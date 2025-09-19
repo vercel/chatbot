@@ -65,7 +65,7 @@ function PureSuggestedActions({
                 parts: [{ type: 'text', text: suggestedAction.action }],
               });
             }}
-            className="text-left border border-sidebar-border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start bg-sidebar-accent/30 hover:bg-sidebar-accent dark:bg-sidebar-accent/20 dark:hover:bg-sidebar-accent/40"
+            className="text-left border border-sidebar-border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start transition-colors duration-200 bg-[#E8D0E0] hover:bg-[#DCC0D0] dark:bg-[#2D1B2E] dark:hover:bg-[#3D2A3E]"
           >
             <span className="font-medium">{suggestedAction.title}</span>
             <span className="text-muted-foreground text-xs font-mono">

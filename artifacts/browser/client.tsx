@@ -445,7 +445,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
             {metadata.error ? (
               <div className="absolute inset-0 flex items-center justify-center bg-red-50 text-red-600">
                 <div className="text-center">
-                  <MonitorX className="w-8 h-8 mx-auto mb-2" />
+                  <MonitorX className="size-8 mx-auto mb-2" />
                   <p className="text-sm font-medium">Connection Error</p>
                   <p className="text-xs opacity-75">{metadata.error}</p>
                   <Button 
@@ -454,7 +454,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     className="mt-2"
                     onClick={connectToBrowserStream}
                   >
-                    <RefreshCwIcon className="w-4 h-4 mr-1" />
+                    <RefreshCwIcon className="size-4 mr-1" />
                     Retry
                   </Button>
                 </div>
@@ -486,13 +486,12 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   onClick={() => {
                     if (metadata.controlMode === 'user' && !metadata.isFocused) {
                       setMetadata(prev => ({ ...prev, isFocused: true }));
-                      toast.info('Browser view is now active. You can type and click.');
                     }
                   }}
                 >
                   {metadata.controlMode === 'user' && !metadata.isFocused && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white z-10 pointer-events-none">
-                      <p className="text-lg font-semibold">Click to activate browser control</p>
+                    <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none" style={{ backgroundColor: '#B1409299' }}>
+                      <h2 className="text-4xl font-bold">Click to activate browser control</h2>
                     </div>
                   )}
                   <canvas

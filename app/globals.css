@@ -165,7 +165,7 @@
 
 /* Assistant message bubble styling */
 .assistant-message-bubble {
-    @apply bg-purple-50 dark:bg-purple-900/20 text-black dark:text-white px-3 py-2 rounded-xl;
+    @apply text-black dark:text-white text-xs leading-[18px] text-left p-0 bg-transparent border-0 outline-none font-serif;
 }
 
 .assistant-message-reasoning {

@@ -283,7 +283,7 @@ function PureArtifact({
 
           {!isMobile && (
             <motion.div
-              className="relative w-[30%] bg-muted dark:bg-background h-dvh shrink-0"
+              className="relative w-[30%] bg-white dark:bg-[#1a0b1a] h-dvh shrink-0"
               initial={{ opacity: 0, x: 10, scale: 1 }}
               animate={{
                 opacity: 1,
@@ -317,13 +317,10 @@ function PureArtifact({
               <div className="flex flex-col h-full">
                 <SideChatHeader
                   title="Chat"
-                  status="online"
                   artifactTitle={artifact.title}
-                  sessionStartTime={document ? formatDistance(
-                    new Date(document.createdAt),
-                    new Date(),
-                    { addSuffix: true }
-                  ) : undefined}
+                  sessionStartTime={document ? new Date(document.createdAt) : undefined}
+                  artifactKind={artifact.kind}
+                  metadata={metadata}
                 />
                 <div className="flex-1 overflow-hidden">
                   <ArtifactMessages
@@ -337,7 +334,7 @@ function PureArtifact({
                     artifactStatus={artifact.status}
                   />
                 </div>
-                <div className="border-t border-gray-200 bg-[#EFD9E9] p-[18px]">
+                <div className="border-t border-gray-200 bg-[#EFD9E9] dark:bg-[#1a0b1a] p-[18px]">
                   <form className="flex gap-2 w-full">
                     <MultimodalInput
                       chatId={chatId}
@@ -428,12 +425,21 @@ function PureArtifact({
           >
             <div className="p-2 flex flex-row justify-between items-start">
               <div className="flex flex-row gap-4 items-start">
-                <ArtifactCloseButton />
+                <ArtifactActions
+                  artifact={artifact}
+                  currentVersionIndex={currentVersionIndex}
+                  handleVersionChange={handleVersionChange}
+                  isCurrentVersion={isCurrentVersion}
+                  mode={mode}
+                  metadata={metadata}
+                  setMetadata={setMetadata}
+                />
+                
 
                 <div className="flex flex-col">
-                  <div className="font-medium">{artifact.title}</div>
+                  {/* <div className="font-medium">{artifact.title}</div> */}
 
-                  {isContentDirty ? (
+                  {/* {isContentDirty ? (
                     <div className="text-sm text-muted-foreground">
                       Saving changes...
                     </div>
@@ -462,19 +468,11 @@ function PureArtifact({
                     </div>
                   ) : (
                     <div className="w-32 h-3 mt-2 bg-muted-foreground/20 rounded-md animate-pulse" />
-                  )}
+                  )} */}
                 </div>
               </div>
 
-              <ArtifactActions
-                artifact={artifact}
-                currentVersionIndex={currentVersionIndex}
-                handleVersionChange={handleVersionChange}
-                isCurrentVersion={isCurrentVersion}
-                mode={mode}
-                metadata={metadata}
-                setMetadata={setMetadata}
-              />
+              <ArtifactCloseButton />
             </div>
 
             <div className="dark:bg-muted bg-background h-full overflow-y-scroll !max-w-full items-center">
@@ -523,6 +521,7 @@ function PureArtifact({
               )}
             </AnimatePresence>
           </motion.div>
+
         </motion.div>
       )}
     </AnimatePresence>

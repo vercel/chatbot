@@ -297,11 +297,10 @@ export function Chat({
   return (
     <>
       <div 
-        className={`flex h-dvh ${browserPanelVisible ? 'flex-row' : 'flex-col'}`}
-        style={{ backgroundColor: initialChatModel === 'web-automation-model' ? '#F4E4F0' : undefined }}
+        className={`flex h-dvh bg-white dark:bg-[#1a0b1a] ${browserPanelVisible ? 'flex-row' : 'flex-col'}`}
       >
         {/* Chat Panel */}
-        <div className={`flex flex-col min-w-0 h-full ${browserPanelVisible ? 'w-[30%] border-r border-gray-200' : 'w-full'} ${initialChatModel === 'web-automation-model' ? 'bg-white' : ''}`}>
+        <div className={`flex flex-col min-w-0 h-full ${browserPanelVisible ? 'w-[30%] border-r border-gray-200 dark:border-gray-700' : 'w-full'}`}>
             <ChatHeader
               chatId={id}
               selectedModelId={initialChatModel}
@@ -321,7 +320,7 @@ export function Chat({
             isArtifactVisible={isArtifactVisible}
           />
 
-          <div className="shrink-0 mx-auto px-4 bg-background pb-4 md:pb-6 w-full">
+          <div className="shrink-0 mx-auto px-4 pt-6 bg-[#F4E4F0] dark:bg-[#1a0b1a] pb-4 md:pb-6 w-full">
             {!isReadonly && (
               <form className="flex gap-2 w-full md:max-w-3xl mx-auto">
                 <MultimodalInput
