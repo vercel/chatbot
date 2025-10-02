@@ -16,7 +16,8 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
-    "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
+    "test:playwright": "export PLAYWRIGHT=True && pnpm exec playwright test",
+    "test": "vitest"
   },
   "dependencies": {
     "@ai-sdk/gateway": "^1.0.15",
@@ -57,6 +58,8 @@
     "@vercel/functions": "^2.0.0",
     "@vercel/otel": "^1.12.0",
     "@vercel/postgres": "^0.10.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "@vitest/browser": "^3.2.4",
     "ai": "5.0.26",
     "bcrypt-ts": "^5.0.2",
     "class-variance-authority": "^0.7.0",
@@ -79,6 +82,7 @@
     "orderedmap": "^2.1.1",
     "papaparse": "^5.5.2",
     "pg": "^8.16.3",
+    "playwright": "^1.55.1",
     "postgres": "^3.4.4",
     "prosemirror-example-setup": "^1.2.3",
     "prosemirror-inputrules": "^1.4.0",
@@ -102,6 +106,7 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^3.1.0",
+    "vitest-browser-react": "^1.0.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -124,7 +129,8 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.4"
   },
   "packageManager": "pnpm@9.12.3"
 }

@@ -9,6 +9,7 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    "types": ["@vitest/browser/providers/playwright"],
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
