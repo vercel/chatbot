@@ -21,6 +21,7 @@ interface BrowserArtifactMetadata {
   error?: string;
   controlMode: 'agent' | 'user';
   isFocused: boolean;
+  isFullscreen: boolean;
 }
 
 export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>({
@@ -37,6 +38,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       isConnecting: false,
       controlMode: 'agent',
       isFocused: false,
+      isFullscreen: false,
     });
   },
 
@@ -229,6 +231,23 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
         data: { mode }
       }));
 
+      // Automatically enable fullscreen when switching to user mode
+      if (mode === 'user') {
+        setMetadata(prev => ({
+          ...prev,
+          controlMode: mode,
+          isFocused: false,
+          isFullscreen: true
+        }));
+      } else {
+        setMetadata(prev => ({
+          ...prev,
+          controlMode: mode,
+          isFocused: false,
+          isFullscreen: false
+        }));
+      }
+
       console.log(`Control mode switch message sent for ${mode}`);
     };
 
@@ -322,6 +341,13 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     const handleKeyboardInput = (event: React.KeyboardEvent) => {
       if (metadata?.controlMode !== 'user' || !metadata.isFocused) return;
 
+      // Handle Escape key to exit fullscreen
+      if (event.key === 'Escape' && metadata.isFullscreen) {
+        event.preventDefault();
+        switchControlMode('agent');
+        return;
+      }
+
       sendUserInput({
         type: event.type === 'keydown' ? 'keydown' : 'keyup',
         key: event.key,
@@ -384,6 +410,21 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       }
     }, [metadata?.controlMode, lastFrame]);
 
+    // Global keyboard listener for fullscreen mode
+    useEffect(() => {
+      const handleGlobalKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' && metadata?.isFullscreen && metadata?.controlMode === 'user') {
+          event.preventDefault();
+          switchControlMode('agent');
+        }
+      };
+
+      if (metadata?.isFullscreen && metadata?.controlMode === 'user') {
+        document.addEventListener('keydown', handleGlobalKeyDown);
+        return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+      }
+    }, [metadata?.isFullscreen, metadata?.controlMode]);
+
     // Cleanup on unmount
     useEffect(() => {
       return () => {
@@ -397,6 +438,105 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           <div className="text-center">
             <Loader2 className="size-8 mx-auto mb-2 animate-spin" />
             <p className="text-sm text-muted-foreground">Initializing browser artifact...</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Fullscreen mode when in user control mode
+    if (metadata.controlMode === 'user' && metadata.isFullscreen) {
+      return (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm">
+          {/* Fullscreen header with controls */}
+          <div className="absolute top-0 left-0 right-0 z-10 bg-black/80 backdrop-blur-sm border-b border-white/10">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3 text-white">
+                <span className="text-sm font-medium">YOU ARE CONTROLLING THE BROWSER</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => switchControlMode('agent')}
+                  className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
+                >
+                  <MousePointerClick className="w-4 h-4 mr-2" />
+                  Save changes and exit
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Fullscreen browser canvas */}
+          <div className="absolute inset-0 pt-20 pb-12 px-12">
+            {metadata.error ? (
+              <div className="flex items-center justify-center h-full bg-red-900/20 text-red-300">
+                <div className="text-center">
+                  <MonitorX className="size-8 mx-auto mb-2" />
+                  <p className="text-sm font-medium">Connection Error</p>
+                  <p className="text-xs opacity-75">{metadata.error}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 text-white border-white/20 hover:bg-white/10"
+                    onClick={connectToBrowserStream}
+                  >
+                    <RefreshCwIcon className="size-4 mr-1" />
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            ) : !metadata.isConnected ? (
+              <div className="flex items-center justify-center h-full text-white/70">
+                <div className="text-center">
+                  {metadata.isConnecting ? (
+                    <>
+                      <Loader2 className="size-8 mx-auto mb-2 animate-spin" />
+                      <p className="text-sm">Connecting to browser...</p>
+                    </>
+                  ) : (
+                    <>
+                      <Monitor className="size-8 mx-auto mb-2" />
+                      <p className="text-sm">No browser connection</p>
+                      <p className="text-xs opacity-75">Browser display will appear here during automation</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <div
+                  className="relative w-full h-full max-w-5xl max-h-[calc(100vh-12rem)] rounded-lg overflow-hidden shadow-2xl bg-white"
+                  tabIndex={0}
+                  onKeyDown={handleKeyboardInput}
+                  onKeyUp={handleKeyboardInput}
+                  onClick={() => {
+                    if (!metadata.isFocused) {
+                      setMetadata(prev => ({ ...prev, isFocused: true }));
+                    }
+                  }}
+                >
+                  {!metadata.isFocused && (
+                    <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-[#B1409299]">
+                      <h2 className="text-4xl font-bold">Click to activate browser control</h2>
+                    </div>
+                  )}
+                  <canvas
+                    ref={canvasRef}
+                    id="browser-artifact-canvas"
+                    width={1920}
+                    height={1080}
+                    className="w-full h-full object-contain bg-white cursor-pointer"
+                    onClick={handleCanvasInteraction}
+                    onMouseMove={handleCanvasInteraction}
+                    onWheel={handleCanvasInteraction}
+                    onContextMenu={(e) => {
+                      e.preventDefault(); // Allow right-click handling
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -503,7 +643,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   }}
                 >
                   {metadata.controlMode === 'user' && !metadata.isFocused && (
-                    <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none" style={{ backgroundColor: '#B1409299' }}>
+                    <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-[#B1409299]">
                       <h2 className="text-4xl font-bold">Click to activate browser control</h2>
                     </div>
                   )}
@@ -512,12 +652,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     id="browser-artifact-canvas"
                     width={1920}
                     height={1080}
-                    className="size-full object-contain"
-                    style={{ 
-                      imageRendering: 'auto',
-                      background: '#ffffff',
-                      cursor: metadata.controlMode === 'user' ? 'pointer' : 'default'
-                    }}
+                    className={`size-full object-contain bg-white ${metadata.controlMode === 'user' ? 'cursor-pointer' : 'cursor-default'}`}
                     onClick={handleCanvasInteraction}
                     onMouseMove={handleCanvasInteraction}
                     onWheel={handleCanvasInteraction}

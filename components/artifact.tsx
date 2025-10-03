@@ -273,7 +273,12 @@ function PureArtifact({
                 width: isSidebarOpen ? windowWidth - 256 : windowWidth,
                 right: 0,
               }}
-              animate={{ width: windowWidth, right: 0 }}
+              animate={{ 
+                width: (artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') 
+                  ? windowWidth 
+                  : windowWidth, 
+                right: 0 
+              }}
               exit={{
                 width: isSidebarOpen ? windowWidth - 256 : windowWidth,
                 right: 0,
@@ -281,7 +286,7 @@ function PureArtifact({
             />
           )}
 
-          {!isMobile && (
+          {!isMobile && !(artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') && (
             <motion.div
               className="relative w-[30%] bg-white dark:bg-[#1a0b1a] h-dvh shrink-0"
               initial={{ opacity: 0, x: 10, scale: 1 }}
@@ -396,12 +401,12 @@ function PureArtifact({
                   }
                 : {
                     opacity: 1,
-                    x: windowWidth * 0.3,
+                    x: (artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') ? 0 : windowWidth * 0.3,
                     y: 0,
                     height: windowHeight,
-                    width: windowWidth
-                      ? windowWidth * 0.7
-                      : 'calc(70dvw)',
+                    width: (artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') 
+                      ? (windowWidth ? windowWidth : 'calc(100dvw)')
+                      : (windowWidth ? windowWidth * 0.7 : 'calc(70dvw)'),
                     borderRadius: 0,
                     transition: {
                       delay: 0,
@@ -423,57 +428,59 @@ function PureArtifact({
               },
             }}
           >
-            <div className="p-2 flex flex-row justify-between items-start">
-              <div className="flex flex-row gap-4 items-start">
-                <ArtifactActions
-                  artifact={artifact}
-                  currentVersionIndex={currentVersionIndex}
-                  handleVersionChange={handleVersionChange}
-                  isCurrentVersion={isCurrentVersion}
-                  mode={mode}
-                  metadata={metadata}
-                  setMetadata={setMetadata}
-                />
-                
+            {!(artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') && (
+              <div className="p-2 flex flex-row justify-between items-start">
+                <div className="flex flex-row gap-4 items-start">
+                  <ArtifactActions
+                    artifact={artifact}
+                    currentVersionIndex={currentVersionIndex}
+                    handleVersionChange={handleVersionChange}
+                    isCurrentVersion={isCurrentVersion}
+                    mode={mode}
+                    metadata={metadata}
+                    setMetadata={setMetadata}
+                  />
+                  
 
-                <div className="flex flex-col">
-                  {/* <div className="font-medium">{artifact.title}</div> */}
+                  <div className="flex flex-col">
+                    {/* <div className="font-medium">{artifact.title}</div> */}
 
-                  {/* {isContentDirty ? (
-                    <div className="text-sm text-muted-foreground">
-                      Saving changes...
-                    </div>
-                  ) : document ? (
-                    <div className="text-sm text-muted-foreground">
-                      {artifact.kind === 'browser' 
-                        ? `Session started ${formatDistance(
-                            new Date(document.createdAt),
-                            new Date(),
-                            { addSuffix: true }
-                          )}`
-                        : `Updated ${formatDistance(
-                            new Date(document.createdAt),
-                            new Date(),
-                            { addSuffix: true }
-                          )}`
-                      }
-                    </div>
-                  ) : artifact.kind === 'browser' && metadata?.sessionId ? (
-                    <div className="text-sm text-muted-foreground">
-                      Session started {formatDistance(
-                        new Date(parseInt(metadata.sessionId.split('-').pop() || '0')),
-                        new Date(),
-                        { addSuffix: true }
-                      )}
-                    </div>
-                  ) : (
-                    <div className="w-32 h-3 mt-2 bg-muted-foreground/20 rounded-md animate-pulse" />
-                  )} */}
+                    {/* {isContentDirty ? (
+                      <div className="text-sm text-muted-foreground">
+                        Saving changes...
+                      </div>
+                    ) : document ? (
+                      <div className="text-sm text-muted-foreground">
+                        {artifact.kind === 'browser' 
+                          ? `Session started ${formatDistance(
+                              new Date(document.createdAt),
+                              new Date(),
+                              { addSuffix: true }
+                            )}`
+                          : `Updated ${formatDistance(
+                              new Date(document.createdAt),
+                              new Date(),
+                              { addSuffix: true }
+                            )}`
+                        }
+                      </div>
+                    ) : artifact.kind === 'browser' && metadata?.sessionId ? (
+                      <div className="text-sm text-muted-foreground">
+                        Session started {formatDistance(
+                          new Date(parseInt(metadata.sessionId.split('-').pop() || '0')),
+                          new Date(),
+                          { addSuffix: true }
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-32 h-3 mt-2 bg-muted-foreground/20 rounded-md animate-pulse" />
+                    )} */}
+                  </div>
                 </div>
-              </div>
 
-              <ArtifactCloseButton />
-            </div>
+                <ArtifactCloseButton />
+              </div>
+            )}
 
             <div className="dark:bg-muted bg-background h-full overflow-y-scroll !max-w-full items-center px-4">
               <artifactDefinition.content
