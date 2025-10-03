@@ -26,6 +26,7 @@ import {
 } from './ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { CollapsibleWrapper } from './ui/collapsible-wrapper';
+import { getToolDisplayInfo } from './tool-icon';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls

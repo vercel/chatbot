@@ -2,8 +2,7 @@ import { Artifact } from '@/components/create-artifact';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { MonitorX, Loader2, RefreshCwIcon, Monitor, Camera, Hand, Bot } from 'lucide-react';
+import { MonitorX, Loader2, RefreshCwIcon, Monitor, Camera, Hand, Bot, MousePointerClick, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BrowserFrame {
@@ -429,13 +428,27 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {metadata.controlMode === 'agent' ? 'Agent' : 'User'}
-                </span>
-                <Switch
-                  checked={metadata.controlMode === 'user'}
-                  onCheckedChange={(checked) => switchControlMode(checked ? 'user' : 'agent')}
-                />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="px-4 py-2.5 rounded-full text-sm font-medium leading-5 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                  >
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-5 h-5" />
+                    Hide Browser
+                  </div>
+                </Button>
+                <Button
+                  variant={metadata.controlMode === 'user' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => switchControlMode(metadata.controlMode === 'agent' ? 'user' : 'agent')}
+                  className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
+                >
+                  <div className="flex items-center gap-2 text-white">
+                    <MousePointerClick className="w-5 h-5" />
+                    {metadata.controlMode === 'agent' ? 'Take control' : 'Save changes and exit'}
+                  </div>
+                </Button>
               </div>
             </div>
           )}
