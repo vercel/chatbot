@@ -460,8 +460,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   onClick={() => switchControlMode('agent')}
                   className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
                 >
-                  <MousePointerClick className="w-4 h-4 mr-2" />
-                  Save changes and exit
+                  Hand Back Control
                 </Button>
               </div>
             </div>
@@ -504,9 +503,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 </div>
               </div>
             ) : (
-              <div className="h-full flex items-center justify-center">
+              <div className="h-full flex items-center justify-center border-4 border-black">
                 <div
-                  className="relative w-full h-full max-w-5xl max-h-[calc(100vh-12rem)] rounded-lg overflow-hidden shadow-2xl bg-white"
+                  className="relative h-full max-h-[calc(100vh-12rem)] rounded-lg overflow-hidden shadow-2xl bg-white"
                   tabIndex={0}
                   onKeyDown={handleKeyboardInput}
                   onKeyUp={handleKeyboardInput}
@@ -526,7 +525,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     id="browser-artifact-canvas"
                     width={1920}
                     height={1080}
-                    className="w-full h-full object-contain bg-white cursor-pointer"
+                    className="h-full object-contain bg-white cursor-pointer"
                     onClick={handleCanvasInteraction}
                     onMouseMove={handleCanvasInteraction}
                     onWheel={handleCanvasInteraction}
@@ -568,25 +567,15 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 )}
               </div>
               <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="px-4 py-2.5 rounded-full text-sm font-medium leading-5 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                  >
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-5 h-5" />
-                    Hide Browser
-                  </div>
-                </Button>
                 <Button
                   variant={metadata.controlMode === 'user' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => switchControlMode(metadata.controlMode === 'agent' ? 'user' : 'agent')}
+                  onClick={() => switchControlMode('user')}
                   className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
                 >
                   <div className="flex items-center gap-2 text-white">
                     <MousePointerClick className="w-5 h-5" />
-                    {metadata.controlMode === 'agent' ? 'Take control' : 'Save changes and exit'}
+                    Take control
                   </div>
                 </Button>
               </div>
