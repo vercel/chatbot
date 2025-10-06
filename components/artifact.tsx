@@ -440,42 +440,6 @@ function PureArtifact({
                     metadata={metadata}
                     setMetadata={setMetadata}
                   />
-                  
-
-                  <div className="flex flex-col">
-                    {/* <div className="font-medium">{artifact.title}</div> */}
-
-                    {/* {isContentDirty ? (
-                      <div className="text-sm text-muted-foreground">
-                        Saving changes...
-                      </div>
-                    ) : document ? (
-                      <div className="text-sm text-muted-foreground">
-                        {artifact.kind === 'browser' 
-                          ? `Session started ${formatDistance(
-                              new Date(document.createdAt),
-                              new Date(),
-                              { addSuffix: true }
-                            )}`
-                          : `Updated ${formatDistance(
-                              new Date(document.createdAt),
-                              new Date(),
-                              { addSuffix: true }
-                            )}`
-                        }
-                      </div>
-                    ) : artifact.kind === 'browser' && metadata?.sessionId ? (
-                      <div className="text-sm text-muted-foreground">
-                        Session started {formatDistance(
-                          new Date(parseInt(metadata.sessionId.split('-').pop() || '0')),
-                          new Date(),
-                          { addSuffix: true }
-                        )}
-                      </div>
-                    ) : (
-                      <div className="w-32 h-3 mt-2 bg-muted-foreground/20 rounded-md animate-pulse" />
-                    )} */}
-                  </div>
                 </div>
 
                 <ArtifactCloseButton />

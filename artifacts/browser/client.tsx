@@ -236,7 +236,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
         setMetadata(prev => ({
           ...prev,
           controlMode: mode,
-          isFocused: false,
+          isFocused: true,
           isFullscreen: true
         }));
       } else {
@@ -460,7 +460,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   onClick={() => switchControlMode('agent')}
                   className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
                 >
-                  Hand Back Control
+                  <div className="flex items-center gap-2 text-white">
+                    Hand Back Control
+                  </div>
                 </Button>
               </div>
             </div>
@@ -509,17 +511,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   tabIndex={0}
                   onKeyDown={handleKeyboardInput}
                   onKeyUp={handleKeyboardInput}
-                  onClick={() => {
-                    if (!metadata.isFocused) {
-                      setMetadata(prev => ({ ...prev, isFocused: true }));
-                    }
-                  }}
                 >
-                  {!metadata.isFocused && (
-                    <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-[#B1409299]">
-                      <h2 className="text-4xl font-bold">Click to activate browser control</h2>
-                    </div>
-                  )}
                   <canvas
                     ref={canvasRef}
                     id="browser-artifact-canvas"
