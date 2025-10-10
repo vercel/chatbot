@@ -54,7 +54,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         <div className="absolute left-[27px] top-[97px]">
           <Button
             variant="outline"
-            className="w-[214px] h-[40px] bg-[#e6e5dc] border-none rounded-[6px] px-[16px] py-[8px] flex items-center justify-center gap-[8px]"
+            className="w-[214px] h-[40px] bg-[#e6e5dc] border-none rounded-[6px] px-[16px] py-[8px] flex items-center justify-center gap-[8px] hover:bg-custom-purple/20"
             onClick={() => {
               setOpenMobile(false);
               router.push('/home');
