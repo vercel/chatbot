@@ -13,15 +13,10 @@ export default function Consent() {
     router.push('/');
   };
 
-  const handleBack = () => {
-    // Navigate back to home page
-    router.push('/home');
-  };
-
   const handleNavigateHome = () => {
     // Navigate to home page
     router.push('/home');
   };
 
-  return <ConsentPage onConsent={handleConsent} onBack={handleBack} onNavigateHome={handleNavigateHome} />;
+  return <ConsentPage onConsent={handleConsent} onNavigateHome={handleNavigateHome} />;
 }

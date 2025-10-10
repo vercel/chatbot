@@ -15,7 +15,7 @@ export default function LandingPage() {
           {/* Background Images */}
           <div className="absolute inset-0">
             <div className="absolute h-[337px] top-[14px] w-[439px] right-0">
-              <div className="absolute inset-0 mix-blend-multiply overflow-hidden pointer-events-none">
+              <div className="absolute inset-0 mix-blend-normal overflow-hidden pointer-events-none opacity-80 brightness-100 contrast-110">
                 <img 
                   alt="" 
                   className="absolute h-full left-[-21.65%] max-w-none top-0 w-[136.47%]" 

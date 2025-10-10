@@ -3,16 +3,14 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, LogOut } from 'lucide-react';
 import { ConsentModal } from '@/components/consent-modal';
 
 interface ConsentPageProps {
   onConsent: () => void;
-  onBack: () => void;
   onNavigateHome: () => void;
 }
 
-export function ConsentPage({ onConsent, onBack, onNavigateHome }: ConsentPageProps) {
+export function ConsentPage({ onConsent, onNavigateHome }: ConsentPageProps) {
   const [consentValue, setConsentValue] = useState<string>('');
   const [showModal, setShowModal] = useState<boolean>(false);
 
