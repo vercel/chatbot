@@ -1,6 +1,6 @@
 import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, IBM_Plex_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, IBM_Plex_Mono, Source_Serif_4, Inter, Roboto } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 
 import './globals.css';
@@ -33,6 +33,27 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: '400',
   display: 'swap',
   variable: '--font-ibm-plex-mono',
+});
+
+const sourceSerifPro = Source_Serif_4({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+  variable: '--font-source-serif',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const roboto = Roboto({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+  variable: '--font-roboto',
 });
 
 const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
@@ -68,7 +89,7 @@ export default async function RootLayout({
       // prop is necessary to avoid the React hydration mismatch warning.
       // https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable} ${ibmPlexMono.variable}`}
+      className={`${geist.variable} ${geistMono.variable} ${ibmPlexMono.variable} ${sourceSerifPro.variable} ${inter.variable} ${roboto.variable}`}
     >
       <head>
         <script
