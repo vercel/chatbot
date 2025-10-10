@@ -452,7 +452,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2 text-white">
                 <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-sm font-medium">YOU ARE IN CONTROLL</span>
+                <span className="text-sm font-medium">YOU ARE IN CONTROL</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button

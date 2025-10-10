@@ -13,6 +13,8 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-geist)'],
         mono: ['var(--font-geist-mono)'],
+        'source-serif': ['Source Serif Pro', 'serif'],
+        'inter': ['Inter', 'sans-serif'],
       },
       screens: {
         'toast-mobile': '600px',

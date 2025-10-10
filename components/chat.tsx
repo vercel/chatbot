@@ -304,7 +304,7 @@ export function Chat({
             isArtifactVisible={isArtifactVisible}
           />
 
-          <div className="shrink-0 mx-auto px-4 pt-6 bg-background pb-4 md:pb-6 w-full">
+          <div className="shrink-0 mx-auto px-4 pt-6 bg-[#EFD9E9] pb-4 md:pb-6 w-full">
             {!isReadonly && (
               <form className="flex gap-2 w-full md:max-w-3xl mx-auto">
                 <MultimodalInput

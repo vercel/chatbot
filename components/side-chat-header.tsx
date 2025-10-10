@@ -53,25 +53,9 @@ function PureSideChatHeader({
 
   return (
     <div className={`border-b border-gray-200 dark:border-gray-700 px-4 py-3 bg-white dark:bg-gray-900 ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Apply for Benefits</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleNewChat}
-            className="p-2 bg-white dark:bg-gray-800 rounded-full border border-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-            title="New Chat"
-          >
-            <Globe size={16} className="text-gray-600 dark:text-gray-300" />
-          </button>
-          {onLogout && (
-            <button
-              onClick={onLogout}
-              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full border border-gray-200 dark:border-gray-600 transition-colors"
-            >
-              Logout
-            </button>
-          )}
-        </div>
+      <div className="flex flex-col left-[27px] top-[25px] text-[18px] font-bold text-black leading-[1.15] not-italic font-serif mb-2">
+        <div>Application</div>
+        <div>Assistant</div>
       </div>
       <hr className="my-2" />
       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 pt-4 mb-2">

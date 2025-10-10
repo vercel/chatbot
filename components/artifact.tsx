@@ -261,38 +261,42 @@ function PureArtifact({
       {artifact.isVisible && (
         <motion.div
           data-testid="artifact"
-          className="flex flex-row h-dvh w-dvw fixed top-0 left-0 z-50 bg-transparent"
+          className="flex flex-row h-dvh w-dvw fixed top-0 left-0 z-40 bg-transparent pointer-events-none"
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { delay: 0.4 } }}
         >
           {!isMobile && (
             <motion.div
-              className="fixed bg-background h-dvh"
+              className="fixed bg-background h-dvh pointer-events-auto"
               initial={{
-                width: isSidebarOpen ? windowWidth - 256 : windowWidth,
-                right: 0,
+                width: isSidebarOpen ? (windowWidth ? windowWidth - 265 - 450 : 'calc(100vw - 265px - 450px)') : (windowWidth ? windowWidth - 50 - 450 : 'calc(100vw - 50px - 450px)'),
+                left: isSidebarOpen ? 265 + 450 : 50 + 450,
               }}
               animate={{ 
                 width: (artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') 
-                  ? windowWidth 
-                  : windowWidth, 
-                right: 0 
+                  ? (windowWidth ? windowWidth : '100vw')
+                  : (isSidebarOpen ? (windowWidth ? windowWidth - 265 - 450 : 'calc(100vw - 265px - 450px)') : (windowWidth ? windowWidth - 50 - 450 : 'calc(100vw - 50px - 450px)')), 
+                left: (artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') ? 0 : (isSidebarOpen ? 265 + 450 : 50 + 450)
               }}
               exit={{
-                width: isSidebarOpen ? windowWidth - 256 : windowWidth,
-                right: 0,
+                width: isSidebarOpen ? (windowWidth ? windowWidth - 265 - 450 : 'calc(100vw - 265px - 450px)') : (windowWidth ? windowWidth - 50 - 450 : 'calc(100vw - 50px - 450px)'),
+                left: isSidebarOpen ? 265 + 450 : 50 + 450,
               }}
             />
           )}
 
           {!isMobile && !(artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') && (
             <motion.div
-              className="relative w-[30%] bg-white dark:bg-[#1a0b1a] h-dvh shrink-0"
-              initial={{ opacity: 0, x: 10, scale: 1 }}
+              className="relative w-[450px] min-w-[400px] max-w-[500px] bg-white dark:bg-[#1a0b1a] h-dvh shrink-0 pointer-events-auto"
+              initial={{ 
+                opacity: 0, 
+                x: isSidebarOpen ? 265 + 10 : 50 + 10, 
+                scale: 1 
+              }}
               animate={{
                 opacity: 1,
-                x: 0,
+                x: isSidebarOpen ? 265 : 50,
                 scale: 1,
                 transition: {
                   delay: 0.2,
@@ -303,7 +307,7 @@ function PureArtifact({
               }}
               exit={{
                 opacity: 0,
-                x: 0,
+                x: isSidebarOpen ? 265 : 50,
                 scale: 1,
                 transition: { duration: 0 },
               }}
@@ -362,7 +366,7 @@ function PureArtifact({
           )}
 
           <motion.div
-            className="fixed dark:bg-muted bg-background h-dvh flex flex-col overflow-y-scroll md:border-l dark:border-zinc-700 border-zinc-200"
+            className="fixed dark:bg-muted bg-background h-dvh flex flex-col overflow-y-scroll md:border-l dark:border-zinc-700 border-zinc-200 pointer-events-auto"
             initial={
               isMobile
                 ? {
@@ -401,12 +405,14 @@ function PureArtifact({
                   }
                 : {
                     opacity: 1,
-                    x: (artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') ? 0 : windowWidth * 0.3,
+                    x: (artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') 
+                      ? (isSidebarOpen ? 265 : 50)
+                      : (isSidebarOpen ? 265 + 450 : 50 + 450),
                     y: 0,
                     height: windowHeight,
                     width: (artifact.kind === 'browser' && metadata?.isFullscreen && metadata?.controlMode === 'user') 
-                      ? (windowWidth ? windowWidth : 'calc(100dvw)')
-                      : (windowWidth ? windowWidth * 0.7 : 'calc(70dvw)'),
+                      ? (isSidebarOpen ? (windowWidth ? windowWidth - 265 : 'calc(100vw - 265px)') : (windowWidth ? windowWidth - 50 : 'calc(100vw - 50px)'))
+                      : (isSidebarOpen ? (windowWidth ? windowWidth - 265 - 450 : 'calc(100vw - 265px - 450px)') : (windowWidth ? windowWidth - 50 - 450 : 'calc(100vw - 50px - 450px)')),
                     borderRadius: 0,
                     transition: {
                       delay: 0,
