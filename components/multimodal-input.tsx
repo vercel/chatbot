@@ -221,7 +221,7 @@ function PureMultimodalInput({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="absolute left-1/2 bottom-28 -translate-x-1/2 z-50"
+            className="absolute left-1/2 bottom-48 -translate-x-1/2 z-50"
           >
             <Button
               data-testid="scroll-to-bottom-button"
@@ -283,42 +283,47 @@ function PureMultimodalInput({
         </div>
       )}
 
-      <Textarea
-        data-testid="multimodal-input"
-        ref={textareaRef}
-        placeholder="Write something..."
-        value={input}
-        onChange={handleInput}
-        className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-custom-purple dark:focus:border-custom-purple focus:ring-2 focus:ring-custom-purple/20 dark:focus:ring-custom-purple/30 focus:outline-none transition-colors pb-10',
-          className,
-        )}
-        rows={2}
-        autoFocus
-        onKeyDown={(event) => {
-          if (
-            event.key === 'Enter' &&
-            !event.shiftKey &&
-            !event.nativeEvent.isComposing
-          ) {
-            event.preventDefault();
+      <div className="relative">
+        <Textarea
+          data-testid="multimodal-input"
+          ref={textareaRef}
+          placeholder="Write something..."
+          value={input}
+          onChange={handleInput}
+          className={cx(
+            'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-custom-purple dark:focus:border-custom-purple focus:ring-2 focus:ring-custom-purple/20 dark:focus:ring-custom-purple/30 focus:outline-none transition-colors pb-10',
+            className,
+          )}
+          rows={2}
+          autoFocus
+          onKeyDown={(event) => {
+            if (
+              event.key === 'Enter' &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing
+            ) {
+              event.preventDefault();
 
-            if (status !== 'ready') {
-              toast.error('Please wait for the model to finish its response!');
-            } else {
-              submitForm();
+              if (status !== 'ready') {
+                toast.error('Please wait for the model to finish its response!');
+              } else {
+                submitForm();
+              }
             }
-          }
-        }}
-      />
-
-      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
-        <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+          }}
+        />
       </div>
 
-      <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
+      <div className="flex flex-row justify-end gap-2 mt-1">
         {status === 'streaming' || status === 'submitted' ? (
-          <StopButton stop={stop} setMessages={setMessages} />
+          <>
+            <StopButton stop={stop} setMessages={setMessages} />
+            <SendButton
+              input={input}
+              submitForm={submitForm}
+              uploadQueue={uploadQueue}
+            />
+          </>
         ) : (
           <SendButton
             input={input}
@@ -354,7 +359,7 @@ function PureAttachmentsButton({
   return (
     <Button
       data-testid="attachments-button"
-      className="rounded-md rounded-bl-lg p-[7px] h-fit border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+      className="rounded-md rounded-bl-lg p-[7px] h-fit border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-custom-purple/20 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();
@@ -379,14 +384,15 @@ function PureStopButton({
   return (
     <Button
       data-testid="stop-button"
-      className="size-10 rounded-full text-white p-0 flex items-center justify-center bg-custom-purple hover:bg-custom-purple/90 dark:bg-custom-purple dark:hover:bg-custom-purple/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="bg-transparent hover:bg-transparent rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-[#b14092] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       onClick={(event) => {
         event.preventDefault();
         stop();
         setMessages((messages) => messages);
       }}
     >
-      <StopIcon size={14} />
+      <StopIcon size={20} />
+      <span>Stop</span>
     </Button>
   );
 }
@@ -405,14 +411,15 @@ function PureSendButton({
   return (
     <Button
       data-testid="send-button"
-      className="size-10 rounded-full text-white p-0 flex items-center justify-center bg-custom-purple hover:bg-custom-purple/90 dark:bg-custom-purple dark:hover:bg-custom-purple/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="bg-custom-purple hover:bg-custom-purple/90 disabled:bg-[rgba(29,27,32,0.1)] disabled:hover:bg-[rgba(29,27,32,0.15)] rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-white disabled:text-[#1d1b20] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       onClick={(event) => {
         event.preventDefault();
         submitForm();
       }}
       disabled={input.length === 0 || uploadQueue.length > 0}
     >
-      <ArrowUpIcon size={14} />
+      <ArrowUpIcon size={20} />
+      <span>Submit</span>
     </Button>
   );
 }

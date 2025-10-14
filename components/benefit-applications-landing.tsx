@@ -39,16 +39,9 @@ export function BenefitApplicationsLanding({
     <div className="flex-1 flex flex-col items-center justify-center p-8 bg-chat-background">
       <div className="max-w-4xl w-full text-left">
         {/* Main Title */}
-        <h1 className="text-5xl md:text-7xl font-extrabold text-purple-900 dark:text-purple-100 mb-16 leading-tight">
-          Get started on
-          <br />
-          benefit applications
-        </h1>
-
-        {/* Question */}
-        <p className="text-2xl text-gray-800 dark:text-gray-200 mb-4">
+        <h1 className="text-[64px] font-serif leading-[1.15] text-black dark:text-white mb-16">
           What program would you like to apply for?
-        </p>
+        </h1>
 
         {/* Input Form */}
         <div className="mb-8 max-w-4xl mx-auto">

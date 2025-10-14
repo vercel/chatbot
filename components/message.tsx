@@ -76,13 +76,6 @@ const PurePreviewMessage = ({
             },
           )}
         >
-          {message.role === 'assistant' && (
-            <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
-              <div className="translate-y-px">
-                <SparklesIcon size={14} />
-              </div>
-            </div>
-          )}
 
           <div
             className={cn('flex flex-col gap-4 w-full', {
@@ -146,9 +139,9 @@ const PurePreviewMessage = ({
                       <div
                         data-testid="message-content"
                         className={cn('flex flex-col gap-4', {
-                          'bg-[#EFD9E9] dark:bg-slate-800 text-black dark:text-slate-100 px-[18px] py-[18px] rounded-xl text-xs leading-[18px]':
+                          'bg-[#EFD9E9] dark:bg-slate-800 text-black dark:text-slate-100 px-[18px] py-[18px] rounded-xl text-xs leading-[18px] font-inter':
                             message.role === 'user',
-                          'assistant-message-bubble':
+                          'assistant-message-bubble font-source-serif':
                             message.role === 'assistant',
                         })}
                       >
@@ -410,9 +403,6 @@ export const ThinkingMessage = () => {
           },
         )}
       >
-        <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-          <SparklesIcon size={14} />
-        </div>
 
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 assistant-message-bubble">

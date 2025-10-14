@@ -147,7 +147,7 @@ export function Chat({
     const userMessage = messages.find(msg => msg.role === 'user');
     if (userMessage) {
       const messageText = userMessage.parts?.find(part => part.type === 'text')?.text || 'Browser session';
-      return `Browser: ${messageText.slice(0, 40)}${messageText.length > 40 ? '...' : ''}`;
+      return `Browser: ${messageText}`;
     }
 
     return 'Browser:';
@@ -302,7 +302,7 @@ export function Chat({
             isArtifactVisible={isArtifactVisible}
           />
 
-          <div className="shrink-0 mx-auto px-4 pt-6 bg-background pb-4 md:pb-6 w-full">
+          <div className="shrink-0 mx-auto px-4 pt-6 bg-[#EFD9E9] pb-4 md:pb-6 w-full">
             {!isReadonly && (
               <form className="flex gap-2 w-full md:max-w-3xl mx-auto">
                 <MultimodalInput

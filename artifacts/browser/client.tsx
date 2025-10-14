@@ -2,7 +2,7 @@ import { Artifact } from '@/components/create-artifact';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MonitorX, Loader2, RefreshCwIcon, Monitor, Camera, Hand, Bot, MousePointerClick, Eye } from 'lucide-react';
+import { MonitorX, Loader2, RefreshCwIcon, Monitor, MousePointerClick } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BrowserFrame {
@@ -467,7 +467,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2 text-white">
                 <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-sm font-medium">YOU ARE IN CONTROLL</span>
+                <span className="text-sm font-medium">YOU ARE IN CONTROL</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -659,78 +659,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     );
   },
 
-  actions: [
-    {
-      icon: <MonitorX size={18} />,
-      description: 'Close browser',
-      onClick: ({ metadata, setMetadata }) => {
-        if (!metadata?.sessionId) {
-          toast.error('No active browser session');
-          return;
-        }
-        
-        // Show confirmation message
-        toast.info('To close the browser, send a message asking the agent to close it');
-        
-        // Reset connection state
-        if (metadata) {
-          setMetadata({
-            ...metadata,
-            isConnected: false,
-            isConnecting: false,
-            error: undefined,
-          });
-        }
-      },
-    },
-    {
-      icon: <RefreshCwIcon size={18} />,
-      description: 'Refresh stream',
-      onClick: ({ metadata, setMetadata }) => {
-        // Just reconnect to stream without killing Chrome
-        if (metadata) {
-          setMetadata({
-            ...metadata,
-            isConnected: false,
-            isConnecting: false,
-            error: undefined,
-          });
-        }
-      },
-    },
-    {
-      icon: <Camera size={18} />,
-      description: 'Take screenshot',
-      onClick: () => {
-        // Find the canvas element and trigger screenshot
-        const canvas = document.querySelector('#browser-artifact-canvas') as HTMLCanvasElement;
-        if (!canvas) {
-          toast.error('No browser view available for screenshot');
-          return;
-        }
-
-        // Convert canvas to blob
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            toast.error('Failed to capture screenshot');
-            return;
-          }
-
-          // Create download link
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `browser-screenshot-${Date.now()}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-
-          toast.success('Screenshot saved!');
-        }, 'image/png');
-      },
-    },
-  ],
+  actions: [],
 
   toolbar: [],
 });
