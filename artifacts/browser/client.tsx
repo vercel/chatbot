@@ -2,7 +2,7 @@ import { Artifact } from '@/components/create-artifact';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MonitorX, Loader2, RefreshCwIcon, Monitor, Camera, Hand, Bot, MousePointerClick, Eye } from 'lucide-react';
+import { MonitorX, Loader2, RefreshCwIcon, Monitor, MousePointerClick } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BrowserFrame {
@@ -73,7 +73,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
 
     const connectToBrowserStream = async () => {
       if (!metadata?.sessionId) return;
-      
+
       try {
         setMetadata({
           ...metadata,
@@ -81,21 +81,27 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           error: undefined,
         });
 
-        // Get WebSocket connection info from our API
-        const response = await fetch(`/api/browser-stream?sessionId=${metadata.sessionId}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const connectionInfo = await response.json();
+        // Fetch browser WebSocket proxy config from server (runtime config)
+        let wsUrl: string;
+        try {
+          const configRes = await fetch('/api/browser-ws-config');
+          const config = await configRes.json();
 
-        if (connectionInfo.error) {
-          throw new Error(connectionInfo.error);
+          if (config.proxyUrl) {
+            // Production: use dedicated proxy service
+            const url = new URL(config.proxyUrl);
+            const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+            wsUrl = `${protocol}//${url.host}?sessionId=${metadata.sessionId}`;
+          } else {
+            // Development: connect directly to localhost
+            wsUrl = `ws://localhost:8933?sessionId=${metadata.sessionId}`;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch browser WS config, falling back to localhost:', err);
+          wsUrl = `ws://localhost:8933?sessionId=${metadata.sessionId}`;
         }
 
-        // Connect to the browser streaming WebSocket
-        const ws = new WebSocket(connectionInfo.url);
+        const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -189,11 +195,16 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
 
     const disconnectFromBrowserStream = () => {
       if (wsRef.current) {
-        // Request streaming to stop
-        wsRef.current.send(JSON.stringify({
-          type: 'stop-streaming',
-          sessionId: metadata?.sessionId
-        }));
+        const currentSessionId = metadata?.sessionId;
+        
+        // Request streaming to stop (but keep Chrome alive)
+        if (currentSessionId && wsRef.current.readyState === WebSocket.OPEN) {
+          console.log(`Requesting stop-streaming for session: ${currentSessionId} (Chrome remains alive)`);
+          wsRef.current.send(JSON.stringify({
+            type: 'stop-streaming',
+            sessionId: currentSessionId
+          }));
+        }
         
         wsRef.current.close();
         wsRef.current = null;
@@ -425,10 +436,13 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       }
     }, [metadata?.isFullscreen, metadata?.controlMode]);
 
-    // Cleanup on unmount
+    // Cleanup on unmount - only disconnect stream, don't kill Chrome
     useEffect(() => {
       return () => {
-        disconnectFromBrowserStream();
+        if (wsRef.current) {
+          disconnectFromBrowserStream();
+        }
+        // Chrome stays alive - agent or "Close Browser" button controls its lifecycle
       };
     }, []);
 

@@ -66,9 +66,7 @@ export function Chat({
     generateId: generateUUID,
     transport: new DefaultChatTransport({
       api: initialChatModel === 'web-automation-model' ?
-        (process.env.NEXT_PUBLIC_MASTRA_SERVER_URL ?
-          `${process.env.NEXT_PUBLIC_MASTRA_SERVER_URL}/chat` :
-          'http://mastra-app:4112/chat') :
+        '/api/mastra-proxy' :
         '/api/chat',
       fetch: fetchWithErrorHandlers,
       prepareSendMessagesRequest: initialChatModel !== 'web-automation-model' ?
