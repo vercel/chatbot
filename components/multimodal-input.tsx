@@ -312,10 +312,6 @@ function PureMultimodalInput({
             }
           }}
         />
-
-        <div className="absolute bottom-2 left-2">
-          <AttachmentsButton fileInputRef={fileInputRef} status={status} />
-        </div>
       </div>
 
       <div className="flex flex-row justify-end gap-2 mt-1">

@@ -644,55 +644,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     );
   },
 
-  actions: [
-    {
-      icon: <RefreshCwIcon size={18} />,
-      description: 'Refresh browser session',
-      onClick: ({ metadata, setMetadata }) => {
-        // Reset connection state to trigger reconnection
-        if (metadata) {
-          setMetadata({
-            ...metadata,
-            isConnected: false,
-            isConnecting: false,
-            error: undefined,
-          });
-        }
-      },
-    },
-    {
-      icon: <Camera size={18} />,
-      description: 'Take screenshot',
-      onClick: () => {
-        // Find the canvas element and trigger screenshot
-        const canvas = document.querySelector('#browser-artifact-canvas') as HTMLCanvasElement;
-        if (!canvas) {
-          toast.error('No browser view available for screenshot');
-          return;
-        }
-
-        // Convert canvas to blob
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            toast.error('Failed to capture screenshot');
-            return;
-          }
-
-          // Create download link
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `browser-screenshot-${Date.now()}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-
-          toast.success('Screenshot saved!');
-        }, 'image/png');
-      },
-    },
-  ],
+  actions: [],
 
   toolbar: [],
 });

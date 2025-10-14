@@ -139,9 +139,9 @@ const PurePreviewMessage = ({
                       <div
                         data-testid="message-content"
                         className={cn('flex flex-col gap-4', {
-                          'bg-[#EFD9E9] dark:bg-slate-800 text-black dark:text-slate-100 px-[18px] py-[18px] rounded-xl text-xs leading-[18px]':
+                          'bg-[#EFD9E9] dark:bg-slate-800 text-black dark:text-slate-100 px-[18px] py-[18px] rounded-xl text-xs leading-[18px] font-inter':
                             message.role === 'user',
-                          'assistant-message-bubble':
+                          'assistant-message-bubble font-source-serif':
                             message.role === 'assistant',
                         })}
                       >

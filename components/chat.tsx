@@ -149,7 +149,7 @@ export function Chat({
     const userMessage = messages.find(msg => msg.role === 'user');
     if (userMessage) {
       const messageText = userMessage.parts?.find(part => part.type === 'text')?.text || 'Browser session';
-      return `Browser: ${messageText.slice(0, 40)}${messageText.length > 40 ? '...' : ''}`;
+      return `Browser: ${messageText}`;
     }
 
     return 'Browser:';

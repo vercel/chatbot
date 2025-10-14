@@ -191,7 +191,7 @@
 
 /* Assistant message bubble styling */
 .assistant-message-bubble {
-    @apply text-black dark:text-white text-xs leading-[18px] text-left p-0 bg-transparent border-0 outline-none font-serif;
+    @apply text-black dark:text-white text-xs leading-[18px] text-left p-0 bg-transparent border-0 outline-none font-source-serif;
 }
 
 .assistant-message-reasoning {

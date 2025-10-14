@@ -58,7 +58,7 @@ function PureSideChatHeader({
         <div>Assistant</div>
       </div>
       <hr className="my-2" />
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 pt-4 mb-2">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 pt-4 mb-2 truncate">
         {artifactTitle || 'Browser:'}
       </h3>
       <p className="font-mono text-[10px] font-normal text-black dark:text-gray-300 pb-2">

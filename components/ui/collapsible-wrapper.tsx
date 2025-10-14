@@ -42,13 +42,10 @@ export function CollapsibleWrapper({
           )}
           {displayName}
           {isError && ' (Error)'}
-          {!isError && output && (
-            <CircleCheck size={14} className="text-custom-purple" />
-          )}
           
         </div>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="p-1 h-auto">
+          <Button variant="ghost" size="sm" className="p-1 h-auto text-gray-400 hover:text-gray-600 hover:bg-gray-100">
             {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             <span className="sr-only">Toggle details</span>
           </Button>
