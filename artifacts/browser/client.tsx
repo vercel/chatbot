@@ -101,7 +101,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           wsUrl = `ws://localhost:8933?sessionId=${metadata.sessionId}`;
         }
 
-        console.log('Connecting to browser stream:', wsUrl);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
