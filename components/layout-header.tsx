@@ -5,10 +5,12 @@ import { PlusIcon, SidebarLeftIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { closeArtifact, useArtifact } from '@/hooks/use-artifact';
 
 export function LayoutHeader() {
   const { state, toggleSidebar } = useSidebar();
   const router = useRouter();
+  const { setArtifact } = useArtifact();
 
   // Don't show the component when sidebar is expanded
   if (state === 'expanded') {
@@ -16,6 +18,7 @@ export function LayoutHeader() {
   }
 
   const handleNewChat = () => {
+    closeArtifact(setArtifact);
     router.push('/home');
     router.refresh();
   };

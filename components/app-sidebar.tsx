@@ -8,6 +8,7 @@ import { SidebarHistory } from '@/components/sidebar-history';
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
 import { Button } from '@/components/ui/button';
+import { closeArtifact, useArtifact } from '@/hooks/use-artifact';
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+  const { setArtifact } = useArtifact();
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0 w-[265px]">
@@ -52,6 +54,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 className="w-[214px] h-[40px] bg-[#e6e5dc] dark:bg-gray-700 border-none rounded-[6px] px-[16px] py-[8px] flex items-center justify-center gap-[8px] hover:bg-custom-purple/20 dark:hover:bg-custom-purple/30"
                 onClick={() => {
                   setOpenMobile(false);
+                  closeArtifact(setArtifact);
                   router.push('/home');
                   router.refresh();
                 }}

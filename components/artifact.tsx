@@ -448,7 +448,7 @@ function PureArtifact({
                   />
                 </div>
 
-                <ArtifactCloseButton />
+                {/* <ArtifactCloseButton /> */}
               </div>
             )}
 

@@ -25,6 +25,7 @@ import {
 } from './icons';
 import { memo } from 'react';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
+import { closeArtifact, useArtifact } from '@/hooks/use-artifact';
 
 const PureChatItem = ({
   chat,
@@ -41,11 +42,15 @@ const PureChatItem = ({
     chatId: chat.id,
     initialVisibilityType: chat.visibility,
   });
+  const { setArtifact } = useArtifact();
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={isActive}>
-        <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)}>
+        <Link href={`/chat/${chat.id}`} onClick={() => {
+          setOpenMobile(false);
+          closeArtifact(setArtifact);
+        }}>
           <span>{chat.title}</span>
         </Link>
       </SidebarMenuButton>

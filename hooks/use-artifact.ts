@@ -19,6 +19,21 @@ export const initialArtifactData: UIArtifact = {
   },
 };
 
+/**
+ * Utility function to close any open artifacts
+ * @param setArtifact - The setArtifact function from useArtifact hook
+ */
+export const closeArtifact = (setArtifact: (updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact)) => void) => {
+  setArtifact((currentArtifact) =>
+    currentArtifact.status === 'streaming'
+      ? {
+          ...currentArtifact,
+          isVisible: false,
+        }
+      : { ...initialArtifactData, status: 'idle' },
+  );
+};
+
 type Selector<T> = (state: UIArtifact) => T;
 
 export function useArtifactSelector<Selected>(selector: Selector<Selected>) {

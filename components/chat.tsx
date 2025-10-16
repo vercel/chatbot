@@ -137,11 +137,14 @@ export function Chat({
   const { setArtifact, artifact } = useArtifact();
   const [browserArtifactDismissed, setBrowserArtifactDismissed] = useState(false);
 
-  // Simple session start time
-  const sessionStartTime = 'Session started';
-
-  // Monitor messages for browser tool usage
+  // Monitor messages for browser tool usage - only open artifact for new messages, not when navigating to existing chats
   useEffect(() => {
+    // Only check for browser tool calls if we're actively streaming (new message being processed)
+    // This prevents artifacts from opening when just navigating to view an existing chat
+    if (status !== 'streaming') {
+      return;
+    }
+
     const hasBrowserToolCall = messages.some(message => 
       message.parts?.some(part => {
         const partType = (part as any).type;
@@ -184,7 +187,7 @@ export function Chat({
         },
       });
     }
-  }, [messages, isArtifactVisible, setArtifact, browserArtifactDismissed]);
+  }, [messages, isArtifactVisible, browserArtifactDismissed, status]);
 
   // Track when user manually closes the browser artifact
   useEffect(() => {
@@ -271,40 +274,42 @@ export function Chat({
   // Unified layout for all models
   return (
     <>
-      <div className="flex h-dvh bg-background flex-col">
-        <div className="flex flex-col min-w-0 size-full">
-          <Messages
-            chatId={id}
-            status={status}
-            votes={votes}
-            messages={messages}
-            setMessages={setMessages}
-            regenerate={regenerate}
-            isReadonly={isReadonly}
-            isArtifactVisible={isArtifactVisible}
-          />
-
-          <div className="shrink-0 mx-auto px-4 pt-6 bg-[#EFD9E9] pb-4 md:pb-6 w-full">
-            {!isReadonly && (
-              <form className="flex gap-2 w-full md:max-w-3xl mx-auto">
-                <MultimodalInput
-                  chatId={id}
-                  input={input}
-                  setInput={setInput}
-                  status={status}
-                  stop={stop}
-                  attachments={attachments}
-                  setAttachments={setAttachments}
-                  messages={messages}
-                  setMessages={setMessages}
-                  sendMessage={sendMessage}
-                  selectedVisibilityType={visibilityType}
-                />
-              </form>
-            )}
+      {!isArtifactVisible && (
+        <div className="flex h-dvh bg-background flex-col">
+          <div className="flex flex-col min-w-0 size-full">
+            <Messages
+              chatId={id}
+              status={status}
+              votes={votes}
+              messages={messages}
+              setMessages={setMessages}
+              regenerate={regenerate}
+              isReadonly={isReadonly}
+              isArtifactVisible={isArtifactVisible}
+            />
+  
+            <div className="shrink-0 mx-auto px-4 pt-6 bg-[#EFD9E9] pb-4 md:pb-6 w-full">
+              {!isReadonly && (
+                <form className="flex gap-2 w-full md:max-w-3xl mx-auto">
+                  <MultimodalInput
+                    chatId={id}
+                    input={input}
+                    setInput={setInput}
+                    status={status}
+                    stop={stop}
+                    attachments={attachments}
+                    setAttachments={setAttachments}
+                    messages={messages}
+                    setMessages={setMessages}
+                    sendMessage={sendMessage}
+                    selectedVisibilityType={visibilityType}
+                  />
+                </form>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <Artifact
         chatId={id}

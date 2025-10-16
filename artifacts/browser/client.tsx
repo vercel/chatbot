@@ -460,9 +460,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // Fullscreen mode when in user control mode
     if (metadata.controlMode === 'user' && metadata.isFullscreen) {
       return (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 browser-fullscreen-bg">
           {/* Fullscreen header with controls */}
-          <div className="absolute top-0 left-0 right-0 z-10 bg-black/90 backdrop-blur-sm">
+          <div className="absolute top-0 left-0 right-0 z-10 browser-fullscreen-bg">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2 text-white">
                 <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
@@ -484,7 +484,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           </div>
 
           {/* Fullscreen browser canvas */}
-          <div className="absolute inset-0 pt-20 pb-12 px-12 bg-black/80">
+          <div className="absolute inset-0 pt-20 pb-12 px-12 browser-fullscreen-bg">
             {metadata.error ? (
               <div className="flex items-center justify-center h-full bg-red-900/20 text-red-300">
                 <div className="text-center">
@@ -639,8 +639,8 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     ref={canvasRef}
                     id="browser-artifact-canvas"
                     width={1920}
-                    height={1080}
-                    className={`size-full object-contain bg-white ${metadata.controlMode === 'user' ? 'cursor-pointer' : 'cursor-default'}`}
+                    height={1400}
+                    className={`w-full h-full object-cover bg-white ${metadata.controlMode === 'user' ? 'cursor-pointer' : 'cursor-default'}`}
                     onClick={handleCanvasInteraction}
                     onMouseMove={handleCanvasInteraction}
                     onWheel={handleCanvasInteraction}
