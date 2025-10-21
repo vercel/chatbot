@@ -118,7 +118,7 @@ const PurePreviewMessage = ({
                 if (mode === 'view') {
                   return (
                     <div key={key} className="flex flex-row gap-2 items-start">
-                      {message.role === 'user' && !isReadonly && (
+                      {/* {message.role === 'user' && !isReadonly && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -134,7 +134,7 @@ const PurePreviewMessage = ({
                           </TooltipTrigger>
                           <TooltipContent>Edit message</TooltipContent>
                         </Tooltip>
-                      )}
+                      )} */}
 
                       <div
                         data-testid="message-content"
@@ -317,38 +317,69 @@ const PurePreviewMessage = ({
 
                 if (state === 'input-available') {
                   const { input } = part as any;
-                  const { text: displayName, icon } = getToolDisplayInfo(type, input);
+                  const { text: displayName, icon: Icon } = getToolDisplayInfo(type, input);
 
+                  // Only use CollapsibleWrapper for get-participant-with-household
+                  if (displayName === 'Retrieved participant data') {
+                    return (
+                      <CollapsibleWrapper key={toolCallId} displayName={displayName} input={input} icon={Icon} />
+                    );
+                  }
+
+                  // For all other tools, show simple icon with text
                   return (
-                    <CollapsibleWrapper key={toolCallId} displayName={displayName} input={input} icon={icon} />
+                    <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
+                      <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-[#767676] flex items-center gap-2">
+                        {Icon && (
+                          <Icon size={12} className="text-gray-500 flex-shrink-0" />
+                        )}
+                        {displayName}
+                      </div>
+                    </div>
                   );
                 }
 
                 if (state === 'output-available') {
                   const { output, input } = part as any;
-                  const { text: displayName, icon } = getToolDisplayInfo(type, input);
+                  const { text: displayName, icon: Icon } = getToolDisplayInfo(type, input);
 
-                  if (output && 'error' in output) {
+                  // Only use CollapsibleWrapper for get-participant-with-household
+                  if (displayName === 'Retrieved participant data') {
+                    if (output && 'error' in output) {
+                      return (
+                        <CollapsibleWrapper 
+                          key={toolCallId} 
+                          displayName={displayName} 
+                          input={input} 
+                          output={output} 
+                          isError={true}
+                          icon={Icon}
+                        />
+                      );
+                    }
+
                     return (
                       <CollapsibleWrapper 
                         key={toolCallId} 
                         displayName={displayName} 
                         input={input} 
-                        output={output} 
-                        isError={true}
-                        icon={icon}
+                        output={output}
+                        icon={Icon}
                       />
                     );
                   }
 
+                  // For all other tools, show simple icon with text
                   return (
-                    <CollapsibleWrapper 
-                      key={toolCallId} 
-                      displayName={displayName} 
-                      input={input} 
-                      output={output}
-                      icon={icon}
-                    />
+                    <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
+                      <div className={`text-[10px] leading-[150%] font-ibm-plex-mono flex items-center gap-2 ${output && 'error' in output ? 'text-red-600' : 'text-[#767676]'}`}>
+                        {Icon && (
+                          <Icon size={12} className="text-gray-500 flex-shrink-0" />
+                        )}
+                        {displayName}
+                        {output && 'error' in output && ' (Error)'}
+                      </div>
+                    </div>
                   );
                 }
               }
