@@ -26,7 +26,7 @@ export default function Page() {
 
   const handleMicrosoftLogin = () => {
     toast({
-      type: 'info',
+      type: 'success',
       description: 'Microsoft sign-in coming soon!',
     });
   };
