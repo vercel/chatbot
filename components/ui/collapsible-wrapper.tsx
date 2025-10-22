@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, CircleCheck } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -9,7 +9,6 @@ import {
 
 import { Button } from './button';
 import { useState } from 'react';
-import { CircleCheck } from '@/components/animate-ui/icons/circle-check';
 
 interface CollapsibleWrapperProps {
   displayName: string;

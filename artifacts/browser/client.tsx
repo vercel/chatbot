@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MonitorX, Loader2, RefreshCwIcon, Monitor, MousePointerClick } from 'lucide-react';
 import { toast } from 'sonner';
-import { Cursor, CursorFollow, CursorProvider } from '@/components/animate-ui/components/animate/cursor';
 
 interface BrowserFrame {
   type: 'frame';
@@ -520,34 +519,28 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 </div>
               </div>
             ) : (
-              <CursorProvider>
-                <div className="h-full flex items-center justify-center border-4 border-black px-4">
-                  <div
-                    className="relative h-full max-h-[calc(100vh-12rem)] rounded-lg overflow-hidden shadow-2xl bg-white"
-                    tabIndex={0}
-                    onKeyDown={handleKeyboardInput}
-                    onKeyUp={handleKeyboardInput}
-                  >
-                    <canvas
-                      ref={canvasRef}
-                      id="browser-artifact-canvas"
-                      width={1920}
-                      height={1080}
-                      className="h-full object-contain bg-white"
-                      onClick={handleCanvasInteraction}
-                      onMouseMove={handleCanvasInteraction}
-                      onWheel={handleCanvasInteraction}
-                      onContextMenu={(e) => {
-                        e.preventDefault(); // Allow right-click handling
-                      }}
-                    />
-                  </div>
-                  <Cursor className="text-white drop-shadow-lg"/>
-                  <CursorFollow>
-                    User
-                  </CursorFollow>
+              <div className="h-full flex items-center justify-center border-4 border-black px-4">
+                <div
+                  className="relative h-full max-h-[calc(100vh-12rem)] rounded-lg overflow-hidden shadow-2xl bg-white"
+                  tabIndex={0}
+                  onKeyDown={handleKeyboardInput}
+                  onKeyUp={handleKeyboardInput}
+                >
+                  <canvas
+                    ref={canvasRef}
+                    id="browser-artifact-canvas"
+                    width={1920}
+                    height={1080}
+                    className="h-full object-contain bg-white"
+                    onClick={handleCanvasInteraction}
+                    onMouseMove={handleCanvasInteraction}
+                    onWheel={handleCanvasInteraction}
+                    onContextMenu={(e) => {
+                      e.preventDefault(); // Allow right-click handling
+                    }}
+                  />
                 </div>
-              </CursorProvider>
+              </div>
             )}
           </div>
         </div>
