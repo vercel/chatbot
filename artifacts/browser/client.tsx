@@ -2,7 +2,7 @@ import { Artifact } from '@/components/create-artifact';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MonitorX, Loader2, RefreshCwIcon, Monitor, MousePointerClick } from 'lucide-react';
+import { MonitorX, Loader2, RefreshCwIcon, Monitor, MousePointerClick, ClockFading } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BrowserFrame {
@@ -485,15 +485,15 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           {/* Fullscreen browser canvas */}
           <div className="absolute inset-0 pt-20 pb-12 px-12 browser-fullscreen-bg">
             {metadata.error ? (
-              <div className="flex items-center justify-center h-full bg-red-900/20 text-red-300">
+              <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500 font-inter">
                 <div className="text-center">
                   <MonitorX className="size-8 mx-auto mb-2" />
-                  <p className="text-sm font-medium">Connection Error</p>
-                  <p className="text-xs opacity-75">{metadata.error}</p>
+                  <p className="text-sm font-medium">Failed to connect to browser</p>
+                  <p className="text-xs opacity-75">Wait a few moments and try again</p>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="mt-2 text-white border-white/20 hover:bg-white/10"
+                    className="mt-2"
                     onClick={connectToBrowserStream}
                   >
                     <RefreshCwIcon className="size-4 mr-1" />
@@ -511,9 +511,18 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     </>
                   ) : (
                     <>
-                      <Monitor className="size-8 mx-auto mb-2" />
-                      <p className="text-sm">No browser connection</p>
-                      <p className="text-xs opacity-75">Browser display will appear here during automation</p>
+                      <ClockFading className="size-8 mx-auto mb-2" />
+                      <p className="text-sm font-medium">Your session was paused due to inactivity</p>
+                      <p className="text-xs opacity-75">Refresh the connection and try again</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={connectToBrowserStream}
+                      >
+                        <RefreshCwIcon className="size-4 mr-1" />
+                        Retry
+                      </Button>
                     </>
                   )}
                 </div>
@@ -579,15 +588,14 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               </div>
             </div>
           )}
-                   
           {/* Main browser display area */}
           <div className="flex-1 relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-inner border border-gray-200/50 m-4">
             {metadata.error ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-red-50 text-red-600">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500 font-inter">
                 <div className="text-center">
                   <MonitorX className="size-8 mx-auto mb-2" />
-                  <p className="text-sm font-medium">Connection Error</p>
-                  <p className="text-xs opacity-75">{metadata.error}</p>
+                  <p className="text-sm font-medium">Failed to connect to browser</p>
+                  <p className="text-xs opacity-75">Wait a few moments and try again</p>
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -609,13 +617,13 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     </>
                   ) : (
                     <>
-                      <Monitor className="size-8 mx-auto mb-2" />
-                      <p className="text-sm">No browser connection</p>
-                      <p className="text-xs opacity-75">Browser display will appear here during automation</p>
+                      <ClockFading className="size-8 mx-auto mb-2" />
+                      <p className="text-sm font-medium">Your session was paused due to inactivity</p>
+                      <p className="text-xs opacity-75">Refresh the connection and try again</p>
                       <Button 
-                        variant="default" 
+                        variant="outline" 
                         size="sm" 
-                        className="mt-2 bg-custom-purple"
+                        className="mt-2"
                         onClick={connectToBrowserStream}
                       >
                         <RefreshCwIcon className="size-4 mr-1" />
