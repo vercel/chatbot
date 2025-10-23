@@ -36,6 +36,13 @@
       "when": 1759204692210,
       "tag": "0003_spooky_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1761006937695,
+      "tag": "0004_common_dragon_man",
+      "breakpoints": true
     }
   ]
 }

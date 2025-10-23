@@ -3,39 +3,32 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from '@/components/toast';
-import { useSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import { MicrosoftLogo } from '@/components/icons/MicrosoftLogo';
 import { GoogleLogo } from '@/components/icons/GoogleLogo';
 
 export default function Page() {
   const router = useRouter();
-  const { update: updateSession } = useSession();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleMockLogin = async (provider: 'microsoft' | 'google') => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     try {
-      // Mock successful login
-      toast({
-        type: 'success',
-        description: `Successfully signed in with ${provider === 'microsoft' ? 'Microsoft' : 'Google'}!`,
-      });
-      
-      // Update session and redirect
-      await updateSession();
-      router.push('/');
+      await signIn('google', { callbackUrl: '/' });
     } catch (error) {
       toast({
         type: 'error',
-        description: `Failed to sign in with ${provider === 'microsoft' ? 'Microsoft' : 'Google'}`,
+        description: 'Failed to sign in with Google',
       });
-    } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleMicrosoftLogin = () => {
+    toast({
+      type: 'success',
+      description: 'Microsoft sign-in coming soon!',
+    });
   };
 
   return (
@@ -51,23 +44,23 @@ export default function Page() {
           
           {/* Microsoft Login Button */}
           <button
-            onClick={() => handleMockLogin('microsoft')}
-            disabled={isLoading}
-            className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
+            onClick={handleMicrosoftLogin}
+            disabled={true}
+            className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full opacity-50 cursor-not-allowed transition-colors bg-card"
           >
             <div className="relative shrink-0 size-[13.25px]">
               <MicrosoftLogo size={13.25} className="block max-w-none size-full" />
             </div>
             <div className="flex flex-col font-inter font-medium justify-center leading-[0] not-italic relative shrink-0 text-[14px] text-center text-card-foreground text-nowrap">
               <p className="leading-[14px] whitespace-pre">
-                {isLoading ? 'Signing in...' : 'Continue with Microsoft'}
+                Continue with Microsoft (Coming Soon)
               </p>
             </div>
           </button>
 
           {/* Google Login Button */}
           <button
-            onClick={() => handleMockLogin('google')}
+            onClick={handleGoogleLogin}
             disabled={isLoading}
             className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
           >

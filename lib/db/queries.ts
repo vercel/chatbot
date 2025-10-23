@@ -113,6 +113,50 @@ export async function createGuestUser() {
   }
 }
 
+export async function upsertOAuthUser({
+  email,
+  name,
+  image,
+}: {
+  email: string;
+  name?: string | null;
+  image?: string | null;
+}) {
+  try {
+    const [existingUser] = await getUser(email);
+
+    if (existingUser) {
+      // Update existing user profile with OAuth data
+      const [updatedUser] = await db
+        .update(user)
+        .set({
+          name: name ?? existingUser.name,
+          image: image ?? existingUser.image,
+          emailVerified: new Date()
+        })
+        .where(eq(user.email, email))
+        .returning();
+      return updatedUser;
+    }
+
+    // Create new OAuth user (no password)
+    const [newUser] = await db.insert(user).values({
+      email,
+      name,
+      image,
+      password: null, // OAuth users don't have passwords
+      emailVerified: new Date(),
+    }).returning();
+
+    return newUser;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to upsert OAuth user'
+    );
+  }
+}
+
 export async function saveChat({
   id,
   userId,
