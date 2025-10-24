@@ -42,6 +42,7 @@ function PureMultimodalInput({
   sendMessage,
   className,
   selectedVisibilityType,
+  showStopButton = true,
 }: {
   chatId: string;
   input: string;
@@ -55,6 +56,7 @@ function PureMultimodalInput({
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   className?: string;
   selectedVisibilityType: VisibilityType;
+  showStopButton?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -316,7 +318,9 @@ function PureMultimodalInput({
 
       <div className="flex flex-row justify-end gap-2 mt-1">
         <>
-          <StopButton status={status} stop={stop} setMessages={setMessages} />
+          {showStopButton && (
+            <StopButton status={status} stop={stop} setMessages={setMessages} />
+          )}
           <SendButton
             input={input}
             submitForm={submitForm}
@@ -412,7 +416,7 @@ function PureSendButton({
   return (
     <Button
       data-testid="send-button"
-      className={`bg-custom-purple hover:bg-custom-purple/90 disabled:bg-[rgba(29,27,32,0.1)] disabled:hover:bg-[rgba(29,27,32,0.15)] rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-white disabled:text-[#1d1b20] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${shouldShowWaitCursor ? 'cursor-wait' : ''}`}
+      className={`bg-custom-purple hover:bg-custom-purple/90 disabled:bg-gray-200 disabled:hover:bg-gray-200 dark:disabled:bg-gray-700 dark:disabled:hover:bg-gray-700 rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-white disabled:text-gray-500 dark:disabled:text-gray-400 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${shouldShowWaitCursor ? 'cursor-wait' : ''}`}
       onClick={(event) => {
         event.preventDefault();
         submitForm();

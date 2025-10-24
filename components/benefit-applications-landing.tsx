@@ -57,6 +57,7 @@ export function BenefitApplicationsLanding({
             setMessages={setMessages}
             sendMessage={sendMessage}
             selectedVisibilityType={selectedVisibilityType}
+            showStopButton={false}
           />
         </div>
       </div>
