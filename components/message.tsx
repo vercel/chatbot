@@ -1,7 +1,7 @@
 'use client';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useState } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
@@ -27,6 +27,9 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
+
+// Responsive min-height calculation that accounts for side-chat-header height
+const RESPONSIVE_MIN_HEIGHT = 'min-h-[calc(60vh-3rem)] sm:min-h-[calc(60vh-3.5rem)] md:min-h-[calc(60vh-4rem)] lg:min-h-[calc(60vh-5rem)] xl:min-h-[calc(60vh-6rem)] 2xl:min-h-[calc(60vh-7rem)]';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls
@@ -79,7 +82,7 @@ const PurePreviewMessage = ({
 
           <div
             className={cn('flex flex-col gap-4 w-full', {
-              'min-h-[60vh]': message.role === 'assistant' && requiresScrollPadding,
+              [RESPONSIVE_MIN_HEIGHT]: message.role === 'assistant' && requiresScrollPadding,
             })}
           >
             {attachmentsFromMessage.length > 0 && (
@@ -326,6 +329,10 @@ const PurePreviewMessage = ({
                     );
                   }
 
+                  if (displayName === 'Updated working memory') {
+                    return;
+                  }
+
                   // For all other tools, show simple icon with text
                   return (
                     <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
@@ -417,11 +424,19 @@ export const PreviewMessage = memo(
 
 export const ThinkingMessage = () => {
   const role = 'assistant';
+  const messageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messageRef.current) {
+      messageRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   return (
     <motion.div
+      ref={messageRef}
       data-testid="message-assistant-loading"
-      className="w-full mx-auto max-w-3xl px-4 group/message min-h-[60vh]"
+      className={`w-full mx-auto max-w-3xl px-4 group/message ${RESPONSIVE_MIN_HEIGHT}`}
       initial={{ y: 5, opacity: 0 }}
       animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
       data-role={role}
