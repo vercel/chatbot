@@ -39,7 +39,7 @@ export default function LandingPage() {
             {/* Start Application Button */}
             <div className="mt-auto">
               <Link 
-                href="/consent"
+                href="/"
                 className="inline-block bg-custom-purple text-white font-inter font-medium text-sm leading-6 px-6 sm:px-7 py-2 sm:py-2.5 rounded-lg hover:bg-custom-purple/90 transition-colors"
               >
                 Start new application
