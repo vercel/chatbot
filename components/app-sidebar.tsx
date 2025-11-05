@@ -32,8 +32,9 @@ export function AppSidebar({ user }: { user: User | undefined }) {
           <div className="flex flex-row justify-between items-center">
             <div className="flex flex-row gap-3 items-center">
               <Link
-                href="/"
+                href="/home"
                 onClick={() => {
+                  closeArtifact(setArtifact);
                   setOpenMobile(false);
                 }}
                 className="flex flex-row gap-3 items-center"
@@ -55,7 +56,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 onClick={() => {
                   setOpenMobile(false);
                   closeArtifact(setArtifact);
-                  router.push('/home');
+                  router.push('/');
                   router.refresh();
                 }}
               >

@@ -19,7 +19,7 @@ export function LayoutHeader() {
 
   const handleNewChat = () => {
     closeArtifact(setArtifact);
-    router.push('/home');
+    router.push('/');
     router.refresh();
   };
 

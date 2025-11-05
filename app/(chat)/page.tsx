@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 import { Chat } from '@/components/chat';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
@@ -14,41 +14,33 @@ export default async function Page() {
     redirect('/api/auth/guest');
   }
 
-  // Check if user is coming from a specific action (consent or previous chat)
   const cookieStore = await cookies();
-  const fromConsent = cookieStore.get('from-consent');
-  const chatId = cookieStore.get('selected-chat-id');
+  const id = generateUUID();
+  const modelIdFromCookie = cookieStore.get('chat-model');
   
-  // If coming from consent flow or has a selected chat, show chat interface
-  if (fromConsent?.value === 'true' || chatId?.value) {
-    const id = generateUUID();
-    const modelIdFromCookie = cookieStore.get('chat-model');
+  // Check if this is the first load of the app (no referrer or referrer doesn't indicate internal navigation)
+  const headersList = await headers();
+  const referer = headersList.get('referer');
+  
+  // If no referrer or referrer doesn't contain internal routes, this is likely the first load - redirect to home
+  const isInternalNavigation = referer && (
+    referer.includes('/home') || 
+    referer.includes('/chat/') || 
+    referer.includes('/')
+  );
+  
+  if (!isInternalNavigation) {
+    redirect('/home');
+  }
 
-    if (!modelIdFromCookie) {
-      return (
-        <>
-          <Chat
-            key={id}
-            id={id}
-            initialMessages={[]}
-            initialChatModel={DEFAULT_CHAT_MODEL}
-            initialVisibilityType="private"
-            isReadonly={false}
-            session={session}
-            autoResume={false}
-          />
-          <DataStreamHandler />
-        </>
-      );
-    }
-
+  if (!modelIdFromCookie) {
     return (
       <>
         <Chat
           key={id}
           id={id}
           initialMessages={[]}
-          initialChatModel={modelIdFromCookie.value}
+          initialChatModel={DEFAULT_CHAT_MODEL}
           initialVisibilityType="private"
           isReadonly={false}
           session={session}
@@ -58,7 +50,20 @@ export default async function Page() {
       </>
     );
   }
-  
-  // Otherwise, always redirect to home on first load
-  redirect('/home');
+
+  return (
+    <>
+      <Chat
+        key={id}
+        id={id}
+        initialMessages={[]}
+        initialChatModel={modelIdFromCookie.value}
+        initialVisibilityType="private"
+        isReadonly={false}
+        session={session}
+        autoResume={false}
+      />
+      <DataStreamHandler />
+    </>
+  );
 }
