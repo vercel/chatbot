@@ -145,24 +145,30 @@ export function Chat({
       return;
     }
 
-    const hasBrowserToolCall = messages.some(message => 
+    const hasBrowserToolCall = messages.some(message =>
       message.parts?.some(part => {
         const partType = (part as any).type;
         const toolName = (part as any).toolName;
-        
-        // Check for tool-call type with playwright toolName
-        if (partType === 'tool-call' && 
-            (toolName?.startsWith('playwright_browser') || 
-             toolName?.startsWith('mcp_playwright_browser'))) {
+
+        // Check for tool-call type with browser-related toolName
+        // Supports: browser_navigate, playwright_browser_*, mcp_playwright_browser_*, playwright.browser_*
+        if (partType === 'tool-call' &&
+            (toolName?.startsWith('browser_') ||
+             toolName?.startsWith('playwright_browser') ||
+             toolName?.startsWith('mcp_playwright_browser') ||
+             toolName?.startsWith('playwright.browser_') ||
+             toolName?.includes('_browser_'))) {
           return true;
         }
-        
+
         // Check for tool- prefixed types (how tools appear in message parts)
-        if (partType?.startsWith('tool-playwright_browser') ||
-            partType?.startsWith('tool-mcp_playwright_browser')) {
+        if (partType?.startsWith('tool-browser_') ||
+            partType?.startsWith('tool-playwright_browser') ||
+            partType?.startsWith('tool-mcp_playwright_browser') ||
+            partType?.startsWith('tool-playwright.browser_')) {
           return true;
         }
-        
+
         return false;
       })
     );
@@ -193,19 +199,25 @@ export function Chat({
   useEffect(() => {
     // If artifact was visible and now it's not, and we have browser tool calls, user dismissed it
     if (!isArtifactVisible && !browserArtifactDismissed) {
-      const hasBrowserToolCall = messages.some(message => 
+      const hasBrowserToolCall = messages.some(message =>
         message.parts?.some(part => {
           const partType = (part as any).type;
           const toolName = (part as any).toolName;
-          
-          return (partType === 'tool-call' && 
-                  (toolName?.startsWith('playwright_browser') || 
-                   toolName?.startsWith('mcp_playwright_browser'))) ||
-                 (partType?.startsWith('tool-playwright_browser') ||
-                  partType?.startsWith('tool-mcp_playwright_browser'));
+
+          // Supports: browser_navigate, playwright_browser_*, mcp_playwright_browser_*, playwright.browser_*
+          return (partType === 'tool-call' &&
+                  (toolName?.startsWith('browser_') ||
+                   toolName?.startsWith('playwright_browser') ||
+                   toolName?.startsWith('mcp_playwright_browser') ||
+                   toolName?.startsWith('playwright.browser_') ||
+                   toolName?.includes('_browser_'))) ||
+                 (partType?.startsWith('tool-browser_') ||
+                  partType?.startsWith('tool-playwright_browser') ||
+                  partType?.startsWith('tool-mcp_playwright_browser') ||
+                  partType?.startsWith('tool-playwright.browser_'));
         })
       );
-      
+
       if (hasBrowserToolCall && initialChatModel === 'web-automation-model') {
         setBrowserArtifactDismissed(true);
       }

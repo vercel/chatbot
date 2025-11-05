@@ -37,6 +37,29 @@ const getToolIcon = (toolName: string) => {
   const cleanToolName = toolName.replace('tool-', '');
   
   const iconMap: Record<string, React.ComponentType<any>> = {
+    // New toolset format (browser_*)
+    'browser_navigate': Globe,
+    'browser_click': MousePointer,
+    'browser_type': Type,
+    'browser_fill_form': FileText,
+    'browser_select_option': CheckSquare,
+    'browser_take_screenshot': Camera,
+    'browser_snapshot': Monitor,
+    'browser_wait_for': Clock,
+    'browser_hover': Move,
+    'browser_drag': Move,
+    'browser_press_key': Keyboard,
+    'browser_evaluate': Code,
+    'browser_close': X,
+    'browser_resize': Maximize2,
+    'browser_tabs': PanelLeft,
+    'browser_console_messages': MessageSquare,
+    'browser_network_requests': Network,
+    'browser_handle_dialog': MessageCircle,
+    'browser_file_upload': Upload,
+    'browser_install': Download,
+    'browser_navigate_back': ArrowLeft,
+    // Legacy format (playwright_browser_*)
     'playwright_browser_navigate': Globe,
     'playwright_browser_click': MousePointer,
     'playwright_browser_type': Type,
@@ -58,6 +81,7 @@ const getToolIcon = (toolName: string) => {
     'playwright_browser_file_upload': Upload,
     'playwright_browser_install': Download,
     'playwright_browser_navigate_back': ArrowLeft,
+    // Database tools
     'search-participants-by-name': Search,
     'get-participant-with-household': Database,
     'updateWorkingMemory': Brain,
@@ -75,6 +99,29 @@ export const ToolIcon = ({ toolName, size = 12, className = "text-gray-500 flex-
 // Helper function to get tool display name with icon
 export const getToolDisplayInfo = (toolName: string, input?: any): { text: string; icon: React.ComponentType<any> } => {
   const toolMappings: Record<string, (input?: any) => string> = {
+    // New toolset format (browser_*)
+    'browser_navigate': (input) => input?.url ? `Navigated to ${input.url}` : 'Navigated to page',
+    'browser_click': (input) => input?.element ? `Clicked on ${input.element}` : 'Clicked element',
+    'browser_type': (input) => input?.text ? `Typed "${input.text}"` : 'Typed text',
+    'browser_fill_form': () => 'Filled form fields',
+    'browser_select_option': (input) => input?.values ? `Selected "${input.values.join(', ')}"` : 'Selected option',
+    'browser_take_screenshot': () => 'Took screenshot',
+    'browser_snapshot': () => 'Captured page snapshot',
+    'browser_wait_for': (input) => input?.text ? `Waited for "${input.text}"` : 'Waited for element',
+    'browser_hover': (input) => input?.element ? `Hovered over ${input.element}` : 'Hovered over element',
+    'browser_drag': () => 'Performed drag and drop',
+    'browser_press_key': (input) => input?.key ? `Pressed key "${input.key}"` : 'Pressed key',
+    'browser_evaluate': () => 'Executed JavaScript',
+    'browser_close': () => 'Closed browser',
+    'browser_resize': () => 'Resized browser window',
+    'browser_tabs': () => 'Managed browser tabs',
+    'browser_console_messages': () => 'Retrieved console messages',
+    'browser_network_requests': () => 'Retrieved network requests',
+    'browser_handle_dialog': () => 'Handled dialog',
+    'browser_file_upload': () => 'Uploaded files',
+    'browser_install': () => 'Installed browser',
+    'browser_navigate_back': () => 'Navigated back',
+    // Legacy format (playwright_browser_*)
     'playwright_browser_navigate': (input) => input?.url ? `Navigated to ${input.url}` : 'Navigated to page',
     'playwright_browser_click': (input) => input?.element ? `Clicked on ${input.element}` : 'Clicked element',
     'playwright_browser_type': (input) => input?.text ? `Typed "${input.text}"` : 'Typed text',
@@ -96,6 +143,7 @@ export const getToolDisplayInfo = (toolName: string, input?: any): { text: strin
     'playwright_browser_file_upload': () => 'Uploaded files',
     'playwright_browser_install': () => 'Installed browser',
     'playwright_browser_navigate_back': () => 'Navigated back',
+    // Database tools
     'search-participants-by-name': (input) => input?.name ? `Searched for participant "${input.name}"` : 'Searched for participant',
     'get-participant-with-household': () => 'Retrieved participant data',
     'updateWorkingMemory': () => 'Updated working memory',
