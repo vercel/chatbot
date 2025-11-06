@@ -27,6 +27,7 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
+import { Spinner } from './ui/spinner';
 
 // Responsive min-height calculation that accounts for side-chat-header height
 const RESPONSIVE_MIN_HEIGHT = 'min-h-[calc(60vh-3rem)] sm:min-h-[calc(60vh-3.5rem)] md:min-h-[calc(60vh-4rem)] lg:min-h-[calc(60vh-5rem)] xl:min-h-[calc(60vh-6rem)] 2xl:min-h-[calc(60vh-7rem)]';
@@ -391,6 +392,15 @@ const PurePreviewMessage = ({
                 }
               }
             })}
+
+            {isLoading && (
+              <div className="flex items-center gap-2 p-3 border-0 rounded-md">
+                <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-[#767676] flex items-center gap-2">
+                  <Spinner className="size-3 flex-shrink-0 text-custom-purple" />
+                  Processing...
+                </div>
+              </div>
+            )}
 
             {/* {!isReadonly && (
               <MessageActions
