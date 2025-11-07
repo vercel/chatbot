@@ -289,7 +289,7 @@ function PureMultimodalInput({
         <Textarea
           data-testid="multimodal-input"
           ref={textareaRef}
-          placeholder="Write something..."
+          placeholder="Ex. Fill out the WIC form for Jane Doe"
           value={input}
           onChange={handleInput}
           className={cx(
