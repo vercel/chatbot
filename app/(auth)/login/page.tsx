@@ -14,7 +14,7 @@ export default function Page() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      await signIn('google', { callbackUrl: '/' });
+      await signIn('google', { callbackUrl: '/home' });
     } catch (error) {
       toast({
         type: 'error',
@@ -39,7 +39,7 @@ export default function Page() {
             Welcome
           </p>
           <p className="font-inter font-normal leading-[1.5] min-w-full not-italic relative shrink-0 text-[14px] text-center text-muted-foreground tracking-[0.07px]">
-            Sign in to access the Application Assistant
+            Sign in to access the Form-Filling Assistant
           </p>
           
           {/* Microsoft Login Button */}

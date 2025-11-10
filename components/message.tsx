@@ -323,15 +323,14 @@ const PurePreviewMessage = ({
                   const { input } = part as any;
                   const { text: displayName, icon: Icon } = getToolDisplayInfo(type, input);
 
+                  if (displayName === 'Updated working memory') {
+                    return;
+                  }
                   // Only use CollapsibleWrapper for get-participant-with-household
                   if (displayName === 'Retrieved participant data') {
                     return (
                       <CollapsibleWrapper key={toolCallId} displayName={displayName} input={input} icon={Icon} />
                     );
-                  }
-
-                  if (displayName === 'Updated working memory') {
-                    return;
                   }
 
                   // For all other tools, show simple icon with text
