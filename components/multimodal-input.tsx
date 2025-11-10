@@ -43,6 +43,7 @@ function PureMultimodalInput({
   className,
   selectedVisibilityType,
   showStopButton = true,
+  placeholder = 'Write Something...',
 }: {
   chatId: string;
   input: string;
@@ -57,6 +58,7 @@ function PureMultimodalInput({
   className?: string;
   selectedVisibilityType: VisibilityType;
   showStopButton?: boolean;
+  placeholder?: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -289,7 +291,7 @@ function PureMultimodalInput({
         <Textarea
           data-testid="multimodal-input"
           ref={textareaRef}
-          placeholder="Write something..."
+          placeholder={placeholder}
           value={input}
           onChange={handleInput}
           className={cx(

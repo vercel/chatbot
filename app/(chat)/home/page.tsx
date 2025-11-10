@@ -32,7 +32,7 @@ export default function LandingPage() {
                 Welcome!
               </h1>
               <p className="font-inter text-base sm:text-lg md:text-xl leading-6 text-black dark:text-gray-200 max-w-[250px] sm:max-w-[291px]">
-                Application Assistant helps you and your clients complete benefit applications faster.
+                Form-Filling Assistant helps you and your clients complete benefit applications faster.
               </p>
             </div>
             
