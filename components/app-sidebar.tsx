@@ -40,7 +40,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 className="flex flex-row gap-3 items-center"
               >
                 <div className="absolute left-[27px] top-[25px] text-[18px] font-bold text-black dark:text-white leading-[1.15] not-italic font-source-serif">
-                  <div>Application</div>
+                  <div>Form-Filling</div>
                   <div>Assistant</div>
                 </div>
               </Link>

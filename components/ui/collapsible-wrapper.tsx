@@ -44,7 +44,7 @@ export function CollapsibleWrapper({
           
         </div>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="p-1 h-auto text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+          <Button variant="ghost" size="sm" className="p-1 h-auto text-gray-400 hover:text-custom-purple hover:bg-custom-purple/20">
             {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             <span className="sr-only">Toggle details</span>
           </Button>

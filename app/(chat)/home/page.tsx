@@ -54,7 +54,7 @@ export default function LandingPage() {
             How it works
           </h2>
           <p className="font-inter text-base sm:text-lg leading-6 text-black dark:text-gray-200 mb-6 sm:mb-8">
-                You&apos;ll see everything the AI assistant is doing, each step of the process
+          This tool uses artificial intelligence (AI) to help you complete applications, while you stay in control.
           </p>
 
           {/* Step Cards */}
@@ -65,10 +65,10 @@ export default function LandingPage() {
                 step 1
               </p>
               <h3 className="font-source-serif text-lg sm:text-xl leading-6 text-black dark:text-white mb-3 sm:mb-4">
-                Start and pre-fill
+                Start and autofill
               </h3>
               <p className="font-inter text-sm sm:text-base leading-6 text-black dark:text-gray-200">
-                AI agents gather what client information it can and pre-fills multiple forms for you.
+              AI autofills the application for you, using client data from your case management system.
               </p>
             </div>
 
@@ -81,7 +81,7 @@ export default function LandingPage() {
                 Fill in any gaps
               </h3>
               <p className="font-inter text-sm sm:text-base leading-6 text-black dark:text-gray-200">
-                If information is missing, the assistant pauses and asks for your input.
+                You review and complete anything that's missing. The AI only adds what's already in your system.
               </p>
             </div>
 
@@ -94,7 +94,7 @@ export default function LandingPage() {
                 Submit with confidence
               </h3>
               <p className="font-inter text-sm sm:text-base leading-6 text-black dark:text-gray-200">
-                Once everything looks right, you submit the application—nothing is submitted automatically.
+              You submit the application once everything looks right. Nothing is submitted automatically.
               </p>
             </div>
           </div>

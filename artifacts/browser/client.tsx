@@ -463,9 +463,12 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           {/* Fullscreen header with controls */}
           <div className="absolute top-0 left-0 right-0 z-10 browser-fullscreen-bg">
             <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-2 text-white">
-                <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-sm font-medium">YOU ARE IN CONTROL</span>
+              <div className="flex flex-col gap-1 text-white">
+                <div className="flex items-center gap-2">
+                  <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
+                  <span className="text-sm font-medium font-ibm-plex-mono">You're editing manually</span>
+                </div>
+                <span className="text-xs text-muted-foreground font-ibm-plex-mono">The AI will continue with your changes when you give back control.</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -475,7 +478,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
                 >
                   <div className="flex items-center gap-2 text-white">
-                    Hand back control
+                    Give back control
                   </div>
                 </Button>
               </div>
@@ -571,7 +574,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
             <div className="flex items-center justify-between py-2 bg-muted/20">
               <div className="flex items-center gap-2 text-sm">
                   <div className="size-2 bg-green-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-xs text-muted-foreground">AGENT MODE</span>
+                <span className="text-xs text-muted-foreground font-ibm-plex-mono">AI is working</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button
