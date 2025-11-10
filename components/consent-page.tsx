@@ -34,7 +34,7 @@ export function ConsentPage({ onConsent, onNavigateHome }: ConsentPageProps) {
           </h1>
           
           {/* Description */}
-          <p className="text-sm sm:text-base md:text-lg lg:text-[18px] text-left text-foreground mb-6 sm:mb-8 leading-[1.5] max-w-[700px] font-inter">
+          <p className="text-sm sm:text-base md:text-lg lg:text-[18px] text-left text-foreground mb-6 sm:mb-8 leading-normal max-w-[700px] font-inter">
             This tool uses your personal data to submit for benefit applications using artificial intelligence (AI).
           </p>
 
@@ -57,7 +57,7 @@ export function ConsentPage({ onConsent, onNavigateHome }: ConsentPageProps) {
           </div>
 
           {/* Terms Link */}
-          <p className="text-sm sm:text-base md:text-lg lg:text-[18px] text-left text-foreground mb-6 sm:mb-8 leading-[1.5] max-w-[700px] font-inter">
+          <p className="text-sm sm:text-base md:text-lg lg:text-[18px] text-left text-foreground mb-6 sm:mb-8 leading-normal max-w-[700px] font-inter">
             To learn more about how your data will be used, read the full{' '}
             <span className="underline hover:no-underline transition-all duration-200">terms & conditions</span>.
           </p>
@@ -82,7 +82,7 @@ export function ConsentPage({ onConsent, onNavigateHome }: ConsentPageProps) {
                   value="yes"
                   id="consent-yes"
                   data-testid="consent-yes"
-                  className="mt-1 h-5 w-5 sm:h-6 sm:w-6"
+                  className="mt-1 size-5 sm:size-6"
                 />
                 <div className="flex-1">
                   <label
@@ -99,7 +99,7 @@ export function ConsentPage({ onConsent, onNavigateHome }: ConsentPageProps) {
                   value="no"
                   id="consent-no"
                   data-testid="consent-no"
-                  className="mt-1 h-5 w-5 sm:h-6 sm:w-6"
+                  className="mt-1 size-5 sm:size-6"
                 />
                 <div className="flex-1">
                   <label

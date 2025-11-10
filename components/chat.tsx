@@ -193,7 +193,7 @@ export function Chat({
         },
       });
     }
-  }, [messages, isArtifactVisible, browserArtifactDismissed, status]);
+  }, [messages, isArtifactVisible, browserArtifactDismissed, status, setArtifact]);
 
   // Track when user manually closes the browser artifact
   useEffect(() => {

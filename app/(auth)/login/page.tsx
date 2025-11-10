@@ -33,12 +33,12 @@ export default function Page() {
 
   return (
     <div className="bg-chat-background relative size-full min-h-screen">
-      <div className="absolute bg-card border border-border border-solid h-[260px] left-1/2 rounded-[10px] top-[257px] translate-x-[-50%] w-[414px]">
+      <div className="absolute bg-card border border-border border-solid h-[260px] left-1/2 rounded-[10px] top-[257px] -translate-x-1/2 w-[414px]">
         <div className="absolute content-stretch flex flex-col gap-[18px] h-[42px] items-center left-[32px] top-[32px] w-[350px]">
-          <p className="font-source-serif leading-[1.5] min-w-full not-italic relative shrink-0 text-[32px] text-center text-card-foreground tracking-[0.16px]">
+          <p className="font-source-serif leading-normal min-w-full not-italic relative shrink-0 text-[32px] text-center text-card-foreground tracking-[0.16px]">
             Welcome
           </p>
-          <p className="font-inter font-normal leading-[1.5] min-w-full not-italic relative shrink-0 text-[14px] text-center text-muted-foreground tracking-[0.07px]">
+          <p className="font-inter font-normal leading-normal min-w-full not-italic relative shrink-0 text-[14px] text-center text-muted-foreground tracking-[0.07px]">
             Sign in to access the Form-Filling Assistant
           </p>
           

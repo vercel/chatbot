@@ -27,7 +27,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0 w-[265px]">
-      <SidebarHeader className="relative h-[176px] flex-shrink-0 overflow-hidden">
+      <SidebarHeader className="relative h-[176px] shrink-0 overflow-hidden">
         <SidebarMenu>
           <div className="flex flex-row justify-between items-center">
             <div className="flex flex-row gap-3 items-center">

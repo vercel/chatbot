@@ -338,7 +338,7 @@ const PurePreviewMessage = ({
                     <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
                       <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-[#767676] flex items-center gap-2">
                         {Icon && (
-                          <Icon size={12} className="text-gray-500 flex-shrink-0" />
+                          <Icon size={12} className="text-gray-500 shrink-0" />
                         )}
                         {displayName}
                       </div>
@@ -381,7 +381,7 @@ const PurePreviewMessage = ({
                     <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
                       <div className={`text-[10px] leading-[150%] font-ibm-plex-mono flex items-center gap-2 ${output && 'error' in output ? 'text-red-600' : 'text-[#767676]'}`}>
                         {Icon && (
-                          <Icon size={12} className="text-gray-500 flex-shrink-0" />
+                          <Icon size={12} className="text-gray-500 shrink-0" />
                         )}
                         {displayName}
                         {output && 'error' in output && ' (Error)'}
@@ -395,7 +395,7 @@ const PurePreviewMessage = ({
             {isLoading && (
               <div className="flex items-center gap-2 p-3 border-0 rounded-md">
                 <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-[#767676] flex items-center gap-2">
-                  <Spinner className="size-3 flex-shrink-0 text-custom-purple" />
+                  <Spinner className="size-3 shrink-0 text-custom-purple" />
                   Processing...
                 </div>
               </div>

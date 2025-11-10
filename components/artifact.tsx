@@ -456,7 +456,7 @@ function PureArtifact({
               </div>
             )}
 
-            <div className="dark:bg-muted bg-background h-full overflow-y-scroll !max-w-full items-center px-4 py-4">
+            <div className="dark:bg-muted bg-background h-full overflow-y-scroll !max-w-full items-center p-4">
               <artifactDefinition.content
                 title={artifact.title}
                 content={
