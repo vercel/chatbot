@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Image assets from Figma
 const imgImage2 = "/nava_image.png";
@@ -9,17 +10,19 @@ export default function LandingPage() {
   return (
     <div className="bg-white dark:bg-background relative min-h-screen">
       {/* Main Content Container */}
-      <div className="px-4 sm:px-6 md:px-8 lg:px-16 xl:px-32 2xl:px-[200px] py-4 sm:py-6 md:py-8">
+      <div className="p-4 sm:p-6 md:p-8 lg:px-16 xl:px-32 2xl:px-[200px]">
         {/* Hero Section */}
         <div className="relative bg-[#f4e4f0] dark:bg-[#1a0b1a] rounded-[25px] h-[280px] sm:h-[320px] md:h-[351px] mb-6 sm:mb-8 overflow-hidden">
           {/* Background Images */}
           <div className="absolute inset-0">
             <div className="absolute h-[250px] sm:h-[280px] md:h-[337px] top-[14px] w-[280px] sm:w-[350px] md:w-[439px] right-0">
               <div className="absolute inset-0 mix-blend-normal overflow-hidden pointer-events-none opacity-80 brightness-100 contrast-110">
-                <img 
-                  alt="" 
-                  className="absolute h-full left-[-21.65%] max-w-none top-0 w-[136.47%]" 
-                  src={imgImage2} 
+                <Image
+                  alt=""
+                  className="absolute h-full left-[-21.65%] max-w-none top-0 w-[136.47%]"
+                  src={imgImage2}
+                  fill
+                  style={{ objectFit: 'cover' }}
                 />
               </div>
             </div>
@@ -81,7 +84,7 @@ export default function LandingPage() {
                 Fill in any gaps
               </h3>
               <p className="font-inter text-sm sm:text-base leading-6 text-black dark:text-gray-200">
-                You review and complete anything that's missing. The AI only adds what's already in your system.
+                You review and complete anything that&apos;s missing. The AI only adds what&apos;s already in your system.
               </p>
             </div>
 

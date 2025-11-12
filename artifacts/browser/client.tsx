@@ -517,9 +517,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                       <ClockFading className="size-8 mx-auto mb-2" />
                       <p className="text-sm font-medium">Your session was paused due to inactivity</p>
                       <p className="text-xs opacity-75">Refresh the connection and try again</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="mt-2"
                         onClick={connectToBrowserStream}
                       >
@@ -623,9 +623,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                       <ClockFading className="size-8 mx-auto mb-2" />
                       <p className="text-sm font-medium">Your session was paused due to inactivity</p>
                       <p className="text-xs opacity-75">Refresh the connection and try again</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="mt-2"
                         onClick={connectToBrowserStream}
                       >
