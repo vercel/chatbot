@@ -43,7 +43,7 @@ function PureMultimodalInput({
   className,
   selectedVisibilityType,
   showStopButton = true,
-  placeholder = 'Write Something...',
+  placeholder = 'Write something...',
 }: {
   chatId: string;
   input: string;
