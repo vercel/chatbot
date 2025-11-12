@@ -2,6 +2,7 @@ import { compare } from 'bcrypt-ts';
 import NextAuth, { type DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { createGuestUser, getUser, upsertOAuthUser } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
@@ -43,6 +44,11 @@ export const {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    MicrosoftEntraID({
+      clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
+      clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
+      issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
     }),
     Credentials({
       name: 'credentials',
@@ -92,12 +98,19 @@ export const {
           image: user.image,
         });
       }
+      if (account?.provider === 'microsoft-entra-id') {
+        await upsertOAuthUser({
+          email: user.email!,
+          name: user.name,
+          image: user.image,
+        });
+      }
       return true;
     },
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id as string;
-        token.type = account?.provider === 'google' ? 'regular' : user.type;
+        token.type = account?.provider === 'google' || account?.provider === 'microsoft-entra-id' ? 'regular' : user.type;
       }
 
       return token;
