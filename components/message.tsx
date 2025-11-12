@@ -350,6 +350,10 @@ const PurePreviewMessage = ({
                   const { output, input } = part as any;
                   const { text: displayName, icon: Icon } = getToolDisplayInfo(type, input);
 
+                  if (displayName === 'Updated working memory') {
+                    return;
+                  }
+
                   // Only use CollapsibleWrapper for get-participant-with-household
                   if (displayName === 'Retrieved participant data') {
                     if (output && 'error' in output) {
