@@ -9,10 +9,10 @@ import { GoogleLogo } from '@/components/icons/GoogleLogo';
 
 export default function Page() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMethod, setLoadingMethod] = useState<'microsoft' | 'google' | null>(null);
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
+    setLoadingMethod('google');
     try {
       await signIn('google', { callbackUrl: '/home' });
     } catch (error) {
@@ -20,12 +20,12 @@ export default function Page() {
         type: 'error',
         description: 'Failed to sign in with Google',
       });
-      setIsLoading(false);
+      setLoadingMethod(null);
     }
   };
 
   const handleMicrosoftLogin = async () => {
-    setIsLoading(true);
+    setLoadingMethod('microsoft');
     try {
       await signIn('microsoft-entra-id', { callbackUrl: '/home' });
     } catch (error) {
@@ -33,7 +33,7 @@ export default function Page() {
         type: 'error',
         description: 'Failed to sign in with Microsoft',
       });
-      setIsLoading(false);
+      setLoadingMethod(null);
     }
   };
 
@@ -51,15 +51,15 @@ export default function Page() {
           {/* Microsoft Login Button */}
           <button
             onClick={handleMicrosoftLogin}
-            disabled={isLoading}
+            disabled={loadingMethod !== null}
             className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
           >
             <div className="relative shrink-0 size-[13.25px]">
               <MicrosoftLogo size={13.25} className="block max-w-none size-full" />
             </div>
             <div className="flex flex-col font-inter font-medium justify-center leading-[0] not-italic relative shrink-0 text-[14px] text-center text-card-foreground text-nowrap">
-              <p className="leading-[14px] whitespace-pre">
-                Continue with Microsoft
+              <p className="leading-normal whitespace-pre">
+                {loadingMethod === 'microsoft' ? 'Signing in...' : 'Continue with Microsoft'}
               </p>
             </div>
           </button>
@@ -67,15 +67,15 @@ export default function Page() {
           {/* Google Login Button */}
           <button
             onClick={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={loadingMethod !== null}
             className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
           >
             <div className="relative shrink-0 size-[13.25px]">
               <GoogleLogo size={13.25} className="block max-w-none size-full" />
             </div>
             <div className="flex flex-col font-inter font-medium justify-center leading-[0] not-italic relative shrink-0 text-[14px] text-center text-card-foreground text-nowrap">
-              <p className="leading-[14px] whitespace-pre">
-                {isLoading ? 'Signing in...' : 'Continue with Google'}
+              <p className="leading-normal whitespace-pre">
+                {loadingMethod === 'google' ? 'Signing in...' : 'Continue with Google'}
               </p>
             </div>
           </button>
