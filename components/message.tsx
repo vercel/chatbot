@@ -30,7 +30,8 @@ import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
 
 // Responsive min-height calculation that accounts for side-chat-header height
-const RESPONSIVE_MIN_HEIGHT = 'min-h-[calc(60vh-3rem)] sm:min-h-[calc(60vh-3.5rem)] md:min-h-[calc(60vh-4rem)] lg:min-h-[calc(60vh-5rem)] xl:min-h-[calc(60vh-6rem)] 2xl:min-h-[calc(60vh-7rem)]';
+// This ensures the last message has enough space to scroll properly with the header
+const RESPONSIVE_MIN_HEIGHT = 'min-h-[calc(100vh-22rem)] md:min-h-[calc(100vh-24rem)] lg:min-h-[calc(100vh-26rem)]';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls
