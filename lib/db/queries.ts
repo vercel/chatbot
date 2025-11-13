@@ -150,6 +150,8 @@ export async function upsertOAuthUser({
 
     return newUser;
   } catch (error) {
+    console.error('OAUTH_UPSERT_ERROR:', error);
+    console.error('OAUTH_USER_DATA:', { email, name, imageLength: image?.length });
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to upsert OAuth user'
