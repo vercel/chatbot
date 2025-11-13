@@ -53,6 +53,15 @@ export const {
         params: {
           scope: "openid profile email User.Read"
         }
+      },
+      profile(profile) {
+        // Multi-tenant apps don't reliably return email claim, use preferred_username
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.preferred_username || profile.email || profile.upn,
+          image: profile.picture,
+        }
       }
     }),
     Credentials({
