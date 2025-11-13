@@ -101,10 +101,12 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <PostHogProvider>
+          {/* Theme locked to light mode. To enable theme switching, uncomment below and sidebar-user-nav.tsx theme toggle: */}
+          {/* <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange> */}
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
             disableTransitionOnChange
           >
             <Toaster position="top-center" />
