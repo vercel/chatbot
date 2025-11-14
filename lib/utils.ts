@@ -34,7 +34,9 @@ export async function fetchWithErrorHandlers(
     const response = await fetch(input, init);
 
     if (!response.ok) {
-      const { code, cause } = await response.json();
+      const responseData = await response.json();
+      const code = responseData.code || 'internal_server_error:chat';
+      const cause = responseData.cause || responseData.error || responseData.message;
       throw new ChatSDKError(code as ErrorCode, cause);
     }
 
