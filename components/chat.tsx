@@ -56,7 +56,7 @@ export function Chat({
     setMessages,
     sendMessage,
     status,
-    stop,
+    stop: originalStop,
     regenerate,
     resumeStream,
   } = useChat<ChatMessage>({
@@ -109,6 +109,31 @@ export function Chat({
       }
     },
   });
+
+  // Custom stop function that sends stopChat action for web automation
+  const stop = async () => {
+    // Always call the original stop to abort the stream
+    originalStop();
+
+    // For web automation model, also send stopChat action to backend
+    if (initialChatModel === 'web-automation-model') {
+      try {
+        await fetch('/api/mastra-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            action: 'stopChat',
+            threadId: id,
+            resourceId: session.user.id,
+          }),
+        });
+      } catch (error) {
+        console.error('Error sending stopChat action:', error);
+      }
+    }
+  };
 
   const searchParams = useSearchParams();
   const query = searchParams.get('query');

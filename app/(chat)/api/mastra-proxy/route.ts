@@ -23,6 +23,29 @@ export async function POST(request: Request) {
     // Forward the request body to Mastra backend
     const body = await request.json();
 
+    // Check if the request is to stop the chat
+    if (body.action === 'stopChat') {
+      // Call the Mastra API to stop the chat with threadId and resourceId
+      console.log('Stopping chat for thread:', body.threadId, 'and resource:', body.resourceId);
+      const stopResponse = await fetch(`${mastraServerUrl}/stop-chat`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+              threadId: body.threadId,
+              resourceId: body.resourceId,
+          }),
+      });
+
+      console.log('Stop response:', stopResponse);
+
+      return new Response(stopResponse.body, {
+          status: stopResponse.status,
+          headers: stopResponse.headers,
+      });
+  }
+
     const response = await fetch(`${mastraServerUrl}/chat`, {
       method: 'POST',
       headers: {
