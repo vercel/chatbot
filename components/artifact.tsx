@@ -362,7 +362,7 @@ function PureArtifact({
                   artifactKind={artifact.kind}
                   metadata={metadata}
                 />
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-scroll">
                   <ArtifactMessages
                     chatId={chatId}
                     status={status}
@@ -535,7 +535,7 @@ function PureArtifact({
 
           {/* Render browser artifact content for mobile (as floating button + drawer) */}
           {isMobile && artifact.kind === 'browser' && !metadata?.isFullscreen && artifactDefinition && (
-            <div className="pointer-events-auto">
+            <div className="pointer-events-auto overflow-y-scroll">
               <artifactDefinition.content
                 title={artifact.title}
                 content={artifact.content}

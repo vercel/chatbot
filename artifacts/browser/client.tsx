@@ -470,7 +470,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // Fullscreen mode when in user control mode
     if (metadata.controlMode === 'user' && metadata.isFullscreen) {
       return (
-        <div className="fixed inset-0 z-50 browser-fullscreen-bg overflow-auto">
+        <div className="fixed inset-0 z-50 browser-fullscreen-bg overflow-y-scroll">
           {/* Fullscreen header with controls */}
           <div className="sticky top-0 left-0 right-0 z-10 browser-fullscreen-bg">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-3 gap-2">
@@ -545,7 +545,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               <div className="min-h-screen flex items-center justify-center border-4 border-black px-4">
                 {/* Scroll container */}
                 <div
-                  className="relative max-h-[calc(100vh-12rem)] w-full overflow-auto rounded-lg shadow-2xl bg-white
+                  className="relative max-h-[calc(100vh-12rem)] w-full overflow-y-scroll rounded-lg shadow-2xl bg-white
                             overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
                   tabIndex={0}
                   onKeyDown={handleKeyboardInput}
@@ -674,7 +674,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           {/* Mobile: Bottom sheet with browser content */}
           <div className="pointer-events-auto">
             <Sheet open={metadata?.isSheetOpen || false} onOpenChange={metadata?.setIsSheetOpen || (() => {})}>
-              <SheetContent side="bottom" className="h-[85vh] p-0 overflow-hidden flex flex-col z-[100]">
+              <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]">
               <SheetHeader className="px-4 py-3 border-b">
                 <SheetTitle className="text-left">Browser View</SheetTitle>
               </SheetHeader>
@@ -721,7 +721,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               )}
 
               {/* Browser content with scroll */}
-              <div className="flex-1 overflow-auto p-4">
+              <div className="flex-1 overflow-y-scroll p-4">
                 {metadata.error ? (
                   <div className="flex items-center justify-center min-h-[400px] bg-gray-50 text-gray-500 font-inter rounded-lg">
                     <div className="text-center px-4">
@@ -768,7 +768,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 ) : (
                   <div className="flex items-center justify-center">
                     <div
-                      className="relative w-full max-w-[768px] bg-white rounded-lg shadow-lg overflow-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
+                      className="relative w-full max-w-[768px] bg-white rounded-lg shadow-lg overflow-y-scroll overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
                       tabIndex={metadata.controlMode === 'user' ? 0 : -1}
                       onKeyDown={metadata.controlMode === 'user' ? handleKeyboardInput : undefined}
                       onKeyUp={metadata.controlMode === 'user' ? handleKeyboardInput : undefined}
