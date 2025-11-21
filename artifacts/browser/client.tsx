@@ -556,7 +556,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     id="browser-artifact-canvas"
                     width={1920}
                     height={1080}
-                    className="block w-full max-w-[768px] md:max-w-[1024px] lg:max-w-[1920px] h-auto aspect-video bg-white"
+                    className="block w-[1920px] h-[1080px] bg-white" 
                     onClick={handleCanvasInteraction}
                     onMouseMove={handleCanvasInteraction}
                     onWheel={handleCanvasInteraction}
@@ -768,7 +768,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 ) : (
                   <div className="flex items-center justify-center">
                     <div
-                      className="relative w-full max-w-[1920px] bg-white rounded-lg shadow-lg overflow-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
+                      className="relative w-full max-w-[768px] bg-white rounded-lg shadow-lg overflow-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
                       tabIndex={metadata.controlMode === 'user' ? 0 : -1}
                       onKeyDown={metadata.controlMode === 'user' ? handleKeyboardInput : undefined}
                       onKeyUp={metadata.controlMode === 'user' ? handleKeyboardInput : undefined}
@@ -781,9 +781,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                       <canvas
                         ref={canvasRef}
                         id="browser-artifact-canvas"
-                        width={1920}
-                        height={1080}
-                        className="w-full h-full object-contain bg-white"
+                        width={768}
+                        height={432}
+                        className="object-contain bg-white"
                         onClick={handleCanvasInteraction}
                         onMouseMove={handleCanvasInteraction}
                         onWheel={handleCanvasInteraction}
