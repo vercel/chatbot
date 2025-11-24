@@ -73,6 +73,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
 
   content: ({ metadata, setMetadata, isCurrentVersion, status }) => {
     const [lastFrame, setLastFrame] = useState<string | null>(null);
+    const [viewportSize, setViewportSize] = useState({ width: 1920, height: 1080 });
     const isMobile = useIsMobile();
   
     const wsRef = useRef<WebSocket | null>(null);
@@ -431,6 +432,24 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       }
     }, [metadata?.controlMode, lastFrame]);
 
+    // Handle viewport resize for responsive canvas
+    useEffect(() => {
+      const handleResize = () => {
+        if (metadata?.isFullscreen) {
+          setViewportSize({
+            width: window.innerWidth,
+            height: window.innerHeight,
+          });
+        }
+      };
+
+      if (metadata?.isFullscreen) {
+        handleResize(); // Set initial size
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+      }
+    }, [metadata?.isFullscreen]);
+
     // Global keyboard listener for fullscreen mode
     useEffect(() => {
       const handleGlobalKeyDown = (event: KeyboardEvent) => {
@@ -542,26 +561,27 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 </div>
               </div>
             ) : (
-              <div className="min-h-screen flex items-center justify-center border-4 border-black px-4">
-                {/* Scroll container */}
-                <div
-                  className="relative max-h-[calc(100vh-12rem)] w-full overflow-y-scroll rounded-lg shadow-2xl bg-white
-                            overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
-                  tabIndex={0}
-                  onKeyDown={handleKeyboardInput}
-                  onKeyUp={handleKeyboardInput}
-                >
-                  <canvas
-                    ref={canvasRef}
-                    id="browser-artifact-canvas"
-                    width={1920}
-                    height={1080}
-                    className="block w-[1920px] h-[1080px] bg-white" 
-                    onClick={handleCanvasInteraction}
-                    onMouseMove={handleCanvasInteraction}
-                    onWheel={handleCanvasInteraction}
-                    onContextMenu={(e) => e.preventDefault()}
-                  />
+              <div className="absolute inset-0 pt-20 pb-12 px-4 sm:px-12">
+                <div className="flex items-center justify-center w-full h-full">
+                  <div
+                    className="relative max-h-[calc(100vh-12rem)] max-w-full overflow-auto rounded-lg shadow-2xl bg-white
+                              overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
+                    tabIndex={0}
+                    onKeyDown={handleKeyboardInput}
+                    onKeyUp={handleKeyboardInput}
+                  >
+                    <canvas
+                      ref={canvasRef}
+                      id="browser-artifact-canvas"
+                      width={1920}
+                      height={1080}
+                      className="block w-full h-auto max-w-[1920px] max-h-[1080px] object-contain bg-white"
+                      onClick={handleCanvasInteraction}
+                      onMouseMove={handleCanvasInteraction}
+                      onWheel={handleCanvasInteraction}
+                      onContextMenu={(e) => e.preventDefault()}
+                    />
+                  </div>
                 </div>
               </div>
             )}
