@@ -630,7 +630,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   }}
                 >
                   {metadata.controlMode === 'user' && !metadata.isFocused && (
-                    <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-[#B1409299]">
+                    <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-custom-purple/60">
                       <h2 className="text-4xl font-bold">Click to activate browser control</h2>
                     </div>
                   )}

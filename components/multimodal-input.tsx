@@ -385,7 +385,7 @@ function PureStopButton({
   return (
     <Button
       data-testid="stop-button"
-      className="bg-transparent hover:bg-transparent rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-[#b14092] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="bg-transparent hover:bg-transparent rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-custom-purple text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       onClick={(event) => {
         event.preventDefault();
         stop();

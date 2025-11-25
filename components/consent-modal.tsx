@@ -32,7 +32,7 @@ export function ConsentModal({ open, onOpenChange, onContinue }: ConsentModalPro
         <AlertDialogFooter className="px-6 pb-6 pt-5 flex-row justify-end gap-2">
           <AlertDialogCancel 
             onClick={() => onOpenChange(false)}
-            className="bg-transparent border-0 text-[#b14092] text-[14px] font-medium px-4 py-2 rounded-[100px] hover:bg-[#b14092]/10 transition-colors"
+            className="bg-transparent border-0 text-custom-purple text-[14px] font-medium px-4 py-2 rounded-[100px] hover:bg-custom-purple/10 transition-colors"
           >
             Cancel
           </AlertDialogCancel>
@@ -41,7 +41,7 @@ export function ConsentModal({ open, onOpenChange, onContinue }: ConsentModalPro
               onOpenChange(false);
               onContinue();
             }}
-            className="bg-transparent border-0 text-[#b14092] text-[14px] font-medium px-4 py-2 rounded-[100px] hover:bg-[#b14092]/10 transition-colors"
+            className="bg-transparent border-0 text-custom-purple text-[14px] font-medium px-4 py-2 rounded-[100px] hover:bg-custom-purple/10 transition-colors"
           >
             Continue
           </AlertDialogAction>
