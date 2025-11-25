@@ -80,6 +80,8 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     const frameCountRef = useRef(0);
     const lastFrameTimeRef = useRef(Date.now());
     const lastMoveEventRef = useRef<number>(0);
+    const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+    const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
 
     const connectToBrowserStream = async () => {
       if (!metadata?.sessionId) return;
@@ -283,7 +285,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       }));
     };
 
-    const handleCanvasInteraction = (event: React.MouseEvent | React.KeyboardEvent | React.WheelEvent) => {
+    const handleCanvasInteraction = (event: React.MouseEvent | React.KeyboardEvent | React.WheelEvent | React.TouchEvent) => {
       if (metadata?.controlMode !== 'user' || !metadata.isFocused) return;
       
       const canvas = canvasRef.current;
@@ -312,19 +314,43 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       const scaleX = canvas.width / renderedWidth;
       const scaleY = canvas.height / renderedHeight;
 
-      // Get the mouse position relative to the canvas
-      const mouseX = (event as React.MouseEvent).clientX - rect.left;
-      const mouseY = (event as React.MouseEvent).clientY - rect.top;
+      // Get the input position relative to the canvas (works for both mouse and touch)
+      let clientX: number;
+      let clientY: number;
+      
+      if (event.type.startsWith('touch')) {
+        const touchEvent = event as React.TouchEvent;
+        if (event.type === 'touchend') {
+          // For touchend, use changedTouches
+          const touch = touchEvent.changedTouches[0];
+          if (!touch) return;
+          clientX = touch.clientX;
+          clientY = touch.clientY;
+        } else {
+          // For touchstart and touchmove, use touches
+          const touch = touchEvent.touches[0];
+          if (!touch) return;
+          clientX = touch.clientX;
+          clientY = touch.clientY;
+        }
+      } else {
+        const mouseEvent = event as React.MouseEvent;
+        clientX = mouseEvent.clientX;
+        clientY = mouseEvent.clientY;
+      }
 
-      // Check if the click is outside the rendered video area
-      if (mouseX < offsetX || mouseX > offsetX + renderedWidth || mouseY < offsetY || mouseY > offsetY + renderedHeight) {
-        // Click was in the letterboxed/pillarboxed area, so ignore it
+      const inputX = clientX - rect.left;
+      const inputY = clientY - rect.top;
+
+      // Check if the input is outside the rendered video area
+      if (inputX < offsetX || inputX > offsetX + renderedWidth || inputY < offsetY || inputY > offsetY + renderedHeight) {
+        // Input was in the letterboxed/pillarboxed area, so ignore it
         return;
       }
 
       // Calculate the final coordinates within the browser's viewport
-      const finalX = (mouseX - offsetX) * scaleX;
-      const finalY = (mouseY - offsetY) * scaleY;
+      const finalX = (inputX - offsetX) * scaleX;
+      const finalY = (inputY - offsetY) * scaleY;
 
       if (event.type === 'click') {
         const mouseEvent = event as React.MouseEvent;
@@ -356,6 +382,81 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           deltaX: wheelEvent.deltaX,
           deltaY: wheelEvent.deltaY
         });
+      } else if (event.type === 'touchstart') {
+        // Store the touch start position and time for scroll detection
+        touchStartRef.current = { x: finalX, y: finalY, time: Date.now() };
+        lastTouchRef.current = { x: finalX, y: finalY };
+        
+        sendUserInput({
+          type: 'touchstart',
+          x: finalX,
+          y: finalY
+        });
+      } else if (event.type === 'touchmove') {
+        if (touchStartRef.current && lastTouchRef.current) {
+          const deltaX = lastTouchRef.current.x - finalX;
+          const deltaY = lastTouchRef.current.y - finalY;
+          
+          // If the touch has moved more than a threshold, treat it as a scroll
+          const scrollThreshold = 10; // Minimum pixels to consider it a scroll
+          if (Math.abs(deltaX) > scrollThreshold || Math.abs(deltaY) > scrollThreshold) {
+            // Send scroll event instead of touchmove
+            sendUserInput({
+              type: 'scroll',
+              x: finalX,
+              y: finalY,
+              deltaX: deltaX,
+              deltaY: deltaY
+            });
+            
+            lastTouchRef.current = { x: finalX, y: finalY };
+          } else {
+            // Small movement, treat as regular touch move
+            const now = Date.now();
+            if (now - lastMoveEventRef.current > 50) {
+              lastMoveEventRef.current = now;
+              sendUserInput({
+                type: 'touchmove',
+                x: finalX,
+                y: finalY
+              });
+              lastTouchRef.current = { x: finalX, y: finalY };
+            }
+          }
+        }
+      } else if (event.type === 'touchend') {
+        // Check if this was a quick tap (not a scroll)
+        const touchDuration = touchStartRef.current ? Date.now() - touchStartRef.current.time : 0;
+        const isTap = touchDuration < 200; // Less than 200ms is a tap
+        
+        if (isTap && touchStartRef.current) {
+          // Calculate distance moved
+          const distanceMoved = Math.sqrt(
+            Math.pow(finalX - touchStartRef.current.x, 2) + 
+            Math.pow(finalY - touchStartRef.current.y, 2)
+          );
+          
+          // If barely moved, it's a tap/click
+          if (distanceMoved < 20) {
+            // Send a click event instead of touchend for taps
+            sendUserInput({
+              type: 'click',
+              x: finalX,
+              y: finalY,
+              button: 'left'
+            });
+          }
+        }
+        
+        sendUserInput({
+          type: 'touchend',
+          x: finalX,
+          y: finalY
+        });
+        
+        // Reset touch tracking
+        touchStartRef.current = null;
+        lastTouchRef.current = null;
       }
     };
 
@@ -377,8 +478,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       });
     };
 
-
-
     const handleBrowserFrame = (frame: BrowserFrame) => {
       // Update frame rate tracking
       frameCountRef.current++;
@@ -393,6 +492,10 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       const canvas = canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext('2d');
+        if (metadata?.isFullscreen) {
+          console.log('Setting touch action to auto');
+          canvas.style.touchAction = 'auto';
+        }
         if (ctx) {
           const img = new Image();
           img.onload = () => {
@@ -560,6 +663,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     onClick={handleCanvasInteraction}
                     onMouseMove={handleCanvasInteraction}
                     onWheel={handleCanvasInteraction}
+                    onTouchStart={handleCanvasInteraction}
+                    onTouchMove={handleCanvasInteraction}
+                    onTouchEnd={handleCanvasInteraction}
                     onContextMenu={(e) => e.preventDefault()}
                   />
                 </div>
@@ -643,6 +749,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     onClick={handleCanvasInteraction}
                     onMouseMove={handleCanvasInteraction}
                     onWheel={handleCanvasInteraction}
+                    onTouchStart={handleCanvasInteraction}
+                    onTouchMove={handleCanvasInteraction}
+                    onTouchEnd={handleCanvasInteraction}
                     onContextMenu={(e) => {
                   if (metadata.controlMode === 'user') {
                     e.preventDefault(); // Allow right-click handling
@@ -787,6 +896,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                         onClick={handleCanvasInteraction}
                         onMouseMove={handleCanvasInteraction}
                         onWheel={handleCanvasInteraction}
+                        onTouchStart={handleCanvasInteraction}
+                        onTouchMove={handleCanvasInteraction}
+                        onTouchEnd={handleCanvasInteraction}
                         onContextMenu={(e) => {
                           if (metadata.controlMode === 'user') {
                             e.preventDefault(); // Allow right-click handling
