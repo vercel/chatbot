@@ -26,6 +26,9 @@ import {
 import { memo } from 'react';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { closeArtifact, useArtifact } from '@/hooks/use-artifact';
+import { useBrowserSessionExit } from '@/hooks/use-browser-session-exit';
+import { useRouter } from 'next/navigation';
+import { ExitWarningModal } from './exit-warning-modal';
 
 const PureChatItem = ({
   chat,
@@ -43,17 +46,31 @@ const PureChatItem = ({
     initialVisibilityType: chat.visibility,
   });
   const { setArtifact } = useArtifact();
+  const router = useRouter();
+  const {
+    showExitWarning,
+    setShowExitWarning,
+    interceptNavigation,
+    handleConfirmLeave,
+  } = useBrowserSessionExit();
+
+  const handleChatClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    interceptNavigation(() => {
+      setOpenMobile(false);
+      closeArtifact(setArtifact);
+      router.push(`/chat/${chat.id}`);
+    });
+  };
 
   return (
-    <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive}>
-        <Link href={`/chat/${chat.id}`} onClick={() => {
-          setOpenMobile(false);
-          closeArtifact(setArtifact);
-        }}>
-          <span>{chat.title}</span>
-        </Link>
-      </SidebarMenuButton>
+    <>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={isActive}>
+          <Link href={`/chat/${chat.id}`} onClick={handleChatClick}>
+            <span>{chat.title}</span>
+          </Link>
+        </SidebarMenuButton>
 
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
@@ -114,6 +131,13 @@ const PureChatItem = ({
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>
+
+      <ExitWarningModal
+        open={showExitWarning}
+        onOpenChange={setShowExitWarning}
+        onLeaveSession={handleConfirmLeave}
+      />
+    </>
   );
 };
 

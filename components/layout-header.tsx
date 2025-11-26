@@ -7,11 +7,19 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { closeArtifact, useArtifact } from '@/hooks/use-artifact';
 import { SidebarToggle } from '@/components/sidebar-toggle';
+import { useBrowserSessionExit } from '@/hooks/use-browser-session-exit';
+import { ExitWarningModal } from '@/components/exit-warning-modal';
 
 export function LayoutHeader() {
   const { state, openMobile } = useSidebar();
   const router = useRouter();
   const { setArtifact, artifact, metadata } = useArtifact();
+  const {
+    showExitWarning,
+    setShowExitWarning,
+    interceptNavigation,
+    handleConfirmLeave,
+  } = useBrowserSessionExit();
 
   // Don't show the component when sidebar is expanded (desktop) or open (mobile/tablet) or browser artifact is in fullscreen mode
   if (state === 'expanded' || openMobile || (artifact.kind === 'browser' && metadata?.isFullscreen)) {
@@ -19,9 +27,11 @@ export function LayoutHeader() {
   }
 
   const handleNewChat = () => {
-    closeArtifact(setArtifact);
-    router.push('/');
-    router.refresh();
+    interceptNavigation(() => {
+      closeArtifact(setArtifact);
+      router.push('/');
+      router.refresh();
+    });
   };
 
   return (
@@ -50,6 +60,12 @@ export function LayoutHeader() {
           </TooltipContent>
         </Tooltip>
       </div>
+
+      <ExitWarningModal
+        open={showExitWarning}
+        onOpenChange={setShowExitWarning}
+        onLeaveSession={handleConfirmLeave}
+      />
     </>
   );
 }
