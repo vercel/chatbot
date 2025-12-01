@@ -374,7 +374,7 @@ function PureArtifact({
                     artifactStatus={artifact.status}
                   />
                 </div>
-                <div className="border-t border-gray-200 bg-[#EFD9E9] dark:bg-[#1a0b1a] p-3 sm:p-[18px] sm:pb-[18px]">
+                <div className="border-t border-gray-200 bg-[#EFD9E9] dark:bg-[#1a0b1a] p-3 sm:p-[18px]">
                   <form className="flex gap-2 w-full">
                     <MultimodalInput
                       chatId={chatId}

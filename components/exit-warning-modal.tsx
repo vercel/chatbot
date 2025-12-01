@@ -43,7 +43,7 @@ export function ExitWarningModal({
             session will end.
             <br />
             <br />
-            You'll be able to view it, but you won't be able to continue or
+            You&apos;ll be able to view it, but you won&apos;t be able to continue or
             submit the application.
           </AlertDialogDescription>
         </AlertDialogHeader>
