@@ -495,6 +495,7 @@ function PureArtifact({
                 }
                 mode={mode}
                 status={artifact.status}
+                chatStatus={status}
                 currentVersionIndex={currentVersionIndex}
                 suggestions={[]}
                 onSaveContent={saveContent}
@@ -504,6 +505,8 @@ function PureArtifact({
                 isLoading={isDocumentsFetching && !artifact.content}
                 metadata={metadata}
                 setMetadata={setMetadata}
+                chatId={chatId}
+                stop={stop}
               />
 
               <AnimatePresence>
@@ -541,6 +544,7 @@ function PureArtifact({
                 content={artifact.content}
                 mode={mode}
                 status={artifact.status}
+                chatStatus={status}
                 currentVersionIndex={currentVersionIndex}
                 suggestions={[]}
                 onSaveContent={saveContent}
@@ -554,6 +558,8 @@ function PureArtifact({
                   setIsSheetOpen: setIsBrowserSheetOpen,
                 }}
                 setMetadata={setMetadata}
+                chatId={chatId}
+                stop={stop}
               />
             </div>
           )}
