@@ -149,6 +149,10 @@
     background-color: rgba(34, 197, 94, 0.9) !important;
 }
 
+.status-indicator.bg-gray-400 {
+    background-color: #9ca3af !important;
+}
+
 .ProseMirror {
     outline: none;
 }

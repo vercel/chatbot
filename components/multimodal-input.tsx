@@ -243,7 +243,7 @@ function PureMultimodalInput({
         )}
       </AnimatePresence>
 
-      {/* {messages.length === 0 &&
+      {messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 && (
           <SuggestedActions
@@ -251,7 +251,7 @@ function PureMultimodalInput({
             chatId={chatId}
             selectedVisibilityType={selectedVisibilityType}
           />
-        )} */}
+        )}
 
       <input
         type="file"

@@ -33,6 +33,8 @@ export type ArtifactToolbarItem = {
   onClick: (context: ArtifactToolbarContext) => void;
 };
 
+export type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
+
 interface ArtifactContent<M = any> {
   title: string;
   content: string;
@@ -40,6 +42,7 @@ interface ArtifactContent<M = any> {
   isCurrentVersion: boolean;
   currentVersionIndex: number;
   status: 'streaming' | 'idle';
+  chatStatus?: ChatStatus;
   suggestions: Array<Suggestion>;
   onSaveContent: (updatedContent: string, debounce: boolean) => void;
   isInline: boolean;
@@ -47,6 +50,8 @@ interface ArtifactContent<M = any> {
   isLoading: boolean;
   metadata: M;
   setMetadata: Dispatch<SetStateAction<M>>;
+  chatId?: string;
+  stop?: () => void;
 }
 
 interface InitializeParameters<M = any> {

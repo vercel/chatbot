@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { AgentStatusIndicator } from '@/components/agent-status-indicator';
 
 interface BrowserFrame {
   type: 'frame';
@@ -71,7 +72,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     }
   },
 
-  content: ({ metadata, setMetadata, isCurrentVersion, status }) => {
+  content: ({ metadata, setMetadata, isCurrentVersion, status, chatStatus, stop }) => {
     const [lastFrame, setLastFrame] = useState<string | null>(null);
     const isMobile = useIsMobile();
   
@@ -256,6 +257,10 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       // On mobile, keep the sheet open when switching to user mode
       // On desktop, automatically enable fullscreen when switching to user mode
       if (mode === 'user') {
+        // Call stop to send stopChat action to backend when user takes control
+        if (stop) {
+          stop();
+        }
         setMetadata(prev => ({
           ...prev,
           controlMode: mode,
@@ -799,14 +804,10 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               {/* Control mode indicator */}
               {metadata.isConnected && (
                 <div className="flex items-center justify-between py-2 px-4 bg-muted/20">
-                  <div className="flex items-center gap-2">
-                    <div className={`size-2 rounded-full animate-pulse flex-shrink-0 ${
-                      metadata.controlMode === 'user' ? 'bg-red-500' : 'bg-green-500'
-                    }`} />
-                    <span className="text-xs font-ibm-plex-mono">
-                      {metadata.controlMode === 'user' ? "You're editing manually" : 'AI is working'}
-                    </span>
-                  </div>
+                  <AgentStatusIndicator
+                    chatStatus={chatStatus}
+                    controlMode={metadata.controlMode}
+                  />
                   <Button
                     variant="outline"
                     size="sm"
@@ -930,10 +931,11 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
         {/* Control mode indicator */}
         {metadata.isConnected && (
           <div className="flex items-center justify-between py-2 bg-muted/20">
-            <div className="flex items-center gap-2 text-sm">
-                <div className="size-2 bg-green-500 rounded-full animate-pulse status-indicator" />
-              <span className="text-xs text-black font-ibm-plex-mono">AI is working</span>
-            </div>
+            <AgentStatusIndicator
+              chatStatus={chatStatus}
+              controlMode={metadata.controlMode}
+              className="text-sm text-black"
+            />
             <div className="flex items-center gap-2">
               <Button
                 variant={metadata.controlMode === 'user' ? 'default' : 'outline'}

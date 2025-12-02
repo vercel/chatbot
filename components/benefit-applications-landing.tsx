@@ -44,7 +44,8 @@ export function BenefitApplicationsLanding({
         </h1>
 
         {/* Subheader */}
-        <h2 className="text-lg sm:text-xl md:text-2xl font-inter text-black dark:text-white mb-6 sm:mb-8 md:mb-12">
+        {/* TODO: When the suggested actions are gone switch back to mb-6 sm:mb-8 md:mb-12*/}
+        <h2 className="text-lg sm:text-xl md:text-2xl font-inter text-black dark:text-white mb-4 sm:mb-6 md:mb-8">
           What&apos;s your client&apos;s name and which program do they need?
         </h2>
 

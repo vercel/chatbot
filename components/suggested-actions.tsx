@@ -20,25 +20,25 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'Apply Ximena Vargas',
+      title: 'Help Rosa Flores',
       label: 'ruhealth.org/appointments/apply-4-wic-form',
-      action: 'Please apply Ximena Vargas to this WIC benefit: https://www.ruhealth.org/appointments/apply-4-wic-form',
+      action: 'Help Rosa Flores, date of birth 1988-07-13 apply for WIC at https://www.ruhealth.org/appointments/apply-4-wic-form#. She is pregnant and has a child.',
     },
     {
-      title: 'Aplica a Yolanda Fuentes',
-      label: 'riversideihss.org/IntakeApp',
-      action: 'Por favor aplica a Yolanda Fuentes (DOB 30 de octubre 2001) para el beneficio de Riverside IHSS: https://riversideihss.org/IntakeApp',
+      title: 'Help Carolina Delgado',
+      label: 'riversideihss.org/Home/IHSSApply',
+      action: 'Help Carolina Delgado, date of birth 1958-03-25 apply for IHSS at https://riversideihss.org/Home/IHSSApply. She has cancer and needs her daughter to help take care of herself.',
     },
     {
-      title: 'Apply Daniel Scott',
-      label: 'riversideihss.org/IntakeApp',
-      action: 'Lookup Daniel Scott. His birthday is 3/15/2004. Apply him to IHSS please: https://riversideihss.org/IntakeApp',
-    },
-    {
-      title: 'Aplica a Juan Pacheco',
+      title: 'Help Daniela Muñoz',
       label: 'ruhealth.org/appointments/apply-4-wic-form',
-      action: 'Por favor aplica a Juan Pacheco para este beneficio de WIC: https://www.ruhealth.org/appointments/apply-4-wic-form',
+      action: 'Help Daniela Muñoz, date of birth 2004-03-31 apply WIC at https://www.ruhealth.org/appointments/apply-4-wic-form#. She is pregnant. ',
     },
+    // {
+    //   title: 'Aplica a Juan Pacheco',
+    //   label: 'ruhealth.org/appointments/apply-4-wic-form',
+    //   action: 'Por favor aplica a Juan Pacheco para este beneficio de WIC: https://www.ruhealth.org/appointments/apply-4-wic-form',
+    // },
   ];
 
   return (
@@ -65,7 +65,7 @@ function PureSuggestedActions({
                 parts: [{ type: 'text', text: suggestedAction.action }],
               });
             }}
-            className="text-left border border-sidebar-border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start transition-colors duration-200 bg-[#E8D0E0] hover:bg-[#DCC0D0] dark:bg-[#2D1B2E] dark:hover:bg-[#3D2A3E]"
+            className="text-left border border-sidebar-border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start transition-colors duration-200 bg-[#E8D0E0] hover:bg-[#DCC0D0] hover:text-black dark:bg-[#2D1B2E] dark:hover:bg-[#3D2A3E]"
           >
             <span className="font-medium">{suggestedAction.title}</span>
             <span className="text-muted-foreground text-xs font-mono">
