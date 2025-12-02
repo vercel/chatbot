@@ -257,6 +257,9 @@ importers:
       vitest-browser-react:
         specifier: ^1.0.1
         version: 1.0.1(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(@vitest/browser@3.2.4)(react-dom@19.0.0-rc-45804af1-20241021(react@19.0.0-rc-45804af1-20241021))(react@19.0.0-rc-45804af1-20241021)(vitest@3.2.4)
+      web-bot-auth:
+        specifier: ^0.1.1
+        version: 0.1.1
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -3950,6 +3953,9 @@ packages:
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
 
+  http-message-sig@0.1.0:
+    resolution: {integrity: sha512-F3ZRFxqgmo7RhftIr0mMi3yPJfqs7U0VHRlfq45pSbxHEXnh35c2BQoMSPp9Wxy4b5L8OvCNgUlb/pzdNeLM3Q==}
+
   http-proxy-agent@5.0.0:
     resolution: {integrity: sha512-n2hY8YdoRE1i7r6M0w9DIw5GgZN0G25P8zLCRQ8rjXtTU3vsNFBI/vWK/UIeE6g5MUUz6avwAPXmL6Fy9D/90w==}
     engines: {node: '>= 6'}
@@ -4203,6 +4209,9 @@ packages:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
     hasBin: true
+
+  jsonwebkey-thumbprint@0.1.0:
+    resolution: {integrity: sha512-4m/gJEUQH8N2NfvZFjCL8/E+vlt0FlrmHoR4T93CEXQRkC64qwRi6oQri4/eqLVXqEqXYCss0+Q7pLx6vJBqzw==}
 
   jsx-ast-utils@3.3.5:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
@@ -5831,6 +5840,9 @@ packages:
 
   w3c-keyname@2.2.8:
     resolution: {integrity: sha512-dpojBhNsCNN7T82Tm7k26A6G9ML3NkhDsnw9n/eoxSRlVBB4CEtIQ/KTCLI2Fwf3ataSXRhYFkQi3SlnFwPvPQ==}
+
+  web-bot-auth@0.1.1:
+    resolution: {integrity: sha512-luRXoRAzeZXU7XnYIvQfxy13Xk5Pw4VdlGn2tXzL3qHBVj+KvJL50nsQzA/VgqaRTvDXWwTIdEKsnjlEYkMlkw==}
 
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
@@ -9526,6 +9538,8 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
+  http-message-sig@0.1.0: {}
+
   http-proxy-agent@5.0.0:
     dependencies:
       '@tootallnate/once': 2.0.0
@@ -9775,6 +9789,8 @@ snapshots:
       minimist: 1.2.8
 
   json5@2.2.3: {}
+
+  jsonwebkey-thumbprint@0.1.0: {}
 
   jsx-ast-utils@3.3.5:
     dependencies:
@@ -11827,6 +11843,11 @@ snapshots:
   vscode-uri@3.0.8: {}
 
   w3c-keyname@2.2.8: {}
+
+  web-bot-auth@0.1.1:
+    dependencies:
+      http-message-sig: 0.1.0
+      jsonwebkey-thumbprint: 0.1.0
 
   web-namespaces@2.0.1: {}
 
