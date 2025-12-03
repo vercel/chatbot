@@ -70,9 +70,24 @@ export async function GET(request: NextRequest) {
 
     // Create a request-like object for signing
     // The @authority component is derived from the request URL
+    // IMPORTANT: In Cloud Run behind a load balancer, request.url may contain
+    // the internal URL. We need to use the Host header or X-Forwarded-Host
+    // to get the correct external authority.
+    const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+
+    // Construct the canonical URL using the external host
+    const canonicalUrl = host
+      ? `${protocol}://${host}${new URL(request.url).pathname}`
+      : request.url;
+
+    console.log('[HTTP-MSG-SIG] Request URL:', request.url);
+    console.log('[HTTP-MSG-SIG] Host header:', host);
+    console.log('[HTTP-MSG-SIG] Canonical URL:', canonicalUrl);
+
     const requestLike = {
       method: request.method,
-      url: request.url,
+      url: canonicalUrl,
       headers: Object.fromEntries(request.headers.entries()),
     };
 
