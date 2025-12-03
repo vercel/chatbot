@@ -14,7 +14,7 @@ export default function LandingPage() {
       <div className="p-4 sm:p-6 md:p-8 lg:px-16 xl:px-32 2xl:px-[200px] pt-16 md:pt-24 lg:pt-4">
         {/* Hero Section */}
         <div className="relative bg-[#f4e4f0] dark:bg-[#1a0b1a] rounded-[25px] mb-6 sm:mb-8 overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between md:min-h-[351px]">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between md:min-h-[351px]">
             {/* Image Container - On top for mobile, right side for desktop */}
             <div className="order-1 md:order-2 w-full md:w-auto md:shrink-0">
               <div className="relative h-[200px] sm:h-[250px] md:h-[337px] w-full md:w-[350px] lg:w-[439px]">

@@ -34,11 +34,11 @@ function PureSuggestedActions({
       label: 'ruhealth.org/appointments/apply-4-wic-form',
       action: 'Help Daniela Muñoz, date of birth 2004-03-31 apply WIC at https://www.ruhealth.org/appointments/apply-4-wic-form#. She is pregnant. ',
     },
-    // {
-    //   title: 'Aplica a Juan Pacheco',
-    //   label: 'ruhealth.org/appointments/apply-4-wic-form',
-    //   action: 'Por favor aplica a Juan Pacheco para este beneficio de WIC: https://www.ruhealth.org/appointments/apply-4-wic-form',
-    // },
+    {
+      title: 'Help Ana Hernández',
+      label: 'ruhealth.org/appointments/apply-4-wic-form',
+      action: 'Help Ana Hernández, date of birth 1982-04-08 apply for WIC since she is pregnant. Application: https://www.ruhealth.org/appointments/apply-4-wic-form#',
+    },
   ];
 
   return (
