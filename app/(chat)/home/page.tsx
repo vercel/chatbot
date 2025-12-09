@@ -14,9 +14,9 @@ export default function LandingPage() {
       <div className="p-4 sm:p-6 md:p-8 lg:px-16 xl:px-32 2xl:px-[200px] pt-16 md:pt-24 lg:pt-4">
         {/* Hero Section */}
         <div className="relative bg-[#f4e4f0] dark:bg-[#1a0b1a] rounded-[25px] mb-6 sm:mb-8 overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between md:min-h-[351px]">
+          <div className="flex flex-col md:flex-row md:justify-between md:min-h-[351px]">
             {/* Image Container - On top for mobile, right side for desktop */}
-            <div className="order-1 md:order-2 w-full md:w-auto md:shrink-0">
+            <div className="order-1 md:order-2 w-full md:w-auto md:shrink-0 md:self-end">
               <div className="relative h-[200px] sm:h-[250px] md:h-[337px] w-full md:w-[350px] lg:w-[439px]">
                 <div className="absolute inset-0 mix-blend-normal overflow-hidden pointer-events-none opacity-80 brightness-100 contrast-110 dark:opacity-60 dark:brightness-75 dark:contrast-120">
                   <Image
@@ -31,7 +31,7 @@ export default function LandingPage() {
             </div>
 
             {/* Content - Below image for mobile, left side for desktop */}
-            <div className="order-2 md:order-1 p-4 sm:p-6 md:p-8 flex flex-col justify-between md:flex-1 md:pr-4">
+            <div className="order-2 md:order-1 p-4 sm:p-6 md:p-8 flex flex-col justify-between md:flex-1 md:pr-4 md:self-center">
               <div>
                 <h1 className="font-source-serif text-3xl sm:text-4xl md:text-5xl leading-tight text-black dark:text-white mb-3 sm:mb-4">
                   Welcome!
