@@ -324,7 +324,7 @@ const PurePreviewMessage = ({
                   const { input } = part as any;
                   const { text: displayName, icon: Icon } = getToolDisplayInfo(type, input);
 
-                  if (displayName === 'Updated working memory') {
+                  if (displayName === 'Updated working memory' || displayName === 'Executed JavaScript') {
                     return;
                   }
                   // Only use CollapsibleWrapper for get-participant-with-household
@@ -351,7 +351,7 @@ const PurePreviewMessage = ({
                   const { output, input } = part as any;
                   const { text: displayName, icon: Icon } = getToolDisplayInfo(type, input);
 
-                  if (displayName === 'Updated working memory') {
+                  if (displayName === 'Updated working memory' || displayName === 'Executed JavaScript') {
                     return;
                   }
 
