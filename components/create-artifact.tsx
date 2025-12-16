@@ -54,9 +54,18 @@ interface ArtifactContent<M = any> {
   stop?: () => void;
 }
 
+export interface ChatContext {
+  /** The chat/thread ID */
+  chatId: string;
+  /** The user/resource ID for session isolation */
+  resourceId?: string;
+}
+
 interface InitializeParameters<M = any> {
   documentId: string;
   setMetadata: Dispatch<SetStateAction<M>>;
+  /** Optional chat context for session isolation (e.g., browser streaming) */
+  chatContext?: ChatContext;
 }
 
 type ArtifactConfig<T extends string, M = any> = {

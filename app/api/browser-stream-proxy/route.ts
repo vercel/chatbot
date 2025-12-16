@@ -6,7 +6,20 @@ export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const sessionId = url.searchParams.get('sessionId') || 'default';
+  const sessionId = url.searchParams.get('sessionId');
+
+  // Require sessionId to prevent session collision
+  if (!sessionId) {
+    return new Response(
+      JSON.stringify({
+        error: 'Missing required sessionId query parameter'
+      }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
 
   // Get browser streaming configuration from environment (runtime)
   const streamingPort = process.env.BROWSER_STREAMING_PORT || '8933';

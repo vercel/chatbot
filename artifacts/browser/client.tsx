@@ -1,4 +1,4 @@
-import { Artifact } from '@/components/create-artifact';
+import { Artifact, type ChatContext } from '@/components/create-artifact';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,10 +37,22 @@ interface BrowserArtifactMetadata {
 export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>({
   kind: 'browser',
   description: 'Live browser automation display with real-time streaming',
-  
-  initialize: async ({ documentId, setMetadata }) => {
-    // Initialize with a unique session ID based on document ID
-    const sessionId = `browser-${documentId}-${Date.now()}`;
+
+  initialize: async ({ documentId, setMetadata, chatContext }) => {
+    // CRITICAL: Use chat session ID (threadId-resourceId) for browser streaming session isolation
+    // This ensures each chat gets its own browser stream, preventing cross-session visibility
+    // The sessionId MUST match the format used by Mastra backend: `${threadId}-${resourceId}`
+    let sessionId: string;
+
+    if (chatContext?.chatId && chatContext?.resourceId) {
+      // Use the same session ID format as Mastra backend for proper correlation
+      sessionId = `${chatContext.chatId}-${chatContext.resourceId}`;
+      console.log(`[Browser Artifact] Using chat session ID for streaming: ${sessionId}`);
+    } else {
+      // Fallback to document-based ID (less ideal, but still unique per artifact)
+      sessionId = `browser-${documentId}-${Date.now()}`;
+      console.warn(`[Browser Artifact] No chat context available, using document-based session ID: ${sessionId}`);
+    }
 
     setMetadata({
       sessionId,

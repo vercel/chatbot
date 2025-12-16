@@ -30,6 +30,7 @@ import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
+import { useSession } from 'next-auth/react';
 
 export const artifactDefinitions = [
   textArtifact,
@@ -88,6 +89,7 @@ function PureArtifact({
   initialChatModel: string;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
+  const { data: session } = useSession();
 
   const {
     data: documents,
@@ -262,10 +264,15 @@ function PureArtifact({
         artifactDefinition.initialize({
           documentId: artifact.documentId,
           setMetadata,
+          // Pass chat context for session isolation (used by browser artifact)
+          chatContext: {
+            chatId,
+            resourceId: session?.user?.id,
+          },
         });
       }
     }
-  }, [artifact.documentId, artifactDefinition, setMetadata]);
+  }, [artifact.documentId, artifactDefinition, setMetadata, chatId, session?.user?.id]);
 
   return (
     <AnimatePresence>

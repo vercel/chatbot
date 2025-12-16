@@ -4,7 +4,17 @@ export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const sessionId = searchParams.get('sessionId') || 'default';
+  const sessionId = searchParams.get('sessionId');
+
+  // Require sessionId to prevent session collision
+  if (!sessionId) {
+    return new Response(JSON.stringify({
+      error: 'Missing required sessionId query parameter'
+    }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
   
   try {
     // Return WebSocket connection info for the browser streaming service
