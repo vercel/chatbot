@@ -1,7 +1,30 @@
-import { SignJWT } from 'jose';
+import { Redis } from '@upstash/redis';
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { createLinkRequestSchema, type CreateLinkResponse } from './schema';
 
-const SECRET = new TextEncoder().encode(process.env.AUTH_SECRET);
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+// AES-256-GCM encryption using AUTH_SECRET
+function encrypt(text: string): string {
+  const key = Buffer.from(process.env.AUTH_SECRET!).subarray(0, 32);
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString('base64url');
+}
+
+export { encrypt };
+
+// Generate short random ID
+function generateId(length = 8): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const bytes = randomBytes(length);
+  return Array.from(bytes).map(b => chars[b % chars.length]).join('');
+}
 
 export async function POST(request: Request) {
   try {
@@ -16,22 +39,22 @@ export async function POST(request: Request) {
 
     const { content, expiresInHours } = requestBody;
 
-    // Create signed JWT with content and expiration
-    const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
-    const token = await new SignJWT({ content })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime(expiresAt)
-      .setIssuedAt()
-      .sign(SECRET);
+    // Generate short ID and encrypt content
+    const id = generateId();
+    const encrypted = encrypt(content);
+
+    // Store in Redis with TTL
+    const ttlSeconds = expiresInHours * 60 * 60;
+    await redis.set(`link:${id}`, encrypted, { ex: ttlSeconds });
 
     // Build the redirect URL
-    const baseUrl =
-      process.env.NEXTAUTH_URL || request.headers.get('origin') || '';
-    const url = `${baseUrl}/link/${token}`;
+    const baseUrl = process.env.NEXTAUTH_URL || request.headers.get('origin') || '';
+    const url = `${baseUrl}/link/${id}`;
+    const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
     const response: CreateLinkResponse = {
       url,
-      token,
+      token: id,
       expiresAt: expiresAt.toISOString(),
     };
 
