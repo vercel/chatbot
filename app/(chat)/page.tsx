@@ -7,7 +7,12 @@ import { DataStreamHandler } from '@/components/data-stream-handler';
 import { auth } from '../(auth)/auth';
 import { redirect } from 'next/navigation';
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ query?: string }>;
+}) {
+  const { query } = await searchParams;
   const session = await auth();
 
   if (!session) {
@@ -23,13 +28,14 @@ export default async function Page() {
   const referer = headersList.get('referer');
   
   // If no referrer or referrer doesn't contain internal routes, this is likely the first load - redirect to home
+  // Exception: if there's a ?query= param (from shared links), skip the redirect
   const isInternalNavigation = referer && (
-    referer.includes('/home') || 
-    referer.includes('/chat/') || 
+    referer.includes('/home') ||
+    referer.includes('/chat/') ||
     referer.includes('/')
   );
-  
-  if (!isInternalNavigation) {
+
+  if (!isInternalNavigation && !query) {
     redirect('/home');
   }
 
