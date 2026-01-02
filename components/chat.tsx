@@ -15,7 +15,6 @@ import { unstable_serialize } from 'swr/infinite';
 import { getChatHistoryPaginationKey } from './sidebar-history';
 import { toast } from './toast';
 import type { Session } from 'next-auth';
-import { useSearchParams } from 'next/navigation';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
@@ -137,30 +136,23 @@ export function Chat({
     }
   };
 
-  const searchParams = useSearchParams();
-  const queryFromUrl = searchParams.get('query');
-  // Use initialQuery prop (from cookie) or fall back to URL query param
-  const query = initialQuery || queryFromUrl;
-
   const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
 
   useEffect(() => {
-    if (query && !hasAppendedQuery) {
+    if (initialQuery && !hasAppendedQuery) {
       sendMessage({
         role: 'user' as const,
-        parts: [{ type: 'text', text: query }],
+        parts: [{ type: 'text', text: initialQuery }],
       });
 
       setHasAppendedQuery(true);
 
-      // Clear the shared link cookie if it was used
-      if (initialQuery) {
-        document.cookie = 'shared_link_content=; path=/; max-age=0';
-      }
+      // Clear the shared link cookie
+      document.cookie = 'shared_link_content=; path=/; max-age=0';
 
       window.history.replaceState({}, '', `/chat/${id}`);
     }
-  }, [query, sendMessage, hasAppendedQuery, id, initialQuery]);
+  }, [initialQuery, sendMessage, hasAppendedQuery, id]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,

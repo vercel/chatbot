@@ -7,12 +7,7 @@ import { DataStreamHandler } from '@/components/data-stream-handler';
 import { auth } from '../(auth)/auth';
 import { redirect } from 'next/navigation';
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ query?: string }>;
-}) {
-  const { query } = await searchParams;
+export default async function Page() {
   const session = await auth();
 
   if (!session) {
@@ -27,20 +22,12 @@ export default async function Page({
   const sharedLinkCookie = cookieStore.get('shared_link_content');
   const initialQuery = sharedLinkCookie?.value || undefined;
 
-  // Check if this is the first load of the app (no referrer or referrer doesn't indicate internal navigation)
+  // Check if this is the first load of the app (no referrer)
+  // If no referrer and no shared link cookie, redirect to home
   const headersList = await headers();
   const referer = headersList.get('referer');
 
-  // If no referrer or referrer doesn't contain internal routes, this is likely the first load - redirect to home
-  // Exception: if there's a ?query= param or shared link cookie, skip the redirect
-  const isInternalNavigation = referer && (
-    referer.includes('/home') ||
-    referer.includes('/chat/') ||
-    referer.includes('/link/') ||
-    referer.includes('/')
-  );
-
-  if (!isInternalNavigation && !query && !initialQuery) {
+  if (!referer && !initialQuery) {
     redirect('/home');
   }
 
