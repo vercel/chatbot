@@ -6,7 +6,7 @@ const storage = new Storage({
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 
-const bucketName = 'labs-asp-artifacts-dev';
+const bucketName = process.env.GCS_BUCKET_NAME || 'nava-storage-dev';
 const bucket = storage.bucket(bucketName);
 
 export interface UploadResult {
