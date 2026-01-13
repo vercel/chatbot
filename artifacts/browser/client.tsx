@@ -531,45 +531,69 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
 
     // Loading state component (matches Figma design)
     const renderLoadingState = () => (
-      <div className="absolute inset-0 flex flex-col">
-        {/* Browser chrome header */}
-        <div className="bg-[#ececec] h-[30px] rounded-tl-lg rounded-tr-lg" />
-        
-        {/* Main content area */}
-        <div className="flex-1 bg-[rgba(235,235,235,0.2)] flex flex-col items-center justify-center">
-          {/* Spinning icon with circular background */}
-          <div className="relative mb-8">
-            <div className="w-[53px] h-[53px] rounded-full bg-[#e5e5e5] flex items-center justify-center">
-              <RefreshCwIcon className="w-6 h-6 animate-spin" />
-            </div>
-          </div>
+      <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
+        <div className="flex flex-col w-full max-w-4xl">
+          {/* Browser chrome header */}
+          <div className="bg-[#ececec] h-[30px] rounded-tl-lg rounded-tr-lg" />
           
-          {/* Text content */}
-          <p className="text-xs sm:text-sm font-medium">
-            Setting up the browser
-          </p>
-          <p className="text-xs opacity-75">
-            Please wait a few moments
-          </p>
+          {/* Main content area */}
+          <div className="flex-1 bg-[rgba(235,235,235,0.2)] flex flex-col items-center justify-center py-20">
+            {/* Spinning icon with circular background */}
+            <div className="relative mb-2">
+              <div className="w-[53px] h-[53px] rounded-full bg-[#e5e5e5] flex items-center justify-center">
+                <RefreshCwIcon className="size-8 animate-spin" />
+              </div>
+            </div>
+            
+            {/* Text content */}
+            <p className="text-sm font-medium font-source-serif">
+              Setting up the browser
+            </p>
+            <p className="text-xs opacity-75 font-inter">
+              Please wait a few moments
+            </p>
+          </div>
         </div>
       </div>
     );
 
     // Error state component
     const renderErrorState = () => (
-      <div className="text-center">
-        <MonitorX className="size-8 mx-auto mb-2" />
-        <p className="text-sm font-medium">Failed to connect to browser</p>
-        <p className="text-xs opacity-75">Wait a few moments and try again</p>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="mt-2"
-          onClick={connectToBrowserStream}
-        >
-          <RefreshCwIcon className="size-4 mr-1" />
-          Retry
-        </Button>
+      <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
+        <div className="text-center">
+          <MonitorX className="size-8 mx-auto mb-2" />
+          <p className="text-sm font-medium font-source-serif">Failed to connect to browser</p>
+          <p className="text-xs opacity-75 font-inter">Wait a few moments and try again</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={connectToBrowserStream}
+          >
+            <RefreshCwIcon className="size-4 mr-1" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+
+    // Timeout/Paused state component
+    const renderTimeOutState = () => (
+      <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
+        <div className="text-center">
+          <ClockFading className="size-8 mx-auto mb-2" />
+          <p className="text-xs sm:text-sm font-medium font-source-serif">Your session was paused due to inactivity</p>
+          <p className="text-xs opacity-75 font-inter">Refresh the connection and try again</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={connectToBrowserStream}
+          >
+            <RefreshCwIcon className="size-4 mr-1" />
+            Retry
+          </Button>
+        </div>
       </div>
     );
 
@@ -626,13 +650,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     }, []);
 
     if (!metadata) {
-      return (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-          <div className="text-center">
-            {renderLoadingState()}
-          </div>
-        </div>
-      );
+      return renderLoadingState();
     }
 
     // Fullscreen mode when in user control mode
@@ -667,40 +685,11 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           {/* Fullscreen browser canvas */}
           <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
             {metadata.error ? (
-              <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500 font-inter">
-                {renderErrorState()}
-              </div>
+              renderErrorState()
             ) : !metadata.isConnected ? (
-              <div className="flex items-center justify-center h-full text-white/70">
-                <div className="text-center">
-                  {metadata.isConnecting ? (
-                    <div className="max-w-4xl w-full relative rounded-lg overflow-hidden">
-                      {renderLoadingState()}
-                    </div>
-                  ) : (
-                    <>
-                      <ClockFading className="size-6 sm:size-8 mx-auto mb-2" />
-                      <p className="text-xs sm:text-sm font-medium">Your session was paused due to inactivity</p>
-                      <p className="text-xs opacity-75">Refresh the connection and try again</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={connectToBrowserStream}
-                      >
-                        <RefreshCwIcon className="size-4 mr-1" />
-                        Retry
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              metadata.isConnecting ? renderLoadingState() : renderTimeOutState()
             ) : !lastFrame ? (
-              <div className="flex items-center justify-center h-full text-white/70">
-                <div className="max-w-4xl w-full relative rounded-lg overflow-hidden">
-                  {renderLoadingState()}
-                </div>
-              </div>
+              renderLoadingState()
             ) : (
               <div className="w-full h-full flex items-center justify-center overflow-auto overscroll-contain touch-action:pan-y_pan-x [-webkit-overflow-scrolling:touch]">
                 <div
@@ -736,53 +725,20 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // Render browser canvas content (reusable for both desktop and mobile drawer)
     const renderBrowserContent = () => {
       if (metadata.error) {
-        return (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500 font-inter">
-            {renderErrorState()}
-          </div>
-        );
+        return renderErrorState();
       }
       
       if (!metadata.isConnected) {
         if (metadata.isConnecting) {
-          return (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-              <div className="text-center">
-                {renderLoadingState()}
-              </div>
-            </div>
-          );
+          return renderLoadingState();
         } else {
-          return (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-              <div className="text-center">
-                <ClockFading className="size-8 mx-auto mb-2" />
-                <p className="text-sm font-medium">Your session was paused due to inactivity</p>
-                <p className="text-xs opacity-75">Refresh the connection and try again</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={connectToBrowserStream}
-                >
-                  <RefreshCwIcon className="size-4 mr-1" />
-                  Retry
-                </Button>
-              </div>
-            </div>
-          );
+          return renderTimeOutState();
         }
       }
       
       // Connected but no frame yet - keep showing loading state
       if (metadata.isConnected && !lastFrame) {
-        return (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-              <div className="text-center">
-                {renderLoadingState()}
-              </div>
-          </div>
-        );
+        return renderLoadingState();
       }
       
       // Connected state with frame - show browser canvas
@@ -852,13 +808,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               </SheetHeader>
               
               {/* Connection status indicator */}
-              {metadata.isConnecting && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-                  <div className="text-center">
-                    {renderLoadingState()}
-                  </div>
-                </div>
-              )}
+              {metadata.isConnecting && renderLoadingState()}
               
               {/* Control mode indicator */}
               {metadata.isConnected && (
@@ -888,46 +838,15 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   </Button>
                 </div>
               )}
-
+              
               {/* Browser content with scroll */}
               <div className="flex-1 overflow-y-scroll p-4">
                 {metadata.error ? (
-                  <div className="flex items-center justify-center min-h-[400px] bg-gray-50 text-gray-500 font-inter rounded-lg">
-                    {renderErrorState()}
-                  </div>
+                  renderErrorState()
                 ) : !metadata.isConnected ? (
-                  <div className="flex items-center justify-center min-h-[400px] bg-gray-50 text-gray-500 rounded-lg">
-                    <div className="text-center px-4">
-                      {metadata.isConnecting ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-                          <div className="text-center">
-                            {renderLoadingState()}
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <ClockFading className="size-8 mx-auto mb-2" />
-                          <p className="text-sm font-medium">Your session was paused due to inactivity</p>
-                          <p className="text-xs opacity-75">Refresh the connection and try again</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={connectToBrowserStream}
-                          >
-                            <RefreshCwIcon className="size-4 mr-1" />
-                            Retry
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  metadata.isConnecting ? renderLoadingState() : renderTimeOutState()
                 ) : !lastFrame ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-                    <div className="text-center">
-                      {renderLoadingState()}
-                    </div>
-                  </div>
+                  renderLoadingState()
                 ) : (
                   <div className="flex items-center justify-center">
                     <div
@@ -974,13 +893,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     return (
       <div className="h-full flex flex-col">
         {/* Connection status indicator */}
-        {metadata.isConnecting && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-            <div className="text-center">
-              {renderLoadingState()}
-            </div>
-          </div>
-        )}
+        {metadata.isConnecting && renderLoadingState()}
          
         {/* Control mode indicator */}
         {metadata.isConnected && (
@@ -1004,7 +917,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               </Button>
             </div>
           </div>
-        )}
+        )}       
         {/* Main browser display area */}
         <div className="flex-1 relative m-4">
           {renderBrowserContent()}
