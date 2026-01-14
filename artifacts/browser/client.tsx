@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { AgentStatusIndicator } from '@/components/agent-status-indicator';
+import { BrowserLoadingState, BrowserErrorState, BrowserTimeoutState } from './browser-states';
 
 interface BrowserFrame {
   type: 'frame';
@@ -57,7 +58,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     setMetadata({
       sessionId,
       isConnected: false,
-      isConnecting: false,
+      isConnecting: true, // Start in connecting state since auto-connect will trigger immediately
       controlMode: 'agent',
       isFocused: false,
       isFullscreen: false,
@@ -100,11 +101,11 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       if (!metadata?.sessionId) return;
 
       try {
-        setMetadata({
-          ...metadata,
+        setMetadata(prev => ({
+          ...prev,
           isConnecting: true,
           error: undefined,
-        });
+        }));
 
         // Fetch browser WebSocket proxy config from server (runtime config)
         let wsUrl: string;
@@ -129,18 +130,20 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
+        const currentSessionId = metadata.sessionId; // Capture for closure
+        
         ws.onopen = () => {
           console.log('Connected to browser streaming service');
-          setMetadata({
-            ...metadata,
+          setMetadata(prev => ({
+            ...prev,
             isConnected: true,
             isConnecting: false,
-          });
+          }));
           
           // Request streaming to start
           ws.send(JSON.stringify({
             type: 'start-streaming',
-            sessionId: metadata.sessionId
+            sessionId: currentSessionId
           }));
         };
 
@@ -191,30 +194,30 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
 
         ws.onclose = () => {
           console.log('Disconnected from browser streaming service');
-          setMetadata({
-            ...metadata,
+          setMetadata(prev => ({
+            ...prev,
             isConnected: false,
             isConnecting: false,
-          });
+          }));
           wsRef.current = null;
         };
 
         ws.onerror = (error) => {
           console.error('WebSocket error:', error);
-          setMetadata({
-            ...metadata,
+          setMetadata(prev => ({
+            ...prev,
             error: 'WebSocket connection error',
             isConnecting: false,
-          });
+          }));
         };
 
       } catch (err) {
         console.error('Failed to connect to browser stream:', err);
-        setMetadata({
-          ...metadata,
+        setMetadata(prev => ({
+          ...prev,
           error: err instanceof Error ? err.message : 'Connection failed',
           isConnecting: false,
-        });
+        }));
       }
     };
 
@@ -235,11 +238,11 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       }
       
       if (metadata) {
-        setMetadata({
-          ...metadata,
+        setMetadata(prev => ({
+          ...prev,
           isConnected: false,
           error: undefined,
-        });
+        }));
       }
       setLastFrame(null);
     };
@@ -527,11 +530,15 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       setLastFrame(frame.data);
     };
 
+
     // Auto-connect when artifact becomes current version or is first created
     useEffect(() => {
-      if (metadata && !metadata.isConnected && !metadata.isConnecting) {
+      if (metadata && !metadata.isConnected) {
         // Auto-connect when artifact is visible and not already connected
-        connectToBrowserStream();
+        // We check !isConnected only, since initialize sets isConnecting: true
+        if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+          connectToBrowserStream();
+        }
       }
     }, [isCurrentVersion, metadata?.sessionId]);
 
@@ -577,14 +584,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     }, []);
 
     if (!metadata) {
-      return (
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <Loader2 className="size-8 mx-auto mb-2 animate-spin" />
-            <p className="text-sm text-muted-foreground">Initializing browser artifact...</p>
-          </div>
-        </div>
-      );
+      return <BrowserLoadingState />;
     }
 
     // Fullscreen mode when in user control mode
@@ -619,48 +619,11 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           {/* Fullscreen browser canvas */}
           <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
             {metadata.error ? (
-              <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500 font-inter">
-                <div className="text-center">
-                  <MonitorX className="size-8 mx-auto mb-2" />
-                  <p className="text-sm font-medium">Failed to connect to browser</p>
-                  <p className="text-xs opacity-75">Wait a few moments and try again</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={connectToBrowserStream}
-                  >
-                    <RefreshCwIcon className="size-4 mr-1" />
-                    Retry
-                  </Button>
-                </div>
-              </div>
+              <BrowserErrorState onRetry={connectToBrowserStream} />
             ) : !metadata.isConnected ? (
-              <div className="flex items-center justify-center h-full text-white/70">
-                <div className="text-center">
-                  {metadata.isConnecting ? (
-                    <>
-                      <Loader2 className="size-6 sm:size-8 mx-auto mb-2 animate-spin" />
-                      <p className="text-xs sm:text-sm">Connecting to browser...</p>
-                    </>
-                  ) : (
-                    <>
-                      <ClockFading className="size-6 sm:size-8 mx-auto mb-2" />
-                      <p className="text-xs sm:text-sm font-medium">Your session was paused due to inactivity</p>
-                      <p className="text-xs opacity-75">Refresh the connection and try again</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={connectToBrowserStream}
-                      >
-                        <RefreshCwIcon className="size-4 mr-1" />
-                        Retry
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              metadata.isConnecting ? <BrowserLoadingState /> : <BrowserTimeoutState onRetry={connectToBrowserStream} />
+            ) : !lastFrame ? (
+              <BrowserLoadingState />
             ) : (
               <div className="w-full h-full flex items-center justify-center overflow-auto overscroll-contain touch-action:pan-y_pan-x [-webkit-overflow-scrolling:touch]">
                 <div
@@ -694,92 +657,65 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     }
 
     // Render browser canvas content (reusable for both desktop and mobile drawer)
-    const renderBrowserContent = () => (
-      <>
-            {metadata.error ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500 font-inter">
-                <div className="text-center">
-                  <MonitorX className="size-8 mx-auto mb-2" />
-                  <p className="text-sm font-medium">Failed to connect to browser</p>
-                  <p className="text-xs opacity-75">Wait a few moments and try again</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={connectToBrowserStream}
-                  >
-                    <RefreshCwIcon className="size-4 mr-1" />
-                    Retry
-                  </Button>
-                </div>
+    const renderBrowserContent = () => {
+      if (metadata.error) {
+        return <BrowserErrorState onRetry={connectToBrowserStream} />;
+      }
+      
+      if (!metadata.isConnected) {
+        if (metadata.isConnecting) {
+          return <BrowserLoadingState />;
+        } else {
+          return <BrowserTimeoutState onRetry={connectToBrowserStream} />;
+        }
+      }
+      
+      // Connected but no frame yet - keep showing loading state
+      if (metadata.isConnected && !lastFrame) {
+        return <BrowserLoadingState />;
+      }
+      
+      // Connected state with frame - show browser canvas
+      return (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div
+            className="relative w-full"
+            tabIndex={metadata.controlMode === 'user' ? 0 : -1}
+            onKeyDown={metadata.controlMode === 'user' ? handleKeyboardInput : undefined}
+            onKeyUp={metadata.controlMode === 'user' ? handleKeyboardInput : undefined}
+            onClick={() => {
+              if (metadata.controlMode === 'user' && !metadata.isFocused) {
+                setMetadata(prev => ({ ...prev, isFocused: true }));
+              }
+            }}
+          >
+            {metadata.controlMode === 'user' && !metadata.isFocused && (
+              <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-custom-purple/60">
+                <h2 className="text-4xl font-bold">Click to activate browser control</h2>
               </div>
-            ) : !metadata.isConnected ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500">
-                <div className="text-center">
-                  {metadata.isConnecting ? (
-                    <>
-                      <Loader2 className="size-8 mx-auto mb-2 animate-spin" />
-                      <p className="text-sm">Connecting to browser...</p>
-                    </>
-                  ) : (
-                    <>
-                      <ClockFading className="size-8 mx-auto mb-2" />
-                      <p className="text-sm font-medium">Your session was paused due to inactivity</p>
-                      <p className="text-xs opacity-75">Refresh the connection and try again</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={connectToBrowserStream}
-                      >
-                        <RefreshCwIcon className="size-4 mr-1" />
-                        Retry
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div
-                  className="relative w-full"
-                  tabIndex={metadata.controlMode === 'user' ? 0 : -1}
-                  onKeyDown={metadata.controlMode === 'user' ? handleKeyboardInput : undefined}
-                  onKeyUp={metadata.controlMode === 'user' ? handleKeyboardInput : undefined}
-                  onClick={() => {
-                    if (metadata.controlMode === 'user' && !metadata.isFocused) {
-                      setMetadata(prev => ({ ...prev, isFocused: true }));
-                    }
-                  }}
-                >
-                  {metadata.controlMode === 'user' && !metadata.isFocused && (
-                    <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-custom-purple/60">
-                      <h2 className="text-4xl font-bold">Click to activate browser control</h2>
-                    </div>
-                  )}
-                  <canvas
-                    ref={canvasRef}
-                    id="browser-artifact-canvas"
-                    width={1920}
-                    height={1080}
-                    className="size-full object-contain bg-white browser-canvas-regular rounded-lg"
-                    onClick={handleCanvasInteraction}
-                    onMouseMove={handleCanvasInteraction}
-                    onWheel={handleCanvasInteraction}
-                    onTouchStart={handleCanvasInteraction}
-                    onTouchMove={handleCanvasInteraction}
-                    onTouchEnd={handleCanvasInteraction}
-                    onContextMenu={(e) => {
-                  if (metadata.controlMode === 'user') {
-                    e.preventDefault(); // Allow right-click handling
-                  }
-                }}
-              />
-            </div>
+            )}
+            <canvas
+              ref={canvasRef}
+              id="browser-artifact-canvas"
+              width={1920}
+              height={1080}
+              className="size-full object-contain bg-white browser-canvas-regular rounded-lg"
+              onClick={handleCanvasInteraction}
+              onMouseMove={handleCanvasInteraction}
+              onWheel={handleCanvasInteraction}
+              onTouchStart={handleCanvasInteraction}
+              onTouchMove={handleCanvasInteraction}
+              onTouchEnd={handleCanvasInteraction}
+              onContextMenu={(e) => {
+                if (metadata.controlMode === 'user') {
+                  e.preventDefault(); // Allow right-click handling
+                }
+              }}
+            />
           </div>
-        )}
-      </>
-    );
+        </div>
+      );
+    };
 
     // Mobile drawer mode - render as portal to not interfere with chat
     if (isMobile) {
@@ -806,12 +742,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               </SheetHeader>
               
               {/* Connection status indicator */}
-              {metadata.isConnecting && (
-                <div className="flex items-center justify-center py-2 px-2 text-xs bg-muted/30">
-                  <Loader2 className="size-4 mr-2 animate-spin flex-shrink-0" />
-                  <span className="truncate">Connecting to browser...</span>
-                </div>
-              )}
+              {metadata.isConnecting && <BrowserLoadingState />}
               
               {/* Control mode indicator */}
               {metadata.isConnected && (
@@ -841,52 +772,14 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   </Button>
                 </div>
               )}
-
               {/* Browser content with scroll */}
               <div className="flex-1 overflow-y-scroll p-4">
                 {metadata.error ? (
-                  <div className="flex items-center justify-center min-h-[400px] bg-gray-50 text-gray-500 font-inter rounded-lg">
-                    <div className="text-center px-4">
-                      <MonitorX className="size-8 mx-auto mb-2" />
-                      <p className="text-sm font-medium">Failed to connect to browser</p>
-                      <p className="text-xs opacity-75">Wait a few moments and try again</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={connectToBrowserStream}
-                      >
-                        <RefreshCwIcon className="size-4 mr-1" />
-                        Retry
-                      </Button>
-                    </div>
-                  </div>
+                  <BrowserErrorState onRetry={connectToBrowserStream} />
                 ) : !metadata.isConnected ? (
-                  <div className="flex items-center justify-center min-h-[400px] bg-gray-50 text-gray-500 rounded-lg">
-                    <div className="text-center px-4">
-                      {metadata.isConnecting ? (
-                        <>
-                          <Loader2 className="size-8 mx-auto mb-2 animate-spin" />
-                          <p className="text-sm">Connecting to browser...</p>
-                        </>
-                      ) : (
-                        <>
-                          <ClockFading className="size-8 mx-auto mb-2" />
-                          <p className="text-sm font-medium">Your session was paused due to inactivity</p>
-                          <p className="text-xs opacity-75">Refresh the connection and try again</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={connectToBrowserStream}
-                          >
-                            <RefreshCwIcon className="size-4 mr-1" />
-                            Retry
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  metadata.isConnecting ? <BrowserLoadingState /> : <BrowserTimeoutState onRetry={connectToBrowserStream} />
+                ) : !lastFrame ? (
+                  <BrowserLoadingState />
                 ) : (
                   <div className="flex items-center justify-center">
                     <div
@@ -933,12 +826,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     return (
       <div className="h-full flex flex-col">
         {/* Connection status indicator */}
-        {metadata.isConnecting && (
-          <div className="flex items-center justify-center py-2 text-sm text-muted-foreground bg-muted/30">
-            <Loader2 className="size-4 mr-2 animate-spin" />
-            Connecting to browser...
-          </div>
-        )}
+        {metadata.isConnecting && <BrowserLoadingState />}
          
         {/* Control mode indicator */}
         {metadata.isConnected && (
