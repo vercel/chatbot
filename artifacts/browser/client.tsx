@@ -838,7 +838,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   </Button>
                 </div>
               )}
-              
               {/* Browser content with scroll */}
               <div className="flex-1 overflow-y-scroll p-4">
                 {metadata.error ? (
