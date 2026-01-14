@@ -917,7 +917,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               </Button>
             </div>
           </div>
-        )}       
+        )}
         {/* Main browser display area */}
         <div className="flex-1 relative m-4">
           {renderBrowserContent()}
