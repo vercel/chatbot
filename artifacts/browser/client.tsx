@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { AgentStatusIndicator } from '@/components/agent-status-indicator';
+import { BrowserLoadingState, BrowserErrorState, BrowserTimeoutState } from './browser-states';
 
 interface BrowserFrame {
   type: 'frame';
@@ -529,73 +530,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       setLastFrame(frame.data);
     };
 
-    // Loading state component (matches Figma design)
-    const renderLoadingState = () => (
-      <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
-        <div className="flex flex-col w-full max-w-4xl">
-          {/* Browser chrome header */}
-          <div className="bg-[#ececec] h-[30px] rounded-tl-lg rounded-tr-lg" />
-          
-          {/* Main content area */}
-          <div className="flex-1 bg-[rgba(235,235,235,0.2)] flex flex-col items-center justify-center py-20">
-            {/* Spinning icon with circular background */}
-            <div className="relative mb-2">
-              <div className="w-[53px] h-[53px] rounded-full bg-[#e5e5e5] flex items-center justify-center">
-                <RefreshCwIcon className="size-8 animate-spin" />
-              </div>
-            </div>
-            
-            {/* Text content */}
-            <p className="text-sm font-medium font-source-serif">
-              Setting up the browser
-            </p>
-            <p className="text-xs opacity-75 font-inter">
-              Please wait a few moments
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-
-    // Error state component
-    const renderErrorState = () => (
-      <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
-        <div className="text-center">
-          <MonitorX className="size-8 mx-auto mb-2" />
-          <p className="text-sm font-medium font-source-serif">Failed to connect to browser</p>
-          <p className="text-xs opacity-75 font-inter">Wait a few moments and try again</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mt-2"
-            onClick={connectToBrowserStream}
-          >
-            <RefreshCwIcon className="size-4 mr-1" />
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-
-    // Timeout/Paused state component
-    const renderTimeOutState = () => (
-      <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
-        <div className="text-center">
-          <ClockFading className="size-8 mx-auto mb-2" />
-          <p className="text-xs sm:text-sm font-medium font-source-serif">Your session was paused due to inactivity</p>
-          <p className="text-xs opacity-75 font-inter">Refresh the connection and try again</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={connectToBrowserStream}
-          >
-            <RefreshCwIcon className="size-4 mr-1" />
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
 
     // Auto-connect when artifact becomes current version or is first created
     useEffect(() => {
@@ -650,7 +584,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     }, []);
 
     if (!metadata) {
-      return renderLoadingState();
+      return <BrowserLoadingState />;
     }
 
     // Fullscreen mode when in user control mode
@@ -685,11 +619,11 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           {/* Fullscreen browser canvas */}
           <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
             {metadata.error ? (
-              renderErrorState()
+              <BrowserErrorState onRetry={connectToBrowserStream} />
             ) : !metadata.isConnected ? (
-              metadata.isConnecting ? renderLoadingState() : renderTimeOutState()
+              metadata.isConnecting ? <BrowserLoadingState /> : <BrowserTimeoutState onRetry={connectToBrowserStream} />
             ) : !lastFrame ? (
-              renderLoadingState()
+              <BrowserLoadingState />
             ) : (
               <div className="w-full h-full flex items-center justify-center overflow-auto overscroll-contain touch-action:pan-y_pan-x [-webkit-overflow-scrolling:touch]">
                 <div
@@ -725,20 +659,20 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // Render browser canvas content (reusable for both desktop and mobile drawer)
     const renderBrowserContent = () => {
       if (metadata.error) {
-        return renderErrorState();
+        return <BrowserErrorState onRetry={connectToBrowserStream} />;
       }
       
       if (!metadata.isConnected) {
         if (metadata.isConnecting) {
-          return renderLoadingState();
+          return <BrowserLoadingState />;
         } else {
-          return renderTimeOutState();
+          return <BrowserTimeoutState onRetry={connectToBrowserStream} />;
         }
       }
       
       // Connected but no frame yet - keep showing loading state
       if (metadata.isConnected && !lastFrame) {
-        return renderLoadingState();
+        return <BrowserLoadingState />;
       }
       
       // Connected state with frame - show browser canvas
@@ -808,7 +742,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               </SheetHeader>
               
               {/* Connection status indicator */}
-              {metadata.isConnecting && renderLoadingState()}
+              {metadata.isConnecting && <BrowserLoadingState />}
               
               {/* Control mode indicator */}
               {metadata.isConnected && (
@@ -841,11 +775,11 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               {/* Browser content with scroll */}
               <div className="flex-1 overflow-y-scroll p-4">
                 {metadata.error ? (
-                  renderErrorState()
+                  <BrowserErrorState onRetry={connectToBrowserStream} />
                 ) : !metadata.isConnected ? (
-                  metadata.isConnecting ? renderLoadingState() : renderTimeOutState()
+                  metadata.isConnecting ? <BrowserLoadingState /> : <BrowserTimeoutState onRetry={connectToBrowserStream} />
                 ) : !lastFrame ? (
-                  renderLoadingState()
+                  <BrowserLoadingState />
                 ) : (
                   <div className="flex items-center justify-center">
                     <div
@@ -892,7 +826,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     return (
       <div className="h-full flex flex-col">
         {/* Connection status indicator */}
-        {metadata.isConnecting && renderLoadingState()}
+        {metadata.isConnecting && <BrowserLoadingState />}
          
         {/* Control mode indicator */}
         {metadata.isConnected && (
