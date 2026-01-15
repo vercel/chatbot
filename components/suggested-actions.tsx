@@ -20,24 +20,24 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'Help Rosa Flores',
+      title: 'Help Elodi Thomas apply for WIC',
       label: 'ruhealth.org/appointments/apply-4-wic-form',
-      action: 'Help Rosa Flores, date of birth 1988-07-13 apply for WIC at https://www.ruhealth.org/appointments/apply-4-wic-form#. She is pregnant and has a child.',
+      action: 'Help participant ID: 339620 apply for WIC at https://www.ruhealth.org/appointments/apply-4-wic-form#.',
     },
     {
-      title: 'Help Carolina Delgado',
+      title: 'Help Celeste Thomas apply for IHSS',
       label: 'riversideihss.org/Home/IHSSApply',
-      action: 'Help Carolina Delgado, date of birth 1958-03-25 apply for IHSS at https://riversideihss.org/Home/IHSSApply. She has cancer and needs her daughter to help take care of herself.',
+      action: 'Help participant ID: 339619 apply for IHSS at https://riversideihss.org/Home/IHSSApply',
     },
     {
-      title: 'Help Daniela Muñoz',
-      label: 'ruhealth.org/appointments/apply-4-wic-form',
-      action: 'Help Daniela Muñoz, date of birth 2004-03-31 apply WIC at https://www.ruhealth.org/appointments/apply-4-wic-form#. She is pregnant. ',
+      title: 'Help Josephine Thomas apply for IHSS',
+      label: 'riversideihss.org/Home/IHSSApply',
+      action: 'Help participant ID: 339622 apply for IHSS at https://riversideihss.org/Home/IHSSApply',
     },
     {
-      title: 'Help Ana Hernández',
-      label: 'ruhealth.org/appointments/apply-4-wic-form',
-      action: 'Help Ana Hernández, date of birth 1982-04-08 apply for WIC since she is pregnant. Application: https://www.ruhealth.org/appointments/apply-4-wic-form#',
+      title: 'Help Marceline Thomas apply for IHSS',
+      label: 'riversideihss.org/Home/IHSSApply',
+      action: 'Help participant ID: 339624 apply for IHSS at https://riversideihss.org/Home/IHSSApply',
     },
   ];
 
