@@ -586,9 +586,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       window.addEventListener('switch-browser-control', handleSwitchControl as EventListener);
       
       return () => {
-    }, []);
+        window.removeEventListener('switch-browser-control', handleSwitchControl as EventListener);
       };
-    }, [metadata?.sessionId, wsRef.current]);
+    }, [switchControlMode]);
 
     useEffect(() => {
       return () => {

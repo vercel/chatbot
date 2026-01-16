@@ -8,16 +8,13 @@ import {
   ConfirmationRejected,
   ConfirmationActions,
   ConfirmationAction,
+  ConfirmationState,
+  ApprovalState,
 } from './confirmation';
-
-interface ApprovalState {
-  id: string;
-  approved: boolean | undefined;
-}
 
 interface UserActionConfirmationProps {
   approval?: ApprovalState;
-  state?: 'approval-requested' | 'approval-responded' | 'output-denied';
+  state?: ConfirmationState;
   requestTitle?: string;
   requestMessage: string;
   acceptedMessage?: string;
@@ -37,7 +34,7 @@ export function UserActionConfirmation({
   onReject,
 }: UserActionConfirmationProps) {
   return (
-    <Confirmation approval={approval} state={state as any}>
+    <Confirmation approval={approval} state={state}>
       <ConfirmationRequest>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-px">

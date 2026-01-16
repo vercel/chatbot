@@ -5,12 +5,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface ApprovalState {
+export interface ApprovalState {
   id: string;
   approved?: boolean;
 }
 
-type ConfirmationState = 'approval-requested' | 'approval-responded' | 'output-denied' | 'output-available';
+export type ConfirmationState = 'approval-requested' | 'approval-responded' | 'output-denied' | 'output-available';
 
 type ConfirmationContextType = {
   approval?: ApprovalState;

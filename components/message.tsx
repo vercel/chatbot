@@ -209,7 +209,7 @@ const PurePreviewMessage = ({
                       {message.role === 'assistant' && requiresUserAction && !isReadonly && (
                         <UserActionConfirmation
                           approval={{ id: `action-${message.id}`, approved: undefined }}
-                          state={'approval-requested' as any}
+                          state="approval-requested"
                           requestMessage={
                             textContent.includes('captcha')
                               ? 'Complete the CAPTCHA and submit the application.'

@@ -8,7 +8,7 @@ test('UserActionConfirmation renders with proper content in approval-requested s
   const { getByText } = render(
     <UserActionConfirmation
       approval={{ id: 'test-1', approved: undefined }}
-      state={'approval-requested' as any}
+      state="approval-requested"
       requestMessage="Complete the CAPTCHA and submit the application."
       onApprove={mockOnApprove}
       onReject={mockOnReject}
@@ -27,7 +27,7 @@ test('UserActionConfirmation calls onApprove when Take control button is clicked
   const { getByRole } = render(
     <UserActionConfirmation
       approval={{ id: 'test-2', approved: undefined }}
-      state={'approval-requested' as any}
+      state="approval-requested"
       requestMessage="Complete the CAPTCHA and submit the application."
       onApprove={mockOnApprove}
       onReject={mockOnReject}
@@ -47,7 +47,7 @@ test('UserActionConfirmation calls onReject when Reject button is clicked', asyn
   const { getByRole } = render(
     <UserActionConfirmation
       approval={{ id: 'test-3', approved: undefined }}
-      state={'approval-requested' as any}
+      state="approval-requested"
       requestMessage="Complete the CAPTCHA and submit the application."
       onApprove={mockOnApprove}
       onReject={mockOnReject}
@@ -67,7 +67,7 @@ test('UserActionConfirmation supports custom messages', async () => {
   const { getByText } = render(
     <UserActionConfirmation
       approval={{ id: 'test-4', approved: undefined }}
-      state={'approval-requested' as any}
+      state="approval-requested"
       requestTitle="Custom Title"
       requestMessage="Custom action required message."
       onApprove={mockOnApprove}
@@ -84,7 +84,7 @@ test('UserActionConfirmation does not show Reject button when onReject is not pr
   const { getByRole, getByText } = render(
     <UserActionConfirmation
       approval={{ id: 'test-5', approved: undefined }}
-      state={'approval-requested' as any}
+      state="approval-requested"
       requestMessage="Complete the CAPTCHA and submit the application."
       onApprove={mockOnApprove}
     />
@@ -104,7 +104,7 @@ test('UserActionConfirmation shows Reject button when onReject is provided', asy
   const { getByRole } = render(
     <UserActionConfirmation
       approval={{ id: 'test-6', approved: undefined }}
-      state={'approval-requested' as any}
+      state="approval-requested"
       requestMessage="Complete the CAPTCHA and submit the application."
       onApprove={mockOnApprove}
       onReject={mockOnReject}
