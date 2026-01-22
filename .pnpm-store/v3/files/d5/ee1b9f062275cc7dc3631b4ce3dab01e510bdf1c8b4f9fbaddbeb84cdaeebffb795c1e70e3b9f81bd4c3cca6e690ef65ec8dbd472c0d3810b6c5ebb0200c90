@@ -1,0 +1,157 @@
+{
+  "name": "@vercel/analytics",
+  "version": "1.5.0",
+  "description": "Gain real-time traffic insights with Vercel Web Analytics",
+  "keywords": [
+    "analytics",
+    "vercel"
+  ],
+  "repository": {
+    "url": "github:vercel/analytics",
+    "directory": "packages/web"
+  },
+  "license": "MPL-2.0",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "browser": "./dist/index.mjs",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./astro": {
+      "import": "./dist/astro/component.ts"
+    },
+    "./next": {
+      "browser": "./dist/next/index.mjs",
+      "import": "./dist/next/index.mjs",
+      "require": "./dist/next/index.js"
+    },
+    "./nuxt": {
+      "browser": "./dist/nuxt/index.mjs",
+      "import": "./dist/nuxt/index.mjs",
+      "require": "./dist/nuxt/index.js"
+    },
+    "./react": {
+      "browser": "./dist/react/index.mjs",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js"
+    },
+    "./remix": {
+      "browser": "./dist/remix/index.mjs",
+      "import": "./dist/remix/index.mjs",
+      "require": "./dist/remix/index.js"
+    },
+    "./server": {
+      "node": "./dist/server/index.mjs",
+      "edge-light": "./dist/server/index.mjs",
+      "import": "./dist/server/index.mjs",
+      "require": "./dist/server/index.js",
+      "default": "./dist/server/index.js"
+    },
+    "./sveltekit": {
+      "svelte": "./dist/sveltekit/index.mjs",
+      "types": "./dist/sveltekit/index.d.ts"
+    },
+    "./vue": {
+      "browser": "./dist/vue/index.mjs",
+      "import": "./dist/vue/index.mjs",
+      "require": "./dist/vue/index.js"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "next": [
+        "dist/next/index.d.ts"
+      ],
+      "nuxt": [
+        "dist/nuxt/index.d.ts"
+      ],
+      "react": [
+        "dist/react/index.d.ts"
+      ],
+      "remix": [
+        "dist/remix/index.d.ts"
+      ],
+      "server": [
+        "dist/server/index.d.ts"
+      ],
+      "sveltekit": [
+        "dist/sveltekit/index.d.ts"
+      ],
+      "vue": [
+        "dist/vue/index.d.ts"
+      ]
+    }
+  },
+  "eslintConfig": {
+    "extends": [
+      "@vercel/eslint-config"
+    ],
+    "rules": {
+      "tsdoc/syntax": "off"
+    },
+    "ignorePatterns": [
+      "jest.setup.ts"
+    ]
+  },
+  "devDependencies": {
+    "@swc/core": "^1.9.2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@vercel/eslint-config": "0.0.0",
+    "server-only": "^0.0.1",
+    "svelte": "^5.1.10",
+    "tsup": "8.3.5",
+    "vitest": "^2.1.5",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5"
+  },
+  "peerDependencies": {
+    "@remix-run/react": "^2",
+    "@sveltejs/kit": "^1 || ^2",
+    "next": ">= 13",
+    "react": "^18 || ^19 || ^19.0.0-rc",
+    "svelte": ">= 4",
+    "vue": "^3",
+    "vue-router": "^4"
+  },
+  "peerDependenciesMeta": {
+    "@remix-run/react": {
+      "optional": true
+    },
+    "@sveltejs/kit": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "svelte": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "vue-router": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tsup && pnpm copy-astro",
+    "copy-astro": "cp -R src/astro dist/",
+    "dev": "pnpm copy-astro && tsup --watch",
+    "lint": "eslint .",
+    "lint-fix": "eslint . --fix",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
+  }
+}
