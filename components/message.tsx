@@ -65,6 +65,7 @@ const PurePreviewMessage = ({
   setMessages,
   regenerate,
   isReadonly,
+  isArtifactVisible,
   requiresScrollPadding,
 }: {
   chatId: string;
@@ -74,6 +75,7 @@ const PurePreviewMessage = ({
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
   regenerate: UseChatHelpers<ChatMessage>['regenerate'];
   isReadonly: boolean;
+  isArtifactVisible: boolean;
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -219,7 +221,7 @@ const PurePreviewMessage = ({
                         </div>
                       </div>
                       
-                      {message.role === 'assistant' && requiresUserAction && !isReadonly && !isLoading && !dismissedActionConfirmations.has(message.id) && (
+                      {message.role === 'assistant' && requiresUserAction && !isReadonly && !isLoading && !dismissedActionConfirmations.has(message.id) && isArtifactVisible && (
                         <UserActionConfirmation
                           approval={{ id: `action-${message.id}`, approved: undefined }}
                           state="approval-requested"
@@ -235,10 +237,10 @@ const PurePreviewMessage = ({
                             });
                             window.dispatchEvent(event);
                           }}
-                          onReject={(approvalId) => {
-                            // Dismiss the confirmation by adding message.id to the dismissed set
-                            setDismissedActionConfirmations((prev) => new Set([...prev, message.id]));
-                          }}
+                          // onReject={(approvalId) => {
+                          //   // Dismiss the confirmation by adding message.id to the dismissed set
+                          //   setDismissedActionConfirmations((prev) => new Set([...prev, message.id]));
+                          // }}
                         />
                       )}
                     </div>
@@ -518,6 +520,7 @@ export const PreviewMessage = memo(
     if (prevProps.message.id !== nextProps.message.id) return false;
     if (prevProps.requiresScrollPadding !== nextProps.requiresScrollPadding)
       return false;
+    if (prevProps.isArtifactVisible !== nextProps.isArtifactVisible) return false;
     if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
     if (!equal(prevProps.vote, nextProps.vote)) return false;
 
