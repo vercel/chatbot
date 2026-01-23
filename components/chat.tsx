@@ -154,10 +154,11 @@ export function Chat({
     }
   }, [initialQuery, sendMessage, hasAppendedQuery, id]);
 
-  const { data: votes } = useSWR<Array<Vote>>(
-    messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
-    fetcher,
-  );
+  // const { data: votes } = useSWR<Array<Vote>>(
+  //   messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
+  //   fetcher,
+  // );
+  const votes = undefined;
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);

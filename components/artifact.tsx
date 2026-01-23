@@ -91,16 +91,19 @@ function PureArtifact({
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
   const { data: session } = useSession();
 
-  const {
-    data: documents,
-    isLoading: isDocumentsFetching,
-    mutate: mutateDocuments,
-  } = useSWR<Array<Document>>(
-    artifact.documentId !== 'init' && artifact.status !== 'streaming'
-      ? `/api/document?id=${artifact.documentId}`
-      : null,
-    fetcher,
-  );
+  // const {
+  //   data: documents,
+  //   isLoading: isDocumentsFetching,
+  //   mutate: mutateDocuments,
+  // } = useSWR<Array<Document>>(
+  //   artifact.documentId !== 'init' && artifact.status !== 'streaming'
+  //     ? `/api/document?id=${artifact.documentId}`
+  //     : null,
+  //   fetcher,
+  // );
+  const documents: Array<Document> = [];
+  const isDocumentsFetching = false;
+  const mutateDocuments = () => {};
 
   const [mode, setMode] = useState<'edit' | 'diff'>('edit');
   const [document, setDocument] = useState<Document | null>(null);
@@ -145,42 +148,42 @@ function PureArtifact({
     (updatedContent: string) => {
       if (!artifact) return;
 
-      mutate<Array<Document>>(
-        `/api/document?id=${artifact.documentId}`,
-        async (currentDocuments) => {
-          if (!currentDocuments) return undefined;
+      // mutate<Array<Document>>(
+      //   `/api/document?id=${artifact.documentId}`,
+      //   async (currentDocuments) => {
+      //     if (!currentDocuments) return undefined;
 
-          const currentDocument = currentDocuments.at(-1);
+      //     const currentDocument = currentDocuments.at(-1);
 
-          if (!currentDocument || !currentDocument.content) {
-            setIsContentDirty(false);
-            return currentDocuments;
-          }
+      //     if (!currentDocument || !currentDocument.content) {
+      //       setIsContentDirty(false);
+      //       return currentDocuments;
+      //     }
 
-          if (currentDocument.content !== updatedContent) {
-            await fetch(`/api/document?id=${artifact.documentId}`, {
-              method: 'POST',
-              body: JSON.stringify({
-                title: artifact.title,
-                content: updatedContent,
-                kind: artifact.kind,
-              }),
-            });
+      //     if (currentDocument.content !== updatedContent) {
+      //       await fetch(`/api/document?id=${artifact.documentId}`, {
+      //         method: 'POST',
+      //         body: JSON.stringify({
+      //           title: artifact.title,
+      //           content: updatedContent,
+      //           kind: artifact.kind,
+      //         }),
+      //       });
 
-            setIsContentDirty(false);
+      //       setIsContentDirty(false);
 
-            const newDocument = {
-              ...currentDocument,
-              content: updatedContent,
-              createdAt: new Date(),
-            };
+      //       const newDocument = {
+      //         ...currentDocument,
+      //         content: updatedContent,
+      //         createdAt: new Date(),
+      //       };
 
-            return [...currentDocuments, newDocument];
-          }
-          return currentDocuments;
-        },
-        { revalidate: false },
-      );
+      //       return [...currentDocuments, newDocument];
+      //     }
+      //     return currentDocuments;
+      //   },
+      //   { revalidate: false },
+      // );
     },
     [artifact, mutate],
   );
