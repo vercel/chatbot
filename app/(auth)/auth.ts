@@ -105,15 +105,16 @@ export const {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Handle OAuth sign-in
-      if (account?.provider === 'google') {
-        await upsertOAuthUser({
-          email: user.email!,
-          name: user.name,
-          image: user.image,
-        });
-      }
-      if (account?.provider === 'microsoft-entra-id') {
+      // Handle OAuth sign-in with domain validation
+      if (account?.provider === 'google' || account?.provider === 'microsoft-entra-id') {
+        const email = user.email?.toLowerCase() || '';
+        const allowedDomains = ['@navapbc.com', '@rivco.org', '@navapbc.onmicrosoft.com'];
+        const isAllowedDomain = allowedDomains.some(domain => email.endsWith(domain));
+
+        if (!isAllowedDomain) {
+          return false;
+        }
+
         await upsertOAuthUser({
           email: user.email!,
           name: user.name,

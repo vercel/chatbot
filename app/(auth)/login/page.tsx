@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { toast } from '@/components/toast';
 import { signIn } from 'next-auth/react';
 import { MicrosoftLogo } from '@/components/icons/MicrosoftLogo';
@@ -9,7 +9,20 @@ import { GoogleLogo } from '@/components/icons/GoogleLogo';
 
 export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loadingMethod, setLoadingMethod] = useState<'microsoft' | 'google' | null>(null);
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      toast({
+        type: 'error',
+        description: 'Access denied',
+      });
+      // Clear the error from URL without refresh
+      router.replace('/login', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleGoogleLogin = async () => {
     setLoadingMethod('google');
