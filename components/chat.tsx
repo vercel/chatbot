@@ -257,8 +257,12 @@ export function Chat({
     // If we have new messages and the last message is from user, reset dismissed state
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === 'user' && browserArtifactDismissed) {
-        setBrowserArtifactDismissed(false);
+      if (lastMessage.role === 'user') {
+        if (browserArtifactDismissed) {
+          setBrowserArtifactDismissed(false);
+        }
+        // Dispatch event to dismiss any UserActionConfirmation components
+        window.dispatchEvent(new CustomEvent('new-user-message'));
       }
     }
   }, [messages, browserArtifactDismissed]);

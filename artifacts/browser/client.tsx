@@ -574,6 +574,22 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     }, [metadata?.isFullscreen, metadata?.controlMode]);
 
     // Cleanup on unmount - only disconnect stream, don't kill Chrome
+    // Listen for control mode switch events from confirmation components
+    useEffect(() => {
+      const handleSwitchControl = (event: CustomEvent) => {
+        const { mode } = event.detail;
+        if (mode === 'user' || mode === 'agent') {
+          switchControlMode(mode);
+        }
+      };
+
+      window.addEventListener('switch-browser-control', handleSwitchControl as EventListener);
+      
+      return () => {
+        window.removeEventListener('switch-browser-control', handleSwitchControl as EventListener);
+      };
+    }, [switchControlMode]);
+
     useEffect(() => {
       return () => {
         if (wsRef.current) {

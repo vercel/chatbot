@@ -28,6 +28,7 @@ function PureMessages({
   setMessages,
   regenerate,
   isReadonly,
+  isArtifactVisible,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -64,6 +65,7 @@ function PureMessages({
           setMessages={setMessages}
           regenerate={regenerate}
           isReadonly={isReadonly}
+          isArtifactVisible={isArtifactVisible}
           requiresScrollPadding={
             hasSentMessage && index === messages.length - 1
           }

@@ -28,6 +28,7 @@ import { ChevronDown } from 'lucide-react';
 import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
+import { UserActionConfirmation } from './ai-elements';
 
 // Responsive min-height calculation that accounts for side-chat-header height
 // This ensures the last message has enough space to scroll properly with the header
@@ -64,6 +65,7 @@ const PurePreviewMessage = ({
   setMessages,
   regenerate,
   isReadonly,
+  isArtifactVisible,
   requiresScrollPadding,
 }: {
   chatId: string;
@@ -73,15 +75,29 @@ const PurePreviewMessage = ({
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
   regenerate: UseChatHelpers<ChatMessage>['regenerate'];
   isReadonly: boolean;
+  isArtifactVisible: boolean;
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const [dismissedActionConfirmations, setDismissedActionConfirmations] = useState<Set<string>>(new Set());
 
   const attachmentsFromMessage = message.parts.filter(
     (part) => part.type === 'file',
   );
 
   useDataStream();
+
+  // Dismiss all action confirmations when user sends a new message
+  useEffect(() => {
+    const handleNewUserMessage = () => {
+      setDismissedActionConfirmations((prev) => new Set([...prev, message.id]));
+    };
+
+    window.addEventListener('new-user-message', handleNewUserMessage);
+    return () => {
+      window.removeEventListener('new-user-message', handleNewUserMessage);
+    };
+  }, [message.id]);
 
   return (
     <AnimatePresence>
@@ -162,37 +178,71 @@ const PurePreviewMessage = ({
                     );
                   }
 
-                  return (
-                    <div key={key} className="flex flex-row gap-2 items-start">
-                      {/* {message.role === 'user' && !isReadonly && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              data-testid="message-edit-button"
-                              variant="ghost"
-                              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
-                              onClick={() => {
-                                setMode('edit');
-                              }}
-                            >
-                              <PencilEditIcon />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit message</TooltipContent>
-                        </Tooltip>
-                      )} */}
+                  const textContent = part.text.toLowerCase();
+                  const requiresUserAction = 
+                    textContent.includes('captcha') ||
+                    textContent.includes('action required') ||
+                    textContent.includes('take control') ||
+                    textContent.includes('user intervention') ||
+                    textContent.includes('missing information') ||
+                    textContent.includes('complete the application');
 
-                      <div
-                        data-testid="message-content"
-                        className={cn('flex flex-col gap-4', {
-                          'bg-[#EFD9E9] dark:bg-slate-800 text-black dark:text-slate-100 px-[18px] py-[18px] rounded-xl text-xs leading-[18px] font-inter':
-                            message.role === 'user',
-                          'assistant-message-bubble font-source-serif':
-                            message.role === 'assistant',
-                        })}
-                      >
-                        <Markdown>{sanitizeText(part.text)}</Markdown>
+                  return (
+                    <div key={key} className="flex flex-col gap-3">
+                      <div className="flex flex-row gap-2 items-start">
+                        {/* {message.role === 'user' && !isReadonly && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                data-testid="message-edit-button"
+                                variant="ghost"
+                                className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+                                onClick={() => {
+                                  setMode('edit');
+                                }}
+                              >
+                                <PencilEditIcon />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit message</TooltipContent>
+                          </Tooltip>
+                        )} */}
+
+                        <div
+                          data-testid="message-content"
+                          className={cn('flex flex-col gap-4', {
+                            'bg-[#EFD9E9] dark:bg-slate-800 text-black dark:text-slate-100 px-[18px] py-[18px] rounded-xl text-xs leading-[18px] font-inter':
+                              message.role === 'user',
+                            'assistant-message-bubble font-source-serif':
+                              message.role === 'assistant',
+                          })}
+                        >
+                          <Markdown>{sanitizeText(part.text)}</Markdown>
+                        </div>
                       </div>
+                      
+                      {message.role === 'assistant' && requiresUserAction && !isReadonly && !isLoading && !dismissedActionConfirmations.has(message.id) && isArtifactVisible && (
+                        <UserActionConfirmation
+                          approval={{ id: `action-${message.id}`, approved: undefined }}
+                          state="approval-requested"
+                          requestMessage={
+                            textContent.includes('captcha')
+                              ? 'Complete the CAPTCHA and submit the application.'
+                              : 'Manual action required to proceed.'
+                          }
+                          onApprove={(approvalId) => {
+                            // Trigger browser control switch to user mode
+                            const event = new CustomEvent('switch-browser-control', { 
+                              detail: { mode: 'user' } 
+                            });
+                            window.dispatchEvent(event);
+                          }}
+                          // onReject={(approvalId) => {
+                          //   // Dismiss the confirmation by adding message.id to the dismissed set
+                          //   setDismissedActionConfirmations((prev) => new Set([...prev, message.id]));
+                          // }}
+                        />
+                      )}
                     </div>
                   );
                 }
@@ -470,6 +520,7 @@ export const PreviewMessage = memo(
     if (prevProps.message.id !== nextProps.message.id) return false;
     if (prevProps.requiresScrollPadding !== nextProps.requiresScrollPadding)
       return false;
+    if (prevProps.isArtifactVisible !== nextProps.isArtifactVisible) return false;
     if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
     if (!equal(prevProps.vote, nextProps.vote)) return false;
 
