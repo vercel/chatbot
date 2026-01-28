@@ -16,7 +16,7 @@ import {
 import { isTestEnvironment } from '../constants';
 
 // Google model for web automation - used directly with streamText when USE_AI_SDK_AGENT=true
-export const webAutomationModel = google('gemini-2.0-flash-exp');
+export const webAutomationModel = google('gemini-3-pro-preview');
 
 export const myProvider = isTestEnvironment
   ? customProvider({
