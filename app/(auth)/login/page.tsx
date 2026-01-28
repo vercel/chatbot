@@ -27,12 +27,16 @@ function ErrorHandler() {
 }
 
 function LoginContent() {
+  const searchParams = useSearchParams();
   const [loadingMethod, setLoadingMethod] = useState<'microsoft' | 'google' | null>(null);
+
+  // Use callbackUrl from URL params, default to /home
+  const callbackUrl = searchParams.get('callbackUrl') || '/home';
 
   const handleGoogleLogin = async () => {
     setLoadingMethod('google');
     try {
-      await signIn('google', { callbackUrl: '/home' });
+      await signIn('google', { callbackUrl });
     } catch (error) {
       toast({
         type: 'error',
@@ -45,7 +49,7 @@ function LoginContent() {
   const handleMicrosoftLogin = async () => {
     setLoadingMethod('microsoft');
     try {
-      await signIn('microsoft-entra-id', { callbackUrl: '/home' });
+      await signIn('microsoft-entra-id', { callbackUrl });
     } catch (error) {
       toast({
         type: 'error',
@@ -105,11 +109,9 @@ function LoginContent() {
 
 export default function Page() {
   return (
-    <>
-      <Suspense fallback={null}>
-        <ErrorHandler />
-      </Suspense>
+    <Suspense fallback={null}>
+      <ErrorHandler />
       <LoginContent />
-    </>
+    </Suspense>
   );
 }
