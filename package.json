@@ -20,6 +20,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.31",
     "@ai-sdk/gateway": "^3.0.24",
     "@ai-sdk/google": "^3.0.14",
     "@ai-sdk/openai": "^3.0.20",
