@@ -16,12 +16,12 @@ export default function LandingPage() {
         <div className="relative bg-chat-background rounded-[25px] mb-6 sm:mb-8 overflow-hidden">
           <div className="flex flex-col md:flex-row md:justify-between md:min-h-[351px]">
             {/* Image Container - On top for mobile, right side for desktop */}
-            <div className="order-1 md:order-2 w-full md:w-auto md:shrink-0 md:self-end">
-              <div className="relative h-[200px] sm:h-[250px] md:h-[337px] w-full md:w-[350px] lg:w-[439px]">
-                <div className="absolute inset-0 mix-blend-normal overflow-hidden pointer-events-none opacity-80 brightness-100 contrast-110 dark:opacity-60 dark:brightness-75 dark:contrast-120">
+            <div className="order-1 md:order-2 w-full md:w-auto md:shrink-0 md:self-stretch">
+              <div className="relative h-[200px] sm:h-[250px] md:h-full w-full md:w-[350px] lg:w-[439px]">
+                <div className="absolute inset-0 bg-chat-background overflow-hidden pointer-events-none">
                   <Image
                     alt=""
-                    className="absolute size-full object-cover top-4 md:top-0 md:left-[-45%] md:w-[136.47%]"
+                    className="absolute size-full object-cover top-4 md:top-0 md:left-[-45%] md:w-[136.47%] opacity-80 brightness-100 contrast-110 dark:opacity-60 dark:brightness-75 dark:contrast-120"
                     src={imgImage2}
                     fill
                     style={{ objectFit: 'cover' }}
