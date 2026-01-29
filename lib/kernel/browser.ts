@@ -25,7 +25,8 @@ const activeBrowsers = globalForKernel.kernelActiveBrowsers;
 const pendingCreations = globalForKernel.kernelPendingCreations;
 
 export async function createKernelBrowser(
-  sessionId: string
+  sessionId: string,
+  options?: { isMobile?: boolean }
 ): Promise<KernelBrowser> {
   // Check if browser already exists for this session
   const existing = activeBrowsers.get(sessionId);
@@ -46,9 +47,14 @@ export async function createKernelBrowser(
   // Create a promise and store it to prevent duplicate creations
   const creationPromise = (async () => {
     try {
+      const viewport = options?.isMobile
+        ? { width: 1024, height: 768 }
+        : { width: 1920, height: 1080 };
+
       const browser = (await kernel.browsers.create({
-        viewport: { width: 1920, height: 1080 },
+        viewport,
         timeout_seconds: 300, // 5 minutes
+        kiosk_mode: true, // Hide URL bar, tabs, and browser chrome in live view
       })) as KernelBrowser;
 
       console.log(`[Kernel] Browser created: ${browser.session_id}`);

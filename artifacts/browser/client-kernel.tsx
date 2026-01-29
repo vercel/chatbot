@@ -2,11 +2,17 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { MousePointerClick, RefreshCw } from 'lucide-react';
+import { MousePointerClick, RefreshCw, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentStatusIndicator } from '@/components/agent-status-indicator';
 import { BrowserLoadingState, BrowserErrorState } from './browser-states';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import type { ChatStatus } from '@/components/create-artifact';
 
 interface KernelBrowserClientProps {
@@ -34,6 +40,7 @@ export function KernelBrowserClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isMobile = useIsMobile();
 
   // Use refs to avoid dependency changes triggering re-initialization
@@ -56,7 +63,7 @@ export function KernelBrowserClient({
       const response = await fetch('/api/kernel-browser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', sessionId }),
+        body: JSON.stringify({ action: 'create', sessionId, isMobile }),
       });
 
       if (!response.ok) {
@@ -230,20 +237,104 @@ export function KernelBrowserClient({
         {/* Fullscreen browser iframe */}
         <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
           <div className="w-full h-full flex items-center justify-center">
-            <iframe
-              key={liveViewUrl} // Stable key prevents unnecessary remounts
-              src={iframeUrl || undefined}
-              className="w-full h-full max-w-[1920px] max-h-[1080px] border-0 bg-white rounded-lg shadow-2xl"
-              allow="clipboard-read; clipboard-write"
-              title="Browser View"
-            />
+            <div className="relative w-full h-full max-w-[1920px] max-h-[1080px]" style={{ aspectRatio: '16 / 9' }}>
+              <iframe
+                key={liveViewUrl} // Stable key prevents unnecessary remounts
+                src={iframeUrl || undefined}
+                className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-2xl"
+                allow="clipboard-read; clipboard-write"
+                title="Browser View"
+              />
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Normal (non-fullscreen) mode
+  // Mobile drawer mode - matches legacy client.tsx mobile experience
+  if (isMobile) {
+    return (
+      <div className="pointer-events-none">
+        {/* Mobile: Floating button to open browser drawer */}
+        <div className="fixed top-4 right-4 z-[100] pointer-events-auto">
+          <Button
+            size="lg"
+            onClick={() => setIsSheetOpen(true)}
+            className="rounded-full shadow-lg px-4 py-3 bg-custom-purple hover:bg-custom-purple/90 text-white"
+          >
+            <Monitor className="w-5 h-5 mr-2" />
+            View Browser
+          </Button>
+        </div>
+
+        {/* Mobile: Bottom sheet with browser content */}
+        <div className="pointer-events-auto">
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]">
+              <SheetHeader className="px-4 py-3 border-b">
+                <SheetTitle className="text-left">Browser View</SheetTitle>
+              </SheetHeader>
+
+              {/* Loading state */}
+              {loading && <BrowserLoadingState />}
+
+              {/* Control mode indicator */}
+              {isConnected && (
+                <div className="flex items-center justify-between py-2 px-4 bg-muted/20">
+                  <AgentStatusIndicator
+                    chatStatus={chatStatus}
+                    controlMode={controlMode}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
+                    className="px-3 py-2 rounded text-xs font-medium border-0 hover:bg-custom-purple/90 bg-custom-purple text-white"
+                  >
+                    {controlMode === 'user' ? (
+                      <div className="flex items-center gap-2 text-white">
+                        Give back control
+                      </div>
+                    ) : (
+                      <>
+                        <MousePointerClick className="w-4 h-4 mr-1" />
+                        Take control
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* Browser content */}
+              <div className="flex-1 overflow-y-scroll p-4">
+                {error ? (
+                  <BrowserErrorState onRetry={initBrowser} />
+                ) : !isConnected ? (
+                  <BrowserLoadingState />
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <div className="relative w-full max-w-[768px] bg-white rounded-lg shadow-lg">
+                      <iframe
+                        key={liveViewUrl}
+                        src={iframeUrl || undefined}
+                        className="w-full border-0 bg-white rounded-lg"
+                        style={{ aspectRatio: '4 / 3' }}
+                        allow="clipboard-read; clipboard-write"
+                        title="Browser View"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal (non-fullscreen) desktop mode
   return (
     <div className="h-full flex flex-col">
       {/* Control mode indicator and buttons */}
@@ -279,15 +370,18 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe */}
+      {/* Browser iframe - matches client.tsx layout: flex-1 relative m-4 with centered content */}
       <div className="flex-1 relative m-4">
-        <iframe
-          key={liveViewUrl} // Stable key prevents unnecessary remounts
-          src={iframeUrl || undefined}
-          className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg"
-          allow="clipboard-read; clipboard-write"
-          title="Browser View"
-        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <iframe
+            key={liveViewUrl}
+            src={iframeUrl || undefined}
+            className="w-full border-0 bg-white rounded-lg"
+            style={{ aspectRatio: '16 / 9' }}
+            allow="clipboard-read; clipboard-write"
+            title="Browser View"
+          />
+        </div>
       </div>
     </div>
   );

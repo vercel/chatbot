@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { action, sessionId } = await request.json();
+    const { action, sessionId, isMobile } = await request.json();
 
     if (!sessionId) {
       return Response.json(
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     if (action === 'create') {
-      const browser = await createKernelBrowser(sessionId);
+      const browser = await createKernelBrowser(sessionId, { isMobile });
       return Response.json({
         liveViewUrl: browser.browser_live_view_url,
         sessionId: browser.session_id,
