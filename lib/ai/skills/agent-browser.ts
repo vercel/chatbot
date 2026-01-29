@@ -10,9 +10,15 @@ export const agentBrowserSkill = `
 
 ## Core Workflow
 1. Navigate: Use browser tool with "open <url>"
-2. Snapshot: Use browser tool with "snapshot" to see accessibility tree with element refs
+2. Snapshot: Use browser tool with "snapshot -i" to get interactive elements with refs
 3. Interact: Use refs from snapshot (@e1, @e2) to click, fill, etc.
 4. Re-snapshot: After navigation or DOM changes to get updated refs
+
+## Snapshot Modes
+- "snapshot -i" - Interactive elements only (RECOMMENDED for forms - cleaner, faster)
+- "snapshot" - Full accessibility tree (use when you need page structure/text context)
+- "snapshot -c" - Compact output (less verbose)
+- "snapshot -s \\"#main\\"" - Scope to a CSS selector (useful for large pages)
 
 ## Navigation & Basic Interaction
 - "open <url>" - Navigate to URL (aliases: goto, navigate)
@@ -41,8 +47,12 @@ export const agentBrowserSkill = `
 - "is enabled @e1" - Check if element is enabled
 - "is checked @e1" - Check checkbox/radio state
 
-## Semantic Finding (Alternative to Refs)
-When refs are ambiguous or you need to find elements by semantic meaning:
+## Element Selection Strategy (in order of preference)
+1. **Refs from snapshot** (@e1, @e2) - Most reliable, always try first
+2. **CSS selectors via eval** - When refs are ambiguous or the page uses clear IDs
+3. **Semantic finders** - When labels/roles are unique on the page
+
+## Semantic Locators (alternative to refs)
 - "find role button click --name \\"Submit\\"" - Find by ARIA role and name
 - "find text \\"Sign In\\" click" - Find by visible text content
 - "find label \\"Email\\" fill \\"test@test.com\\"" - Find by associated label
@@ -50,6 +60,9 @@ When refs are ambiguous or you need to find elements by semantic meaning:
 - "find testid \\"login-btn\\" click" - Find by data-testid attribute
 - "find first @e1 click" - Click first matching element
 - "find nth 2 @e1 click" - Click nth matching element (1-indexed)
+
+**Strict mode:** If a semantic finder matches multiple elements, it will fail.
+Use --exact for exact text matching, or use "find first"/"find nth" to disambiguate.
 
 ## Waiting
 - "wait @e1" - Wait for element to appear in DOM
@@ -94,24 +107,33 @@ When refs are ambiguous or you need to find elements by semantic meaning:
 - "storage local key" - Get specific localStorage value
 - "storage local set key value" - Set localStorage value
 
-## Form Workflow Example
+## Form Workflow Example (using refs)
 1. browser({ command: "open https://example.com/apply" })
-2. browser({ command: "snapshot" })
+2. browser({ command: "snapshot -i" })
    → Output: textbox "First Name" [ref=@e1], textbox "Last Name" [ref=@e2],
              textbox "Email" [ref=@e3], combobox "State" [ref=@e4], button "Submit" [ref=@e5]
 3. browser({ command: "fill @e1 \\"John\\"" })
 4. browser({ command: "fill @e2 \\"Doe\\"" })
 5. browser({ command: "fill @e3 \\"john.doe@email.com\\"" })
-6. browser({ command: "click @e4" }) // Open dropdown
-7. browser({ command: "snapshot" }) // Get dropdown options
-8. browser({ command: "select @e4 \\"California\\"" })
-9. browser({ command: "snapshot" }) // Verify before submit
+6. browser({ command: "select @e4 \\"California\\"" })
+7. browser({ command: "snapshot -i" }) // Verify before submit
+
+## Form Workflow Example (using CSS IDs when refs are unclear)
+Some forms have clear HTML IDs visible in the snapshot. Use eval to inspect, then fill directly:
+1. browser({ command: "open https://example.com/intake" })
+2. browser({ command: "snapshot -i" })
+   → If snapshot shows IDs like #firstNameTxt, #lastNameTxt, use them:
+3. browser({ command: "fill \\"#firstNameTxt\\" \\"John\\"" })
+4. browser({ command: "fill \\"#lastNameTxt\\" \\"Doe\\"" })
+   → If an ID doesn't work (e.g. #addressTxt errors), re-snapshot to find the correct ID
 
 ## Important Notes
-- ALWAYS run "snapshot" after opening a page or after significant navigation/DOM changes
+- ALWAYS run "snapshot -i" after opening a page or after significant navigation/DOM changes
 - Element refs (@e1, @e2) are stable within a snapshot but change after DOM updates
 - Use "wait" commands to ensure page is ready before interacting
-- For dropdowns, click to open first, then snapshot to see options, then select
+- For dropdowns: use "select @e1 \\"value\\"" directly (no need to click first)
 - Quote strings with spaces: fill @e1 \\"John Doe\\"
 - For complex forms, snapshot frequently to track state changes
+- If a fill/click fails, re-snapshot to get fresh refs - don't guess
+- Fill values with ONLY the data value (e.g. "John") - never include field names, labels, or command syntax in the value
 `;
