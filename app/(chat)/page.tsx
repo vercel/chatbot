@@ -10,10 +10,6 @@ import { redirect } from 'next/navigation';
 export default async function Page() {
   const session = await auth();
 
-  if (!session) {
-    redirect('/api/auth/guest');
-  }
-
   const cookieStore = await cookies();
   const id = generateUUID();
   const modelIdFromCookie = cookieStore.get('chat-model');

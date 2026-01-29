@@ -15,6 +15,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
@@ -77,11 +78,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               <div className="absolute left-[27px] top-[117px]">
                 <Button
                   variant="outline"
-                  className="w-[214px] h-[40px] bg-[#e6e5dc] dark:bg-gray-700 border-none rounded-[6px] px-[16px] py-[8px] flex items-center justify-center gap-[8px] hover:bg-custom-purple/20 dark:hover:bg-custom-purple/30"
+                  className="w-[214px] h-[40px] bg-sidebar-accent dark:bg-sidebar-accent border-none rounded-[6px] px-[16px] py-[8px] flex items-center justify-center gap-[8px] hover:bg-accent/80 dark:hover:bg-accent/80"
                   onClick={handleNewChatClick}
                 >
                   <PlusIcon size={16} />
-                  <span className="text-[14px] font-medium text-black dark:text-white leading-[24px] not-italic font-inter">
+                  <span className="text-[14px] font-medium text-sidebar-foreground leading-[24px] not-italic font-inter">
                     New chat
                   </span>
                 </Button>
@@ -98,7 +99,20 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         </SidebarContent>
 
         <SidebarFooter className="absolute bottom-0 left-[26px] w-[214px]">
-          {user && <SidebarUserNav user={user} />}
+          {user ? (
+            <SidebarUserNav user={user} />
+          ) : (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <Button
+                  className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground border-none rounded-[6px] px-4 py-2 flex items-center justify-center gap-2"
+                  onClick={() => router.push('/login')}
+                >
+                  <span className="text-sm font-medium">Sign in</span>
+                </Button>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
         </SidebarFooter>
       </Sidebar>
 

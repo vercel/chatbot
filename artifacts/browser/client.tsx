@@ -656,19 +656,19 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           {/* Fullscreen header with controls */}
           <div className="sticky top-0 left-0 right-0 z-10 browser-fullscreen-bg">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-3 gap-2">
-            <div className="flex flex-col gap-1 text-white">
+            <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                  <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono">You're editing manually</span>
+                  <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono text-gray-500">You're editing manually</span>
                 </div>
-                <span className="text-xs sm:text-sm text-gray-400 font-inter hidden sm:block">The AI will continue with your changes when you give back control.</span>
+                <span className="text-xs sm:text-sm text-gray-500 font-inter hidden sm:block">The AI will continue with your changes when you give back control.</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => switchControlMode('agent')}
-                  className="px-3 sm:px-4 py-2 sm:py-2.5 rounded text-xs sm:text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
+                  className="px-3 sm:px-4 py-2 sm:py-2.5 rounded text-xs sm:text-sm font-medium leading-5 border-0 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2"
                 >
                   <div className="flex items-center gap-2 text-white">
                     Give back control
@@ -752,7 +752,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
             }}
           >
             {metadata.controlMode === 'user' && !metadata.isFocused && (
-              <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-custom-purple/60">
+              <div className="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none bg-primary/60">
                 <h2 className="text-4xl font-bold">Click to activate browser control</h2>
               </div>
             )}
@@ -788,7 +788,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
             <Button
               size="lg"
               onClick={() => metadata?.setIsSheetOpen?.(true)}
-              className="rounded-full shadow-lg px-4 py-3 bg-custom-purple hover:bg-custom-purple/90 text-white"
+              className="rounded-full shadow-lg px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
             >
               <Monitor className="w-5 h-5 mr-2" />
               View Browser
@@ -803,9 +803,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 <SheetTitle className="text-left">Browser View</SheetTitle>
               </SheetHeader>
               
-              {/* Connection status indicator */}
-              {metadata.isConnecting && <BrowserLoadingState />}
-              
               {/* Control mode indicator */}
               {metadata.isConnected && (
                 <div className="flex items-center justify-between py-2 px-4 bg-muted/20">
@@ -819,7 +816,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                     onClick={() => {
                       switchControlMode(metadata.controlMode === 'user' ? 'agent' : 'user');
                     }}
-                    className="px-3 py-2 rounded text-xs font-medium border-0 hover:bg-custom-purple/90 bg-custom-purple text-white"
+                    className="px-3 py-2 rounded text-xs font-medium border-0 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
                   >
                     {metadata.controlMode === 'user' ? (
                       <div className="flex items-center gap-2 text-white">
@@ -887,9 +884,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // Desktop mode
     return (
       <div className="h-full flex flex-col">
-        {/* Connection status indicator */}
-        {metadata.isConnecting && <BrowserLoadingState />}
-         
         {/* Control mode indicator */}
         {metadata.isConnected && (
           <div className="flex items-center justify-between py-2 bg-muted/20">
@@ -903,7 +897,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                 variant={metadata.controlMode === 'user' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => switchControlMode('user')}
-                className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
+                className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2"
               >
                 <div className="flex items-center gap-2 text-white">
                   <MousePointerClick className="w-5 h-5" />

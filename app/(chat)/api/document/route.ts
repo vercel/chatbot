@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   // Ensure user exists in database (handles stale sessions)
   await ensureUserExists({
     id: session.user.id,
-    email: session.user.email || undefined,
+    email: session.user.email || '',
   });
 
   const {

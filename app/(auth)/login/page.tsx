@@ -1,20 +1,42 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import { toast } from '@/components/toast';
 import { signIn } from 'next-auth/react';
 import { MicrosoftLogo } from '@/components/icons/MicrosoftLogo';
 import { GoogleLogo } from '@/components/icons/GoogleLogo';
 
-export default function Page() {
+function ErrorHandler() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      toast({
+        type: 'error',
+        description: 'Access denied',
+      });
+      // Clear the error from URL without refresh
+      router.replace('/login', { scroll: false });
+    }
+  }, [searchParams, router]);
+
+  return null;
+}
+
+function LoginContent() {
+  const searchParams = useSearchParams();
   const [loadingMethod, setLoadingMethod] = useState<'microsoft' | 'google' | null>(null);
+
+  // Use callbackUrl from URL params, default to /home
+  const callbackUrl = searchParams.get('callbackUrl') || '/home';
 
   const handleGoogleLogin = async () => {
     setLoadingMethod('google');
     try {
-      await signIn('google', { callbackUrl: '/home' });
+      await signIn('google', { callbackUrl });
     } catch (error) {
       toast({
         type: 'error',
@@ -27,7 +49,7 @@ export default function Page() {
   const handleMicrosoftLogin = async () => {
     setLoadingMethod('microsoft');
     try {
-      await signIn('microsoft-entra-id', { callbackUrl: '/home' });
+      await signIn('microsoft-entra-id', { callbackUrl });
     } catch (error) {
       toast({
         type: 'error',
@@ -52,7 +74,7 @@ export default function Page() {
           <button
             onClick={handleMicrosoftLogin}
             disabled={loadingMethod !== null}
-            className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-custom-purple/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
+            className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
           >
             <div className="relative shrink-0 size-[13.25px]">
               <MicrosoftLogo size={13.25} className="block max-w-none size-full" />
@@ -68,7 +90,7 @@ export default function Page() {
           <button
             onClick={handleGoogleLogin}
             disabled={loadingMethod !== null}
-            className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-custom-purple/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
+            className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
           >
             <div className="relative shrink-0 size-[13.25px]">
               <GoogleLogo size={13.25} className="block max-w-none size-full" />
@@ -82,5 +104,14 @@ export default function Page() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <ErrorHandler />
+      <LoginContent />
+    </Suspense>
   );
 }

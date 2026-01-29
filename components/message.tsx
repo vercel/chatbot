@@ -165,7 +165,7 @@ const PurePreviewMessage = ({
                         {partnerData.taskText && (
                           <div
                             data-testid="message-content"
-                            className="bg-[#EFD9E9] dark:bg-slate-800 text-black dark:text-slate-100 px-[18px] py-[18px] rounded-xl text-xs leading-[18px] font-inter"
+                            className="bg-accent dark:bg-muted text-foreground dark:text-foreground px-[18px] py-[18px] rounded-xl text-xs leading-[18px] font-inter"
                           >
                             <Markdown>{sanitizeText(partnerData.taskText)}</Markdown>
                           </div>
@@ -211,7 +211,7 @@ const PurePreviewMessage = ({
                         <div
                           data-testid="message-content"
                           className={cn('flex flex-col gap-4', {
-                            'bg-[#EFD9E9] dark:bg-slate-800 text-black dark:text-slate-100 px-[18px] py-[18px] rounded-xl text-xs leading-[18px] font-inter':
+                            'bg-accent dark:bg-muted text-foreground dark:text-foreground px-[18px] py-[18px] rounded-xl text-xs leading-[18px] font-inter':
                               message.role === 'user',
                             'assistant-message-bubble font-source-serif':
                               message.role === 'assistant',
@@ -428,7 +428,7 @@ const PurePreviewMessage = ({
                   // For all other tools, show simple icon with text
                   return (
                     <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
-                      <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-[#767676] flex items-center gap-2">
+                      <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground flex items-center gap-2">
                         {Icon && (
                           <Icon size={12} className="text-gray-500 shrink-0" />
                         )}
@@ -482,8 +482,8 @@ const PurePreviewMessage = ({
 
             {isLoading && (
               <div className="flex items-center gap-2 p-3 border-0 rounded-md">
-                <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-[#767676] flex items-center gap-2">
-                  <Spinner className="size-3 shrink-0 text-custom-purple" />
+                <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground flex items-center gap-2">
+                  <Spinner className="size-3 shrink-0 text-primary" />
                   Processing...
                 </div>
               </div>

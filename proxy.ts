@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { guestRegex, isDevelopmentEnvironment } from './lib/constants';
+import { isDevelopmentEnvironment } from './lib/constants';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -28,15 +28,13 @@ export async function proxy(request: NextRequest) {
     if (['/login', '/register'].includes(pathname)) {
       return NextResponse.next();
     }
-    
-    // For other pages, let NextAuth handle the redirect to login page
-    // The individual pages (like the main chat page) will handle guest user creation
+
+    // For other pages, allow access - individual pages handle auth requirements
     return NextResponse.next();
   }
 
-  const isGuest = guestRegex.test(token?.email ?? '');
-
-  if (token && !isGuest && ['/login', '/register'].includes(pathname)) {
+  // Redirect logged-in users away from login/register pages
+  if (token && ['/login', '/register'].includes(pathname)) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

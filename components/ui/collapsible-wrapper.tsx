@@ -35,7 +35,7 @@ export function CollapsibleWrapper({
   return (
     <Collapsible open={open} onOpenChange={setOpen} className={finalClassName}>
       <div className="flex items-center justify-between p-3">
-        <div className={`text-[10px] leading-[150%] font-ibm-plex-mono text-[#767676] flex items-center gap-2 ${isError ? 'text-red-600' : ''}`}>
+        <div className={`text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground flex items-center gap-2 ${isError ? 'text-red-600' : ''}`}>
           {Icon && (
             <Icon size={12} className="text-gray-500 flex-shrink-0" />
           )}
@@ -44,7 +44,7 @@ export function CollapsibleWrapper({
           
         </div>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="p-1 h-auto text-gray-400 hover:text-custom-purple hover:bg-custom-purple/20">
+          <Button variant="ghost" size="sm" className="p-1 h-auto text-muted-foreground hover:text-primary hover:bg-accent">
             {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             <span className="sr-only">Toggle details</span>
           </Button>

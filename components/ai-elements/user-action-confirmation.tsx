@@ -38,7 +38,7 @@ export function UserActionConfirmation({
       <ConfirmationRequest>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-px">
-            <div className="font-source-serif font-normal leading-[1.5] text-[14px] text-[#171717]">
+            <div className="font-source-serif font-normal leading-[1.5] text-[14px] text-foreground">
               <p className="font-bold mb-[14px]">{requestTitle}</p>
               <p>{requestMessage}</p>
             </div>

@@ -3,12 +3,12 @@ import NextAuth, { type DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
-import { createGuestUser, getUser, upsertOAuthUser } from '@/lib/db/queries';
+import { getUser, upsertOAuthUser } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
 import type { DefaultJWT } from 'next-auth/jwt';
 
-export type UserType = 'guest' | 'regular';
+export type UserType = 'regular';
 
 declare module 'next-auth' {
   interface Session extends DefaultSession {
@@ -93,27 +93,19 @@ export const {
         return { ...user, type: 'regular' };
       },
     }),
-    Credentials({
-      id: 'guest',
-      name: 'guest',
-      credentials: {},
-      async authorize() {
-        const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: 'guest' };
-      },
-    }),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Handle OAuth sign-in
-      if (account?.provider === 'google') {
-        await upsertOAuthUser({
-          email: user.email!,
-          name: user.name,
-          image: user.image,
-        });
-      }
-      if (account?.provider === 'microsoft-entra-id') {
+      // Handle OAuth sign-in with domain validation
+      if (account?.provider === 'google' || account?.provider === 'microsoft-entra-id') {
+        const email = user.email?.toLowerCase() || '';
+        const allowedDomains = ['@navapbc.com', '@rivco.org', '@navapbc.onmicrosoft.com', '@amplifi.org'];
+        const isAllowedDomain = allowedDomains.some(domain => email.endsWith(domain));
+
+        if (!isAllowedDomain) {
+          return false;
+        }
+
         await upsertOAuthUser({
           email: user.email!,
           name: user.name,

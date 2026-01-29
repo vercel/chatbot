@@ -33,12 +33,12 @@ export function ExitWarningModal({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-[512px] bg-white rounded-[6px] border border-slate-300 p-6">
+      <AlertDialogContent className="max-w-[512px] bg-card rounded-[6px] border border-border p-6">
         <AlertDialogHeader className="gap-2">
-          <AlertDialogTitle className="font-serif text-[20px] font-semibold leading-[28px] text-slate-900 text-left">
+          <AlertDialogTitle className="font-serif text-[20px] font-semibold leading-[28px] text-card-foreground text-left">
             Leave this application session?
           </AlertDialogTitle>
-          <AlertDialogDescription className="font-sans text-[18px] font-normal leading-[28px] text-black text-left">
+          <AlertDialogDescription className="font-sans text-[18px] font-normal leading-[28px] text-foreground text-left">
             If you start a new application or open another one, your current
             session will end.
             <br />
@@ -50,13 +50,13 @@ export function ExitWarningModal({
         <AlertDialogFooter className="flex-row justify-end gap-2 mt-0">
           <AlertDialogCancel
             onClick={handleCancel}
-            className="bg-white border border-slate-200 text-slate-900 text-[14px] font-medium leading-[24px] px-4 py-2 rounded-[6px] hover:bg-slate-50 transition-colors"
+            className="bg-secondary border border-border text-secondary-foreground text-[14px] font-medium leading-[24px] px-4 py-2 rounded-[6px] hover:bg-secondary/80 transition-colors"
           >
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleLeaveSession}
-            className="bg-[#b14092] text-white text-[14px] font-medium leading-[24px] px-4 py-2 rounded-[6px] hover:bg-[#9a3680] transition-colors border-0"
+            className="bg-primary text-primary-foreground text-[14px] font-medium leading-[24px] px-4 py-2 rounded-[6px] hover:bg-primary/90 transition-colors border-0"
           >
             Leave session
           </AlertDialogAction>

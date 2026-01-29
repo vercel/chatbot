@@ -29,7 +29,7 @@ export function SidebarToggle({
           onClick={toggleSidebar}
           variant="outline"
           className={cn(
-            "md:px-2 md:h-fit hover:bg-custom-purple/20",
+            "md:px-2 md:h-fit hover:bg-accent",
             isSheetOpen && "opacity-30 cursor-not-allowed pointer-events-auto bg-gray-100 dark:bg-gray-800"
           )}
         >

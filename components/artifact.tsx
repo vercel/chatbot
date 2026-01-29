@@ -313,7 +313,7 @@ function PureArtifact({
 
           {!(artifact.kind === 'browser' && metadata?.isFullscreen) && (
             <motion.div
-              className={`relative bg-white dark:bg-[#1a0b1a] h-dvh shrink-0 pointer-events-auto ${
+              className={`relative bg-white dark:bg-background h-dvh shrink-0 pointer-events-auto ${
                 isMobile 
                   ? 'w-full' 
                   : 'w-[450px] min-w-[400px] max-w-[500px]'
@@ -398,6 +398,7 @@ function PureArtifact({
                       sendMessage={sendMessage}
                       setMessages={setMessages}
                       selectedVisibilityType={selectedVisibilityType}
+                      session={session ?? null}
                     />
 
                   </form>

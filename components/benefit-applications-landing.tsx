@@ -4,6 +4,7 @@ import type { ChatMessage, Attachment } from '@/lib/types';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
 import type { Dispatch, SetStateAction } from 'react';
+import type { Session } from 'next-auth';
 import { MultimodalInput } from './multimodal-input';
 
 interface BenefitApplicationsLandingProps {
@@ -19,6 +20,7 @@ interface BenefitApplicationsLandingProps {
   setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
   messages: ChatMessage[];
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
+  session: Session | null;
 }
 
 export function BenefitApplicationsLanding({
@@ -34,6 +36,7 @@ export function BenefitApplicationsLanding({
   setAttachments,
   messages,
   setMessages,
+  session,
 }: BenefitApplicationsLandingProps) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 lg:p-8 pt-8 sm:pt-12 md:pt-16 bg-chat-background overflow-hidden">
@@ -65,6 +68,7 @@ export function BenefitApplicationsLanding({
             selectedVisibilityType={selectedVisibilityType}
             showStopButton={false}
             placeholder="Ex. Fill out the WIC form for Jane Doe"
+            session={session}
           />
         </div>
       </div>

@@ -20,6 +20,7 @@ import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { SuggestedActions } from './suggested-actions';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
@@ -28,6 +29,9 @@ import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
+import type { Session } from 'next-auth';
+import { useRouter } from 'next/navigation';
+import { Alert, AlertDescription } from './ui/alert';
 
 function PureMultimodalInput({
   chatId,
@@ -44,6 +48,7 @@ function PureMultimodalInput({
   selectedVisibilityType,
   showStopButton = true,
   placeholder = 'Write something...',
+  session,
 }: {
   chatId: string;
   input: string;
@@ -59,9 +64,12 @@ function PureMultimodalInput({
   selectedVisibilityType: VisibilityType;
   showStopButton?: boolean;
   placeholder?: string;
+  session: Session | null;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
+  const router = useRouter();
+  const isLoggedIn = !!session;
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -243,9 +251,26 @@ function PureMultimodalInput({
         )}
       </AnimatePresence>
 
+      {!isLoggedIn && (
+        <Alert variant="default" className="mb-6 bg-primary/10 border-primary/30">
+          <AlertDescription className="flex items-center justify-between">
+            <div className="flex flex-col gap-1 font-inter">
+              <span className="text-base font-medium">Log in to get started</span>
+              <span className="text-sm text-muted-foreground">You'll be able to complete applications once you're logged in.</span>
+            </div>
+            <Button
+              onClick={() => router.push('/login')}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 shrink-0"
+            >
+              Log in
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       {messages.length === 0 &&
         attachments.length === 0 &&
-        uploadQueue.length === 0 && (
+        uploadQueue.length === 0 &&
+        isLoggedIn && (
           <SuggestedActions
             sendMessage={sendMessage}
             chatId={chatId}
@@ -295,7 +320,7 @@ function PureMultimodalInput({
           value={input}
           onChange={handleInput}
           className={cx(
-            'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-custom-purple dark:focus:border-custom-purple focus:ring-2 focus:ring-custom-purple/20 dark:focus:ring-custom-purple/30 focus:outline-none transition-colors pb-10',
+            'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base border-2 border-input bg-card text-foreground placeholder-muted-foreground focus:border-primary dark:focus:border-primary focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/30 focus:outline-none transition-colors pb-10',
             className,
           )}
           rows={2}
@@ -308,7 +333,9 @@ function PureMultimodalInput({
             ) {
               event.preventDefault();
 
-              if (status !== 'ready') {
+              if (!isLoggedIn) {
+                router.push('/login');
+              } else if (status !== 'ready') {
                 toast.error('Please wait for the model to finish its response!');
               } else {
                 submitForm();
@@ -328,6 +355,7 @@ function PureMultimodalInput({
             submitForm={submitForm}
             uploadQueue={uploadQueue}
             status={status}
+            isLoggedIn={isLoggedIn}
           />
         </>
       </div>
@@ -343,6 +371,7 @@ export const MultimodalInput = memo(
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
       return false;
+    if (prevProps.session?.user?.id !== nextProps.session?.user?.id) return false;
 
     return true;
   },
@@ -358,7 +387,7 @@ function PureAttachmentsButton({
   return (
     <Button
       data-testid="attachments-button"
-      className="rounded-md rounded-bl-lg p-[7px] h-fit border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-custom-purple/20 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+      className="rounded-md rounded-bl-lg p-[7px] h-fit border border-input bg-card dark:bg-card hover:bg-accent dark:hover:bg-accent text-muted-foreground transition-colors"
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();
@@ -385,7 +414,7 @@ function PureStopButton({
   return (
     <Button
       data-testid="stop-button"
-      className="bg-transparent hover:bg-transparent rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-custom-purple text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="bg-transparent hover:bg-accent rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-primary text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       onClick={(event) => {
         event.preventDefault();
         stop();
@@ -406,29 +435,47 @@ function PureSendButton({
   input,
   uploadQueue,
   status,
+  isLoggedIn,
 }: {
   submitForm: () => void;
   input: string;
   uploadQueue: Array<string>;
   status: UseChatHelpers<ChatMessage>['status'];
+  isLoggedIn: boolean;
 }) {
-  const isEnabled = input.length > 0 && uploadQueue.length === 0;
-  const shouldShowWaitCursor = isEnabled && (status === 'submitted' || status === 'streaming');
-  
-  return (
+  const hasInput = input.length > 0 && uploadQueue.length === 0;
+  const isDisabled = !isLoggedIn || input.length === 0 || uploadQueue.length > 0;
+  const shouldShowWaitCursor = hasInput && isLoggedIn && (status === 'submitted' || status === 'streaming');
+
+  const button = (
     <Button
       data-testid="send-button"
-      className={`bg-custom-purple hover:bg-custom-purple/90 disabled:bg-gray-200 disabled:hover:bg-gray-200 dark:disabled:bg-gray-700 dark:disabled:hover:bg-gray-700 rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-white disabled:text-gray-500 dark:disabled:text-gray-400 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${shouldShowWaitCursor ? 'cursor-wait' : ''}`}
+      className={`bg-primary hover:bg-primary/90 disabled:bg-muted disabled:hover:bg-muted rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-primary-foreground disabled:text-muted-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${shouldShowWaitCursor ? 'cursor-wait' : ''}`}
       onClick={(event) => {
         event.preventDefault();
-        submitForm();
+        if (isLoggedIn) {
+          submitForm();
+        }
       }}
-      disabled={input.length === 0 || uploadQueue.length > 0}
+      disabled={isDisabled}
     >
       <ArrowUpIcon size={20} />
       <span>Submit</span>
     </Button>
   );
+
+  if (!isLoggedIn) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0}>{button}</span>
+        </TooltipTrigger>
+        <TooltipContent>Log in to submit</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return button;
 }
 
 const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
@@ -436,5 +483,6 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
     return false;
   if (prevProps.input !== nextProps.input) return false;
   if (prevProps.status !== nextProps.status) return false;
+  if (prevProps.isLoggedIn !== nextProps.isLoggedIn) return false;
   return true;
 });

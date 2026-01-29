@@ -6,7 +6,7 @@ interface BrowserStateProps {
 }
 
 export const BrowserLoadingState = () => (
-  <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
+  <div className="flex items-center justify-center h-full bg-card text-gray-500">
     <div className="flex flex-col w-full max-w-4xl">
       {/* Browser chrome header */}
       <div className="bg-[#ececec] h-[30px] rounded-tl-lg rounded-tr-lg" />
@@ -33,7 +33,7 @@ export const BrowserLoadingState = () => (
 );
 
 export const BrowserErrorState = ({ onRetry }: BrowserStateProps) => (
-  <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
+  <div className="flex items-center justify-center h-full bg-card text-gray-500">
     <div className="text-center">
       <MonitorX className="size-8 mx-auto mb-2" />
       <p className="text-sm font-medium font-source-serif">Failed to connect to browser</p>
@@ -52,7 +52,7 @@ export const BrowserErrorState = ({ onRetry }: BrowserStateProps) => (
 );
 
 export const BrowserTimeoutState = ({ onRetry }: BrowserStateProps) => (
-  <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
+  <div className="flex items-center justify-center h-full bg-card text-gray-500">
     <div className="text-center">
       <ClockFading className="size-8 mx-auto mb-2" />
       <p className="text-xs sm:text-sm font-medium font-source-serif">Your session was paused due to inactivity</p>

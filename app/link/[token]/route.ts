@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { createDecipheriv } from 'crypto';
+import { auth } from '@/app/(auth)/auth';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -50,6 +51,13 @@ export async function GET(
 ) {
   const { token } = await params;
   const baseUrl = getBaseUrl(request);
+
+  // Check authentication - redirect to login if not signed in
+  const session = await auth();
+  if (!session?.user) {
+    const callbackUrl = encodeURIComponent(`/link/${token}`);
+    return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, baseUrl));
+  }
 
   try {
     // Get encrypted content from Redis

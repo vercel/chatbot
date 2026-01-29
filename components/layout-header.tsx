@@ -50,7 +50,7 @@ export function LayoutHeader() {
             <Button
               onClick={handleNewChat}
               variant="outline"
-              className="size-8 p-0 bg-background border-sidebar-border hover:bg-custom-purple/20"
+              className="size-8 p-0 bg-background border-sidebar-border hover:bg-accent"
             >
               <PlusIcon size={16} />
             </Button>

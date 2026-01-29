@@ -40,7 +40,7 @@ export function Chat({
   initialChatModel: string;
   initialVisibilityType: VisibilityType;
   isReadonly: boolean;
-  session: Session;
+  session: Session | null;
   autoResume: boolean;
   initialQuery?: string;
 }) {
@@ -136,7 +136,7 @@ export function Chat({
           body: JSON.stringify({
             action: 'stopChat',
             threadId: id,
-            resourceId: session.user.id,
+            resourceId: session?.user?.id,
           }),
         });
       } catch (error) {
@@ -305,6 +305,7 @@ export function Chat({
             setAttachments={setAttachments}
             messages={messages}
             setMessages={setMessages}
+            session={session}
           />
         </div>
         <Artifact
@@ -345,7 +346,7 @@ export function Chat({
               isArtifactVisible={isArtifactVisible}
             />
   
-            <div className="shrink-0 mx-auto px-4 pt-6 bg-[#EFD9E9] dark:bg-[#2D1B2E] pb-4 md:pb-6 w-full">
+            <div className="shrink-0 mx-auto px-4 pt-6 bg-chat-background pb-4 md:pb-6 w-full">
               {!isReadonly && (
                 <form className="flex gap-2 w-full md:max-w-3xl mx-auto">
                   <MultimodalInput
@@ -360,6 +361,7 @@ export function Chat({
                     setMessages={setMessages}
                     sendMessage={sendMessage}
                     selectedVisibilityType={visibilityType}
+                    session={session}
                   />
                 </form>
               )}

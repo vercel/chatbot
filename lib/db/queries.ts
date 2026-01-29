@@ -62,19 +62,18 @@ export async function getUserById({ id }: { id: string }): Promise<User | null> 
   }
 }
 
-export async function ensureUserExists({ id, email }: { id: string; email?: string }): Promise<User> {
+export async function ensureUserExists({ id, email }: { id: string; email: string }): Promise<User> {
   const existingUser = await getUserById({ id });
   if (existingUser) {
     return existingUser;
   }
 
-  const userEmail = email || `guest-recovery-${Date.now()}`;
   const password = generateHashedPassword(generateUUID());
 
   try {
     const result = await db.insert(user).values({
       id,
-      email: userEmail,
+      email,
       password
     }).returning();
     return result[0];
@@ -93,23 +92,6 @@ export async function createUser(email: string, password: string) {
     return await db.insert(user).values({ email, password: hashedPassword });
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to create user');
-  }
-}
-
-export async function createGuestUser() {
-  const email = `guest-${Date.now()}`;
-  const password = generateHashedPassword(generateUUID());
-
-  try {
-    return await db.insert(user).values({ email, password }).returning({
-      id: user.id,
-      email: user.email,
-    });
-  } catch (error) {
-    throw new ChatSDKError(
-      'bad_request:database',
-      'Failed to create guest user',
-    );
   }
 }
 

@@ -38,7 +38,7 @@ export function Confirmation({ approval, state, className, children, ...props }:
     <ConfirmationContext.Provider value={{ approval, state }}>
       <Alert
         className={cn(
-          'bg-[rgba(245,228,240,0.25)] border-[#f5e4f0] dark:bg-[rgba(245,228,240,0.1)]',
+          'bg-accent/25 border-accent dark:bg-accent/10',
           className
         )}
         {...props}
@@ -123,7 +123,7 @@ export function ConfirmationAction({ className, variant = 'default', ...props }:
   return (
     <Button
       className={cn(
-        variant === 'default' && 'bg-[#a11e83] hover:bg-[#a11e83]/90 text-white',
+        variant === 'default' && 'bg-primary hover:bg-primary/90 text-primary-foreground',
         className
       )}
       variant={variant}

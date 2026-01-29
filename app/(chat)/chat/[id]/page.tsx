@@ -19,13 +19,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   const session = await auth();
 
-  if (!session) {
-    redirect('/api/auth/guest');
-  }
-
   if (chat.visibility === 'private') {
-    if (!session.user) {
-      return notFound();
+    if (!session?.user) {
+      redirect('/login');
     }
 
     if (session.user.id !== chat.userId) {
