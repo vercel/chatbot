@@ -6,6 +6,7 @@ import {
 import { xai } from '@ai-sdk/xai';
 import { openai } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
+import { anthropic } from '@ai-sdk/anthropic';
 import { gateway } from '@ai-sdk/gateway';
 import {
   artifactModel,
@@ -15,8 +16,8 @@ import {
 } from './models.test';
 import { isTestEnvironment } from '../constants';
 
-// Google model for web automation - used directly with streamText when USE_AI_SDK_AGENT=true
-export const webAutomationModel = google('gemini-3-pro-preview');
+// Anthropic model for web automation - used directly with streamText when USE_AI_SDK_AGENT=true
+export const webAutomationModel = anthropic('claude-opus-4-5-20251101');
 
 export const myProvider = isTestEnvironment
   ? customProvider({
