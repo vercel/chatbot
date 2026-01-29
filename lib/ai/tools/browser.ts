@@ -71,7 +71,9 @@ Common commands:
         return {
           success: true,
           output: stdout || 'Command completed successfully',
-          error: stderr || null,
+          // Don't include stderr as error for successful commands
+          // (npx outputs notices to stderr that aren't actual errors)
+          error: null,
         };
       } catch (error: unknown) {
         const execError = error as {
