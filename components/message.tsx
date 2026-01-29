@@ -467,7 +467,7 @@ const PurePreviewMessage = ({
                   const hasError = output && 'error' in output && output.error;
                   return (
                     <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
-                      <div className={`text-[10px] leading-[150%] font-ibm-plex-mono flex items-center gap-2 ${hasError ? 'text-red-600' : 'text-[#767676]'}`}>
+                      <div className={`text-[10px] leading-[150%] font-ibm-plex-mono flex items-center gap-2 ${hasError ? 'text-red-600' : 'text-muted-foreground'}`}>
                         {Icon && (
                           <Icon size={12} className="text-gray-500 shrink-0" />
                         )}
