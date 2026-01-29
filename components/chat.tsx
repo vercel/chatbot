@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 import { ChatHeader } from "@/components/chat-header";
+import { Greeting } from "@/components/greeting";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -185,6 +186,24 @@ export function Chat({
     setMessages,
   });
 
+  const multimodalInput = (
+    <MultimodalInput
+      attachments={attachments}
+      chatId={id}
+      input={input}
+      messages={messages}
+      onModelChange={setCurrentModelId}
+      selectedModelId={currentModelId}
+      selectedVisibilityType={visibilityType}
+      sendMessage={sendMessage}
+      setAttachments={setAttachments}
+      setInput={setInput}
+      setMessages={setMessages}
+      status={status}
+      stop={stop}
+    />
+  );
+
   return (
     <>
       <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background">
@@ -194,38 +213,47 @@ export function Chat({
           selectedVisibilityType={initialVisibilityType}
         />
 
-        <Messages
-          addToolApprovalResponse={addToolApprovalResponse}
-          chatId={id}
-          isArtifactVisible={isArtifactVisible}
-          isReadonly={isReadonly}
-          messages={messages}
-          regenerate={regenerate}
-          selectedModelId={initialChatModel}
-          setMessages={setMessages}
-          status={status}
-          votes={votes}
-        />
-
-        <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
-          {!isReadonly && (
-            <MultimodalInput
-              attachments={attachments}
+        {messages.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-4 pb-20">
+            <Greeting />
+            <div className="w-full max-w-2xl relative">
+              {!isReadonly && multimodalInput}
+              <div className="mt-8 flex flex-col items-center gap-2 w-full text-center">
+                <div className="bg-muted/50 backdrop-blur-sm rounded-xl p-3 text-xs text-muted-foreground border border-border/50">
+                  <p className="font-medium">
+                    You've hit the Free plan limit for Crawl-4o. Subscribe to
+                    Pro plan to increase limits.
+                  </p>
+                  <p className="mt-1 opacity-80">
+                    Responses will use another model until your limit resets.
+                  </p>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  AI can make mistakes. Please double-check responses.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <Messages
+              addToolApprovalResponse={addToolApprovalResponse}
               chatId={id}
-              input={input}
+              isArtifactVisible={isArtifactVisible}
+              isReadonly={isReadonly}
               messages={messages}
-              onModelChange={setCurrentModelId}
-              selectedModelId={currentModelId}
-              selectedVisibilityType={visibilityType}
-              sendMessage={sendMessage}
-              setAttachments={setAttachments}
-              setInput={setInput}
+              regenerate={regenerate}
+              selectedModelId={initialChatModel}
               setMessages={setMessages}
               status={status}
-              stop={stop}
+              votes={votes}
             />
-          )}
-        </div>
+
+            <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
+              {!isReadonly && multimodalInput}
+            </div>
+          </>
+        )}
       </div>
 
       <Artifact

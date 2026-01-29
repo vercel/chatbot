@@ -912,14 +912,18 @@ export const CheckCircleFillIcon = ({ size = 16 }: { size?: number }) => {
   );
 };
 
-export const GlobeIcon = ({ size = 16 }: { size?: number }) => {
+export const GlobeIcon = ({
+  size = 16,
+  ...props
+}: { size?: number } & React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
       height={size}
       strokeLinejoin="round"
-      style={{ color: "currentcolor" }}
+      style={{ color: "currentcolor", ...props.style }}
       viewBox="0 0 16 16"
       width={size}
+      {...props}
     >
       <path
         clipRule="evenodd"

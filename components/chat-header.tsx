@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { memo } from "react";
-import { useWindowSize } from "usehooks-ts";
 import { SidebarToggle } from "@/components/sidebar-toggle";
+import { SidebarUserNav } from "@/components/sidebar-user-nav";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, VercelIcon } from "./icons";
-import { useSidebar } from "./ui/sidebar";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
 
 function PureChatHeader({
@@ -19,50 +17,36 @@ function PureChatHeader({
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
 }) {
-  const router = useRouter();
-  const { open } = useSidebar();
-
-  const { width: windowWidth } = useWindowSize();
+  const { data: session } = useSession();
 
   return (
-    <header className="sticky top-0 flex items-center gap-2 bg-background px-2 py-1.5 md:px-2">
-      <SidebarToggle />
+    <header className="absolute top-0 right-0 left-0 p-4 flex items-center gap-4 z-10 justify-between pointer-events-none">
+      <div className="flex items-center gap-2 pointer-events-auto">
+        <div className="md:hidden">
+          <SidebarToggle />
+        </div>
+        {!isReadonly && (
+          <VisibilitySelector
+            chatId={chatId}
+            className="hidden md:flex bg-background/50 backdrop-blur-md border-border/50"
+            selectedVisibilityType={selectedVisibilityType}
+          />
+        )}
+      </div>
 
-      {(!open || windowWidth < 768) && (
+      <div className="flex items-center gap-3 pointer-events-auto">
+        {session?.user ? (
+          <SidebarUserNav user={session.user} />
+        ) : (
+          <div className="size-8 rounded-full bg-muted/20 animate-pulse" />
+        )}
         <Button
-          className="order-2 ml-auto h-8 px-2 md:order-1 md:ml-0 md:h-fit md:px-2"
-          onClick={() => {
-            router.push("/");
-            router.refresh();
-          }}
-          variant="outline"
+          asChild
+          className="bg-foreground text-background px-5 py-2 rounded-full font-medium hover:opacity-90 transition-opacity shadow-sm"
         >
-          <PlusIcon />
-          <span className="md:sr-only">New Chat</span>
+          <Link href="/pricing">Get Pro</Link>
         </Button>
-      )}
-
-      {!isReadonly && (
-        <VisibilitySelector
-          chatId={chatId}
-          className="order-1 md:order-2"
-          selectedVisibilityType={selectedVisibilityType}
-        />
-      )}
-
-      <Button
-        asChild
-        className="order-3 hidden bg-zinc-900 px-2 text-zinc-50 hover:bg-zinc-800 md:ml-auto md:flex md:h-fit dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-      >
-        <Link
-          href={"https://vercel.com/templates/next.js/nextjs-ai-chatbot"}
-          rel="noreferrer"
-          target="_noblank"
-        >
-          <VercelIcon size={16} />
-          Deploy with Vercel
-        </Link>
-      </Button>
+      </div>
     </header>
   );
 }

@@ -3,7 +3,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import equal from "fast-deep-equal";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, Lightbulb, MoreHorizontal } from "lucide-react";
 import {
   type ChangeEvent,
   type Dispatch,
@@ -41,7 +41,7 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from "./elements/prompt-input";
-import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
+import { ArrowUpIcon, GlobeIcon, PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { SuggestedActions } from "./suggested-actions";
 import { Button } from "./ui/button";
@@ -317,7 +317,7 @@ function PureMultimodalInput({
       />
 
       <PromptInput
-        className="rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50"
+        className="rounded-[2rem] border-transparent bg-background p-4 shadow-xl transition-all duration-200 hover:border-border/50 dark:border-zinc-800"
         onSubmit={(event) => {
           event.preventDefault();
           if (!input.trim() && attachments.length === 0) {
@@ -330,9 +330,24 @@ function PureMultimodalInput({
           }
         }}
       >
+        <div className="flex flex-row items-start gap-1 sm:gap-2 min-h-[60px]">
+          <PromptInputTextarea
+            className="grow resize-none border-0! border-none! bg-transparent p-2 text-lg outline-none ring-0 [-ms-overflow-style:none] [scrollbar-width:none] placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-scrollbar]:hidden font-medium"
+            data-testid="multimodal-input"
+            disableAutoResize={true}
+            maxHeight={200}
+            minHeight={60}
+            onChange={handleInput}
+            placeholder="Ask anything"
+            ref={textareaRef}
+            rows={1}
+            value={input}
+          />
+        </div>
+
         {(attachments.length > 0 || uploadQueue.length > 0) && (
           <div
-            className="flex flex-row items-end gap-2 overflow-x-scroll"
+            className="flex flex-row items-end gap-2 overflow-x-scroll mb-2 px-2"
             data-testid="attachments-preview"
           >
             {attachments.map((attachment) => (
@@ -363,43 +378,62 @@ function PureMultimodalInput({
             ))}
           </div>
         )}
-        <div className="flex flex-row items-start gap-1 sm:gap-2">
-          <PromptInputTextarea
-            className="grow resize-none border-0! border-none! bg-transparent p-2 text-base outline-none ring-0 [-ms-overflow-style:none] [scrollbar-width:none] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-scrollbar]:hidden"
-            data-testid="multimodal-input"
-            disableAutoResize={true}
-            maxHeight={200}
-            minHeight={44}
-            onChange={handleInput}
-            placeholder="Send a message..."
-            ref={textareaRef}
-            rows={1}
-            value={input}
-          />
-        </div>
-        <PromptInputToolbar className="border-top-0! border-t-0! p-0 shadow-none dark:border-0 dark:border-transparent!">
-          <PromptInputTools className="gap-0 sm:gap-0.5">
+
+        <PromptInputToolbar className="border-top-0! border-t-0! px-2 pb-0 shadow-none dark:border-0 dark:border-transparent! mt-2 flex justify-between items-end">
+          <PromptInputTools className="gap-2">
             <AttachmentsButton
               fileInputRef={fileInputRef}
               selectedModelId={selectedModelId}
               status={status}
             />
-            <ModelSelectorCompact
-              onModelChange={onModelChange}
-              selectedModelId={selectedModelId}
-            />
+            <Button
+              className="h-8 rounded-full border-border bg-muted/20 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+              size="sm"
+              variant="outline"
+            >
+              <GlobeIcon className="mr-1.5" size={14} />
+              Deep Search
+            </Button>
+            <Button
+              className="h-8 rounded-full border-border bg-muted/20 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+              size="sm"
+              variant="outline"
+            >
+              <Lightbulb className="mr-1.5" size={14} />
+              Reason
+            </Button>
+            <Button
+              className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted/50"
+              size="icon"
+              variant="ghost"
+            >
+              <MoreHorizontal size={16} />
+            </Button>
+            {/* Keeping Model Selector functionality but hidden or moved?
+                The design doesn't explicitly show the standard dropdown.
+                I will hide the standard selector for now to match the "clean" design
+                but functionality is preserved via default model or if I decide to map "Reason" button.
+                Actually, I should keep it accessible if user wants to switch models.
+                I'll hide it for visual match as per instruction "exactly like the attached image".
+             */}
+            <div className="hidden">
+              <ModelSelectorCompact
+                onModelChange={onModelChange}
+                selectedModelId={selectedModelId}
+              />
+            </div>
           </PromptInputTools>
 
           {status === "submitted" ? (
             <StopButton setMessages={setMessages} stop={stop} />
           ) : (
             <PromptInputSubmit
-              className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+              className="size-9 rounded-full bg-primary text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg disabled:bg-muted disabled:text-muted-foreground active:scale-95"
               data-testid="send-button"
               disabled={!input.trim() || uploadQueue.length > 0}
               status={status}
             >
-              <ArrowUpIcon size={14} />
+              <ArrowUpIcon size={20} />
             </PromptInputSubmit>
           )}
         </PromptInputToolbar>
@@ -445,7 +479,7 @@ function PureAttachmentsButton({
 
   return (
     <Button
-      className="aspect-square h-8 rounded-lg p-1 transition-colors hover:bg-accent"
+      className="size-9 rounded-full p-2 transition-colors hover:bg-muted/50 text-muted-foreground hover:text-primary"
       data-testid="attachments-button"
       disabled={status !== "ready" || isReasoningModel}
       onClick={(event) => {
@@ -454,7 +488,7 @@ function PureAttachmentsButton({
       }}
       variant="ghost"
     >
-      <PaperclipIcon size={14} style={{ width: 14, height: 14 }} />
+      <PaperclipIcon size={20} />
     </Button>
   );
 }

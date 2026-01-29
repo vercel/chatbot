@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import Script from "next/script";
 import { Suspense } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -23,11 +22,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 }
 
 async function SidebarWrapper({ children }: { children: React.ReactNode }) {
-  const [session, cookieStore] = await Promise.all([auth(), cookies()]);
-  const isCollapsed = cookieStore.get("sidebar_state")?.value !== "true";
+  const [session] = await Promise.all([auth()]);
 
   return (
-    <SidebarProvider defaultOpen={!isCollapsed}>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar user={session?.user} />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
