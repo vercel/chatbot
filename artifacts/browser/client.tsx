@@ -659,9 +659,9 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
             <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                  <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono text-gray-500">You're editing manually</span>
+                  <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono text-white">You're editing manually</span>
                 </div>
-                <span className="text-xs sm:text-sm text-gray-500 font-inter hidden sm:block">The AI will continue with your changes when you give back control.</span>
+                <span className="text-xs sm:text-sm text-white font-inter hidden sm:block">The AI will continue with your changes when you give back control.</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button
