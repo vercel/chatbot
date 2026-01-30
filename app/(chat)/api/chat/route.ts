@@ -25,7 +25,7 @@ import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
-import { myProvider } from '@/lib/ai/providers';
+import { myProvider, webAutomationModel } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
@@ -38,7 +38,14 @@ import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
-// Mastra import removed - web automation now uses chatRoute
+
+// AI SDK web automation imports (used when USE_AI_SDK_AGENT=true)
+import { apricotTools } from '@/lib/ai/tools/apricot';
+import { createBrowserTool } from '@/lib/ai/tools/browser';
+import { webAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
+
+// Feature flag for AI SDK agent vs Mastra
+const useAiSdkAgent = process.env.USE_AI_SDK_AGENT === 'true';
 
 export const maxDuration = 300; // 5 minutes for web automation tasks
 
@@ -151,18 +158,76 @@ export async function POST(request: Request) {
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
-    // Web automation model is now handled by Mastra chatRoute
+    // Web automation model handling
     if (selectedChatModel === 'web-automation-model') {
-      return new ChatSDKError('bad_request:api', 'Web automation model should use Mastra chatRoute').toResponse();
+      // Feature flag: if false, return error so client falls back to mastra-proxy
+      if (!useAiSdkAgent) {
+        return new ChatSDKError(
+          'bad_request:api',
+          'Web automation uses Mastra backend'
+        ).toResponse();
+      }
+
+      // Create session ID for browser isolation
+      const sessionId = `${id}-${session.user.id}`;
+
+      const stream = createUIMessageStream({
+        execute: async ({ writer: dataStream }) => {
+          const result = streamText({
+            model: webAutomationModel,
+            system: webAutomationSystemPrompt,
+            messages: await convertToModelMessages(uiMessages),
+            tools: {
+              ...apricotTools,
+              browser: createBrowserTool(sessionId),
+            },
+            stopWhen: stepCountIs(50),
+            experimental_telemetry: {
+              isEnabled: isProductionEnvironment,
+              functionId: 'web-automation-agent',
+            },
+          });
+
+          result.consumeStream();
+          dataStream.merge(result.toUIMessageStream());
+        },
+        generateId: generateUUID,
+        onFinish: async ({ messages }) => {
+          await saveMessages({
+            messages: messages.map((message) => ({
+              id: message.id,
+              role: message.role,
+              parts: message.parts,
+              createdAt: new Date(),
+              attachments: [],
+              chatId: id,
+            })),
+          });
+        },
+        onError: () => {
+          return 'Oops, an error occurred!';
+        },
+      });
+
+      const streamContext = getStreamContext();
+
+      if (streamContext) {
+        return new Response(
+          await streamContext.resumableStream(streamId, () =>
+            stream.pipeThrough(new JsonToSseTransformStream())
+          )
+        );
+      }
+      return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
     }
 
     // Default handling for other models
     const stream = createUIMessageStream({
-      execute: ({ writer: dataStream }) => {
+      execute: async ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, requestHints }),
-          messages: convertToModelMessages(uiMessages),
+          messages: await convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(50),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'

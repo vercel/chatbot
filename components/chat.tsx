@@ -22,6 +22,9 @@ import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
 import { BenefitApplicationsLanding } from './benefit-applications-landing';
 
+// Feature flag for AI SDK agent vs Mastra (client-side)
+const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
+
 export function Chat({
   id,
   initialMessages,
@@ -66,27 +69,32 @@ export function Chat({
     experimental_throttle: 100,
     generateId: generateUUID,
     transport: new DefaultChatTransport({
-      api: initialChatModel === 'web-automation-model' ?
-        '/api/mastra-proxy' :
-        '/api/chat',
+      // Route based on feature flag: when AI SDK agent is enabled, use /api/chat for web automation
+      // Otherwise, use /api/mastra-proxy for backward compatibility
+      api:
+        initialChatModel === 'web-automation-model' && !useAiSdkAgent
+          ? '/api/mastra-proxy'
+          : '/api/chat',
       fetch: fetchWithErrorHandlers,
-      prepareSendMessagesRequest: initialChatModel !== 'web-automation-model' ?
-        ({ messages, id, body }) => ({
-          body: {
-            id,
-            message: messages.at(-1),
-            selectedChatModel: initialChatModel,
-            selectedVisibilityType: visibilityType,
-            ...body,
-          },
-        }) : ({ messages, id, body }) => ({
-          body: {
-            messages,
-            threadId: id,
-            resourceId: session?.user?.id,
-            ...body,
-          },
-        }),
+      prepareSendMessagesRequest:
+        initialChatModel === 'web-automation-model' && !useAiSdkAgent
+          ? ({ messages, id, body }) => ({
+              body: {
+                messages,
+                threadId: id,
+                resourceId: session?.user?.id,
+                ...body,
+              },
+            })
+          : ({ messages, id, body }) => ({
+              body: {
+                id,
+                message: messages.at(-1),
+                selectedChatModel: initialChatModel,
+                selectedVisibilityType: visibilityType,
+                ...body,
+              },
+            }),
     }),
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
@@ -116,8 +124,9 @@ export function Chat({
     // Always call the original stop to abort the stream
     originalStop();
 
-    // For web automation model, also send stopChat action to backend
-    if (initialChatModel === 'web-automation-model') {
+    // For web automation model using Mastra backend, also send stopChat action
+    // When using AI SDK agent, the AbortController handles stopping
+    if (initialChatModel === 'web-automation-model' && !useAiSdkAgent) {
       try {
         await fetch('/api/mastra-proxy', {
           method: 'POST',
@@ -179,9 +188,10 @@ export function Chat({
         const toolName = (part as any).toolName;
 
         // Check for tool-call type with browser-related toolName
-        // Supports: browser_navigate, playwright_browser_*, mcp_playwright_browser_*, playwright.browser_*
+        // Supports: browser (AI SDK), browser_navigate, playwright_browser_*, mcp_playwright_browser_*, playwright.browser_*
         if (partType === 'tool-call' &&
-            (toolName?.startsWith('browser_') ||
+            (toolName === 'browser' || // AI SDK agent browser tool
+             toolName?.startsWith('browser_') ||
              toolName?.startsWith('playwright_browser') ||
              toolName?.startsWith('mcp_playwright_browser') ||
              toolName?.startsWith('playwright.browser_') ||
@@ -190,7 +200,8 @@ export function Chat({
         }
 
         // Check for tool- prefixed types (how tools appear in message parts)
-        if (partType?.startsWith('tool-browser_') ||
+        if (partType === 'tool-browser' || // AI SDK agent browser tool
+            partType?.startsWith('tool-browser_') ||
             partType?.startsWith('tool-playwright_browser') ||
             partType?.startsWith('tool-mcp_playwright_browser') ||
             partType?.startsWith('tool-playwright.browser_')) {
@@ -232,14 +243,16 @@ export function Chat({
           const partType = (part as any).type;
           const toolName = (part as any).toolName;
 
-          // Supports: browser_navigate, playwright_browser_*, mcp_playwright_browser_*, playwright.browser_*
+          // Supports: browser (AI SDK), browser_navigate, playwright_browser_*, mcp_playwright_browser_*, playwright.browser_*
           return (partType === 'tool-call' &&
-                  (toolName?.startsWith('browser_') ||
+                  (toolName === 'browser' || // AI SDK agent browser tool
+                   toolName?.startsWith('browser_') ||
                    toolName?.startsWith('playwright_browser') ||
                    toolName?.startsWith('mcp_playwright_browser') ||
                    toolName?.startsWith('playwright.browser_') ||
                    toolName?.includes('_browser_'))) ||
-                 (partType?.startsWith('tool-browser_') ||
+                 (partType === 'tool-browser' || // AI SDK agent browser tool
+                  partType?.startsWith('tool-browser_') ||
                   partType?.startsWith('tool-playwright_browser') ||
                   partType?.startsWith('tool-mcp_playwright_browser') ||
                   partType?.startsWith('tool-playwright.browser_'));

@@ -448,39 +448,31 @@ const PurePreviewMessage = ({
 
                   // Only use CollapsibleWrapper for get-participant-with-household
                   if (displayName === 'Retrieved participant data') {
-                    if (output && 'error' in output) {
-                      return (
-                        <CollapsibleWrapper 
-                          key={toolCallId} 
-                          displayName={displayName} 
-                          input={input} 
-                          output={output} 
-                          isError={true}
-                          icon={Icon}
-                        />
-                      );
-                    }
-
+                    // Check for actual error value, not just presence of 'error' key
+                    const hasParticipantError = output && 'error' in output && output.error;
                     return (
-                      <CollapsibleWrapper 
-                        key={toolCallId} 
-                        displayName={displayName} 
-                        input={input} 
+                      <CollapsibleWrapper
+                        key={toolCallId}
+                        displayName={displayName}
+                        input={input}
                         output={output}
+                        isError={hasParticipantError}
                         icon={Icon}
                       />
                     );
                   }
 
                   // For all other tools, show simple icon with text
+                  // Check for actual error value, not just presence of 'error' key (some tools return { error: null } on success)
+                  const hasError = output && 'error' in output && output.error;
                   return (
                     <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
-                      <div className={`text-[10px] leading-[150%] font-ibm-plex-mono flex items-center gap-2 ${output && 'error' in output ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      <div className={`text-[10px] leading-[150%] font-ibm-plex-mono flex items-center gap-2 ${hasError ? 'text-red-600' : 'text-muted-foreground'}`}>
                         {Icon && (
                           <Icon size={12} className="text-gray-500 shrink-0" />
                         )}
                         {displayName}
-                        {output && 'error' in output && ' (Error)'}
+                        {hasError && ' (Error)'}
                       </div>
                     </div>
                   );

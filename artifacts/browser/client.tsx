@@ -13,6 +13,10 @@ import {
 } from '@/components/ui/sheet';
 import { AgentStatusIndicator } from '@/components/agent-status-indicator';
 import { BrowserLoadingState, BrowserErrorState, BrowserTimeoutState } from './browser-states';
+import { KernelBrowserClient } from './client-kernel';
+
+// Feature flag for AI SDK agent vs Mastra (client-side)
+const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
 
 interface BrowserFrame {
   type: 'frame';
@@ -86,9 +90,12 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
   },
 
   content: ({ metadata, setMetadata, isCurrentVersion, status, chatStatus, stop }) => {
+    // =====================================================
+    // ALL HOOKS MUST BE AT THE TOP - before any conditional returns
+    // This is a React requirement - hooks must be called in the same order every render
+    // =====================================================
     const [lastFrame, setLastFrame] = useState<string | null>(null);
     const isMobile = useIsMobile();
-  
     const wsRef = useRef<WebSocket | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const frameCountRef = useRef(0);
@@ -97,6 +104,8 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
     const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
 
+    // Define connectToBrowserStream early so it can be used in useEffect
+    // This function is only used in the Mastra/WebSocket path, but must be stable for hooks
     const connectToBrowserStream = async () => {
       if (!metadata?.sessionId) return;
 
@@ -532,7 +541,10 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
 
 
     // Auto-connect when artifact becomes current version or is first created
+    // Skip WebSocket connection when using AI SDK agent (uses Kernel iframe instead)
     useEffect(() => {
+      if (useAiSdkAgent) return; // Kernel handles its own connection via iframe
+
       if (metadata && !metadata.isConnected) {
         // Auto-connect when artifact is visible and not already connected
         // We check !isConnected only, since initialize sets isConnecting: true
@@ -601,6 +613,40 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
 
     if (!metadata) {
       return <BrowserLoadingState />;
+    }
+
+    // When using AI SDK agent with Kernel.sh, render the Kernel browser client
+    // This uses an iframe with Kernel's live-view instead of WebSocket streaming
+    if (useAiSdkAgent && metadata?.sessionId) {
+      return (
+        <KernelBrowserClient
+          sessionId={metadata.sessionId}
+          controlMode={metadata.controlMode}
+          onControlModeChange={(mode) => {
+            setMetadata((prev) => ({
+              ...prev,
+              controlMode: mode,
+              isFocused: mode === 'user',
+            }));
+          }}
+          onConnectionChange={(connected) => {
+            setMetadata((prev) => ({
+              ...prev,
+              isConnected: connected,
+              isConnecting: false,
+            }));
+          }}
+          chatStatus={chatStatus}
+          stop={stop}
+          isFullscreen={metadata.isFullscreen}
+          onFullscreenChange={(fullscreen) => {
+            setMetadata((prev) => ({
+              ...prev,
+              isFullscreen: fullscreen,
+            }));
+          }}
+        />
+      );
     }
 
     // Fullscreen mode when in user control mode

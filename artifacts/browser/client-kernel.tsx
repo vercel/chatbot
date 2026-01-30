@@ -1,0 +1,388 @@
+'use client';
+
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { MousePointerClick, RefreshCw, Monitor } from 'lucide-react';
+import { toast } from 'sonner';
+import { AgentStatusIndicator } from '@/components/agent-status-indicator';
+import { BrowserLoadingState, BrowserErrorState } from './browser-states';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import type { ChatStatus } from '@/components/create-artifact';
+
+interface KernelBrowserClientProps {
+  sessionId: string;
+  controlMode: 'agent' | 'user';
+  onControlModeChange: (mode: 'agent' | 'user') => void;
+  onConnectionChange?: (connected: boolean) => void;
+  chatStatus?: ChatStatus;
+  stop?: () => void;
+  isFullscreen?: boolean;
+  onFullscreenChange?: (fullscreen: boolean) => void;
+}
+
+export function KernelBrowserClient({
+  sessionId,
+  controlMode,
+  onControlModeChange,
+  onConnectionChange,
+  chatStatus,
+  stop,
+  isFullscreen = false,
+  onFullscreenChange,
+}: KernelBrowserClientProps) {
+  const [liveViewUrl, setLiveViewUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Use refs to avoid dependency changes triggering re-initialization
+  const onConnectionChangeRef = useRef(onConnectionChange);
+  onConnectionChangeRef.current = onConnectionChange;
+
+  // Track if we've already initialized for this session
+  const initializedSessionRef = useRef<string | null>(null);
+
+  const initBrowser = useCallback(async (force = false) => {
+    // Skip if already initialized for this session (unless forced)
+    if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/kernel-browser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', sessionId, isMobile }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create browser');
+      }
+
+      const data = await response.json();
+      setLiveViewUrl(data.liveViewUrl);
+      setIsConnected(true);
+      initializedSessionRef.current = sessionId;
+      onConnectionChangeRef.current?.(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to connect';
+      setError(message);
+      setIsConnected(false);
+      onConnectionChangeRef.current?.(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId, liveViewUrl]);
+
+  // Initialize browser on mount
+  // NOTE: We do NOT delete the browser on unmount because:
+  // 1. React StrictMode causes double mount/unmount cycles
+  // 2. The browser should persist for the entire chat session
+  // 3. Kernel browsers auto-delete after timeout (5 min)
+  // 4. The browser tool needs the same browser instance
+  useEffect(() => {
+    // Only initialize if we haven't already for this session
+    if (initializedSessionRef.current !== sessionId) {
+      initBrowser();
+    }
+  }, [sessionId, initBrowser]);
+
+  // Listen for control mode switch events from confirmation components
+  useEffect(() => {
+    const handleSwitchControl = (event: CustomEvent) => {
+      const { mode } = event.detail;
+      if (mode === 'user' || mode === 'agent') {
+        switchControlMode(mode);
+      }
+    };
+
+    window.addEventListener('switch-browser-control', handleSwitchControl as EventListener);
+
+    return () => {
+      window.removeEventListener('switch-browser-control', handleSwitchControl as EventListener);
+    };
+  }, []);
+
+  // Global keyboard listener for fullscreen mode - Escape to exit
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullscreen && controlMode === 'user') {
+        event.preventDefault();
+        switchControlMode('agent');
+      }
+    };
+
+    if (isFullscreen && controlMode === 'user') {
+      document.addEventListener('keydown', handleGlobalKeyDown);
+      return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+    }
+  }, [isFullscreen, controlMode]);
+
+  const switchControlMode = (mode: 'agent' | 'user') => {
+    if (!isConnected) {
+      toast.error('Not connected to browser session');
+      return;
+    }
+
+    console.log(`[Kernel] Switching control mode to: ${mode}`);
+
+    if (mode === 'user') {
+      // Stop the AI when user takes control
+      if (stop) {
+        stop();
+      }
+      // On desktop, automatically enable fullscreen when switching to user mode
+      if (!isMobile) {
+        onFullscreenChange?.(true);
+      }
+    } else {
+      // Exit fullscreen when giving back control to agent
+      onFullscreenChange?.(false);
+    }
+
+    onControlModeChange(mode);
+    toast.success(`Control switched to ${mode} mode`);
+  };
+
+  const disconnectBrowser = async () => {
+    try {
+      await fetch('/api/kernel-browser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', sessionId }),
+      });
+      setIsConnected(false);
+      setLiveViewUrl(null);
+      onConnectionChange?.(false);
+    } catch (err) {
+      console.error('Failed to disconnect browser:', err);
+    }
+  };
+
+  // Build the iframe URL with readOnly based on control mode
+  // In agent mode: readOnly=true (user cannot interact)
+  // In user mode: no readOnly param (user can interact directly)
+  // Memoize to prevent unnecessary iframe reloads
+  const iframeUrl = useMemo(() => {
+    if (!liveViewUrl) return null;
+
+    const url = new URL(liveViewUrl);
+    if (controlMode === 'agent') {
+      url.searchParams.set('readOnly', 'true');
+    } else {
+      url.searchParams.delete('readOnly');
+    }
+    return url.toString();
+  }, [liveViewUrl, controlMode]);
+
+  if (loading) {
+    return <BrowserLoadingState />;
+  }
+
+  if (error) {
+    return <BrowserErrorState onRetry={initBrowser} />;
+  }
+
+  if (!liveViewUrl) {
+    return (
+      <div className="flex items-center justify-center h-full bg-zinc-900 text-zinc-400">
+        No browser available
+      </div>
+    );
+  }
+
+  // Fullscreen mode when user has control
+  if (controlMode === 'user' && isFullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 browser-fullscreen-bg flex flex-col overflow-hidden">
+        {/* Fullscreen header with controls */}
+        <div className="sticky top-0 left-0 right-0 z-10 browser-fullscreen-bg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-3 gap-2">
+            <div className="flex flex-col gap-1 text-white">
+              <div className="flex items-center gap-2">
+                <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
+                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono">You're editing manually</span>
+              </div>
+              <span className="text-xs sm:text-sm text-gray-400 font-inter hidden sm:block">
+                The AI will continue with your changes when you give back control.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => switchControlMode('agent')}
+                className="px-3 sm:px-4 py-2 sm:py-2.5 rounded text-xs sm:text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
+              >
+                <div className="flex items-center gap-2 text-white">
+                  Give back control
+                </div>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Fullscreen browser iframe */}
+        <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="relative w-full h-full max-w-[1920px] max-h-[1080px]" style={{ aspectRatio: '16 / 9' }}>
+              <iframe
+                key={liveViewUrl} // Stable key prevents unnecessary remounts
+                src={iframeUrl || undefined}
+                className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-2xl"
+                allow="clipboard-read; clipboard-write"
+                title="Browser View"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile drawer mode - matches legacy client.tsx mobile experience
+  if (isMobile) {
+    return (
+      <div className="pointer-events-none">
+        {/* Mobile: Floating button to open browser drawer */}
+        <div className="fixed top-4 right-4 z-[100] pointer-events-auto">
+          <Button
+            size="lg"
+            onClick={() => setIsSheetOpen(true)}
+            className="rounded-full shadow-lg px-4 py-3 bg-custom-purple hover:bg-custom-purple/90 text-white"
+          >
+            <Monitor className="w-5 h-5 mr-2" />
+            View Browser
+          </Button>
+        </div>
+
+        {/* Mobile: Bottom sheet with browser content */}
+        <div className="pointer-events-auto">
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]">
+              <SheetHeader className="px-4 py-3 border-b">
+                <SheetTitle className="text-left">Browser View</SheetTitle>
+              </SheetHeader>
+
+              {/* Loading state */}
+              {loading && <BrowserLoadingState />}
+
+              {/* Control mode indicator */}
+              {isConnected && (
+                <div className="flex items-center justify-between py-2 px-4 bg-muted/20">
+                  <AgentStatusIndicator
+                    chatStatus={chatStatus}
+                    controlMode={controlMode}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
+                    className="px-3 py-2 rounded text-xs font-medium border-0 hover:bg-custom-purple/90 bg-custom-purple text-white"
+                  >
+                    {controlMode === 'user' ? (
+                      <div className="flex items-center gap-2 text-white">
+                        Give back control
+                      </div>
+                    ) : (
+                      <>
+                        <MousePointerClick className="w-4 h-4 mr-1" />
+                        Take control
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* Browser content */}
+              <div className="flex-1 overflow-y-scroll p-4">
+                {error ? (
+                  <BrowserErrorState onRetry={initBrowser} />
+                ) : !isConnected ? (
+                  <BrowserLoadingState />
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <div className="relative w-full max-w-[768px] bg-white rounded-lg shadow-lg">
+                      <iframe
+                        key={liveViewUrl}
+                        src={iframeUrl || undefined}
+                        className="w-full border-0 bg-white rounded-lg"
+                        style={{ aspectRatio: '4 / 3' }}
+                        allow="clipboard-read; clipboard-write"
+                        title="Browser View"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal (non-fullscreen) desktop mode
+  return (
+    <div className="h-full flex flex-col">
+      {/* Control mode indicator and buttons */}
+      {isConnected && (
+        <div className="flex items-center justify-between py-2 bg-muted/20">
+          <AgentStatusIndicator
+            chatStatus={chatStatus}
+            controlMode={controlMode}
+            className="text-sm text-black"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => initBrowser(true)}
+              className="px-2 py-2"
+              title="Refresh browser connection"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={controlMode === 'user' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
+              className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
+            >
+              <div className="flex items-center gap-2 text-white">
+                <MousePointerClick className="w-5 h-5" />
+                {controlMode === 'user' ? 'Give back control' : 'Take control'}
+              </div>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Browser iframe - matches client.tsx layout: flex-1 relative m-4 with centered content */}
+      <div className="flex-1 relative m-4">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <iframe
+            key={liveViewUrl}
+            src={iframeUrl || undefined}
+            className="w-full border-0 bg-white rounded-lg"
+            style={{ aspectRatio: '16 / 9' }}
+            allow="clipboard-read; clipboard-write"
+            title="Browser View"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

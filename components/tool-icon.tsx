@@ -96,8 +96,85 @@ export const ToolIcon = ({ toolName, size = 12, className = "text-gray-500 flex-
   return <IconComponent size={size} className={className} />;
 };
 
+// Map agent-browser CLI commands to display info
+const browserCommandMap: Record<string, { verb: string; icon: React.ComponentType<any> }> = {
+  'open': { verb: 'Opening', icon: Globe },
+  'goto': { verb: 'Opening', icon: Globe },
+  'navigate': { verb: 'Opening', icon: Globe },
+  'snapshot': { verb: 'Reading page', icon: Monitor },
+  'click': { verb: 'Clicking', icon: MousePointer },
+  'dblclick': { verb: 'Double-clicking', icon: MousePointer },
+  'fill': { verb: 'Filling', icon: Type },
+  'type': { verb: 'Typing', icon: Type },
+  'press': { verb: 'Pressing', icon: Keyboard },
+  'select': { verb: 'Selecting', icon: CheckSquare },
+  'check': { verb: 'Checking', icon: CheckSquare },
+  'uncheck': { verb: 'Unchecking', icon: CheckSquare },
+  'hover': { verb: 'Hovering', icon: Move },
+  'focus': { verb: 'Focusing', icon: MousePointer },
+  'scroll': { verb: 'Scrolling', icon: Move },
+  'scrollintoview': { verb: 'Scrolling to', icon: Move },
+  'wait': { verb: 'Waiting', icon: Clock },
+  'get': { verb: 'Getting', icon: Search },
+  'screenshot': { verb: 'Taking screenshot', icon: Camera },
+  'drag': { verb: 'Dragging', icon: Move },
+  'upload': { verb: 'Uploading', icon: Upload },
+  'eval': { verb: 'Running script', icon: Code },
+  'back': { verb: 'Going back', icon: ArrowLeft },
+  'forward': { verb: 'Going forward', icon: Globe },
+  'reload': { verb: 'Reloading', icon: Globe },
+  'close': { verb: 'Closing', icon: X },
+};
+
+// Parse agent-browser command to get display text and icon
+const parseBrowserCommand = (command?: string): { text: string; icon: React.ComponentType<any> } => {
+  if (!command) return { text: 'Browser', icon: Monitor };
+
+  const firstWord = command.trim().split(/\s+/)[0].toLowerCase();
+  const mapping = browserCommandMap[firstWord];
+
+  if (mapping) {
+    // For simple commands, just show the verb
+    if (['snapshot', 'screenshot', 'back', 'forward', 'reload', 'close'].includes(firstWord)) {
+      return { text: mapping.verb, icon: mapping.icon };
+    }
+
+    // Extract quoted value (the meaningful part, not the selector)
+    const quotedMatch = command.match(/"([^"]+)"/);
+    if (quotedMatch) {
+      const value = quotedMatch[1].length > 35 ? quotedMatch[1].substring(0, 35) + '...' : quotedMatch[1];
+      return { text: `${mapping.verb} "${value}"`, icon: mapping.icon };
+    }
+
+    // For open/goto/navigate, show the URL (second argument, no quotes)
+    if (['open', 'goto', 'navigate'].includes(firstWord)) {
+      const url = command.trim().split(/\s+/)[1] || '';
+      const displayUrl = url.length > 40 ? url.substring(0, 40) + '...' : url;
+      return { text: `${mapping.verb} ${displayUrl}`, icon: mapping.icon };
+    }
+
+    // For press, show the key
+    if (firstWord === 'press') {
+      const key = command.trim().split(/\s+/)[1] || '';
+      return { text: `${mapping.verb} ${key}`, icon: mapping.icon };
+    }
+
+    // For other commands without quotes, just show the verb
+    return { text: mapping.verb, icon: mapping.icon };
+  }
+
+  // Fallback for unknown commands
+  return { text: `Browser: ${command.substring(0, 40)}${command.length > 40 ? '...' : ''}`, icon: Monitor };
+};
+
 // Helper function to get tool display name with icon
 export const getToolDisplayInfo = (toolName: string, input?: any): { text: string; icon: React.ComponentType<any> } => {
+  // Handle AI SDK browser tool (agent-browser CLI)
+  const cleanToolName = toolName.replace('tool-', '');
+  if (cleanToolName === 'browser') {
+    return parseBrowserCommand(input?.command);
+  }
+
   const toolMappings: Record<string, (input?: any) => string> = {
     // New toolset format (browser_*)
     'browser_navigate': (input) => input?.url ? `Navigated to ${input.url}` : 'Navigated to page',
@@ -149,7 +226,6 @@ export const getToolDisplayInfo = (toolName: string, input?: any): { text: strin
     'updateWorkingMemory': () => 'Updated working memory',
   };
 
-  const cleanToolName = toolName.replace('tool-', '');
   const mapper = toolMappings[cleanToolName];
   
   let text: string;
