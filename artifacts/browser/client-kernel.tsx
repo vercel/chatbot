@@ -210,25 +210,23 @@ export function KernelBrowserClient({
         {/* Fullscreen header with controls */}
         <div className="sticky top-0 left-0 right-0 z-10 browser-fullscreen-bg">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-3 gap-2">
-            <div className="flex flex-col gap-1 text-white">
+            <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono">You're editing manually</span>
+                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">You're editing manually</span>
               </div>
-              <span className="text-xs sm:text-sm text-gray-400 font-inter hidden sm:block">
+              <span className="text-xs sm:text-sm browser-fullscreen-text font-inter hidden sm:block">
                 The AI will continue with your changes when you give back control.
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                type="button"
+                variant="default"
                 size="sm"
                 onClick={() => switchControlMode('agent')}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 rounded text-xs sm:text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
               >
-                <div className="flex items-center gap-2 text-white">
-                  Give back control
-                </div>
+                Give back control
               </Button>
             </div>
           </div>
@@ -259,9 +257,11 @@ export function KernelBrowserClient({
         {/* Mobile: Floating button to open browser drawer */}
         <div className="fixed top-4 right-4 z-[100] pointer-events-auto">
           <Button
+            type="button"
+            variant="default"
             size="lg"
             onClick={() => setIsSheetOpen(true)}
-            className="rounded-full shadow-lg px-4 py-3 bg-custom-purple hover:bg-custom-purple/90 text-white"
+            className="rounded-full shadow-lg"
           >
             <Monitor className="w-5 h-5 mr-2" />
             View Browser
@@ -287,15 +287,13 @@ export function KernelBrowserClient({
                     controlMode={controlMode}
                   />
                   <Button
-                    variant="outline"
+                    type="button"
+                    variant="default"
                     size="sm"
                     onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
-                    className="px-3 py-2 rounded text-xs font-medium border-0 hover:bg-custom-purple/90 bg-custom-purple text-white"
                   >
                     {controlMode === 'user' ? (
-                      <div className="flex items-center gap-2 text-white">
-                        Give back control
-                      </div>
+                      'Give back control'
                     ) : (
                       <>
                         <MousePointerClick className="w-4 h-4 mr-1" />
@@ -347,24 +345,22 @@ export function KernelBrowserClient({
           />
           <div className="flex items-center gap-2">
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => initBrowser(true)}
-              className="px-2 py-2"
               title="Refresh browser connection"
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
             <Button
-              variant={controlMode === 'user' ? 'default' : 'outline'}
+              type="button"
+              variant="default"
               size="sm"
               onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
-              className="px-4 py-2.5 rounded text-sm font-medium leading-5 border-0 hover:bg-custom-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-custom-purple"
             >
-              <div className="flex items-center gap-2 text-white">
-                <MousePointerClick className="w-5 h-5" />
-                {controlMode === 'user' ? 'Give back control' : 'Take control'}
-              </div>
+              <MousePointerClick className="w-4 h-4" />
+              {controlMode === 'user' ? 'Give back control' : 'Take control'}
             </Button>
           </div>
         </div>

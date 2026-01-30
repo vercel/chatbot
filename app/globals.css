@@ -207,6 +207,11 @@
     background-color: #000000 !important;
 }
 
+/* Browser fullscreen white text - ensures text is white on black background */
+.browser-fullscreen-text {
+    color: #ffffff !important;
+}
+
 /* Regular browser canvas cursor */
 .browser-canvas-regular {
     cursor: not-allowed !important;
