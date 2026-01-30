@@ -61,7 +61,7 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
         console.log('[browser-tool] CDP URL:', cdpUrl);
 
         // Use --cdp flag to connect agent-browser to Kernel's browser via CDP WebSocket
-        const fullCommand = `npx agent-browser --cdp "${cdpUrl}" --timeout 3000 ${command}`;
+        const fullCommand = `npx agent-browser --cdp "${cdpUrl}" ${command}`;
         console.log('[browser-tool] Executing:', fullCommand);
 
         const { stdout, stderr } = await execAsync(fullCommand, {
