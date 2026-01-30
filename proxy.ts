@@ -1,59 +1,90 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
-import { guestRegex, isDevelopmentEnvironment } from "./lib/constants";
+
+const isLocalEnvironment = process.env.LOCAL_ENVIRONMENT === "true";
+
+function base64UrlDecode(str: string): Uint8Array {
+  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(
+    base64.length + ((4 - (base64.length % 4)) % 4),
+    "="
+  );
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+}
+
+async function verifyHS256(token: string, secret: string): Promise<boolean> {
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+
+  try {
+    const [header, payload, signature] = parts;
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+    const data = new TextEncoder().encode(`${header}.${payload}`);
+    const sig = base64UrlDecode(signature);
+    return crypto.subtle.verify("HMAC", key, sig, data);
+  } catch {
+    return false;
+  }
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  /*
-   * Playwright starts the dev server and requires a 200 status to
-   * begin the tests, so this ensures that the tests can start
-   */
   if (pathname.startsWith("/ping")) {
     return new Response("pong", { status: 200 });
   }
 
-  if (pathname.startsWith("/api/auth")) {
+  if (isLocalEnvironment) {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    secureCookie: !isDevelopmentEnvironment,
-  });
-
-  if (!token) {
-    const redirectUrl = encodeURIComponent(request.url);
-
-    return NextResponse.redirect(
-      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url)
-    );
+  const secret = process.env.IFRAME_SECRET;
+  if (!secret) {
+    console.error("IFRAME_SECRET is not set");
+    return NextResponse.rewrite(new URL("/404", request.url));
   }
 
-  const isGuest = guestRegex.test(token?.email ?? "");
+  const tokenFromUrl = request.nextUrl.searchParams.get("token");
 
-  if (token && !isGuest && ["/login", "/register"].includes(pathname)) {
-    return NextResponse.redirect(new URL("/", request.url));
+  if (tokenFromUrl) {
+    const isValid = await verifyHS256(tokenFromUrl, secret);
+    if (isValid) {
+      const url = request.nextUrl.clone();
+      url.searchParams.delete("token");
+      const response = NextResponse.redirect(url);
+      response.cookies.set("portal-token", tokenFromUrl, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "none",
+        path: "/",
+      });
+      return response;
+    }
+    return NextResponse.rewrite(new URL("/404", request.url));
   }
 
-  return NextResponse.next();
+  const cookieToken = request.cookies.get("portal-token")?.value;
+  if (cookieToken) {
+    const isValid = await verifyHS256(cookieToken, secret);
+    if (isValid) {
+      return NextResponse.next();
+    }
+    const response = NextResponse.rewrite(new URL("/404", request.url));
+    response.cookies.delete("portal-token");
+    return response;
+  }
+
+  return NextResponse.rewrite(new URL("/404", request.url));
 }
 
 export const config = {
   matcher: [
-    "/",
-    "/chat/:id",
-    "/api/:path*",
-    "/login",
-    "/register",
-
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|404).*)",
   ],
 };

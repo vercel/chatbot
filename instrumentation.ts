@@ -1,5 +1,5 @@
 import { registerOTel } from "@vercel/otel";
 
 export function register() {
-  registerOTel({ serviceName: "ai-chatbot" });
+  registerOTel({ serviceName: "cadre-ai-chat" });
 }

@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { User } from "next-auth";
+type User = { id: string; email: string; name?: string };
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -71,8 +72,14 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   setOpenMobile(false);
                 }}
               >
-                <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  Chatbot
+                <Image
+                  alt="Cadre AI"
+                  height={24}
+                  src="/images/cadre_ai.png"
+                  width={24}
+                />
+                <span className="cursor-pointer font-semibold text-lg hover:bg-muted rounded-md px-1">
+                  Cadre AI Chat
                 </span>
               </Link>
               <div className="flex flex-row gap-1">
