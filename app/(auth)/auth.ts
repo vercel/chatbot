@@ -3,10 +3,17 @@ import NextAuth, { type DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
-import { getUser, upsertOAuthUser } from '@/lib/db/queries';
+import { getUser, upsertOAuthUser, ensureUserExists } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
 import type { DefaultJWT } from 'next-auth/jwt';
+
+// Feature flag for guest login in preview environments
+const useGuestLogin = process.env.USE_GUEST_LOGIN === 'true';
+
+// Fixed guest user for preview environments (using a valid UUID)
+const GUEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+const GUEST_USER_EMAIL = 'guest@preview.local';
 
 export type UserType = 'regular';
 
@@ -91,6 +98,25 @@ export const {
         if (!passwordsMatch) return null;
 
         return { ...user, type: 'regular' };
+      },
+    }),
+    // Guest provider for preview environments - auto-logs in without credentials
+    Credentials({
+      id: 'guest',
+      name: 'guest',
+      credentials: {},
+      async authorize() {
+        if (!useGuestLogin) {
+          return null;
+        }
+
+        // Create or get the guest user
+        const guestUser = await ensureUserExists({
+          id: GUEST_USER_ID,
+          email: GUEST_USER_EMAIL,
+        });
+
+        return { ...guestUser, type: 'regular' as const };
       },
     }),
   ],

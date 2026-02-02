@@ -7,6 +7,9 @@ import { signIn } from 'next-auth/react';
 import { MicrosoftLogo } from '@/components/icons/MicrosoftLogo';
 import { GoogleLogo } from '@/components/icons/GoogleLogo';
 
+// Feature flag for guest login in preview environments
+const useGuestLogin = process.env.NEXT_PUBLIC_USE_GUEST_LOGIN === 'true';
+
 function ErrorHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,11 +30,39 @@ function ErrorHandler() {
 }
 
 function LoginContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const [loadingMethod, setLoadingMethod] = useState<'microsoft' | 'google' | null>(null);
+  const [loadingMethod, setLoadingMethod] = useState<'microsoft' | 'google' | 'guest' | null>(null);
+  const [hasAutoSignedIn, setHasAutoSignedIn] = useState(false);
 
   // Use callbackUrl from URL params, default to /home
   const callbackUrl = searchParams.get('callbackUrl') || '/home';
+
+  // Auto sign-in as guest when feature flag is enabled
+  useEffect(() => {
+    const doGuestSignIn = async () => {
+      if (useGuestLogin && !hasAutoSignedIn) {
+        setHasAutoSignedIn(true);
+        setLoadingMethod('guest');
+
+        // Use redirect: false to handle redirect manually
+        const result = await signIn('guest', { redirect: false });
+
+        if (result?.ok) {
+          // Manual redirect to ensure we stay on the correct host
+          router.push(callbackUrl);
+        } else {
+          toast({
+            type: 'error',
+            description: 'Failed to sign in as guest',
+          });
+          setLoadingMethod(null);
+        }
+      }
+    };
+
+    doGuestSignIn();
+  }, [callbackUrl, hasAutoSignedIn, router]);
 
   const handleGoogleLogin = async () => {
     setLoadingMethod('google');
@@ -59,19 +90,38 @@ function LoginContent() {
     }
   };
 
+  // Show loading state when auto-signing in as guest
+  if (useGuestLogin) {
+    return (
+      <div className="bg-chat-background relative size-full min-h-screen">
+        <div className="absolute bg-card border border-border border-solid left-1/2 rounded-[10px] top-[257px] -translate-x-1/2 w-[414px] h-[180px]">
+          <div className="content-stretch flex flex-col gap-[18px] items-center px-[32px] pt-[32px] w-full">
+            <p className="font-source-serif leading-normal min-w-full not-italic relative shrink-0 text-[32px] text-center text-card-foreground tracking-[0.16px]">
+              Welcome
+            </p>
+            <p className="font-inter font-normal leading-normal min-w-full not-italic relative shrink-0 text-[14px] text-center text-muted-foreground tracking-[0.07px]">
+              Signing you in...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-chat-background relative size-full min-h-screen">
-      <div className="absolute bg-card border border-border border-solid h-[260px] left-1/2 rounded-[10px] top-[257px] -translate-x-1/2 w-[414px]">
-        <div className="absolute content-stretch flex flex-col gap-[18px] h-[42px] items-center left-[32px] top-[32px] w-[350px]">
+      <div className="absolute bg-card border border-border border-solid left-1/2 rounded-[10px] top-[257px] -translate-x-1/2 w-[414px] h-[260px]">
+        <div className="content-stretch flex flex-col gap-[18px] items-center px-[32px] pt-[32px] w-full">
           <p className="font-source-serif leading-normal min-w-full not-italic relative shrink-0 text-[32px] text-center text-card-foreground tracking-[0.16px]">
             Welcome
           </p>
           <p className="font-inter font-normal leading-normal min-w-full not-italic relative shrink-0 text-[14px] text-center text-muted-foreground tracking-[0.07px]">
             Sign in to access the Form-Filling Assistant
           </p>
-          
+
           {/* Microsoft Login Button */}
           <button
+            type="button"
             onClick={handleMicrosoftLogin}
             disabled={loadingMethod !== null}
             className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
@@ -88,6 +138,7 @@ function LoginContent() {
 
           {/* Google Login Button */}
           <button
+            type="button"
             onClick={handleGoogleLogin}
             disabled={loadingMethod !== null}
             className="border border-border border-solid box-border content-stretch flex gap-[8px] items-center justify-center min-h-[36px] px-[16px] py-[7.5px] relative rounded-[8px] shrink-0 w-full hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-card"
