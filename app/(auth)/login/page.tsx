@@ -35,7 +35,11 @@ function LoginContent() {
   const [hasAutoSignedIn, setHasAutoSignedIn] = useState(false);
 
   // Use callbackUrl from URL params, default to /home
-  const callbackUrl = searchParams.get('callbackUrl') || '/home';
+  // Make it absolute to ensure redirect goes to the correct host
+  const callbackUrlParam = searchParams.get('callbackUrl') || '/home';
+  const callbackUrl = typeof window !== 'undefined' && callbackUrlParam.startsWith('/')
+    ? `${window.location.origin}${callbackUrlParam}`
+    : callbackUrlParam;
 
   // Auto sign-in as guest when feature flag is enabled
   useEffect(() => {
