@@ -131,3 +131,45 @@ export interface RecordByIdResponse {
   };
   data: RecordData[];
 }
+
+// ===== Form Fields Types =====
+
+export interface FieldProperty {
+  id: number;
+  field_id: string;
+  type: string;
+  value: string;
+}
+
+export interface FieldOption {
+  id: number;
+  field_id: string;
+  value: string;
+  sort_order: number;
+}
+
+export interface FormFieldData {
+  id: number;
+  section_id: number;
+  field_type_id: number;
+  sort_order: number;
+  label: string;
+  is_required: number;
+  active: number;
+  is_searchable: number;
+  is_duplicate: number;
+  is_hidden: number;
+  is_readonly: number;
+  tooltip: string;
+  guid: string;
+  reference_tag: string;
+  field_properties: FieldProperty[];
+  field_options: FieldOption[];
+}
+
+export interface FormFieldsResponse {
+  meta: {
+    count: number;
+  };
+  data: FormFieldData[];
+}

@@ -1,10 +1,10 @@
 import type {
   OAuthTokenResponse,
   GetUsersOptions,
-  UsersResponse,
   GetFormsOptions,
   FormsResponse,
   RecordByIdResponse,
+  FormFieldsResponse,
 } from './models/apricot-models';
 
 // Re-export types for convenience
@@ -23,7 +23,23 @@ export type {
   RecordLinks,
   RecordData,
   RecordByIdResponse,
+  FieldProperty,
+  FieldOption,
+  FormFieldData,
+  FormFieldsResponse,
 } from './models/apricot-models';
+
+// ===== Configuration =====
+// Use 'api' for production only (https://labs-asp.navateam.com), 'sandbox' for all other environments including dev
+const env = process.env.NEXTAUTH_URL?.includes('://labs-asp.navateam.com') ? 'api' : 'sandbox';
+
+// API configuration from environment variables
+const baseUrl = process.env.APRICOT_API_BASE_URL;
+const clientId = process.env.APRICOT_CLIENT_ID;
+const clientSecret = process.env.APRICOT_CLIENT_SECRET;
+
+// Retry configuration
+const MAX_RETRIES = 1;
 
 // ===== Token Management =====
 let cachedToken: string | null = null;
@@ -36,9 +52,7 @@ export const invalidateToken = (): void => {
 };
 
 // Helper function to build query string
-const buildQueryString = (
-  options?: GetUsersOptions | GetFormsOptions
-): string => {
+const buildQueryString = (options?: GetUsersOptions | GetFormsOptions): string => {
   if (!options) return '';
 
   const params = new URLSearchParams();
@@ -72,11 +86,6 @@ export const authenticate = async (): Promise<string> => {
     return cachedToken;
   }
 
-  // Get environment variables
-  const baseUrl = process.env.APRICOT_API_BASE_URL;
-  const clientId = process.env.APRICOT_CLIENT_ID;
-  const clientSecret = process.env.APRICOT_CLIENT_SECRET;
-
   if (!baseUrl || !clientId || !clientSecret) {
     throw new Error(
       'Missing required environment variables: APRICOT_API_BASE_URL, APRICOT_CLIENT_ID, or APRICOT_CLIENT_SECRET'
@@ -84,7 +93,7 @@ export const authenticate = async (): Promise<string> => {
   }
 
   try {
-    const response = await fetch(`${baseUrl}/sandbox/oauth/token`, {
+    const response = await fetch(`${baseUrl}/${env}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -120,109 +129,25 @@ export const authenticate = async (): Promise<string> => {
     return cachedToken;
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(
-        `Failed to authenticate with Apricot API: ${error.message}`,
-        { cause: error }
-      );
+      throw new Error(`Failed to authenticate with Apricot API: ${error.message}`, { cause: error });
     }
     throw new Error('Failed to authenticate with Apricot API: Unknown error');
   }
 };
 
-// Get Users function
-export const getUsers = async (
-  options?: GetUsersOptions
-): Promise<UsersResponse> => {
-  const baseUrl = process.env.APRICOT_API_BASE_URL;
-
-  if (!baseUrl) {
-    throw new Error(
-      'Missing required environment variable: APRICOT_API_BASE_URL'
-    );
-  }
-
-  // Get access token (with retry logic)
-  let retryCount = 0;
-  const maxRetries = 1;
-
-  while (retryCount <= maxRetries) {
-    try {
-      const accessToken = await authenticate();
-
-      const queryString = buildQueryString(options);
-      const url = `${baseUrl}/sandbox/users${queryString}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      // Handle 401 errors by invalidating token and retrying once
-      if (response.status === 401 && retryCount < maxRetries) {
-        invalidateToken();
-        retryCount++;
-        continue;
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Failed to fetch users with status ${response.status}: ${errorText}`
-        );
-      }
-
-      const data: UsersResponse = await response.json();
-      return data;
-    } catch (error) {
-      // If it's a 401 and we haven't retried yet, continue the loop
-      if (
-        retryCount < maxRetries &&
-        error instanceof Error &&
-        error.message.includes('401')
-      ) {
-        invalidateToken();
-        retryCount++;
-        continue;
-      }
-
-      // Otherwise, throw the error
-      if (error instanceof Error) {
-        throw new Error(
-          `Failed to get users from Apricot API: ${error.message}`
-        );
-      }
-      throw new Error('Failed to get users from Apricot API: Unknown error');
-    }
-  }
-
-  // This should never be reached, but TypeScript needs it
-  throw new Error('Failed to get users after retries');
-};
-
 // Get Forms function
-export const getForms = async (
-  options?: GetFormsOptions
-): Promise<FormsResponse> => {
-  const baseUrl = process.env.APRICOT_API_BASE_URL;
-
+export const getForms = async (options?: GetFormsOptions): Promise<FormsResponse> => {
   if (!baseUrl) {
-    throw new Error(
-      'Missing required environment variable: APRICOT_API_BASE_URL'
-    );
+    throw new Error('Missing required environment variable: APRICOT_API_BASE_URL');
   }
 
-  // Get access token (with retry logic)
   let retryCount = 0;
-  const maxRetries = 1;
 
-  while (retryCount <= maxRetries) {
+  while (retryCount <= MAX_RETRIES) {
     try {
       const accessToken = await authenticate();
-
       const queryString = buildQueryString(options);
-      const url = `${baseUrl}/sandbox/forms${queryString}`;
+      const url = `${baseUrl}/${env}/forms${queryString}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -231,8 +156,7 @@ export const getForms = async (
         },
       });
 
-      // Handle 401 errors by invalidating token and retrying once
-      if (response.status === 401 && retryCount < maxRetries) {
+      if (response.status === 401 && retryCount < MAX_RETRIES) {
         invalidateToken();
         retryCount++;
         continue;
@@ -240,60 +164,39 @@ export const getForms = async (
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `Failed to fetch forms with status ${response.status}: ${errorText}`
-        );
+        throw new Error(`Failed to fetch forms with status ${response.status}: ${errorText}`);
       }
 
-      const data: FormsResponse = await response.json();
-      return data;
+      return await response.json();
     } catch (error) {
-      // If it's a 401 and we haven't retried yet, continue the loop
-      if (
-        retryCount < maxRetries &&
-        error instanceof Error &&
-        error.message.includes('401')
-      ) {
+      if (retryCount < MAX_RETRIES && error instanceof Error && error.message.includes('401')) {
         invalidateToken();
         retryCount++;
         continue;
       }
 
-      // Otherwise, throw the error
       if (error instanceof Error) {
-        throw new Error(
-          `Failed to get forms from Apricot API: ${error.message}`
-        );
+        throw new Error(`Failed to get forms from Apricot API: ${error.message}`);
       }
       throw new Error('Failed to get forms from Apricot API: Unknown error');
     }
   }
 
-  // This should never be reached, but TypeScript needs it
   throw new Error('Failed to get forms after retries');
 };
 
 // Get Record by ID function
-export const getRecordById = async (
-  recordId: number
-): Promise<RecordByIdResponse> => {
-  const baseUrl = process.env.APRICOT_API_BASE_URL;
-
+export const getRecordById = async (recordId: number): Promise<RecordByIdResponse> => {
   if (!baseUrl) {
-    throw new Error(
-      'Missing required environment variable: APRICOT_API_BASE_URL'
-    );
+    throw new Error('Missing required environment variable: APRICOT_API_BASE_URL');
   }
 
-  // Get access token (with retry logic)
   let retryCount = 0;
-  const maxRetries = 1;
 
-  while (retryCount <= maxRetries) {
+  while (retryCount <= MAX_RETRIES) {
     try {
       const accessToken = await authenticate();
-
-      const url = `${baseUrl}/sandbox/records/${recordId}`;
+      const url = `${baseUrl}/${env}/records/${recordId}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -302,8 +205,7 @@ export const getRecordById = async (
         },
       });
 
-      // Handle 401 errors by invalidating token and retrying once
-      if (response.status === 401 && retryCount < maxRetries) {
+      if (response.status === 401 && retryCount < MAX_RETRIES) {
         invalidateToken();
         retryCount++;
         continue;
@@ -311,35 +213,72 @@ export const getRecordById = async (
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `Failed to fetch record with status ${response.status}: ${errorText}`
-        );
+        throw new Error(`Failed to fetch record with status ${response.status}: ${errorText}`);
       }
 
-      const data: RecordByIdResponse = await response.json();
-      return data;
+      return await response.json();
     } catch (error) {
-      // If it's a 401 and we haven't retried yet, continue the loop
-      if (
-        retryCount < maxRetries &&
-        error instanceof Error &&
-        error.message.includes('401')
-      ) {
+      if (retryCount < MAX_RETRIES && error instanceof Error && error.message.includes('401')) {
         invalidateToken();
         retryCount++;
         continue;
       }
 
-      // Otherwise, throw the error
       if (error instanceof Error) {
-        throw new Error(
-          `Failed to get record from Apricot API: ${error.message}`
-        );
+        throw new Error(`Failed to get record from Apricot API: ${error.message}`);
       }
       throw new Error('Failed to get record from Apricot API: Unknown error');
     }
   }
 
-  // This should never be reached, but TypeScript needs it
   throw new Error('Failed to get record after retries');
+};
+
+// Get Form Fields function
+export const getFormFields = async (formId: number): Promise<FormFieldsResponse> => {
+  if (!baseUrl) {
+    throw new Error('Missing required environment variable: APRICOT_API_BASE_URL');
+  }
+
+  let retryCount = 0;
+
+  while (retryCount <= MAX_RETRIES) {
+    try {
+      const accessToken = await authenticate();
+      const url = `${baseUrl}/${env}/forms/${formId}/fields`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.status === 401 && retryCount < MAX_RETRIES) {
+        invalidateToken();
+        retryCount++;
+        continue;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch form fields with status ${response.status}: ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (retryCount < MAX_RETRIES && error instanceof Error && error.message.includes('401')) {
+        invalidateToken();
+        retryCount++;
+        continue;
+      }
+
+      if (error instanceof Error) {
+        throw new Error(`Failed to get form fields from Apricot API: ${error.message}`);
+      }
+      throw new Error('Failed to get form fields from Apricot API: Unknown error');
+    }
+  }
+
+  throw new Error('Failed to get form fields after retries');
 };
