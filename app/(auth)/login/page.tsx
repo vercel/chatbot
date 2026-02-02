@@ -30,25 +30,39 @@ function ErrorHandler() {
 }
 
 function LoginContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [loadingMethod, setLoadingMethod] = useState<'microsoft' | 'google' | 'guest' | null>(null);
   const [hasAutoSignedIn, setHasAutoSignedIn] = useState(false);
 
   // Use callbackUrl from URL params, default to /home
-  // Make it absolute to ensure redirect goes to the correct host
-  const callbackUrlParam = searchParams.get('callbackUrl') || '/home';
-  const callbackUrl = typeof window !== 'undefined' && callbackUrlParam.startsWith('/')
-    ? `${window.location.origin}${callbackUrlParam}`
-    : callbackUrlParam;
+  const callbackUrl = searchParams.get('callbackUrl') || '/home';
 
   // Auto sign-in as guest when feature flag is enabled
   useEffect(() => {
-    if (useGuestLogin && !hasAutoSignedIn) {
-      setHasAutoSignedIn(true);
-      setLoadingMethod('guest');
-      signIn('guest', { callbackUrl });
-    }
-  }, [callbackUrl, hasAutoSignedIn]);
+    const doGuestSignIn = async () => {
+      if (useGuestLogin && !hasAutoSignedIn) {
+        setHasAutoSignedIn(true);
+        setLoadingMethod('guest');
+
+        // Use redirect: false to handle redirect manually
+        const result = await signIn('guest', { redirect: false });
+
+        if (result?.ok) {
+          // Manual redirect to ensure we stay on the correct host
+          router.push(callbackUrl);
+        } else {
+          toast({
+            type: 'error',
+            description: 'Failed to sign in as guest',
+          });
+          setLoadingMethod(null);
+        }
+      }
+    };
+
+    doGuestSignIn();
+  }, [callbackUrl, hasAutoSignedIn, router]);
 
   const handleGoogleLogin = async () => {
     setLoadingMethod('google');
