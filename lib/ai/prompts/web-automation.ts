@@ -1,4 +1,4 @@
-import { agentBrowserSkill } from '../skills/agent-browser';
+import { agentBrowserSkill } from '../skills/agent-browser/skill';
 
 /**
  * System prompt for the web automation agent.
