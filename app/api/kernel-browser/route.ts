@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     if (action === 'getLiveView') {
-      const url = getLiveViewUrl(sessionId);
+      const url = await getLiveViewUrl(sessionId);
       return Response.json({ liveViewUrl: url });
     }
 
