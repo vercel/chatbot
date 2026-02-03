@@ -38,6 +38,12 @@ cp .env.example .env.local
   例: `openssl rand -base64 32` で生成
 - `AI_GATEWAY_API_KEY`  
   Vercel 以外の環境で AI Gateway を使う場合に必要
+- `AI_PROVIDER_MODE`  
+  `gateway`(デフォルト) か `direct` を指定します。`direct` の場合は自前のAPIキーで直接LLMを呼び出します。
+- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`  
+  `AI_PROVIDER_MODE=direct` のときに必要（使うプロバイダに応じて設定）
+- `AI_DEFAULT_MODEL` / `AI_TITLE_MODEL` / `AI_ARTIFACT_MODEL`  
+  任意。`AI_PROVIDER_MODE=direct` のとき、タイトル生成やArtifacts生成で使うモデルを `provider/model` 形式で上書きできます。
 - `POSTGRES_URL`  
   DB 接続文字列
 - `REDIS_URL`  
