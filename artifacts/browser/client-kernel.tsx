@@ -47,6 +47,10 @@ export function KernelBrowserClient({
   const onConnectionChangeRef = useRef(onConnectionChange);
   onConnectionChangeRef.current = onConnectionChange;
 
+  // Use ref for isConnected to avoid stale closure in event handlers
+  const isConnectedRef = useRef(isConnected);
+  isConnectedRef.current = isConnected;
+
   // Track if we've already initialized for this session
   const initializedSessionRef = useRef<string | null>(null);
 
@@ -149,7 +153,7 @@ export function KernelBrowserClient({
   }, [isFullscreen, controlMode]);
 
   const switchControlMode = (mode: 'agent' | 'user') => {
-    if (!isConnected) {
+    if (!isConnectedRef.current) {
       toast.error('Not connected to browser session');
       return;
     }
