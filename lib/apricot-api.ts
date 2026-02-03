@@ -33,6 +33,10 @@ export type {
 // Use 'api' for production only (ENVIRONMENT=prod), 'sandbox' for all other environments including dev
 const env = process.env.ENVIRONMENT === 'prod' ? 'api' : 'sandbox';
 
+// Log environment on module load for debugging
+console.log(`[Apricot API] Environment: "${env}" | ENVIRONMENT: "${process.env.ENVIRONMENT || 'undefined'}"`);
+console.log(`[Apricot API] Expected: prod (ENVIRONMENT=prod) → "api", all others → "sandbox"`);
+
 // API configuration from environment variables
 const baseUrl = process.env.APRICOT_API_BASE_URL;
 const clientId = process.env.APRICOT_CLIENT_ID;
