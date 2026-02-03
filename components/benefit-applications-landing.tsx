@@ -49,7 +49,7 @@ export function BenefitApplicationsLanding({
         {/* Subheader */}
         {/* TODO: When the suggested actions are gone switch back to mb-6 sm:mb-8 md:mb-12*/}
         <h2 className="text-base sm:text-lg md:text-2xl font-inter text-black dark:text-white mb-4 sm:mb-6 md:mb-8">
-          What&apos;s your client&apos;s name and which program do they need?
+          What&apos;s your client&apos;s Apricot ID number and which program are they applying for?
         </h2>
 
         {/* Input Form */}
@@ -67,7 +67,7 @@ export function BenefitApplicationsLanding({
             sendMessage={sendMessage}
             selectedVisibilityType={selectedVisibilityType}
             showStopButton={false}
-            placeholder="Ex. Fill out the WIC form for Jane Doe"
+            placeholder="Ex. Retrieve ID# and fill in https://riversideihss.org/IntakeApp"
             session={session}
           />
         </div>

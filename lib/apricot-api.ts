@@ -30,8 +30,8 @@ export type {
 } from './models/apricot-models';
 
 // ===== Configuration =====
-// Use 'api' for production only (https://labs-asp.navateam.com), 'sandbox' for all other environments including dev
-const env = process.env.NEXTAUTH_URL?.includes('://labs-asp.navateam.com') ? 'api' : 'sandbox';
+// Use 'api' for production only (ENVIRONMENT=prod), 'sandbox' for all other environments including dev
+const env = process.env.ENVIRONMENT === 'prod' ? 'api' : 'sandbox';
 
 // API configuration from environment variables
 const baseUrl = process.env.APRICOT_API_BASE_URL;
