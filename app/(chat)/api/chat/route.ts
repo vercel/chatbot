@@ -42,6 +42,7 @@ import type { VisibilityType } from '@/components/visibility-selector';
 // AI SDK web automation imports (used when USE_AI_SDK_AGENT=true)
 import { apricotTools } from '@/lib/ai/tools/apricot';
 import { createBrowserTool } from '@/lib/ai/tools/browser';
+import { gapAnalysis } from '@/lib/ai/tools/gap-analysis';
 import { webAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
 
 // Feature flag for AI SDK agent vs Mastra
@@ -179,6 +180,7 @@ export async function POST(request: Request) {
             messages: await convertToModelMessages(uiMessages),
             tools: {
               ...apricotTools,
+              gapAnalysis,
               browser: createBrowserTool(sessionId),
             },
             stopWhen: stepCountIs(100),

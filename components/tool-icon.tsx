@@ -85,6 +85,7 @@ const getToolIcon = (toolName: string) => {
     'search-participants-by-name': Search,
     'get-participant-with-household': Database,
     'updateWorkingMemory': Brain,
+    'gapAnalysis': FileText,
   };
 
   return iconMap[cleanToolName] || FileText; // Default icon
@@ -224,6 +225,7 @@ export const getToolDisplayInfo = (toolName: string, input?: any): { text: strin
     'search-participants-by-name': (input) => input?.name ? `Searched for participant "${input.name}"` : 'Searched for participant',
     'get-participant-with-household': () => 'Retrieved participant data',
     'updateWorkingMemory': () => 'Updated working memory',
+    'gapAnalysis': () => 'Gap analysis',
   };
 
   const mapper = toolMappings[cleanToolName];

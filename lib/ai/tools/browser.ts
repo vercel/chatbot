@@ -1,10 +1,46 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { createKernelBrowser } from '@/lib/kernel/browser';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+/**
+ * Parse a command string into an array of arguments, respecting quoted strings.
+ * e.g. `fill @e1 "hello world"` → `['fill', '@e1', 'hello world']`
+ */
+function parseCommand(command: string): string[] {
+  const args: string[] = [];
+  let current = '';
+  let inQuote: string | null = null;
+
+  for (let i = 0; i < command.length; i++) {
+    const ch = command[i];
+
+    if (inQuote) {
+      if (ch === '\\' && i + 1 < command.length) {
+        // Escaped character inside quotes — include the next char literally
+        current += command[++i];
+      } else if (ch === inQuote) {
+        inQuote = null;
+      } else {
+        current += ch;
+      }
+    } else if (ch === '"' || ch === "'") {
+      inQuote = ch;
+    } else if (ch === ' ' || ch === '\t') {
+      if (current) {
+        args.push(current);
+        current = '';
+      }
+    } else {
+      current += ch;
+    }
+  }
+  if (current) args.push(current);
+  return args;
+}
 
 /**
  * Creates a browser automation tool for a specific session.
@@ -81,10 +117,11 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
         console.log('[browser-tool] CDP URL:', cdpUrl);
 
         // Use --cdp flag to connect agent-browser to Kernel's browser via CDP WebSocket
-        const fullCommand = `npx agent-browser --cdp "${cdpUrl}" ${command}`;
-        console.log('[browser-tool] Executing:', fullCommand);
+        // Use execFile (no shell) so URLs with #, &, ? etc. aren't mangled by the shell
+        const args = ['agent-browser', '--cdp', cdpUrl, ...parseCommand(command)];
+        console.log('[browser-tool] Executing: npx', args.join(' '));
 
-        const { stdout, stderr } = await execAsync(fullCommand, {
+        const { stdout, stderr } = await execFileAsync('npx', args, {
           timeout: 120000, // 2 minute timeout per command
           maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large snapshots
         });

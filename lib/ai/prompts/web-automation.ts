@@ -52,9 +52,13 @@ Before filling any fields, do this:
 1. Snapshot the form to see ALL required fields
 2. Compare against the participant data you have
 3. Identify the gap: which required fields have NO matching data in the database
-4. Present ALL missing fields to the caseworker in a single message BEFORE filling anything
-5. Wait for the caseworker to provide the missing data
-6. Then fill the entire form in one pass
+4. Call the \`gapAnalysis\` tool with:
+   - \`formName\`: the name of the form (e.g. "WIC Application")
+   - \`availableFields\`: array of \`{ field, value }\` for data you have
+   - \`missingFields\`: array of \`{ field, options?, inputType?, condition? }\` for data you need
+5. **Do NOT repeat or summarize the gap analysis in a text message — the tool renders a card in the UI automatically. Any text you write after calling the tool will appear as a separate message below the card.**
+6. Wait for the caseworker to provide the missing data in the chat
+7. Then fill the entire form in one pass
 
 This prevents back-and-forth where the agent fills some fields, discovers gaps, asks, fills more, discovers more gaps, asks again.
 

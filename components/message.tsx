@@ -28,7 +28,7 @@ import { ChevronDown } from 'lucide-react';
 import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
-import { UserActionConfirmation } from './ai-elements';
+import { UserActionConfirmation, GapAnalysisCard } from './ai-elements';
 
 // Responsive min-height calculation that accounts for side-chat-header height
 // This ensures the last message has enough space to scroll properly with the header
@@ -64,6 +64,7 @@ const PurePreviewMessage = ({
   isLoading,
   setMessages,
   regenerate,
+  sendMessage,
   isReadonly,
   isArtifactVisible,
   requiresScrollPadding,
@@ -74,6 +75,7 @@ const PurePreviewMessage = ({
   isLoading: boolean;
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
   regenerate: UseChatHelpers<ChatMessage>['regenerate'];
+  sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
   requiresScrollPadding: boolean;
@@ -407,8 +409,24 @@ const PurePreviewMessage = ({
                 }
               }
 
+              if ((type as string) === 'tool-gapAnalysis') {
+                const { toolCallId, state, input } = part as any;
+
+                if (state === 'input-available' || state === 'output-available') {
+                  return (
+                    <GapAnalysisCard
+                      key={toolCallId}
+                      formName={input?.formName}
+                      availableFields={input?.availableFields ?? []}
+                      missingFields={input?.missingFields ?? []}
+                      sendMessage={sendMessage}
+                    />
+                  );
+                }
+              }
+
               // Handle any other tool calls (including web automation tools)
-              if (type.startsWith('tool-') && !['tool-getWeather', 'tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions'].includes(type)) {
+              if (type.startsWith('tool-') && !['tool-getWeather', 'tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions', 'tool-gapAnalysis'].includes(type)) {
                 const { toolCallId, state } = part as any;
 
                 if (state === 'input-available') {
