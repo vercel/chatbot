@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MousePointerClick, RefreshCw, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentStatusIndicator } from '@/components/agent-status-indicator';
-import { BrowserLoadingState, BrowserErrorState } from './browser-states';
+import { BrowserLoadingState, BrowserErrorState, BrowserTimeoutState } from './browser-states';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sheet,
