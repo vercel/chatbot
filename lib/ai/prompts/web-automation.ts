@@ -69,7 +69,6 @@ PAUSE ONLY for:
 - File uploads
 - Error states
 - Final submission of forms
-- CAPTCHAs or other challenges that require human intervention
 
 ## Communication
 - Be extremely concise - use bullet points, short sentences, and minimal explanation

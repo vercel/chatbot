@@ -16,26 +16,37 @@ Complete reference for all agent-browser commands. Load this when you need detai
 
 | Command | Description |
 |---------|-------------|
-| `snapshot` | Full accessibility tree with refs |
-| `snapshot -i` | Interactive elements only (RECOMMENDED for forms) |
+| `snapshot` | Full accessibility tree with labels |
+| `snapshot -i` | Interactive elements only (with refs) |
 | `snapshot -c` | Compact output |
 | `snapshot -s "#main"` | Scope to CSS selector |
 
-## Interaction
+## Label Locators (RECOMMENDED for forms)
 
 | Command | Description |
 |---------|-------------|
-| `click @e1` | Click element by ref |
-| `dblclick @e1` | Double-click element |
-| `fill @e1 "text"` | Clear field and fill |
-| `type @e1 "text"` | Type into element (appends) |
+| `find label "First Name" fill "John"` | Fill field by its label |
+| `find label "Yes" click` | Click labeled checkbox/radio |
+| `find label "State" select "California"` | Select dropdown by label |
+| `find label "Email" type "test@test.com"` | Type into labeled field |
+
+## Interaction (by ref or CSS selector)
+
+| Command | Description |
+|---------|-------------|
+| `click <sel>` | Click element |
+| `dblclick <sel>` | Double-click element |
+| `fill <sel> "text"` | Clear field and fill |
+| `type <sel> "text"` | Type into element (appends) |
 | `press Enter` | Press key (Tab, Escape, ArrowDown, Control+a) |
-| `hover @e1` | Hover over element |
-| `select @e1 "value"` | Select dropdown option |
-| `check @e1` | Check checkbox |
-| `uncheck @e1` | Uncheck checkbox |
-| `upload @e1 "/path/to/file"` | Upload file |
-| `drag @e1 @e2` | Drag from e1 to e2 |
+| `hover <sel>` | Hover over element |
+| `select <sel> "value"` | Select dropdown option |
+| `check <sel>` | Check checkbox |
+| `uncheck <sel>` | Uncheck checkbox |
+| `upload <sel> "/path/to/file"` | Upload file |
+| `drag <sel1> <sel2>` | Drag from sel1 to sel2 |
+
+Note: `<sel>` can be a ref (`@e1`), CSS selector (`"#firstName"`), or other locator.
 
 ## Information Retrieval
 

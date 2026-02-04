@@ -1,10 +1,30 @@
 # Snapshot and Refs Guide
 
-Element refs are the foundation of reliable browser automation. This guide explains how they work.
+Understanding when to use snapshots vs label locators.
 
-## Why Refs?
+## When to Use What
 
-Full DOM/HTML can be 3000-5000 tokens. Snapshots with refs need only 200-400 tokens.
+### Use `find label` (PREFERRED for forms)
+When the form has visible labels next to fields:
+```
+browser({ command: "find label \"First Name\" fill \"John\"" })
+browser({ command: "find label \"Email\" fill \"john@example.com\"" })
+```
+No snapshot needed - uses accessibility tree directly.
+
+### Use Snapshot + Refs
+When you need to see the page structure or labels aren't working:
+```
+browser({ command: "snapshot -i" })
+# Output: textbox [ref=@e1], button [ref=@e2]
+browser({ command: "fill @e1 \"John\"" })
+```
+
+### Use CSS Selectors
+When IDs are visible and labels/refs don't work:
+```
+browser({ command: "fill \"#firstName\" \"John\"" })
+```
 
 ## Ref Format
 
@@ -33,23 +53,23 @@ You MUST re-snapshot after:
 
 ## Snapshot Modes
 
-### `snapshot -i` (Interactive Only)
-Best for forms. Shows only interactive elements:
-```
-textbox "First Name" [ref=@e1]
-textbox "Last Name" [ref=@e2]
-combobox "State" [ref=@e3]
-button "Submit" [ref=@e4]
-```
-
 ### `snapshot` (Full Tree)
-Shows page structure and text:
+Shows page structure with labels - useful for understanding the form:
 ```
 heading "Welcome to Our Site"
   paragraph "Please fill out the form below"
   form
     textbox "First Name" [ref=@e1]
     textbox "Last Name" [ref=@e2]
+```
+
+### `snapshot -i` (Interactive Only)
+Compact view of just interactive elements:
+```
+textbox "First Name" [ref=@e1]
+textbox "Last Name" [ref=@e2]
+combobox "State" [ref=@e3]
+button "Submit" [ref=@e4]
 ```
 
 ### `snapshot -s "#formId"` (Scoped)

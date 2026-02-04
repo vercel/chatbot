@@ -2,29 +2,52 @@
 
 Patterns for filling out web forms reliably.
 
-## Standard Form Workflow
+## Primary Strategy: Label Locators
+
+Most forms have labeled fields. Use `find label` as your first approach:
 
 ```
-# 1. Navigate and wait for page load
 browser({ command: "open https://example.com/application" })
 browser({ command: "wait --load networkidle" })
 
-# 2. Get form elements
-browser({ command: "snapshot -i" })
+# Fill fields by their visible labels
+browser({ command: "find label \"First Name\" fill \"John\"" })
+browser({ command: "find label \"Last Name\" fill \"Doe\"" })
+browser({ command: "find label \"Email\" fill \"john@example.com\"" })
+browser({ command: "find label \"Phone\" fill \"5551234567\"" })
 
-# 3. Fill fields using refs from snapshot
+# Checkboxes and radio buttons
+browser({ command: "find label \"Yes\" click" })
+browser({ command: "find label \"Male\" click" })
+
+# Dropdowns
+browser({ command: "find label \"State\" select \"California\"" })
+```
+
+This is the most efficient approach because:
+- Uses accessibility tree (token efficient, no DOM inspection needed)
+- Works without discovering IDs or waiting for refs
+- Self-documenting - you can see what field you're targeting
+
+## Fallback: Refs from Snapshot
+
+If labels don't work, use snapshot refs:
+
+```
+browser({ command: "snapshot -i" })
+# Output: textbox [ref=@e1], textbox [ref=@e2], button [ref=@e3]
 browser({ command: "fill @e1 \"John\"" })
 browser({ command: "fill @e2 \"Doe\"" })
-browser({ command: "fill @e3 \"john.doe@email.com\"" })
+```
 
-# 4. Handle dropdowns
-browser({ command: "select @e4 \"California\"" })
+## Fallback: CSS Selectors
 
-# 5. Handle checkboxes
-browser({ command: "check @e5" })
+If refs aren't available but IDs are visible:
 
-# 6. Verify before submit
-browser({ command: "snapshot -i" })
+```
+browser({ command: "fill \"#firstName\" \"John\"" })
+browser({ command: "fill \"#lastName\" \"Doe\"" })
+browser({ command: "check \"#agreeToTerms\"" })
 ```
 
 ## Field Type Patterns
