@@ -8,3 +8,5 @@ export {
 } from './confirmation';
 
 export { UserActionConfirmation } from './user-action-confirmation';
+
+export { GapAnalysisCard } from './gap-analysis-card';

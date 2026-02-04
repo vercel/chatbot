@@ -1,7 +1,7 @@
 'use client';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useState, useRef, useEffect } from 'react';
+import { memo, useMemo, useState, useRef, useEffect } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
@@ -28,7 +28,8 @@ import { ChevronDown } from 'lucide-react';
 import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
-import { UserActionConfirmation } from './ai-elements';
+import { UserActionConfirmation, GapAnalysisCard } from './ai-elements';
+import { groupMessageParts, ToolCallGroup } from './tool-call-group';
 
 // Responsive min-height calculation that accounts for side-chat-header height
 // This ensures the last message has enough space to scroll properly with the header
@@ -64,6 +65,7 @@ const PurePreviewMessage = ({
   isLoading,
   setMessages,
   regenerate,
+  sendMessage,
   isReadonly,
   isArtifactVisible,
   requiresScrollPadding,
@@ -74,6 +76,7 @@ const PurePreviewMessage = ({
   isLoading: boolean;
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
   regenerate: UseChatHelpers<ChatMessage>['regenerate'];
+  sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
   requiresScrollPadding: boolean;
@@ -83,6 +86,12 @@ const PurePreviewMessage = ({
 
   const attachmentsFromMessage = message.parts.filter(
     (part) => part.type === 'file',
+  );
+
+  // Suppress "action required" card when the message contains a gap analysis tool
+  // (the gap analysis card itself IS the user action — don't show a duplicate prompt)
+  const hasGapAnalysis = message.parts.some(
+    (part) => (part.type as string) === 'tool-gapAnalysis',
   );
 
   useDataStream();
@@ -98,6 +107,28 @@ const PurePreviewMessage = ({
       window.removeEventListener('new-user-message', handleNewUserMessage);
     };
   }, [message.id]);
+
+  const processedParts = useMemo(
+    () => {
+      const result = groupMessageParts(message.parts ?? []);
+      // DEBUG: remove after verifying grouping works
+      const toolParts = (message.parts ?? []).filter((p) => p.type.startsWith('tool-'));
+      if (toolParts.length > 1) {
+        console.log('[tool-group] message', message.id, {
+          totalParts: (message.parts ?? []).length,
+          toolParts: toolParts.length,
+          partTypes: (message.parts ?? []).map((p) => p.type),
+          processed: result.map((r) =>
+            r.kind === 'tool-group'
+              ? `GROUP(${r.parts.length})`
+              : `pass:${r.part.type}`,
+          ),
+        });
+      }
+      return result;
+    },
+    [message.parts],
+  );
 
   return (
     <AnimatePresence>
@@ -141,7 +172,20 @@ const PurePreviewMessage = ({
               </div>
             )}
 
-            {message.parts?.map((part, index) => {
+            {processedParts.map((processed) => {
+              if (processed.kind === 'tool-group') {
+                return (
+                  <ToolCallGroup
+                    key={`message-${message.id}-group-${processed.startIndex}`}
+                    parts={processed.parts as any}
+                    messageId={message.id}
+                    startIndex={processed.startIndex}
+                  />
+                );
+              }
+
+              const { index } = processed;
+              const part = processed.part as ChatMessage['parts'][number];
               const { type } = part;
               const key = `message-${message.id}-part-${index}`;
 
@@ -221,7 +265,7 @@ const PurePreviewMessage = ({
                         </div>
                       </div>
                       
-                      {message.role === 'assistant' && requiresUserAction && !isReadonly && !isLoading && !dismissedActionConfirmations.has(message.id) && isArtifactVisible && (
+                      {message.role === 'assistant' && requiresUserAction && !hasGapAnalysis && !isReadonly && !isLoading && !dismissedActionConfirmations.has(message.id) && isArtifactVisible && (
                         <UserActionConfirmation
                           approval={{ id: `action-${message.id}`, approved: undefined }}
                           state="approval-requested"
@@ -407,8 +451,24 @@ const PurePreviewMessage = ({
                 }
               }
 
+              if ((type as string) === 'tool-gapAnalysis') {
+                const { toolCallId, state, input } = part as any;
+
+                if (state === 'input-available' || state === 'output-available') {
+                  return (
+                    <GapAnalysisCard
+                      key={toolCallId}
+                      formName={input?.formName}
+                      availableFields={input?.availableFields ?? []}
+                      missingFields={input?.missingFields ?? []}
+                      sendMessage={sendMessage}
+                    />
+                  );
+                }
+              }
+
               // Handle any other tool calls (including web automation tools)
-              if (type.startsWith('tool-') && !['tool-getWeather', 'tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions'].includes(type)) {
+              if (type.startsWith('tool-') && !['tool-getWeather', 'tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions', 'tool-gapAnalysis'].includes(type)) {
                 const { toolCallId, state } = part as any;
 
                 if (state === 'input-available') {
