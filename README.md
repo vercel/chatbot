@@ -49,18 +49,7 @@ You can switch modes with the `AI_PROVIDER_MODE` environment variable (see `.env
 
 **For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
 
-### Direct mode (bring your own API key)
-
-1. Set `AI_PROVIDER_MODE=direct`
-2. Set the provider key(s) you want to use:
-   - `OPENAI_API_KEY`
-   - `ANTHROPIC_API_KEY`
-   - `GOOGLE_GENERATIVE_AI_API_KEY`
-3. In the UI, select a model that matches the provider key you configured (e.g. `openai/*` if you set `OPENAI_API_KEY`).
-
-Optional: set `AI_DEFAULT_MODEL`, `AI_TITLE_MODEL`, and `AI_ARTIFACT_MODEL` (format: `provider/model`) to control which models are used for non-chat tasks like titles and artifacts.
-
-Optional: set `AI_DIFY_MODEL` (format: `provider/model`) to fix which model is used for `/dify` DSL generation.
+With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
 
 ## Deploy Your Own
 
