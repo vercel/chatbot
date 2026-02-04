@@ -36,6 +36,7 @@ export function Chat({
   id,
   initialMessages,
   initialChatModel,
+  fixedChatModelId,
   initialVisibilityType,
   isReadonly,
   autoResume,
@@ -47,6 +48,7 @@ export function Chat({
   id: string;
   initialMessages: ChatMessage[];
   initialChatModel: string;
+  fixedChatModelId?: string;
   initialVisibilityType: VisibilityType;
   isReadonly: boolean;
   autoResume: boolean;
@@ -83,12 +85,14 @@ export function Chat({
 
   const [input, setInput] = useState<string>("");
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
-  const [currentModelId, setCurrentModelId] = useState(initialChatModel);
-  const currentModelIdRef = useRef(currentModelId);
+  const [currentModelId, setCurrentModelId] = useState(
+    fixedChatModelId ?? initialChatModel
+  );
+  const currentModelIdRef = useRef(fixedChatModelId ?? initialChatModel);
 
   useEffect(() => {
-    currentModelIdRef.current = currentModelId;
-  }, [currentModelId]);
+    currentModelIdRef.current = fixedChatModelId ?? currentModelId;
+  }, [fixedChatModelId, currentModelId]);
 
   const {
     messages,
@@ -231,13 +235,14 @@ export function Chat({
               input={input}
               inputPlaceholder={inputPlaceholder}
               messages={messages}
-              onModelChange={setCurrentModelId}
+              onModelChange={fixedChatModelId ? undefined : setCurrentModelId}
               selectedModelId={currentModelId}
               selectedVisibilityType={visibilityType}
               sendMessage={sendMessage}
               setAttachments={setAttachments}
               setInput={setInput}
               setMessages={setMessages}
+              showModelSelector={!fixedChatModelId}
               status={status}
               stop={stop}
             />

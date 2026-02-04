@@ -44,6 +44,8 @@ cp .env.example .env.local
   `AI_PROVIDER_MODE=direct` のときに必要（使うプロバイダに応じて設定）
 - `AI_DEFAULT_MODEL` / `AI_TITLE_MODEL` / `AI_ARTIFACT_MODEL`  
   任意。`AI_PROVIDER_MODE=direct` のとき、タイトル生成やArtifacts生成で使うモデルを `provider/model` 形式で上書きできます。
+- `AI_DIFY_MODEL`  
+  任意。`/dify` の DSL 自動生成で使うモデルを固定します（`provider/model` 形式）。
 - `POSTGRES_URL`  
   DB 接続文字列
 - `REDIS_URL`  
@@ -52,6 +54,42 @@ cp .env.example .env.local
   Vercel Blob 用トークン
 
 注意: `.env.local` はコミットしないでください。
+
+#### 2.3.1 LLMの呼び出し先切替（AI Gateway ↔ Direct）の実装箇所
+
+このプロジェクトでは、LLMの呼び出し先（Vercel AI Gateway / 直接プロバイダ）を **環境変数で切り替え**できるようにしています。
+
+**設定（どちらを使うか）**
+- `AI_PROVIDER_MODE=gateway`（デフォルト）: Vercel AI Gateway 経由（`AI_GATEWAY_API_KEY` または Vercel の OIDC）
+- `AI_PROVIDER_MODE=direct`: 自前のAPIキーで直接呼び出し（`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`）
+  - 注意: `direct` は現状 `openai/*` / `anthropic/*` / `google/*` のみ対応です（それ以外は `gateway` を使ってください）
+  - Vercelにデプロイする場合は、`.env.local` ではなく Vercel の Environment Variables に同じ変数を設定します
+- `AI_DIFY_MODEL`（任意）: `/dify` のDSL自動生成に使うモデルを固定します（例: `openai/gpt-4.1-mini`）
+
+**主な変更箇所（コード）**
+- `lib/ai/providers.ts`  
+  - `AI_PROVIDER_MODE` を読み取り、`getLanguageModel()` / `getTitleModel()` / `getArtifactModel()` の内部で `gateway` / `direct` を分岐
+  - `direct` の場合、モデルID（例: `openai/gpt-4.1-mini`）の先頭（`openai` / `anthropic` / `google`）でルーティング
+  - 必要なAPIキーが未設定の場合は `ChatSDKError("bad_request:provider_config")` を投げる
+- `app/(chat)/api/chat/route.ts`  
+  - チャットのLLM呼び出しは `getLanguageModel(...)` 経由（＝切替は `lib/ai/providers.ts` 側で完結）
+  - `/dify`（`systemPromptId=dify-rule-ver5`）のときは、`AI_DIFY_MODEL` が設定されていれば `selectedChatModel` より優先して使用（サーバ側で強制）
+- `app/dify/page.tsx`, `app/dify/chat/[id]/page.tsx`  
+  - `AI_DIFY_MODEL` が設定されていれば、`/dify` の初期モデルをそれに固定
+- `components/chat.tsx`, `components/multimodal-input.tsx`  
+  - 固定モデルのときはモデル切替UIを非表示にして、意図せずモデルが変わらないようにする
+- `lib/errors.ts`  
+  - 設定ミス時のエラーコード `bad_request:provider_config` を追加（ユーザーに分かりやすく返すため）
+
+**主な変更箇所（依存関係/設定テンプレ）**
+- `.env.example`  
+  - `AI_PROVIDER_MODE` と `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`、および任意の `AI_*_MODEL` を追加
+- `package.json`  
+  - `direct` 用に `@ai-sdk/openai` / `@ai-sdk/anthropic` / `@ai-sdk/google` を追加
+
+**動作確認の目安**
+- `AI_PROVIDER_MODE=direct` で Google のキーが未設定のまま `google/*`（例: `google/gemini-2.5-flash-lite`）を選ぶと、Google API 側のエラーになります（`API key not valid` など）。
+- `AI_PROVIDER_MODE=direct` では、Googleキーが無い場合に自動でAI Gatewayへフォールバックはしません。使うモデル（プロバイダ）とキー設定を一致させてください。
 
 ### 2.4 DB マイグレーション
 ```bash

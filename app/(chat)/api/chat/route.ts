@@ -137,10 +137,12 @@ export async function POST(request: Request) {
       });
     }
 
-    const isReasoningModel =
-      selectedChatModel.includes("reasoning") ||
-      selectedChatModel.includes("thinking");
     const isDifyMode = systemPromptId === "dify-rule-ver5";
+    const resolvedChatModel =
+      (isDifyMode ? process.env.AI_DIFY_MODEL : undefined) ?? selectedChatModel;
+    const isReasoningModel =
+      resolvedChatModel.includes("reasoning") ||
+      resolvedChatModel.includes("thinking");
     const shouldUseTools = !isReasoningModel && !isDifyMode;
 
     const modelMessages = await convertToModelMessages(uiMessages);
@@ -149,9 +151,9 @@ export async function POST(request: Request) {
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
         const result = streamText({
-          model: getLanguageModel(selectedChatModel),
+          model: getLanguageModel(resolvedChatModel),
           system: systemPrompt({
-            selectedChatModel,
+            selectedChatModel: resolvedChatModel,
             requestHints,
             systemPromptId,
           }),

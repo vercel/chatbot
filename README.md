@@ -60,6 +60,8 @@ You can switch modes with the `AI_PROVIDER_MODE` environment variable (see `.env
 
 Optional: set `AI_DEFAULT_MODEL`, `AI_TITLE_MODEL`, and `AI_ARTIFACT_MODEL` (format: `provider/model`) to control which models are used for non-chat tasks like titles and artifacts.
 
+Optional: set `AI_DIFY_MODEL` (format: `provider/model`) to fix which model is used for `/dify` DSL generation.
+
 ## Deploy Your Own
 
 You can deploy your own version of the Next.js AI Chatbot to Vercel with one click:

@@ -10,7 +10,7 @@ progress:
   completed:
     - Added setup and implementation guide in docs/implementation-guide.md.
   in_progress:
-    - Fill .env.local values (AUTH_SECRET, AI_PROVIDER_MODE, AI_GATEWAY_API_KEY or provider API key(s), BLOB_READ_WRITE_TOKEN, POSTGRES_URL, REDIS_URL).
+    - Fill .env.local values (AUTH_SECRET, AI_PROVIDER_MODE, AI_GATEWAY_API_KEY or provider API key(s), optional AI_DIFY_MODEL, BLOB_READ_WRITE_TOKEN, POSTGRES_URL, REDIS_URL).
   next:
     - Run pnpm db:migrate after env setup.
     - Run pnpm dev and verify http://localhost:3000.
