@@ -215,105 +215,56 @@ async function releaseDistributedLock(sessionId: string, token: string) {
 }
 
 /**
- * Atomically check if a browser exists and verify userId ownership using Lua script.
- * This ensures the read-check-update happens atomically in Redis to prevent races.
+ * Atomically check if a browser exists and verify userId ownership.
+ * Uses standard Redis GET with validation - Upstash REST API compatible.
  * Returns the existing browser if it belongs to the user, null otherwise.
  */
 async function atomicCheckAndClaimBrowser(
   sessionId: string,
   userId: string
 ): Promise<KernelBrowserEntry | null> {
-  const redisKey = getRedisKey(sessionId);
+  const entry = await loadBrowserEntry(sessionId);
 
-  // Use Lua script for atomic read-verify-update operation
-  const script = `
-    local key = KEYS[1]
-    local userId = ARGV[1]
-    local now = tonumber(ARGV[2])
-    local ttl = tonumber(ARGV[3])
-    local agentIdleTimeout = tonumber(ARGV[4])
-    local liveViewHeartbeatTimeout = tonumber(ARGV[5])
+  if (!entry) {
+    return null;
+  }
 
-    -- Get existing entry
-    local existing = redis.call("GET", key)
-    if not existing then
-      return nil
-    end
-
-    local entry = cjson.decode(existing)
-
-    -- Verify this is a browser entry (not pending marker)
-    if not entry.browser or not entry.userId then
-      return nil
-    end
-
-    -- CRITICAL: Verify ownership
-    if entry.userId ~= userId then
-      return redis.error_reply("Session belongs to different user: " .. entry.userId)
-    end
-
-    -- Check if expired based on activity and live view heartbeat
-    local hasRecentAgentActivity = (now - entry.lastAgentActivityAt) <= agentIdleTimeout
-    local hasActiveLiveView = false
-    if entry.liveViewConnections > 0 and entry.lastLiveViewHeartbeatAt then
-      hasActiveLiveView = (now - entry.lastLiveViewHeartbeatAt) <= liveViewHeartbeatTimeout
-    end
-
-    if not hasRecentAgentActivity and not hasActiveLiveView then
-      -- Expired - return nil so caller can create new browser
-      return nil
-    end
-
-    -- Update lastAccessedAt and refresh TTL
-    entry.lastAccessedAt = now
-    redis.call("SET", key, cjson.encode(entry), "EX", ttl)
-
-    return cjson.encode(entry)
-  `;
-
-  try {
-    const result = await redis.eval(
-      script,
-      [redisKey],
-      [
-        userId,
-        Date.now().toString(),
-        BROWSER_TTL_SECONDS.toString(),
-        AGENT_IDLE_TIMEOUT_MS.toString(),
-        LIVE_VIEW_HEARTBEAT_TIMEOUT_MS.toString(),
-      ]
+  // CRITICAL: Verify ownership
+  if (entry.userId !== userId) {
+    logger.securityViolation({
+      sessionId,
+      userId,
+      expectedUserId: entry.userId,
+      actualUserId: userId,
+      operation: 'atomicCheckAndClaim',
+      securityEvent: 'cross_user_session_access_attempt',
+    });
+    throw new Error(
+      `Session ${sessionId} belongs to a different user. This browser session cannot be shared.`
     );
+  }
 
-    if (!result) {
-      return null;
-    }
-
-    const entry = JSON.parse(result as string) as KernelBrowserEntry;
-    logger.browserReused({
+  // Check if expired
+  const expired = await maybeExpireSession(sessionId, entry);
+  if (expired) {
+    logger.browserExpired({
       sessionId,
       userId,
       operation: 'atomicCheckAndClaim',
       browserSessionId: entry.browser.session_id,
     });
-    return entry;
-  } catch (error: any) {
-    if (error.message && error.message.includes('Session belongs to different user')) {
-      const match = error.message.match(/different user: (.+)$/);
-      const ownerId = match ? match[1] : 'unknown';
-      logger.securityViolation({
-        sessionId,
-        userId,
-        expectedUserId: ownerId,
-        actualUserId: userId,
-        operation: 'atomicCheckAndClaim',
-        securityEvent: 'cross_user_session_access_attempt',
-      });
-      throw new Error(
-        `Session ${sessionId} belongs to a different user. This browser session cannot be shared.`
-      );
-    }
-    throw error;
+    return null;
   }
+
+  // Refresh and return
+  const refreshed = await persistEntry(sessionId, entry, userId);
+  logger.browserReused({
+    sessionId,
+    userId,
+    operation: 'atomicCheckAndClaim',
+    browserSessionId: refreshed.browser.session_id,
+  });
+  return refreshed;
 }
 
 async function waitForPendingBrowser(sessionId: string): Promise<KernelBrowser | null> {
@@ -465,65 +416,41 @@ export async function createKernelBrowser(
         lastLiveViewHeartbeatAt: null,
       };
 
-      // Atomic set: only store if key doesn't exist or belongs to same user
-      const setScript = `
-        local key = KEYS[1]
-        local value = ARGV[1]
-        local ttl = tonumber(ARGV[2])
-        local userId = ARGV[3]
-
-        local existing = redis.call("GET", key)
-        if existing then
-          local existingData = cjson.decode(existing)
-          if existingData.userId and existingData.userId ~= userId then
-            return redis.error_reply("Session already exists for different user")
-          end
-        end
-
-        redis.call("SET", key, value, "EX", ttl)
-        return "OK"
-      `;
-
-      try {
-        await redis.eval(
-          setScript,
-          [redisKey],
-          [JSON.stringify(entry), BROWSER_TTL_SECONDS.toString(), userId]
-        );
-        logger.info('Browser entry atomically stored in Redis', {
+      // Store in Redis - verify no race condition occurred
+      const existingCheck = await loadBrowserEntry(sessionId);
+      if (existingCheck && existingCheck.userId !== userId) {
+        logger.raceConditionDetected({
           sessionId,
           userId,
           operation: 'createBrowser',
+          details: `Another user (${existingCheck.userId}) created browser during our creation window despite lock`,
         });
-      } catch (error: any) {
-        if (error.message && error.message.includes('already exists for different user')) {
-          logger.raceConditionDetected({
+        // Clean up the Kernel browser we just created since we can't use it
+        try {
+          await kernel.browsers.deleteByID(browser.session_id);
+          logger.info('Cleaned up orphaned browser due to race condition', {
             sessionId,
             userId,
             operation: 'createBrowser',
-            details: 'Another user created browser during our creation window despite lock',
+            browserSessionId: browser.session_id,
           });
-          // Clean up the Kernel browser we just created since we can't use it
-          try {
-            await kernel.browsers.deleteByID(browser.session_id);
-            logger.info('Cleaned up orphaned browser due to race condition', {
-              sessionId,
-              userId,
-              operation: 'createBrowser',
-              browserSessionId: browser.session_id,
-            });
-          } catch (cleanupError) {
-            logger.error('Failed to clean up orphaned browser', {
-              sessionId,
-              userId,
-              operation: 'createBrowser',
-              browserSessionId: browser.session_id,
-            });
-          }
-          throw new Error('Race condition detected: browser created by different user');
+        } catch (cleanupError) {
+          logger.error('Failed to clean up orphaned browser', {
+            sessionId,
+            userId,
+            operation: 'createBrowser',
+            browserSessionId: browser.session_id,
+          });
         }
-        throw error;
+        throw new Error('Race condition detected: browser created by different user');
       }
+
+      await redis.set(redisKey, entry, { ex: BROWSER_TTL_SECONDS });
+      logger.info('Browser entry stored in Redis', {
+        sessionId,
+        userId,
+        operation: 'createBrowser',
+      });
 
       return browser;
     } catch (error) {
