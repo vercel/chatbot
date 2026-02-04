@@ -7,12 +7,44 @@
 export const agentBrowserSkill = `
 # Browser Automation
 
-## Core Workflow (ALWAYS follow this pattern)
+## Core Workflow
 
 1. **Navigate**: \`open <url>\`
-2. **Snapshot**: \`snapshot -i\` to get interactive elements with refs (@e1, @e2, etc.)
-3. **Interact**: Use refs from snapshot: \`click @e1\`, \`fill @e2 "text"\`
-4. **Re-snapshot**: After ANY navigation or DOM change, snapshot again
+2. **Snapshot**: \`snapshot\` to see the page structure
+3. **Interact**: Use the best selector strategy (see below)
+4. **Re-snapshot**: After ANY navigation or DOM change
+
+## Selector Strategy (in order of preference)
+
+### 1. Label Locators (BEST for forms)
+Use \`find label\` for any field with a visible label - most forms have these:
+\`\`\`
+browser({ command: "find label \\"First Name\\" fill \\"John\\"" })
+browser({ command: "find label \\"Email\\" fill \\"john@example.com\\"" })
+browser({ command: "find label \\"State\\" fill \\"CA\\"" })
+browser({ command: "find label \\"Yes\\" click" })  // For labeled checkboxes
+\`\`\`
+
+This is the most robust approach because:
+- Works without needing refs or IDs
+- Uses the accessibility tree (token efficient)
+- Self-documenting - you can see what field you're targeting
+
+### 2. Refs from Snapshot
+If snapshot shows refs (@e1, @e2), use them:
+\`\`\`
+browser({ command: "snapshot -i" })
+// Output: textbox "Name" [ref=@e1], button "Submit" [ref=@e2]
+browser({ command: "fill @e1 \\"John\\"" })
+browser({ command: "click @e2" })
+\`\`\`
+
+### 3. CSS Selectors (fallback)
+If labels aren't available and refs don't work, use CSS selectors:
+\`\`\`
+browser({ command: "fill \\"#firstNameTxt\\" \\"John\\"" })
+browser({ command: "click \\"#submitBtn\\"" })
+\`\`\`
 
 ## Essential Commands
 
@@ -20,25 +52,30 @@ export const agentBrowserSkill = `
 - \`open <url>\` - Go to URL
 - \`back\` / \`forward\` / \`reload\` - Browser navigation
 
-### Snapshot (CRITICAL - always do this first)
-- \`snapshot -i\` - Get interactive elements with refs (RECOMMENDED)
-- \`snapshot\` - Full accessibility tree (when you need page text)
+### Snapshot
+- \`snapshot\` - Full accessibility tree with labels
+- \`snapshot -i\` - Interactive elements only (with refs)
 
-### Interaction (use refs from snapshot)
-- \`click @e1\` - Click element
-- \`fill @e1 "text"\` - Clear and fill field
-- \`type @e1 "text"\` - Append text to field
-- \`select @e1 "option"\` - Select dropdown option
-- \`check @e1\` / \`uncheck @e1\` - Toggle checkbox
+### Interaction
+- \`fill <sel> "text"\` - Clear and fill field
+- \`type <sel> "text"\` - Append text to field
+- \`click <sel>\` - Click element
+- \`select <sel> "option"\` - Select dropdown option
+- \`check <sel>\` / \`uncheck <sel>\` - Toggle checkbox
 - \`press Enter\` - Press key (Tab, Escape, ArrowDown, etc.)
 
+### Label-based Actions (RECOMMENDED for forms)
+- \`find label "First Name" fill "John"\` - Fill by label
+- \`find label "Yes" click\` - Click labeled checkbox
+- \`find label "State" fill "CA"\` - Works for any labeled field
+
 ### Information
-- \`get text @e1\` - Get element text
-- \`get value @e1\` - Get input value
+- \`get text <sel>\` - Get element text
+- \`get value <sel>\` - Get input value
 - \`get url\` - Current URL
 
 ### Waiting
-- \`wait @e1\` - Wait for element
+- \`wait <sel>\` - Wait for element
 - \`wait 2000\` - Wait milliseconds
 - \`wait --load networkidle\` - Wait for network to settle
 
@@ -46,36 +83,28 @@ export const agentBrowserSkill = `
 - \`scroll down 500\` - Scroll pixels
 - \`scroll up 300\`
 
-## Critical Rules
-
-1. **ALWAYS snapshot before interacting** - Refs are only valid from the most recent snapshot
-2. **Re-snapshot after DOM changes** - Navigation, form submissions, dropdowns opening, modals appearing
-3. **Use refs (@e1, @e2), not semantic finders** - Refs from snapshot are most reliable
-4. **If a ref doesn't work, re-snapshot** - Don't guess, get fresh refs
-
 ## Form Workflow Example
 
 \`\`\`
-browser({ command: "open https://example.com/form" })
+browser({ command: "open https://example.com/application" })
 browser({ command: "wait --load networkidle" })
-browser({ command: "snapshot -i" })
-// Output: textbox "Name" [ref=@e1], textbox "Email" [ref=@e2], button "Submit" [ref=@e3]
-browser({ command: "fill @e1 \\"John Doe\\"" })
-browser({ command: "fill @e2 \\"john@example.com\\"" })
-browser({ command: "snapshot -i" })  // Verify before submit
-\`\`\`
+browser({ command: "snapshot" })  // See form structure
 
-## When CSS Selectors are Better
+// Fill using labels (preferred)
+browser({ command: "find label \\"First Name\\" fill \\"John\\"" })
+browser({ command: "find label \\"Last Name\\" fill \\"Doe\\"" })
+browser({ command: "find label \\"Email\\" fill \\"john@example.com\\"" })
+browser({ command: "find label \\"Phone\\" fill \\"5551234567\\"" })
 
-If snapshot shows HTML IDs (like \`#firstNameTxt\`, \`#emailInput\`), you can use them directly:
-\`\`\`
-browser({ command: "fill \\"#firstNameTxt\\" \\"John\\"" })
-browser({ command: "fill \\"#emailInput\\" \\"john@example.com\\"" })
-\`\`\`
+// For yes/no checkbox pairs, click the label text
+browser({ command: "find label \\"Yes\\" click" })
 
-Use CSS selectors when:
-- The snapshot shows clear, unique IDs
-- Refs are ambiguous or the page has many similar elements
+// For dropdowns
+browser({ command: "find label \\"State\\" click" })
+browser({ command: "select \\"California\\"" })
+
+browser({ command: "snapshot" })  // Verify before submit
+\`\`\`
 
 ## CAPTCHA Handling
 
