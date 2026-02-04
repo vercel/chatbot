@@ -39,11 +39,28 @@ browser({ command: "fill @e1 \\"John\\"" })
 browser({ command: "click @e2" })
 \`\`\`
 
-### 3. CSS Selectors (fallback)
-If labels aren't available and refs don't work, use CSS selectors:
+### 3. Tab Navigation (when labels/refs fail)
+If one field works but the next selector fails, don't guess - use Tab to move through the form:
+\`\`\`
+browser({ command: "find label \\"First Name\\" fill \\"John\\"" })
+browser({ command: "press Tab" })
+browser({ command: "type \\":focus\\" \\"Doe\\"" })
+browser({ command: "press Tab" })
+browser({ command: "type \\":focus\\" \\"123 Main St\\"" })
+\`\`\`
+Forms are in tab order. This is faster than guessing selector names.
+
+### 4. CSS Selectors
+If you know the exact IDs (from snapshot or prior knowledge):
 \`\`\`
 browser({ command: "fill \\"#firstNameTxt\\" \\"John\\"" })
 browser({ command: "click \\"#submitBtn\\"" })
+\`\`\`
+
+### 5. DOM Inspection
+If other strategies aren't working, inspect the DOM to find actual IDs:
+\`\`\`
+browser({ command: "eval \\"Array.from(document.querySelectorAll('input')).map(e => e.id).filter(Boolean).join(', ')\\"" })
 \`\`\`
 
 ## Essential Commands
