@@ -2,7 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { createKernelBrowser, getCdpUrl } from '@/lib/kernel/browser';
+import { createKernelBrowser } from '@/lib/kernel/browser';
 
 const execAsync = promisify(exec);
 

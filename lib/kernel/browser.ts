@@ -1,6 +1,17 @@
 import Kernel from '@onkernel/sdk';
+import { Redis } from '@upstash/redis';
 
 const kernel = new Kernel();
+
+// Initialize Redis for distributed session storage
+// This is critical for Cloud Run where multiple instances may handle requests
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+const REDIS_KEY_PREFIX = 'kernel-browser:';
+const BROWSER_TTL_SECONDS = 10 * 60; // 10 minutes
 
 interface KernelBrowser {
   session_id: string;
@@ -13,51 +24,37 @@ interface KernelBrowserEntry {
   lastAccessedAt: number;
 }
 
-const BROWSER_TTL_MS = 10 * 60 * 1000; // 10 minutes
-
-// Use globalThis to persist state across HMR in development
+// In-memory pending creations map (per-instance only, for race condition prevention)
+// This is fine to be in-memory since it's only for preventing duplicate creations
+// within the same instance during the brief creation window
 const globalForKernel = globalThis as typeof globalThis & {
-  kernelActiveBrowsers?: Map<string, KernelBrowserEntry>;
   kernelPendingCreations?: Map<string, Promise<KernelBrowser>>;
 };
 
-if (!globalForKernel.kernelActiveBrowsers) {
-  globalForKernel.kernelActiveBrowsers = new Map<string, KernelBrowserEntry>();
-}
 if (!globalForKernel.kernelPendingCreations) {
   globalForKernel.kernelPendingCreations = new Map<string, Promise<KernelBrowser>>();
 }
 
-const activeBrowsers = globalForKernel.kernelActiveBrowsers;
 const pendingCreations = globalForKernel.kernelPendingCreations;
 
-function evictStaleBrowsers() {
-  const now = Date.now();
-  for (const [key, entry] of activeBrowsers) {
-    if (now - entry.lastAccessedAt > BROWSER_TTL_MS) {
-      console.log(`[Kernel] Evicting stale browser for session ${key} (idle for ${Math.round((now - entry.lastAccessedAt) / 1000)}s)`);
-      activeBrowsers.delete(key);
-      kernel.browsers.deleteByID(entry.browser.session_id).catch(() => {});
-    }
-  }
+function getRedisKey(sessionId: string): string {
+  return `${REDIS_KEY_PREFIX}${sessionId}`;
 }
 
 export async function createKernelBrowser(
   sessionId: string,
   options?: { isMobile?: boolean }
 ): Promise<KernelBrowser> {
-  // Evict stale entries on each create call
-  evictStaleBrowsers();
-
-  // Check if browser already exists for this session
-  const existing = activeBrowsers.get(sessionId);
-  if (existing) {
-    existing.lastAccessedAt = Date.now(); // Refresh TTL on reuse
-    console.log(`[Kernel] Reusing existing browser for session ${sessionId}: ${existing.browser.session_id}`);
-    return existing.browser;
+  // Check if browser already exists in Redis
+  const existingEntry = await redis.get<KernelBrowserEntry>(getRedisKey(sessionId));
+  if (existingEntry) {
+    // Refresh TTL on reuse
+    await redis.expire(getRedisKey(sessionId), BROWSER_TTL_SECONDS);
+    console.log(`[Kernel] Reusing existing browser for session ${sessionId}: ${existingEntry.browser.session_id}`);
+    return existingEntry.browser;
   }
 
-  // Check if there's already a pending creation for this session (prevents race condition)
+  // Check if there's already a pending creation for this session (per-instance race prevention)
   const pending = pendingCreations.get(sessionId);
   if (pending) {
     console.log(`[Kernel] Waiting for pending browser creation for session ${sessionId}...`);
@@ -66,9 +63,16 @@ export async function createKernelBrowser(
 
   console.log(`[Kernel] Creating new browser for session ${sessionId}...`);
 
-  // Create a promise and store it to prevent duplicate creations
+  // Create a promise and store it to prevent duplicate creations within this instance
   const creationPromise = (async () => {
     try {
+      // Double-check Redis in case another instance created it while we were waiting
+      const recheckEntry = await redis.get<KernelBrowserEntry>(getRedisKey(sessionId));
+      if (recheckEntry) {
+        console.log(`[Kernel] Browser was created by another instance for session ${sessionId}: ${recheckEntry.browser.session_id}`);
+        return recheckEntry.browser;
+      }
+
       const viewport = options?.isMobile
         ? { width: 1024, height: 768 }
         : { width: 1920, height: 1080 };
@@ -84,7 +88,13 @@ export async function createKernelBrowser(
       console.log(`[Kernel] CDP URL: ${browser.cdp_ws_url}`);
       console.log(`[Kernel] Live View: ${browser.browser_live_view_url}`);
 
-      activeBrowsers.set(sessionId, { browser, lastAccessedAt: Date.now() });
+      // Store in Redis with TTL
+      const entry: KernelBrowserEntry = {
+        browser,
+        lastAccessedAt: Date.now(),
+      };
+      await redis.set(getRedisKey(sessionId), entry, { ex: BROWSER_TTL_SECONDS });
+
       return browser;
     } finally {
       // Always clean up the pending promise
@@ -99,16 +109,18 @@ export async function createKernelBrowser(
 export async function getKernelBrowser(
   sessionId: string
 ): Promise<KernelBrowser | null> {
-  return activeBrowsers.get(sessionId)?.browser || null;
+  const entry = await redis.get<KernelBrowserEntry>(getRedisKey(sessionId));
+  return entry?.browser || null;
 }
 
 export async function deleteKernelBrowser(sessionId: string): Promise<void> {
-  const entry = activeBrowsers.get(sessionId);
+  const entry = await redis.get<KernelBrowserEntry>(getRedisKey(sessionId));
   if (entry) {
     const browser = entry.browser;
     console.log(`[Kernel] Deleting browser ${browser.session_id} for session ${sessionId}`);
-    // Remove from map FIRST to prevent reuse during deletion
-    activeBrowsers.delete(sessionId);
+
+    // Remove from Redis FIRST to prevent reuse during deletion
+    await redis.del(getRedisKey(sessionId));
 
     try {
       await kernel.browsers.deleteByID(browser.session_id);
@@ -130,29 +142,33 @@ export async function deleteKernelBrowser(sessionId: string): Promise<void> {
   }
 }
 
-export function getLiveViewUrl(sessionId: string): string | null {
-  const entry = activeBrowsers.get(sessionId);
+export async function getLiveViewUrl(sessionId: string): Promise<string | null> {
+  const entry = await redis.get<KernelBrowserEntry>(getRedisKey(sessionId));
   if (entry) {
-    entry.lastAccessedAt = Date.now(); // Refresh TTL on access
+    // Refresh TTL on access
+    await redis.expire(getRedisKey(sessionId), BROWSER_TTL_SECONDS);
     return entry.browser.browser_live_view_url;
   }
   return null;
 }
 
-export function getCdpUrl(sessionId: string): string | null {
-  const entry = activeBrowsers.get(sessionId);
+export async function getCdpUrl(sessionId: string): Promise<string | null> {
+  const entry = await redis.get<KernelBrowserEntry>(getRedisKey(sessionId));
   if (entry) {
-    entry.lastAccessedAt = Date.now(); // Refresh TTL on access
+    // Refresh TTL on access
+    await redis.expire(getRedisKey(sessionId), BROWSER_TTL_SECONDS);
     return entry.browser.cdp_ws_url;
   }
   return null;
 }
 
-export function hasActiveBrowser(sessionId: string): boolean {
-  return activeBrowsers.has(sessionId);
+export async function hasActiveBrowser(sessionId: string): Promise<boolean> {
+  const exists = await redis.exists(getRedisKey(sessionId));
+  return exists === 1;
 }
 
-// Debug function to see all active browsers
-export function listActiveBrowsers(): string[] {
-  return Array.from(activeBrowsers.keys());
+// Debug function to see all active browsers (scans Redis keys)
+export async function listActiveBrowsers(): Promise<string[]> {
+  const keys = await redis.keys(`${REDIS_KEY_PREFIX}*`);
+  return keys.map(key => key.replace(REDIS_KEY_PREFIX, ''));
 }
