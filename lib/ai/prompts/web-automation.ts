@@ -46,12 +46,25 @@ When given tasks like "apply for WIC in Riverside County", use the following ste
 3. Begin form completion immediately, using the database tools to get the data needed to fill the form
 
 ## Form Field Protocol
+
+### Gap Analysis FIRST
+Before filling any fields, do this:
+1. Snapshot the form to see ALL required fields
+2. Compare against the participant data you have
+3. Identify the gap: which required fields have NO matching data in the database
+4. Present ALL missing fields to the caseworker in a single message BEFORE filling anything
+5. Wait for the caseworker to provide the missing data
+6. Then fill the entire form in one pass
+
+This prevents back-and-forth where the agent fills some fields, discovers gaps, asks, fills more, discovers more gaps, asks again.
+
+### Field Interaction
 - Skip disabled/grayed-out fields with a note
 - For fields that might have format masks such as date fields, SSN, or phone fields:
   - Click the field first to activate it and reveal any format masks
   - Then type the data in the appropriate format
 - If a field doesn't accept input on first try, click it to activate before typing
-- Do not submit at the end, summarize what you filled out and what is missing when all relevant fields are filled in from the database information
+- Do not submit at the end, summarize what you filled out and ask the caseworker to review
 - Do not close the browser unless the user asks you to
 
 ## Autonomous Progression

@@ -181,7 +181,7 @@ export async function POST(request: Request) {
               ...apricotTools,
               browser: createBrowserTool(sessionId),
             },
-            stopWhen: stepCountIs(50),
+            stopWhen: stepCountIs(100),
             experimental_telemetry: {
               isEnabled: isProductionEnvironment,
               functionId: 'web-automation-agent',
@@ -228,7 +228,7 @@ export async function POST(request: Request) {
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: await convertToModelMessages(uiMessages),
-          stopWhen: stepCountIs(50),
+          stopWhen: stepCountIs(100),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
               ? []
