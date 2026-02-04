@@ -29,6 +29,18 @@ This is the most efficient approach because:
 - Works without discovering IDs or waiting for refs
 - Self-documenting - you can see what field you're targeting
 
+## Snapshot Strategy
+
+Always take a full snapshot first, then scope on complex pages:
+
+```
+browser({ command: "snapshot" })            # Full page — understand structure
+browser({ command: "snapshot -s \"form\"" })  # Scope to form on complex pages (Drupal, WordPress)
+browser({ command: "snapshot -s \"main\"" })  # Alternative scope for main content area
+```
+
+**ALWAYS re-snapshot after DOM-changing actions** (click, select, navigation). Refs go stale.
+
 ## Fallback: Refs from Snapshot
 
 If labels don't work, use snapshot refs:
@@ -78,17 +90,64 @@ browser({ command: "click @e1" })
 browser({ command: "type @e1 \"5551234567\"" })
 ```
 
-### Dropdowns (select)
+### Native Dropdowns (select)
 ```
 browser({ command: "select @e1 \"Option Value\"" })
 ```
 
-If it's a custom dropdown (not native select):
+### Custom Dropdowns (Select2, Chosen, Drupal)
+
+The `select` command ONLY works on native `<select>` elements. Many CMS forms use custom dropdown widgets (Select2, Chosen) that render styled HTML instead of native selects.
+
+**How to detect a custom dropdown:**
+- `select` command fails or has no effect
+- Snapshot shows `<span>` or `<div>` with classes like `select2-container`, `chosen-container`
+- The visible element is a styled container, not a native `<select>`
+- The actual `<select>` is hidden (`display: none` or `aria-hidden`)
+
+**Pattern for Select2/Chosen dropdowns:**
 ```
-browser({ command: "click @e1" })  # Open dropdown
-browser({ command: "snapshot -i" })  # Get options
-browser({ command: "click @e5" })  # Click option
+# 1. Click the dropdown trigger (the visible styled container)
+browser({ command: "click @e5" })
+
+# 2. Wait for the dropdown panel to render
+browser({ command: "wait 300" })
+
+# 3. Snapshot to see the options
+browser({ command: "snapshot -i" })
+
+# 4. Click the desired option
+browser({ command: "click @e12" })
+
+# 5. ALWAYS re-snapshot after selection (DOM changed)
+browser({ command: "snapshot -s \"form\"" })
 ```
+
+**Select2 with search (common in Drupal):**
+```
+# 1. Click to open the dropdown
+browser({ command: "click @e5" })
+browser({ command: "wait 300" })
+
+# 2. Type into the search box (auto-focused in Select2)
+browser({ command: "type \":focus\" \"Riverside\"" })
+browser({ command: "wait 300" })
+
+# 3. Snapshot to find filtered results
+browser({ command: "snapshot -i" })
+
+# 4. Click the matching option
+browser({ command: "click @e12" })
+
+# 5. Re-snapshot
+browser({ command: "snapshot -s \"form\"" })
+```
+
+**Drupal-specific tips:**
+- Drupal forms often have deep navigation, sidebars, and footer. Always use `snapshot -s "form"` after the initial full snapshot.
+- Drupal webforms frequently use Select2 for any dropdown with many options (clinics, locations, languages).
+- The Select2 trigger element usually has a class containing `select2` — look for it in the snapshot.
+- If clicking the trigger opens a search input inside the dropdown, type into `:focus` rather than trying to find the search input's ref.
 
 ### Checkboxes
 ```
@@ -99,6 +158,8 @@ browser({ command: "uncheck @e1" })  # Uncheck it
 ### Radio Buttons
 ```
 browser({ command: "click @e1" })  # Click the desired option
+# ALWAYS re-snapshot — radio selections often reveal conditional fields
+browser({ command: "snapshot -s \"form\"" })
 ```
 
 ### File Uploads
