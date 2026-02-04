@@ -152,20 +152,28 @@ function PureMultimodalInput({
     const nextPath = chatPath ?? `/chat/${chatId}`;
     window.history.pushState({}, "", nextPath);
 
+    const parts = [
+      ...attachments.map((attachment) => ({
+        type: "file" as const,
+        url: attachment.url,
+        name: attachment.name,
+        mediaType: attachment.contentType,
+      })),
+      ...(input.trim() ? [
+        {
+          type: "text" as const,
+          text: input.trim(),
+        },
+      ] : []),
+    ];
+
+    if (parts.length === 0) {
+      return;
+    }
+
     sendMessage({
       role: "user",
-      parts: [
-        ...attachments.map((attachment) => ({
-          type: "file" as const,
-          url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
-        })),
-        {
-          type: "text",
-          text: input,
-        },
-      ],
+      parts,
     });
 
     setAttachments([]);

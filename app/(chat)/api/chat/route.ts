@@ -9,6 +9,10 @@ import {
 } from "ai";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
+import { mkdir, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { ZodError } from "zod";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
@@ -49,13 +53,50 @@ function getStreamContext() {
 
 export { getStreamContext };
 
+async function saveDslToTempFile({
+  chatId,
+  dslYaml,
+  workflowName,
+}: {
+  chatId: string;
+  dslYaml: string;
+  workflowName?: string | null;
+}): Promise<string | null> {
+  try {
+    const dslDir = join(homedir(), "ai-chatbot", "dsl");
+    await mkdir(dslDir, { recursive: true });
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const safeWorkflowName = workflowName
+      ? workflowName.replace(/[^a-zA-Z0-9-_]/g, "_")
+      : "workflow";
+    const filename = `${safeWorkflowName}_${chatId}_${timestamp}.yml`;
+    const filePath = join(dslDir, filename);
+
+    await writeFile(filePath, dslYaml, "utf8");
+    return filePath;
+  } catch (error) {
+    console.error("Failed to save DSL to temporary file:", error);
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
+  let requestJson: unknown;
 
   try {
-    const json = await request.json();
-    requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
+    requestJson = await request.json();
+    requestBody = postRequestBodySchema.parse(requestJson);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const errorDetails = error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join("; ");
+      console.error("Validation error:", errorDetails, "Request body:", JSON.stringify(requestJson));
+      return new ChatSDKError("bad_request:api", errorDetails).toResponse();
+    }
+    console.error("Request parsing error:", error);
     return new ChatSDKError("bad_request:api").toResponse();
   }
 
@@ -290,14 +331,25 @@ export async function POST(request: Request) {
               const yaml = extractYamlCodeBlock(text);
               if (yaml) {
                 try {
+                  const workflowName = inferWorkflowName(yaml);
                   await saveDifyWorkflowDsl({
                     chatId: id,
                     userId: session.user.id,
                     messageId: latestAssistant.id,
                     dslYaml: yaml,
-                    workflowName: inferWorkflowName(yaml),
+                    workflowName,
                     mode: inferMode(yaml),
                   });
+
+                  // Save DSL file to temporary directory
+                  const tempFilePath = await saveDslToTempFile({
+                    chatId: id,
+                    dslYaml: yaml,
+                    workflowName,
+                  });
+                  if (tempFilePath) {
+                    console.log(`DSL file saved to temporary location: ${tempFilePath}`);
+                  }
                 } catch {
                   // Don't fail the chat if DSL persistence fails (e.g. migrations not applied yet).
                 }
