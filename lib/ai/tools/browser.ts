@@ -2,7 +2,10 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { createKernelBrowser } from '@/lib/kernel/browser';
+import {
+  createKernelBrowser,
+  recordAgentActivity,
+} from '@/lib/kernel/browser';
 
 const execFileAsync = promisify(execFile);
 
@@ -49,10 +52,13 @@ function parseCommand(command: string): string[] {
  * The tool connects to a Kernel.sh managed browser instance and executes
  * commands using the agent-browser CLI.
  *
+ * @param sessionId - The chat/session ID for browser isolation
+ * @param userId - The user ID for ownership validation and security
+ *
  * @see https://www.kernel.sh/docs/integrations/agent-browser
  * @see https://agent-browser.dev/commands
  */
-export const createBrowserTool = (sessionId: string) =>
+export const createBrowserTool = (sessionId: string, userId: string) =>
   tool({
     description: `Execute browser automation commands using agent-browser CLI connected to a remote Kernel browser.
 
@@ -109,8 +115,9 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
     execute: async ({ command }: { command: string }) => {
       try {
         // Ensure we have a Kernel browser instance for this session
-        // This creates a new browser or returns existing one
-        const browser = await createKernelBrowser(sessionId);
+        // This creates a new browser or returns existing one with userId validation
+        const browser = await createKernelBrowser(sessionId, userId);
+        await recordAgentActivity(sessionId, userId);
         const cdpUrl = browser.cdp_ws_url;
 
         console.log('[browser-tool] Session:', sessionId);

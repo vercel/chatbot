@@ -3,6 +3,9 @@ import {
   createKernelBrowser,
   deleteKernelBrowser,
   getLiveViewUrl,
+  recordLiveViewConnection,
+  recordLiveViewDisconnection,
+  recordLiveViewHeartbeat,
 } from '@/lib/kernel/browser';
 
 export async function POST(request: Request) {
@@ -30,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     if (action === 'create') {
-      const browser = await createKernelBrowser(sessionId, { isMobile });
+      const browser = await createKernelBrowser(sessionId, session.user.id, { isMobile });
       return Response.json({
         liveViewUrl: browser.browser_live_view_url,
         sessionId: browser.session_id,
@@ -43,8 +46,31 @@ export async function POST(request: Request) {
     }
 
     if (action === 'getLiveView') {
-      const url = await getLiveViewUrl(sessionId);
+      const url = await getLiveViewUrl(sessionId, session.user.id);
       return Response.json({ liveViewUrl: url });
+    }
+
+    if (action === 'liveViewConnected') {
+      await recordLiveViewConnection(sessionId, session.user.id);
+      return Response.json({ success: true });
+    }
+
+    if (action === 'liveViewDisconnected') {
+      await recordLiveViewDisconnection(sessionId, session.user.id);
+      return Response.json({ success: true });
+    }
+
+    if (action === 'liveViewHeartbeat') {
+      try {
+        await recordLiveViewHeartbeat(sessionId, session.user.id);
+        return Response.json({ success: true });
+      } catch (error) {
+        // If heartbeat fails (session expired), return 404 so client disconnects
+        if (error instanceof Error && error.message.includes('different user')) {
+          return Response.json({ error: 'Session expired or invalid' }, { status: 404 });
+        }
+        throw error;
+      }
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });
