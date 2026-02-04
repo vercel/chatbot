@@ -61,8 +61,16 @@ export async function POST(request: Request) {
     }
 
     if (action === 'liveViewHeartbeat') {
-      await recordLiveViewHeartbeat(sessionId, session.user.id);
-      return Response.json({ success: true });
+      try {
+        await recordLiveViewHeartbeat(sessionId, session.user.id);
+        return Response.json({ success: true });
+      } catch (error) {
+        // If heartbeat fails (session expired), return 404 so client disconnects
+        if (error instanceof Error && error.message.includes('different user')) {
+          return Response.json({ error: 'Session expired or invalid' }, { status: 404 });
+        }
+        throw error;
+      }
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });

@@ -41,6 +41,7 @@ export function KernelBrowserClient({
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const isMobile = useIsMobile();
 
   // Use refs to avoid dependency changes triggering re-initialization
@@ -59,7 +60,7 @@ export function KernelBrowserClient({
   const sendLiveViewEvent = useCallback(
     async (event: 'connected' | 'disconnected' | 'heartbeat') => {
       try {
-        await fetch('/api/kernel-browser', {
+        const response = await fetch('/api/kernel-browser', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
@@ -74,8 +75,28 @@ export function KernelBrowserClient({
             sessionId,
           }),
         });
+
+        // If heartbeat returns error, the session has expired
+        // Disconnect the live view to let Kernel's timeout delete the browser
+        if (event === 'heartbeat' && !response.ok) {
+          console.log('[Kernel] Session expired due to agent inactivity, disconnecting live view');
+          setSessionExpired(true);
+          await notifyDisconnected();
+          setLiveViewUrl(null);
+          setIsConnected(false);
+          onConnectionChangeRef.current?.(false);
+          toast.info('Browser session closed due to inactivity');
+        }
       } catch (error) {
         console.warn(`Failed to send live view ${event} event`, error);
+        // On heartbeat failure, assume session expired
+        if (event === 'heartbeat') {
+          setSessionExpired(true);
+          await notifyDisconnected();
+          setLiveViewUrl(null);
+          setIsConnected(false);
+          onConnectionChangeRef.current?.(false);
+        }
       }
     },
     [sessionId]
@@ -280,6 +301,10 @@ export function KernelBrowserClient({
   }
 
   if (!liveViewUrl) {
+    // If session expired, show the timeout state with retry option
+    if (sessionExpired) {
+      return <BrowserTimeoutState onRetry={() => initBrowser(true)} />;
+    }
     return (
       <div className="flex items-center justify-center h-full bg-zinc-900 text-zinc-400">
         No browser available

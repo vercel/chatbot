@@ -89,8 +89,18 @@ function hasActiveLiveView(entry: KernelBrowserEntry): boolean {
   return Date.now() - entry.lastLiveViewHeartbeatAt <= LIVE_VIEW_HEARTBEAT_TIMEOUT_MS;
 }
 
+/**
+ * Determines if a browser entry should be deleted from our Redis state.
+ *
+ * IMPORTANT: We only expire based on agent activity, NOT live view connection.
+ * Kernel handles browser deletion via timeout when no CDP/live view connections exist.
+ *
+ * Our job: Delete the Redis entry when agent is idle for 5 minutes.
+ * This allows the client to disconnect the live view iframe, which triggers
+ * Kernel's own timeout mechanism to delete the actual browser instance.
+ */
 function isEntryExpired(entry: KernelBrowserEntry): boolean {
-  return !hasRecentAgentActivity(entry) && !hasActiveLiveView(entry);
+  return !hasRecentAgentActivity(entry);
 }
 
 async function persistEntry(
@@ -709,13 +719,24 @@ export async function recordLiveViewHeartbeat(
   }
 
   const entry = await loadBrowserEntry(sessionId);
-  if (entry && entry.userId !== userId) {
+
+  // Session doesn't exist - agent has been idle and session expired
+  if (!entry) {
+    console.log(
+      `[Kernel] Heartbeat for expired session ${sessionId}. Agent has been idle >5min.`
+    );
+    throw new Error('Session expired due to agent inactivity');
+  }
+
+  // Wrong user
+  if (entry.userId !== userId) {
     console.warn(
       `[Kernel] Heartbeat from user ${userId} for session ${sessionId} owned by ${entry.userId}. Ignoring.`
     );
-    return; // Don't throw on heartbeat, just log and ignore
+    throw new Error('Session belongs to different user');
   }
 
+  // Update heartbeat timestamp
   await updateBrowserEntry(sessionId, entry => {
     if (entry.liveViewConnections <= 0) {
       return entry;
