@@ -2,7 +2,10 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { createKernelBrowser } from '@/lib/kernel/browser';
+import {
+  createKernelBrowser,
+  recordAgentActivity,
+} from '@/lib/kernel/browser';
 
 const execFileAsync = promisify(execFile);
 
@@ -111,6 +114,7 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
         // Ensure we have a Kernel browser instance for this session
         // This creates a new browser or returns existing one
         const browser = await createKernelBrowser(sessionId);
+        await recordAgentActivity(sessionId);
         const cdpUrl = browser.cdp_ws_url;
 
         console.log('[browser-tool] Session:', sessionId);

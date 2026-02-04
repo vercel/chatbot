@@ -3,6 +3,9 @@ import {
   createKernelBrowser,
   deleteKernelBrowser,
   getLiveViewUrl,
+  recordLiveViewConnection,
+  recordLiveViewDisconnection,
+  recordLiveViewHeartbeat,
 } from '@/lib/kernel/browser';
 
 export async function POST(request: Request) {
@@ -45,6 +48,21 @@ export async function POST(request: Request) {
     if (action === 'getLiveView') {
       const url = await getLiveViewUrl(sessionId);
       return Response.json({ liveViewUrl: url });
+    }
+
+    if (action === 'liveViewConnected') {
+      await recordLiveViewConnection(sessionId);
+      return Response.json({ success: true });
+    }
+
+    if (action === 'liveViewDisconnected') {
+      await recordLiveViewDisconnection(sessionId);
+      return Response.json({ success: true });
+    }
+
+    if (action === 'liveViewHeartbeat') {
+      await recordLiveViewHeartbeat(sessionId);
+      return Response.json({ success: true });
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });

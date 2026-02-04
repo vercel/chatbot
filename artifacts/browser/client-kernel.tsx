@@ -53,6 +53,58 @@ export function KernelBrowserClient({
 
   // Track if we've already initialized for this session
   const initializedSessionRef = useRef<string | null>(null);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const liveViewActiveRef = useRef(false);
+
+  const sendLiveViewEvent = useCallback(
+    async (event: 'connected' | 'disconnected' | 'heartbeat') => {
+      try {
+        await fetch('/api/kernel-browser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          keepalive: event === 'disconnected',
+          body: JSON.stringify({
+            action:
+              event === 'connected'
+                ? 'liveViewConnected'
+                : event === 'disconnected'
+                ? 'liveViewDisconnected'
+                : 'liveViewHeartbeat',
+            sessionId,
+          }),
+        });
+      } catch (error) {
+        console.warn(`Failed to send live view ${event} event`, error);
+      }
+    },
+    [sessionId]
+  );
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  }, []);
+
+  const notifyDisconnected = useCallback(async () => {
+    if (!liveViewActiveRef.current) return;
+    liveViewActiveRef.current = false;
+    stopHeartbeat();
+    await sendLiveViewEvent('disconnected');
+  }, [sendLiveViewEvent, stopHeartbeat]);
+
+  const startHeartbeat = useCallback(async () => {
+    stopHeartbeat();
+    await sendLiveViewEvent('connected');
+    liveViewActiveRef.current = true;
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (liveViewActiveRef.current) {
+        void sendLiveViewEvent('heartbeat');
+      }
+    }, 30_000);
+  }, [sendLiveViewEvent, stopHeartbeat]);
 
   const initBrowser = useCallback(async (force = false) => {
     // Skip if already initialized for this session (unless forced)
@@ -80,15 +132,17 @@ export function KernelBrowserClient({
       setIsConnected(true);
       initializedSessionRef.current = sessionId;
       onConnectionChangeRef.current?.(true);
+      await startHeartbeat();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to connect';
       setError(message);
       setIsConnected(false);
       onConnectionChangeRef.current?.(false);
+      await notifyDisconnected();
     } finally {
       setLoading(false);
     }
-  }, [sessionId, liveViewUrl]);
+  }, [sessionId, liveViewUrl, notifyDisconnected, startHeartbeat]);
 
   // Keep sessionId in a ref so the beforeunload handler always has the latest value
   const sessionIdRef = useRef(sessionId);
@@ -136,6 +190,13 @@ export function KernelBrowserClient({
       window.removeEventListener('switch-browser-control', handleSwitchControl as EventListener);
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      stopHeartbeat();
+      void notifyDisconnected();
+    };
+  }, [stopHeartbeat, notifyDisconnected]);
 
   // Global keyboard listener for fullscreen mode - Escape to exit
   useEffect(() => {
@@ -188,6 +249,7 @@ export function KernelBrowserClient({
       setIsConnected(false);
       setLiveViewUrl(null);
       onConnectionChange?.(false);
+      await notifyDisconnected();
     } catch (err) {
       console.error('Failed to disconnect browser:', err);
     }
