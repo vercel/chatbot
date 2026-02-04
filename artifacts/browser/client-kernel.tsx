@@ -56,6 +56,9 @@ export function KernelBrowserClient({
   const initializedSessionRef = useRef<string | null>(null);
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const liveViewActiveRef = useRef(false);
+  // Ref for liveViewUrl so heartbeat handler can compare without re-creating the callback
+  const liveViewUrlRef = useRef(liveViewUrl);
+  liveViewUrlRef.current = liveViewUrl;
 
   const sendLiveViewEvent = useCallback(
     async (event: 'connected' | 'disconnected' | 'heartbeat') => {
@@ -86,6 +89,20 @@ export function KernelBrowserClient({
           setIsConnected(false);
           onConnectionChangeRef.current?.(false);
           toast.info('Browser session closed due to inactivity');
+          return;
+        }
+
+        // On successful heartbeat, check if the server-side browser was recreated.
+        // If the live view URL changed, update the iframe to point to the new browser.
+        if (event === 'heartbeat' && response.ok) {
+          const data = await response.json();
+          if (data.liveViewUrl && data.liveViewUrl !== liveViewUrlRef.current) {
+            console.log(
+              '[Kernel] Browser was recreated server-side, updating live view URL',
+              { old: liveViewUrlRef.current, new: data.liveViewUrl }
+            );
+            setLiveViewUrl(data.liveViewUrl);
+          }
         }
       } catch (error) {
         console.warn(`Failed to send live view ${event} event`, error);

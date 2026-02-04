@@ -103,15 +103,34 @@ function isEntryExpired(entry: KernelBrowserEntry): boolean {
   return !hasRecentAgentActivity(entry);
 }
 
+/**
+ * Persist browser entry to Redis, preserving concurrent field updates.
+ *
+ * CRITICAL: This function re-reads the current entry from Redis before writing
+ * to avoid overwriting fields (especially `lastAgentActivityAt`) that may have
+ * been updated concurrently by other requests (e.g. `recordAgentActivity`).
+ *
+ * The caller's `entry` is used as a fallback if no current entry exists in Redis.
+ */
 async function persistEntry(
   sessionId: string,
   entry: KernelBrowserEntry,
   userId?: string
 ): Promise<KernelBrowserEntry> {
   const redisKey = getRedisKey(sessionId);
+
+  // Re-read from Redis to get the latest values for fields we don't intend to change
+  const current = await loadBrowserEntry(sessionId);
+
   const updated: KernelBrowserEntry = {
+    // Start with the caller's entry as base (for fields like browser, userId)
     ...entry,
-    userId: userId || entry.userId, // Preserve or update userId
+    // Overlay the latest Redis values for fields that may have been updated concurrently
+    lastAgentActivityAt: current?.lastAgentActivityAt ?? entry.lastAgentActivityAt,
+    liveViewConnections: current?.liveViewConnections ?? entry.liveViewConnections,
+    lastLiveViewHeartbeatAt: current?.lastLiveViewHeartbeatAt ?? entry.lastLiveViewHeartbeatAt,
+    // These are the only fields we intentionally update
+    userId: userId || entry.userId,
     lastAccessedAt: Date.now(),
   };
   await redis.set(redisKey, updated, { ex: BROWSER_TTL_SECONDS });
@@ -124,6 +143,14 @@ async function loadBrowserEntry(sessionId: string): Promise<KernelBrowserEntry |
   return isBrowserEntry(entry) ? entry : null;
 }
 
+/**
+ * Read-modify-write a browser entry.
+ *
+ * IMPORTANT: This writes the updater's result directly to Redis (with a fresh
+ * `lastAccessedAt`) rather than going through `persistEntry`, because the
+ * updater's mutations ARE the authoritative values. Using `persistEntry`
+ * would re-read and potentially undo the updater's changes.
+ */
 async function updateBrowserEntry(
   sessionId: string,
   updater: (entry: KernelBrowserEntry) => KernelBrowserEntry | null
@@ -138,7 +165,11 @@ async function updateBrowserEntry(
     return null;
   }
 
-  return persistEntry(sessionId, updated);
+  // Write directly — the updater's result is authoritative
+  const redisKey = getRedisKey(sessionId);
+  const final: KernelBrowserEntry = { ...updated, lastAccessedAt: Date.now() };
+  await redis.set(redisKey, final, { ex: BROWSER_TTL_SECONDS });
+  return final;
 }
 
 async function maybeExpireSession(
@@ -225,9 +256,12 @@ async function releaseDistributedLock(sessionId: string, token: string) {
 }
 
 /**
- * Atomically check if a browser exists and verify userId ownership.
- * Uses standard Redis GET with validation - Upstash REST API compatible.
- * Returns the existing browser if it belongs to the user, null otherwise.
+ * Check if a browser exists and verify userId ownership.
+ *
+ * CRITICAL FIX: Before checking expiry, re-read the entry from Redis to get
+ * the latest `lastAgentActivityAt`. Without this, a stale read from a few
+ * hundred milliseconds ago could cause us to falsely expire an active session
+ * because a concurrent `recordAgentActivity` updated the field after our read.
  */
 async function atomicCheckAndClaimBrowser(
   sessionId: string,
@@ -254,8 +288,14 @@ async function atomicCheckAndClaimBrowser(
     );
   }
 
+  // Re-read to get the absolute latest lastAgentActivityAt before expiry decision.
+  // A concurrent recordAgentActivity may have updated it between our first read
+  // and this check. Without this, we could falsely expire an active session.
+  const freshEntry = await loadBrowserEntry(sessionId);
+  const entryForExpiry = freshEntry ?? entry;
+
   // Check if expired
-  const expired = await maybeExpireSession(sessionId, entry);
+  const expired = await maybeExpireSession(sessionId, entryForExpiry);
   if (expired) {
     logger.browserExpired({
       sessionId,
@@ -267,7 +307,7 @@ async function atomicCheckAndClaimBrowser(
   }
 
   // Refresh and return
-  const refreshed = await persistEntry(sessionId, entry, userId);
+  const refreshed = await persistEntry(sessionId, entryForExpiry, userId);
   logger.browserReused({
     sessionId,
     userId,
