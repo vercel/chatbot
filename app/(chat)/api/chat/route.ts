@@ -170,6 +170,7 @@ export async function POST(request: Request) {
       }
 
       // Create session ID for browser isolation
+      // sessionId includes both chatId and userId to ensure global uniqueness
       const sessionId = `${id}-${session.user.id}`;
 
       const stream = createUIMessageStream({
@@ -181,7 +182,7 @@ export async function POST(request: Request) {
             tools: {
               ...apricotTools,
               gapAnalysis,
-              browser: createBrowserTool(sessionId),
+              browser: createBrowserTool(sessionId, session.user.id),
             },
             stopWhen: stepCountIs(100),
             experimental_telemetry: {

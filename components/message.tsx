@@ -109,24 +109,7 @@ const PurePreviewMessage = ({
   }, [message.id]);
 
   const processedParts = useMemo(
-    () => {
-      const result = groupMessageParts(message.parts ?? []);
-      // DEBUG: remove after verifying grouping works
-      const toolParts = (message.parts ?? []).filter((p) => p.type.startsWith('tool-'));
-      if (toolParts.length > 1) {
-        console.log('[tool-group] message', message.id, {
-          totalParts: (message.parts ?? []).length,
-          toolParts: toolParts.length,
-          partTypes: (message.parts ?? []).map((p) => p.type),
-          processed: result.map((r) =>
-            r.kind === 'tool-group'
-              ? `GROUP(${r.parts.length})`
-              : `pass:${r.part.type}`,
-          ),
-        });
-      }
-      return result;
-    },
+    () => groupMessageParts(message.parts ?? []),
     [message.parts],
   );
 

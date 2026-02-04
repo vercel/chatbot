@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     if (action === 'create') {
-      const browser = await createKernelBrowser(sessionId, { isMobile });
+      const browser = await createKernelBrowser(sessionId, session.user.id, { isMobile });
       return Response.json({
         liveViewUrl: browser.browser_live_view_url,
         sessionId: browser.session_id,
@@ -46,22 +46,22 @@ export async function POST(request: Request) {
     }
 
     if (action === 'getLiveView') {
-      const url = await getLiveViewUrl(sessionId);
+      const url = await getLiveViewUrl(sessionId, session.user.id);
       return Response.json({ liveViewUrl: url });
     }
 
     if (action === 'liveViewConnected') {
-      await recordLiveViewConnection(sessionId);
+      await recordLiveViewConnection(sessionId, session.user.id);
       return Response.json({ success: true });
     }
 
     if (action === 'liveViewDisconnected') {
-      await recordLiveViewDisconnection(sessionId);
+      await recordLiveViewDisconnection(sessionId, session.user.id);
       return Response.json({ success: true });
     }
 
     if (action === 'liveViewHeartbeat') {
-      await recordLiveViewHeartbeat(sessionId);
+      await recordLiveViewHeartbeat(sessionId, session.user.id);
       return Response.json({ success: true });
     }
 
