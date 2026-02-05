@@ -84,6 +84,22 @@ export class DifyClient {
   }
 
   /**
+   * dify loginコマンドを実行（結果は表示しない）
+   * CLIスクリプトのcmd_loginと同じロジックをTypeScriptで実装
+   */
+  private async executeDifyLogin(): Promise<void> {
+    try {
+      // login()メソッドを呼び出してログインを実行
+      // このメソッドはCLIスクリプトのcmd_loginと同じロジックを実装している
+      await this.login();
+      console.log(`[Dify Client] Login successful to ${this.consoleApiBase}`);
+    } catch (error) {
+      // エラーは無視（既にログイン済みの可能性があるため）
+      console.warn(`[Dify Client] Login attempt failed or already logged in:`, error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  /**
    * Difyにログインして認証トークンを取得
    */
   async login(): Promise<DifyAuthTokens> {
@@ -252,6 +268,9 @@ export class DifyClient {
     markedName = "",
     markedComment = ""
   ): Promise<DifyPublishResponse> {
+    // 公開前に毎回dify loginコマンドを実行（結果は表示しない）
+    await this.executeDifyLogin();
+    // 認証ファイルを読み込んで認証を確実にする
     await this.ensureAuth();
 
     const response = await fetch(

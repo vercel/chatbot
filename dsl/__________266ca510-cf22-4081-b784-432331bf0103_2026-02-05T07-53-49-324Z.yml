@@ -1,0 +1,112 @@
+app:
+  description: 日本語テキストを中国語に翻訳します
+  icon: 🈯
+  icon_background: '#FF9900'
+  name: 日本語→中国語翻訳
+kind: app
+version: 0.1.5
+workflow:
+  mode: advanced-chat
+  nodes:
+    - id: start_node
+      type: custom
+      position:
+        x: 0
+        y: 0
+      positionAbsolute:
+        x: 0
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      width: 180
+      height: 80
+      data:
+        type: start
+        variables:
+          - label: 入力テキスト
+            max_length: 0
+            required: true
+            variable: sys.query
+            type: text-input
+            ui_options:
+              input_type: paragraph
+    - id: llm_node
+      type: custom
+      position:
+        x: 320
+        y: 0
+      positionAbsolute:
+        x: 320
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      width: 320
+      height: 200
+      data:
+        type: llm
+        title: LLM翻訳ノード
+        model:
+          name: gpt-4o
+          provider: openai
+          completion_params:
+            temperature: 0.7
+        prompt_template:
+          - id: system
+            role: system
+            text: >
+              あなたは日本語を正確かつ自然な中国語に翻訳する翻訳者です。
+          - id: user
+            role: user
+            text: '{{#start_node.sys.query#}}'
+        context:
+          enabled: false
+          variable_selector: []
+    - id: answer_node
+      type: custom
+      position:
+        x: 680
+        y: 0
+      positionAbsolute:
+        x: 680
+        y: 0
+      selected: false
+      sourcePosition: none
+      targetPosition: none
+      width: 280
+      height: 160
+      data:
+        type: answer
+        title: 翻訳結果
+        variables:
+          - label: 翻訳結果
+            required: true
+            variable: text
+            value_selector:
+              - llm_node
+              - text
+  edges:
+    - id: edge_start_to_llm
+      type: custom
+      source: start_node
+      sourceHandle: source
+      target: llm_node
+      targetHandle: target
+      data:
+        sourceType: start
+        targetType: llm
+        isInLoop: false
+        isInIteration: false
+    - id: edge_llm_to_answer
+      type: custom
+      source: llm_node
+      sourceHandle: source
+      target: answer_node
+      targetHandle: target
+      data:
+        sourceType: llm
+        targetType: answer
+        isInLoop: false
+        isInIteration: false
+dependencies: []

@@ -1,0 +1,133 @@
+app:
+  description: 入力された日本語を中国語（簡体字）に翻訳して返す
+  icon: 🇯🇵➡️🇨🇳
+  icon_background: '#1C64F2'
+  mode: advanced-chat
+  name: 日中翻訳チャット
+kind: app
+version: 0.1.5
+workflow:
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: llm
+      id: start-llm_translate
+      source: start
+      sourceHandle: source
+      target: llm_translate
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: llm_translate-answer
+      source: llm_translate
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: Start
+        type: start
+        variables: []
+      height: 98
+      id: start
+      position:
+        x: -420
+        y: 180
+      positionAbsolute:
+        x: -420
+        y: 180
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 日本語を中国語（簡体字）に翻訳
+        model:
+          completion_params:
+            frequency_penalty: 0
+            max_tokens: 1024
+            presence_penalty: 0
+            temperature: 0.3
+            top_p: 1
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            あなたは高品質な翻訳者です。
+            以下の日本語を中国語（簡体字）に翻訳してください。
+
+            ルール:
+            - 翻訳結果のみを出力する（解説・注釈・前置きは不要）
+            - 固有名詞・数値・記号は可能な限り保持
+            - 文体は原文のニュアンスを維持（指定がなければ中立）
+        - id: user
+          role: user
+          text: '{{#sys.query#}}'
+        selected: false
+        title: 日→中 翻訳
+        type: llm
+      height: 186
+      id: llm_translate
+      position:
+        x: -120
+        y: 180
+      positionAbsolute:
+        x: -120
+        y: 180
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        answer: '{{#llm_translate.text#}}'
+        desc: 翻訳結果を表示
+        selected: false
+        title: Answer
+        type: answer
+      height: 107
+      id: answer
+      position:
+        x: 260
+        y: 180
+      positionAbsolute:
+        x: 260
+        y: 180
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244

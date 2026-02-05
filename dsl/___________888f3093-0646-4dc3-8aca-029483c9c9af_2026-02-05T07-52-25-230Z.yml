@@ -1,0 +1,105 @@
+kind: app
+version: 0.1.5
+app:
+  name: 日本語から中国語変換
+  description: 日本語テキストを受け取り中国語に翻訳します
+  mode: advanced-chat
+  icon: '🈯️'
+  icon_background: '#FFCC00'
+workflow:
+  nodes:
+  - id: start_node
+    type: custom
+    data:
+      type: start
+      variables:
+      - type: text-input
+        label: 日本語テキスト
+        variable: input_text
+        max_length: 1000
+        required: true
+    position:
+      x: 0
+      y: 0
+    positionAbsolute:
+      x: 0
+      y: 0
+    selected: false
+    sourcePosition: right
+    targetPosition: left
+    width: 240
+    height: 130
+  - id: llm_node
+    type: custom
+    data:
+      type: llm
+      title: 日本語を中国語に翻訳
+      prompt_template:
+      - id: system
+        role: system
+        text: 'あなたはプロの翻訳者です。日本語の文章を分かりやすく自然な中国語に翻訳してください。'
+      - id: user
+        role: user
+        text: '{{#start_node.input_text#}}'
+      completion_params:
+        temperature: 0.7  # 翻訳は安定重視なので標準程度の創造性
+        max_tokens: 1000
+        top_p: 1
+        frequency_penalty: 0
+        presence_penalty: 0
+      model:
+        provider: openai
+        name: gpt-4o
+        mode: chat
+      context:
+        enabled: false
+        variable_selector: []
+      selected: false
+    position:
+      x: 400
+      y: 0
+    positionAbsolute:
+      x: 400
+      y: 0
+    sourcePosition: right
+    targetPosition: left
+    width: 300
+    height: 300
+  - id: answer_node
+    type: custom
+    data:
+      type: answer
+      title: 翻訳結果（中国語）
+      output_variable: text
+      selected: false
+    position:
+      x: 800
+      y: 0
+    positionAbsolute:
+      x: 800
+      y: 0
+    sourcePosition: right
+    targetPosition: left
+    width: 300
+    height: 130
+edges:
+- id: edge_start_llm
+  source: start_node
+  target: llm_node
+  sourceHandle: source
+  targetHandle: target
+  type: custom
+  data:
+    isInLoop: false
+    isInIteration: false
+- id: edge_llm_answer
+  source: llm_node
+  target: answer_node
+  sourceHandle: source
+  targetHandle: target
+  type: custom
+  data:
+    isInLoop: false
+    isInIteration: false
+environment_variables: []
+dependencies: []

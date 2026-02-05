@@ -1,0 +1,97 @@
+app:
+  description: 日本語のテキストを中国語に翻訳します
+  icon: translate
+  icon_background: '#3b82f6'
+  mode: advanced-chat
+  name: 日中翻訳システム
+id: 日中翻訳システム_20240613
+kind: app
+version: 0.1.5
+workflow:
+  edges:
+  - data:
+      isInIteration: false
+      isInLoop: false
+      sourceType: start
+      targetType: llm
+    id: start-llm
+    source: start
+    sourceHandle: source
+    target: llm_translate
+    targetHandle: target
+    type: custom
+  - data:
+      isInIteration: false
+      isInLoop: false
+      sourceType: llm
+      targetType: answer
+    id: llm-answer
+    source: llm_translate
+    sourceHandle: source
+    target: answer_translate
+    targetHandle: target
+    type: custom
+  nodes:
+  - data:
+      title: Start
+      type: start
+      variables:
+      - label: 入力テキスト
+        max_length: 1000
+        required: true
+        type: text-input
+        variable: input
+    id: start
+    position:
+      x: 0
+      y: 0
+    positionAbsolute:
+      x: 0
+      y: 0
+    selected: false
+    sourcePosition: right
+    targetPosition: left
+    type: custom
+    width: 160
+    height: 100
+  - data:
+      context:
+        enabled: false
+        variable_selector: []
+      prompt_template:
+      - id: user
+        role: user
+        text: |
+          以下是需要翻译成中文的日文文本，请将其准确翻译为自然流畅的中文：
+          {{#start.input#}}
+      title: 日本語→中国語翻訳
+      type: llm
+    id: llm_translate
+    position:
+      x: 300
+      y: 0
+    positionAbsolute:
+      x: 300
+      y: 0
+    selected: false
+    sourcePosition: right
+    targetPosition: left
+    type: custom
+    width: 300
+    height: 150
+  - data:
+      title: 翻訳結果
+      type: answer
+    id: answer_translate
+    position:
+      x: 650
+      y: 0
+    positionAbsolute:
+      x: 650
+      y: 0
+    selected: false
+    sourcePosition: right
+    targetPosition: left
+    type: custom
+    width: 160
+    height: 100

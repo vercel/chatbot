@@ -1,0 +1,71 @@
+version: 0.1.5
+kind: app
+app:
+  name: 日本語→中国語翻訳
+  description: 入力された日本語テキストを中国語に翻訳するチャット形式のワークフローです。
+  icon: 🈶
+  icon_background: "#FFDD00"
+  mode: advanced-chat
+workflow:
+  nodes:
+    - id: start_node
+      type: custom
+      data:
+        type: start
+        title: 開始
+        variables:
+          - type: text-input
+            label: 日本語テキスト
+            variable: input_text
+            max_length: 500
+            required: true
+    - id: llm_translate
+      type: custom
+      data:
+        type: llm
+        title: 翻訳
+        prompt_template:
+          - id: user
+            role: user
+            text: "以下の日本語を中国語に翻訳してください:\n\n{{#start_node.input_text#}}"
+        model:
+          name: gpt-4o
+          provider: openai
+          completion_params:
+            temperature: 0.7
+            top_p: 1
+            frequency_penalty: 0
+            presence_penalty: 0
+          mode: chat
+        context:
+          enabled: false
+          variable_selector: []
+    - id: answer_node
+      type: custom
+      data:
+        type: answer
+        title: 翻訳結果
+        variable_selector:
+          - llm_translate
+          - text
+  edges:
+    - id: edge_start_to_llm
+      source: start_node
+      target: llm_translate
+      type: custom
+      data:
+        sourceType: start
+        targetType: llm
+        isInLoop: false
+        isInIteration: false
+    - id: edge_llm_to_answer
+      source: llm_translate
+      target: answer_node
+      type: custom
+      data:
+        sourceType: llm
+        targetType: answer
+        isInLoop: false
+        isInIteration: false
+environment_variables: []
+dependencies: []
