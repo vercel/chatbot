@@ -6,6 +6,7 @@ import {
 import { xai } from '@ai-sdk/xai';
 import { openai } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
+import { vertex } from '@ai-sdk/google-vertex';
 import { anthropic } from '@ai-sdk/anthropic';
 import { gateway } from '@ai-sdk/gateway';
 import {
@@ -18,6 +19,8 @@ import { isTestEnvironment } from '../constants';
 
 // Anthropic model for web automation - used directly with streamText when USE_AI_SDK_AGENT=true
 export const webAutomationModel = anthropic('claude-opus-4-5-20251101');
+// Vertex AI model
+export const vertexModel = vertex('gemini-2.0-flash');
 
 export const myProvider = isTestEnvironment
   ? customProvider({
