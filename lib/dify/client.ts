@@ -29,9 +29,11 @@ export class DifyClient {
       process.env.DIFY_CONSOLE_API_BASE ?? process.env.CONSOLE_API_BASE ?? "";
     this.email = process.env.DIFY_EMAIL ?? process.env.EMAIL ?? "";
     this.password = process.env.DIFY_PASSWORD ?? process.env.PASSWORD ?? "";
+    // デフォルトはtrue（平文パスワードだと "Invalid encrypted data" エラーになるため）
+    // 明示的にfalseを設定した場合のみbase64エンコードを無効化
     this.passwordBase64 =
-      process.env.PASSWORD_BASE64 === "true" ||
-      process.env.DIFY_PASSWORD_BASE64 === "true";
+      process.env.PASSWORD_BASE64 !== "false" &&
+      process.env.DIFY_PASSWORD_BASE64 !== "false";
 
     if (!this.consoleApiBase || !this.email || !this.password) {
       throw new Error(
@@ -301,18 +303,16 @@ export class DifyClient {
 
       if (appResponse.ok) {
         const appInfo = (await appResponse.json()) as {
-          data?: DifyAppInfo;
+          data?: DifyAppInfo & { mode?: string };
         } & DifyAppInfo;
 
         const accessToken =
           appInfo.data?.site?.access_token ??
-          appInfo.site?.access_token ??
-          appInfo.data?.data?.site?.access_token;
+          appInfo.site?.access_token;
 
         if (accessToken && accessToken !== "null") {
           // ワークフローの種類（mode）を取得
-          const mode =
-            appInfo.data?.mode ?? appInfo.mode ?? appInfo.data?.data?.mode;
+          const mode = appInfo.data?.mode ?? appInfo.mode;
           const path = this.getPathByMode(mode);
           return `${baseUrl}/${path}/${accessToken}`;
         }
@@ -396,16 +396,25 @@ let difyClientInstance: DifyClient | null = null;
 
 export function getDifyClient(): DifyClient | null {
   // 環境変数が設定されていない場合はnullを返す（オプショナル機能）
-  if (!process.env.DIFY_CONSOLE_API_BASE && !process.env.CONSOLE_API_BASE) {
+  const consoleApiBase =
+    process.env.DIFY_CONSOLE_API_BASE ?? process.env.CONSOLE_API_BASE;
+  const email = process.env.DIFY_EMAIL ?? process.env.EMAIL;
+  const password = process.env.DIFY_PASSWORD ?? process.env.PASSWORD;
+
+  if (!consoleApiBase || !email || !password) {
+    console.warn(
+      "[Dify Client] Environment variables not set. Required: DIFY_CONSOLE_API_BASE (or CONSOLE_API_BASE), DIFY_EMAIL (or EMAIL), DIFY_PASSWORD (or PASSWORD)"
+    );
     return null;
   }
 
   if (!difyClientInstance) {
     try {
       difyClientInstance = new DifyClient();
+      console.log("[Dify Client] Initialized successfully");
     } catch (error) {
       // 設定が不完全な場合はnullを返す
-      console.warn("Dify client initialization failed:", error);
+      console.error("[Dify Client] Initialization failed:", error);
       return null;
     }
   }

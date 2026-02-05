@@ -332,6 +332,16 @@ ls -lt dsl/*.yml | head -1
    - ファイル名形式: `{workflowName}_{chatId}_{timestamp}.yml`
    - プロジェクトルートの`dsl/`ディレクトリに保存
 
+**DSL検証機能:**
+正しいDify DSL形式のみが保存されるように、以下の検証が行われます：
+
+- **最小行数チェック**: 10行未満のテキストは除外（説明文などの短いテキストを除外）
+- **必須フィールドチェック**: 
+  - `app:`または`kind: app`で始まる
+  - `workflow:`または`graph:`を含む
+
+これにより、LLMが生成した説明文や途中のテキストが誤って保存されることを防ぎます。
+
 #### 6.4.2 Dify Console APIによる自動インポート（オプショナル）
 `.env.local`に以下の環境変数を設定すると、DSL生成後に自動的にDifyにインポート・公開されます：
 
@@ -368,6 +378,8 @@ DIFY_PASSWORD_BASE64=false
 - `pnpm db:migrate` が通っていないとテーブルが作成されないため、DSL自動保存も動作しない
 - Dify Console APIの設定がない場合、DSLはローカルに保存されるが自動インポートは実行されない（既存の動作を維持）
 - `.dify_auth`と`.dify_csrf`は認証情報を含むため、`.gitignore`に追加されている
+- DSL検証により、正しいDify DSL形式のみが保存されます（説明文や途中のテキストは除外）
+- DSL保存と自動インポートは`createUIMessageStream`の`onFinish`で1回だけ実行されます（重複保存を防止）
 
 ## 7. つまずきやすいポイント
 - `.env.local` の値が不足していると起動やAI機能が失敗する
