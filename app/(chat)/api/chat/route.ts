@@ -39,6 +39,7 @@ import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
+import { getDifyClient } from "@/lib/dify/client";
 
 export const maxDuration = 60;
 
@@ -357,6 +358,26 @@ export async function POST(request: Request) {
                     console.log(
                       `DSL file saved to temporary location: ${tempFilePath}`
                     );
+
+                    // 自動インポートと公開（オプショナル）
+                    const difyClient = getDifyClient();
+                    if (difyClient && tempFilePath) {
+                      try {
+                        const result = await difyClient.importAndPublish(
+                          tempFilePath
+                        );
+                        console.log(
+                          `Dify workflow imported and published: ${result.appId}`
+                        );
+                        console.log(`Publish URL: ${result.publishUrl}`);
+                      } catch (error) {
+                        // Difyインポートが失敗してもチャット処理は継続
+                        console.error(
+                          "Failed to auto-import DSL to Dify:",
+                          error
+                        );
+                      }
+                    }
                   }
                 } catch {
                   // Don't fail the chat if DSL persistence fails (e.g. migrations not applied yet).

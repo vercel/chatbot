@@ -42,3 +42,7 @@ yarn-error.log*
 /playwright-report/
 /blob-report/
 /playwright/*
+
+# Dify CLI authentication files
+.dify_auth
+.dify_csrf
