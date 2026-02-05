@@ -1,0 +1,147 @@
+app:
+  description: 入力文をふんわり可愛い日本語に言い換えます
+  icon: 🎀
+  icon_background: '#FFB6C1'
+  mode: advanced-chat
+  name: かわいい日本語変換
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: llm
+      id: start-llm_cute
+      source: start
+      sourceHandle: source
+      target: llm_cute
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: llm_cute-answer
+      source: llm_cute
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: Start
+        type: start
+        variables: []
+      height: 90
+      id: start
+      position:
+        x: 80
+        y: 220
+      positionAbsolute:
+        x: 80
+        y: 220
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 入力文を「ふつう」にふんわり可愛い日本語へ変換
+        model:
+          completion_params:
+            frequency_penalty: 0
+            max_tokens: 800
+            presence_penalty: 0
+            temperature: 0.7
+            top_p: 1
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            あなたは「日本語をふんわり可愛い日本語に言い換える」専門の編集者です。
+            次のルールで出力してください。
+
+            # 目的
+            入力文の意味を変えずに、柔らかく・親しみやすく・可愛い雰囲気に整える。
+
+            # ルール
+            - 敬語（です・ます）は維持する（原文が敬語でない場合は、丁寧すぎない範囲で自然に）
+            - 赤ちゃん言葉（例: 〜でちゅ、〜なのら 等）は使わない
+            - 絵文字/顔文字は「1〜2個まで」。多用しない
+            - 砕けすぎない。相手が不快にならない、やさしい表現にする
+            - 余計な情報は足さない。原文の内容に忠実に
+            - 出力は「変換後の文章のみ」（解説・前置き・箇条書き・引用は不要）
+
+            # 変換のコツ（必要に応じて）
+            - 角の立つ言い方をやわらげる（例: 〜してください → 〜していただけると嬉しいです）
+            - 語尾に少しだけ柔らかさを足す（例: 〜です → 〜です♪ / 〜です☺️ など）
+            - 断定を少しだけ丸める（例: 〜です → 〜かもしれません）
+        - id: user
+          role: user
+          text: |
+            次の文章を、ルールに従って「ふんわり可愛い日本語」に言い換えてください。
+
+            入力文:
+            {{#sys.query#}}
+        selected: false
+        title: かわいく変換
+        type: llm
+      height: 270
+      id: llm_cute
+      position:
+        x: 380
+        y: 220
+      positionAbsolute:
+        x: 380
+        y: 220
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 360
+    - data:
+        answer: '{{#llm_cute.text#}}'
+        desc: ''
+        selected: false
+        title: Answer
+        type: answer
+      height: 120
+      id: answer
+      position:
+        x: 790
+        y: 220
+      positionAbsolute:
+        x: 790
+        y: 220
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244

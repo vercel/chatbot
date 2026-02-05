@@ -70,7 +70,6 @@ function PureMultimodalInput({
   selectedVisibilityType,
   selectedModelId,
   onModelChange,
-  showModelSelector = true,
 }: {
   chatId: string;
   chatPath?: string;
@@ -88,7 +87,6 @@ function PureMultimodalInput({
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
   onModelChange?: (modelId: string) => void;
-  showModelSelector?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -154,20 +152,28 @@ function PureMultimodalInput({
     const nextPath = chatPath ?? `/chat/${chatId}`;
     window.history.pushState({}, "", nextPath);
 
+    const parts = [
+      ...attachments.map((attachment) => ({
+        type: "file" as const,
+        url: attachment.url,
+        name: attachment.name,
+        mediaType: attachment.contentType,
+      })),
+      ...(input.trim() ? [
+        {
+          type: "text" as const,
+          text: input.trim(),
+        },
+      ] : []),
+    ];
+
+    if (parts.length === 0) {
+      return;
+    }
+
     sendMessage({
       role: "user",
-      parts: [
-        ...attachments.map((attachment) => ({
-          type: "file" as const,
-          url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
-        })),
-        {
-          type: "text",
-          text: input,
-        },
-      ],
+      parts,
     });
 
     setAttachments([]);
@@ -392,12 +398,10 @@ function PureMultimodalInput({
               selectedModelId={selectedModelId}
               status={status}
             />
-            {showModelSelector && (
-              <ModelSelectorCompact
-                onModelChange={onModelChange}
-                selectedModelId={selectedModelId}
-              />
-            )}
+            <ModelSelectorCompact
+              onModelChange={onModelChange}
+              selectedModelId={selectedModelId}
+            />
           </PromptInputTools>
 
           {status === "submitted" ? (
@@ -434,9 +438,6 @@ export const MultimodalInput = memo(
       return false;
     }
     if (prevProps.selectedModelId !== nextProps.selectedModelId) {
-      return false;
-    }
-    if (prevProps.showModelSelector !== nextProps.showModelSelector) {
       return false;
     }
 
