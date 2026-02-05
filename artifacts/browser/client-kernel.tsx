@@ -407,7 +407,7 @@ export function KernelBrowserClient({
 
               {/* Control mode indicator */}
               {isConnected && (
-                <div className="flex items-center justify-between py-2 px-4 bg-muted/20">
+                <div className="flex-shrink-0 flex items-center justify-between py-2 px-4 bg-muted/20">
                   <AgentStatusIndicator
                     chatStatus={chatStatus}
                     controlMode={controlMode}
@@ -431,23 +431,21 @@ export function KernelBrowserClient({
               )}
 
               {/* Browser content */}
-              <div className="flex-1 overflow-y-scroll p-4">
+              <div className="flex-1 overflow-hidden min-h-0 p-4">
                 {error ? (
                   <BrowserErrorState onRetry={initBrowser} />
                 ) : !isConnected ? (
                   <BrowserLoadingState />
                 ) : (
-                  <div className="flex items-center justify-center">
-                    <div className="relative w-full max-w-[768px] bg-white rounded-lg shadow-lg">
-                      <iframe
-                        key={liveViewUrl}
-                        src={iframeUrl || undefined}
-                        className="w-full border-0 bg-white rounded-lg"
-                        style={{ aspectRatio: '4 / 3' }}
-                        allow="clipboard-read; clipboard-write"
-                        title="Browser View"
-                      />
-                    </div>
+                  <div className="h-full flex items-center justify-center">
+                    <iframe
+                      key={liveViewUrl}
+                      src={iframeUrl || undefined}
+                      className="max-w-full max-h-full border-0 bg-white rounded-lg shadow-lg"
+                      style={{ aspectRatio: '4 / 3' }}
+                      allow="clipboard-read; clipboard-write"
+                      title="Browser View"
+                    />
                   </div>
                 )}
               </div>
@@ -463,7 +461,7 @@ export function KernelBrowserClient({
     <div className="h-full flex flex-col">
       {/* Control mode indicator and buttons */}
       {isConnected && (
-        <div className="flex items-center justify-between py-2 bg-muted/20">
+        <div className="flex-shrink-0 flex items-center justify-between py-2 bg-muted/20">
           <AgentStatusIndicator
             chatStatus={chatStatus}
             controlMode={controlMode}
@@ -493,12 +491,12 @@ export function KernelBrowserClient({
       )}
 
       {/* Browser iframe - matches client.tsx layout: flex-1 relative m-4 with centered content */}
-      <div className="flex-1 relative m-4">
+      <div className="flex-1 relative m-4 overflow-hidden min-h-0">
         <div className="absolute inset-0 flex items-center justify-center">
           <iframe
             key={liveViewUrl}
             src={iframeUrl || undefined}
-            className="w-full border-0 bg-white rounded-lg"
+            className="max-w-full max-h-full border-0 bg-white rounded-lg"
             style={{ aspectRatio: '16 / 9' }}
             allow="clipboard-read; clipboard-write"
             title="Browser View"
