@@ -438,14 +438,18 @@ export function KernelBrowserClient({
                   <BrowserLoadingState />
                 ) : (
                   <div className="h-full flex items-center justify-center">
-                    <iframe
-                      key={liveViewUrl}
-                      src={iframeUrl || undefined}
-                      className="max-w-full max-h-full border-0 bg-white rounded-lg shadow-lg"
+                    <div
+                      className="relative w-full max-h-full"
                       style={{ aspectRatio: '4 / 3' }}
-                      allow="clipboard-read; clipboard-write"
-                      title="Browser View"
-                    />
+                    >
+                      <iframe
+                        key={liveViewUrl}
+                        src={iframeUrl || undefined}
+                        className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-lg"
+                        allow="clipboard-read; clipboard-write"
+                        title="Browser View"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -490,17 +494,21 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe - matches client.tsx layout: flex-1 relative m-4 with centered content */}
+      {/* Browser iframe - wrapper div handles aspect ratio, iframe fills wrapper */}
       <div className="flex-1 relative m-4 overflow-hidden min-h-0">
         <div className="absolute inset-0 flex items-center justify-center">
-          <iframe
-            key={liveViewUrl}
-            src={iframeUrl || undefined}
-            className="max-w-full max-h-full border-0 bg-white rounded-lg"
+          <div
+            className="relative w-full max-h-full"
             style={{ aspectRatio: '16 / 9' }}
-            allow="clipboard-read; clipboard-write"
-            title="Browser View"
-          />
+          >
+            <iframe
+              key={liveViewUrl}
+              src={iframeUrl || undefined}
+              className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg"
+              allow="clipboard-read; clipboard-write"
+              title="Browser View"
+            />
+          </div>
         </div>
       </div>
     </div>
