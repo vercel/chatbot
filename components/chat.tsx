@@ -242,7 +242,6 @@ export function Chat({
               setAttachments={setAttachments}
               setInput={setInput}
               setMessages={setMessages}
-              showModelSelector={!fixedChatModelId}
               status={status}
               stop={stop}
             />
