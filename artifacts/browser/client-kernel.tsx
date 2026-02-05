@@ -44,80 +44,28 @@ export function KernelBrowserClient({
   const [sessionExpired, setSessionExpired] = useState(false);
   const isMobile = useIsMobile();
 
-  // Use refs to avoid dependency changes triggering re-initialization
+  // Stable refs to avoid dependency changes triggering re-initialization
   const onConnectionChangeRef = useRef(onConnectionChange);
   onConnectionChangeRef.current = onConnectionChange;
 
-  // Use ref for isConnected to avoid stale closure in event handlers
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
 
   // Track if we've already initialized for this session
   const initializedSessionRef = useRef<string | null>(null);
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const liveViewActiveRef = useRef(false);
-  // Ref for liveViewUrl so heartbeat handler can compare without re-creating the callback
+
+  // Ref for liveViewUrl so heartbeat can compare without re-creating callbacks
   const liveViewUrlRef = useRef(liveViewUrl);
   liveViewUrlRef.current = liveViewUrl;
 
-  const sendLiveViewEvent = useCallback(
-    async (event: 'connected' | 'disconnected' | 'heartbeat') => {
-      try {
-        const response = await fetch('/api/kernel-browser', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          keepalive: event === 'disconnected',
-          body: JSON.stringify({
-            action:
-              event === 'connected'
-                ? 'liveViewConnected'
-                : event === 'disconnected'
-                ? 'liveViewDisconnected'
-                : 'liveViewHeartbeat',
-            sessionId,
-          }),
-        });
+  // Keep sessionId in a ref so the beforeunload handler always has the latest value
+  const sessionIdRef = useRef(sessionId);
+  sessionIdRef.current = sessionId;
 
-        // If heartbeat returns error, the session has expired
-        // Disconnect the live view to let Kernel's timeout delete the browser
-        if (event === 'heartbeat' && !response.ok) {
-          console.log('[Kernel] Session expired due to agent inactivity, disconnecting live view');
-          setSessionExpired(true);
-          await notifyDisconnected();
-          setLiveViewUrl(null);
-          setIsConnected(false);
-          onConnectionChangeRef.current?.(false);
-          toast.info('Browser session closed due to inactivity');
-          return;
-        }
-
-        // On successful heartbeat, check if the server-side browser was recreated.
-        // If the live view URL changed, update the iframe to point to the new browser.
-        if (event === 'heartbeat' && response.ok) {
-          const data = await response.json();
-          if (data.liveViewUrl && data.liveViewUrl !== liveViewUrlRef.current) {
-            console.log(
-              '[Kernel] Browser was recreated server-side, updating live view URL',
-              { old: liveViewUrlRef.current, new: data.liveViewUrl }
-            );
-            setLiveViewUrl(data.liveViewUrl);
-          }
-        }
-      } catch (error) {
-        console.warn(`Failed to send live view ${event} event`, error);
-        // On heartbeat failure, assume session expired
-        if (event === 'heartbeat') {
-          setSessionExpired(true);
-          await notifyDisconnected();
-          setLiveViewUrl(null);
-          setIsConnected(false);
-          onConnectionChangeRef.current?.(false);
-        }
-      }
-    },
-    [sessionId]
-  );
+  // =========================================================================
+  // Heartbeat — simple TTL refresh + URL change detection
+  // =========================================================================
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatIntervalRef.current) {
@@ -126,65 +74,93 @@ export function KernelBrowserClient({
     }
   }, []);
 
-  const notifyDisconnected = useCallback(async () => {
-    if (!liveViewActiveRef.current) return;
-    liveViewActiveRef.current = false;
-    stopHeartbeat();
-    await sendLiveViewEvent('disconnected');
-  }, [sendLiveViewEvent, stopHeartbeat]);
-
-  const startHeartbeat = useCallback(async () => {
-    stopHeartbeat();
-    await sendLiveViewEvent('connected');
-    liveViewActiveRef.current = true;
-    heartbeatIntervalRef.current = setInterval(() => {
-      if (liveViewActiveRef.current) {
-        void sendLiveViewEvent('heartbeat');
-      }
-    }, 30_000);
-  }, [sendLiveViewEvent, stopHeartbeat]);
-
-  const initBrowser = useCallback(async (force = false) => {
-    // Skip if already initialized for this session (unless forced)
-    if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
-      return;
-    }
-
+  const heartbeat = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-
       const response = await fetch('/api/kernel-browser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', sessionId, isMobile }),
+        credentials: 'same-origin',
+        body: JSON.stringify({ action: 'heartbeat', sessionId }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create browser');
+        // Session expired — disconnect
+        console.log('[Kernel] Session expired, disconnecting');
+        setSessionExpired(true);
+        setLiveViewUrl(null);
+        setIsConnected(false);
+        onConnectionChangeRef.current?.(false);
+        stopHeartbeat();
+        toast.info('Browser session closed due to inactivity');
+        return;
       }
 
       const data = await response.json();
-      setLiveViewUrl(data.liveViewUrl);
-      setIsConnected(true);
-      initializedSessionRef.current = sessionId;
-      onConnectionChangeRef.current?.(true);
-      await startHeartbeat();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to connect';
-      setError(message);
-      setIsConnected(false);
-      onConnectionChangeRef.current?.(false);
-      await notifyDisconnected();
-    } finally {
-      setLoading(false);
-    }
-  }, [sessionId, liveViewUrl, notifyDisconnected, startHeartbeat]);
 
-  // Keep sessionId in a ref so the beforeunload handler always has the latest value
-  const sessionIdRef = useRef(sessionId);
-  sessionIdRef.current = sessionId;
+      // Detect if the browser was recreated (Kernel host changed → new URL)
+      if (data.liveViewUrl && data.liveViewUrl !== liveViewUrlRef.current) {
+        console.log('[Kernel] Browser was recreated, updating live view URL', {
+          old: liveViewUrlRef.current,
+          new: data.liveViewUrl,
+        });
+        setLiveViewUrl(data.liveViewUrl);
+      }
+    } catch (err) {
+      console.warn('[Kernel] Heartbeat failed:', err);
+    }
+  }, [sessionId, stopHeartbeat]);
+
+  const startHeartbeat = useCallback(() => {
+    stopHeartbeat();
+    heartbeatIntervalRef.current = setInterval(() => {
+      void heartbeat();
+    }, 30_000);
+  }, [heartbeat, stopHeartbeat]);
+
+  // =========================================================================
+  // Browser lifecycle
+  // =========================================================================
+
+  const initBrowser = useCallback(
+    async (force = false) => {
+      // Skip if already initialized for this session (unless forced)
+      if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        setSessionExpired(false);
+
+        const response = await fetch('/api/kernel-browser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', sessionId, isMobile }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to create browser');
+        }
+
+        const data = await response.json();
+        setLiveViewUrl(data.liveViewUrl);
+        setIsConnected(true);
+        initializedSessionRef.current = sessionId;
+        onConnectionChangeRef.current?.(true);
+        startHeartbeat();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to connect';
+        setError(message);
+        setIsConnected(false);
+        onConnectionChangeRef.current?.(false);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sessionId, liveViewUrl, isMobile, startHeartbeat],
+  );
 
   // Initialize browser on mount
   useEffect(() => {
@@ -193,11 +169,14 @@ export function KernelBrowserClient({
     }
   }, [sessionId, initBrowser]);
 
-  // Clean up browser only when the user closes/navigates away from the page
+  // Clean up browser when the user closes/navigates away from the page
   useEffect(() => {
     const handleBeforeUnload = () => {
       try {
-        const payload = JSON.stringify({ action: 'delete', sessionId: sessionIdRef.current });
+        const payload = JSON.stringify({
+          action: 'delete',
+          sessionId: sessionIdRef.current,
+        });
         navigator.sendBeacon(
           '/api/kernel-browser',
           new Blob([payload], { type: 'application/json' }),
@@ -222,21 +201,49 @@ export function KernelBrowserClient({
       }
     };
 
-    window.addEventListener('switch-browser-control', handleSwitchControl as EventListener);
+    window.addEventListener(
+      'switch-browser-control',
+      handleSwitchControl as EventListener,
+    );
 
     return () => {
-      window.removeEventListener('switch-browser-control', handleSwitchControl as EventListener);
+      window.removeEventListener(
+        'switch-browser-control',
+        handleSwitchControl as EventListener,
+      );
     };
   }, []);
 
+  // Cleanup heartbeat on unmount
   useEffect(() => {
     return () => {
       stopHeartbeat();
-      void notifyDisconnected();
     };
-  }, [stopHeartbeat, notifyDisconnected]);
+  }, [stopHeartbeat]);
 
-  // Global keyboard listener for fullscreen mode - Escape to exit
+  // Track previous chatStatus to detect when the chat stops.
+  // When chatStatus transitions from 'streaming'/'submitted' → 'ready'/'error',
+  // the AI has stopped (user clicked stop or generation completed).
+  // The abort signal in the browser tool kills the agent-browser subprocess,
+  // disconnecting CDP from the Kernel browser. The browser stays alive and
+  // visible in the live view so the user can see the final state.
+  const prevChatStatusRef = useRef(chatStatus);
+  useEffect(() => {
+    const prev = prevChatStatusRef.current;
+    prevChatStatusRef.current = chatStatus;
+
+    // If chat was actively streaming and now stopped, and user hasn't already
+    // taken control, the browser is idle — no agent commands are running.
+    if (
+      (prev === 'streaming' || prev === 'submitted') &&
+      (chatStatus === 'ready' || chatStatus === 'error') &&
+      controlMode === 'agent'
+    ) {
+      console.log('[Kernel] Chat stopped while in agent mode — browser is idle');
+    }
+  }, [chatStatus, controlMode]);
+
+  // Global keyboard listener for fullscreen mode — Escape to exit
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isFullscreen && controlMode === 'user') {
@@ -250,6 +257,10 @@ export function KernelBrowserClient({
       return () => document.removeEventListener('keydown', handleGlobalKeyDown);
     }
   }, [isFullscreen, controlMode]);
+
+  // =========================================================================
+  // Control mode
+  // =========================================================================
 
   const switchControlMode = (mode: 'agent' | 'user') => {
     if (!isConnectedRef.current) {
@@ -277,26 +288,10 @@ export function KernelBrowserClient({
     toast.success(`Control switched to ${mode} mode`);
   };
 
-  const disconnectBrowser = async () => {
-    try {
-      await fetch('/api/kernel-browser', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', sessionId }),
-      });
-      setIsConnected(false);
-      setLiveViewUrl(null);
-      onConnectionChange?.(false);
-      await notifyDisconnected();
-    } catch (err) {
-      console.error('Failed to disconnect browser:', err);
-    }
-  };
+  // =========================================================================
+  // Iframe URL — memoized to prevent unnecessary reloads
+  // =========================================================================
 
-  // Build the iframe URL with readOnly based on control mode
-  // In agent mode: readOnly=true (user cannot interact)
-  // In user mode: no readOnly param (user can interact directly)
-  // Memoize to prevent unnecessary iframe reloads
   const iframeUrl = useMemo(() => {
     if (!liveViewUrl) return null;
 
@@ -309,6 +304,10 @@ export function KernelBrowserClient({
     return url.toString();
   }, [liveViewUrl, controlMode]);
 
+  // =========================================================================
+  // Render
+  // =========================================================================
+
   if (loading) {
     return <BrowserLoadingState />;
   }
@@ -318,7 +317,6 @@ export function KernelBrowserClient({
   }
 
   if (!liveViewUrl) {
-    // If session expired, show the timeout state with retry option
     if (sessionExpired) {
       return <BrowserTimeoutState onRetry={() => initBrowser(true)} />;
     }
@@ -339,10 +337,13 @@ export function KernelBrowserClient({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">You're editing manually</span>
+                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">
+                  You're editing manually
+                </span>
               </div>
               <span className="text-xs sm:text-sm browser-fullscreen-text font-inter hidden sm:block">
-                The AI will continue with your changes when you give back control.
+                The AI will continue with your changes when you give back
+                control.
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -361,9 +362,12 @@ export function KernelBrowserClient({
         {/* Fullscreen browser iframe */}
         <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
           <div className="w-full h-full flex items-center justify-center">
-            <div className="relative w-full h-full max-w-[1920px] max-h-[1080px]" style={{ aspectRatio: '16 / 9' }}>
+            <div
+              className="relative w-full h-full max-w-[1920px] max-h-[1080px]"
+              style={{ aspectRatio: '16 / 9' }}
+            >
               <iframe
-                key={liveViewUrl} // Stable key prevents unnecessary remounts
+                key={liveViewUrl}
                 src={iframeUrl || undefined}
                 className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-2xl"
                 allow="clipboard-read; clipboard-write"
@@ -376,7 +380,7 @@ export function KernelBrowserClient({
     );
   }
 
-  // Mobile drawer mode - matches legacy client.tsx mobile experience
+  // Mobile drawer mode
   if (isMobile) {
     return (
       <div className="pointer-events-none">
@@ -397,7 +401,10 @@ export function KernelBrowserClient({
         {/* Mobile: Bottom sheet with browser content */}
         <div className="pointer-events-auto">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]">
+            <SheetContent
+              side="bottom"
+              className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]"
+            >
               <SheetHeader className="px-4 py-3 border-b">
                 <SheetTitle className="text-left">Browser View</SheetTitle>
               </SheetHeader>
@@ -416,7 +423,11 @@ export function KernelBrowserClient({
                     type="button"
                     variant="default"
                     size="sm"
-                    onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
+                    onClick={() =>
+                      switchControlMode(
+                        controlMode === 'user' ? 'agent' : 'user',
+                      )
+                    }
                   >
                     {controlMode === 'user' ? (
                       'Give back control'
@@ -485,7 +496,11 @@ export function KernelBrowserClient({
               type="button"
               variant="default"
               size="sm"
-              onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
+              onClick={() =>
+                switchControlMode(
+                  controlMode === 'user' ? 'agent' : 'user',
+                )
+              }
             >
               <MousePointerClick className="w-4 h-4" />
               {controlMode === 'user' ? 'Give back control' : 'Take control'}
@@ -494,7 +509,7 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe - wrapper div handles aspect ratio, iframe fills wrapper */}
+      {/* Browser iframe */}
       <div className="flex-1 relative m-4 overflow-hidden min-h-0">
         <div className="absolute inset-0 flex items-center justify-center">
           <div

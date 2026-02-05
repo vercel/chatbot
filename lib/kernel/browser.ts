@@ -1,787 +1,457 @@
 import Kernel from '@onkernel/sdk';
 import { Redis } from '@upstash/redis';
-import { randomUUID } from 'crypto';
 import { logger } from './logger';
 
 const kernel = new Kernel();
 
-// Initialize Redis for distributed session storage
-// This is critical for Cloud Run where multiple instances may handle requests
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const REDIS_KEY_PREFIX = 'kernel-browser:';
-const BROWSER_TTL_SECONDS = 10 * 60; // 10 minutes
-const LOCK_KEY_PREFIX = 'kernel-browser-lock:';
-const LOCK_TTL_SECONDS = 120; // Long enough for Kernel API call to complete
-const LOCK_RETRY_DELAY_MS = 200;
-const LOCK_MAX_WAIT_MS = 10_000; // Fail fast so callers can surface an error
-const PENDING_POLL_INTERVAL_MS = 250;
-const PENDING_MAX_WAIT_MS = 10_000;
-const AGENT_IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes without tool usage
-const LIVE_VIEW_HEARTBEAT_TIMEOUT_MS = 60 * 1000; // 60 seconds without heartbeat
+// =============================================================================
+// KEY DESIGN: All Redis keys are scoped by userId first.
+//
+// This makes cross-user session access structurally impossible because:
+//   1. The userId comes from server-side auth (cannot be spoofed by clients)
+//   2. Every Redis operation requires userId to construct the key
+//   3. Even if a sessionId leaks, the attacker cannot construct the key without
+//      the correct userId prefix
+//
+// Previous implementation used `kernel-browser:{sessionId}` where sessionId
+// contained the userId as a suffix. Isolation depended on runtime ownership
+// checks inside non-atomic read-modify-write patterns, which was racy.
+// =============================================================================
 
-interface KernelBrowser {
-  session_id: string;
-  cdp_ws_url: string;
-  browser_live_view_url: string;
-}
+const SESSION_KEY_PREFIX = 'kb:session:';
+const LOCK_KEY_PREFIX = 'kb:lock:';
+const EVENT_KEY_PREFIX = 'kb:events:';
 
-interface KernelBrowserEntry {
-  browser: KernelBrowser;
-  userId: string; // Owner of this browser session - CRITICAL for isolation
-  lastAccessedAt: number;
+const SESSION_TTL_SECONDS = 10 * 60; // 10 minutes
+const LOCK_TTL_SECONDS = 30; // 30 seconds for creation lock
+const EVENT_TTL_SECONDS = 5 * 60; // 5 minutes for event log
+const AGENT_IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes without agent tool usage
+
+// =============================================================================
+// Types
+// =============================================================================
+
+export interface BrowserSession {
+  kernelSessionId: string;
+  liveViewUrl: string;
+  cdpWsUrl: string;
+  userId: string;
+  createdAt: number;
   lastAgentActivityAt: number;
-  liveViewConnections: number;
-  lastLiveViewHeartbeatAt: number | null;
 }
 
-type KernelBrowserRedisValue =
-  | KernelBrowserEntry
-  | {
-      status: 'pending';
-      lastAccessedAt: number;
-    };
-
-// In-memory pending creations map (per-instance only, for race condition prevention)
-// This is fine to be in-memory since it's only for preventing duplicate creations
-// within the same instance during the brief creation window
-const globalForKernel = globalThis as typeof globalThis & {
-  kernelPendingCreations?: Map<string, Promise<KernelBrowser>>;
-};
-
-if (!globalForKernel.kernelPendingCreations) {
-  globalForKernel.kernelPendingCreations = new Map<string, Promise<KernelBrowser>>();
+interface BrowserEvent {
+  type: 'created' | 'deleted' | 'expired' | 'activity' | 'heartbeat';
+  timestamp: number;
+  details?: string;
 }
 
-const pendingCreations = globalForKernel.kernelPendingCreations;
+// =============================================================================
+// Key construction — always user-scoped
+// =============================================================================
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-function getRedisKey(sessionId: string): string {
-  return `${REDIS_KEY_PREFIX}${sessionId}`;
+function sessionKey(userId: string, sessionId: string): string {
+  return `${SESSION_KEY_PREFIX}${userId}:${sessionId}`;
 }
 
-function getLockKey(sessionId: string): string {
-  return `${LOCK_KEY_PREFIX}${sessionId}`;
+function lockKey(userId: string, sessionId: string): string {
+  return `${LOCK_KEY_PREFIX}${userId}:${sessionId}`;
 }
 
-function isBrowserEntry(
-  value: KernelBrowserRedisValue | null
-): value is KernelBrowserEntry {
-  return !!value && 'browser' in value;
+function eventKey(userId: string, sessionId: string): string {
+  return `${EVENT_KEY_PREFIX}${userId}:${sessionId}`;
 }
 
-function isPendingEntry(value: KernelBrowserRedisValue | null): boolean {
-  return !!value && 'status' in value && value.status === 'pending';
-}
+// =============================================================================
+// Event logging (lightweight message queue / audit trail)
+//
+// Each session has a per-user event log stored as a Redis list. This provides:
+//   - Auditability: see exactly what happened to a session
+//   - Isolation: events are per-user, per-session
+//   - Debugging: easy to diagnose cross-session issues in production
+// =============================================================================
 
-function hasRecentAgentActivity(entry: KernelBrowserEntry): boolean {
-  return Date.now() - entry.lastAgentActivityAt <= AGENT_IDLE_TIMEOUT_MS;
-}
-
-function hasActiveLiveView(entry: KernelBrowserEntry): boolean {
-  if (entry.liveViewConnections <= 0 || entry.lastLiveViewHeartbeatAt == null) {
-    return false;
-  }
-  return Date.now() - entry.lastLiveViewHeartbeatAt <= LIVE_VIEW_HEARTBEAT_TIMEOUT_MS;
-}
-
-/**
- * Determines if a browser entry should be deleted from our Redis state.
- *
- * IMPORTANT: We only expire based on agent activity, NOT live view connection.
- * Kernel handles browser deletion via timeout when no CDP/live view connections exist.
- *
- * Our job: Delete the Redis entry when agent is idle for 5 minutes.
- * This allows the client to disconnect the live view iframe, which triggers
- * Kernel's own timeout mechanism to delete the actual browser instance.
- */
-function isEntryExpired(entry: KernelBrowserEntry): boolean {
-  return !hasRecentAgentActivity(entry);
-}
-
-/**
- * Persist browser entry to Redis, preserving concurrent field updates.
- *
- * CRITICAL: This function re-reads the current entry from Redis before writing
- * to avoid overwriting fields (especially `lastAgentActivityAt`) that may have
- * been updated concurrently by other requests (e.g. `recordAgentActivity`).
- *
- * The caller's `entry` is used as a fallback if no current entry exists in Redis.
- */
-async function persistEntry(
+async function logEvent(
+  userId: string,
   sessionId: string,
-  entry: KernelBrowserEntry,
-  userId?: string
-): Promise<KernelBrowserEntry> {
-  const redisKey = getRedisKey(sessionId);
-
-  // Re-read from Redis to get the latest values for fields we don't intend to change
-  const current = await loadBrowserEntry(sessionId);
-
-  const updated: KernelBrowserEntry = {
-    // Start with the caller's entry as base (for fields like browser, userId)
-    ...entry,
-    // Overlay the latest Redis values for fields that may have been updated concurrently
-    lastAgentActivityAt: current?.lastAgentActivityAt ?? entry.lastAgentActivityAt,
-    liveViewConnections: current?.liveViewConnections ?? entry.liveViewConnections,
-    lastLiveViewHeartbeatAt: current?.lastLiveViewHeartbeatAt ?? entry.lastLiveViewHeartbeatAt,
-    // These are the only fields we intentionally update
-    userId: userId || entry.userId,
-    lastAccessedAt: Date.now(),
-  };
-  await redis.set(redisKey, updated, { ex: BROWSER_TTL_SECONDS });
-  console.log(`[Kernel] Persisted browser entry for session ${sessionId}, user ${updated.userId}`);
-  return updated;
-}
-
-async function loadBrowserEntry(sessionId: string): Promise<KernelBrowserEntry | null> {
-  const entry = await redis.get<KernelBrowserRedisValue>(getRedisKey(sessionId));
-  return isBrowserEntry(entry) ? entry : null;
-}
-
-/**
- * Read-modify-write a browser entry.
- *
- * IMPORTANT: This writes the updater's result directly to Redis (with a fresh
- * `lastAccessedAt`) rather than going through `persistEntry`, because the
- * updater's mutations ARE the authoritative values. Using `persistEntry`
- * would re-read and potentially undo the updater's changes.
- */
-async function updateBrowserEntry(
-  sessionId: string,
-  updater: (entry: KernelBrowserEntry) => KernelBrowserEntry | null
-): Promise<KernelBrowserEntry | null> {
-  const current = await loadBrowserEntry(sessionId);
-  if (!current) {
-    return null;
-  }
-
-  const updated = updater({ ...current });
-  if (!updated) {
-    return null;
-  }
-
-  // Write directly — the updater's result is authoritative
-  const redisKey = getRedisKey(sessionId);
-  const final: KernelBrowserEntry = { ...updated, lastAccessedAt: Date.now() };
-  await redis.set(redisKey, final, { ex: BROWSER_TTL_SECONDS });
-  return final;
-}
-
-async function maybeExpireSession(
-  sessionId: string,
-  entry: KernelBrowserEntry
-): Promise<boolean> {
-  if (!isEntryExpired(entry)) {
-    return false;
-  }
-
-  await deleteKernelBrowser(sessionId, entry);
-  return true;
-}
-
-async function acquireDistributedLock(sessionId: string, userId: string): Promise<string> {
-  const lockKey = getLockKey(sessionId);
-  const token = randomUUID();
-  const startTime = Date.now();
-  const deadline = startTime + LOCK_MAX_WAIT_MS;
-  let retryCount = 0;
-
-  while (Date.now() < deadline) {
-    const result = await redis.set(lockKey, token, {
-      nx: true,
-      ex: LOCK_TTL_SECONDS,
-    });
-
-    if (result === 'OK') {
-      const waitMs = Date.now() - startTime;
-      logger.lockAcquired({
-        sessionId,
-        userId,
-        operation: 'acquireLock',
-        lockWaitMs: waitMs,
-        retryCount,
-      });
-      return token;
-    }
-
-    retryCount++;
-
-    // Before sleeping, check if another instance finished creating the browser
-    const existing = await redis.get<KernelBrowserRedisValue>(getRedisKey(sessionId));
-    if (isBrowserEntry(existing)) {
-      logger.info('Another instance created browser while waiting for lock', {
-        sessionId,
-        userId,
-        operation: 'acquireLock',
-        lockWaitMs: Date.now() - startTime,
-        retryCount,
-      });
-      throw new Error('browser-exists-after-lock'); // Signal caller to re-fetch
-    }
-
-    await sleep(LOCK_RETRY_DELAY_MS);
-  }
-
-  const totalWaitMs = Date.now() - startTime;
-  logger.lockTimeout({
-    sessionId,
-    userId,
-    operation: 'acquireLock',
-    lockWaitMs: totalWaitMs,
-    retryCount,
-  });
-  throw new Error(`Failed to acquire browser creation lock after ${totalWaitMs}ms and ${retryCount} retries`);
-}
-
-async function releaseDistributedLock(sessionId: string, token: string) {
-  const lockKey = getLockKey(sessionId);
-  const script = `
-    if redis.call("get", KEYS[1]) == ARGV[1] then
-      return redis.call("del", KEYS[1])
-    else
-      return 0
-    end
-  `;
-
+  event: BrowserEvent,
+): Promise<void> {
+  const key = eventKey(userId, sessionId);
   try {
-    await redis.eval(script, [lockKey], [token]);
-  } catch (error) {
-    console.error('[Kernel] Failed to release distributed lock:', error);
+    await redis.lpush(key, JSON.stringify(event));
+    await redis.ltrim(key, 0, 49); // Keep last 50 events
+    await redis.expire(key, EVENT_TTL_SECONDS);
+  } catch (err) {
+    // Non-critical — don't fail operations due to event logging
+    console.warn('[Kernel] Failed to log event:', err);
   }
 }
+
+// =============================================================================
+// Core operations
+// =============================================================================
 
 /**
- * Check if a browser exists and verify userId ownership.
+ * Get or create a browser session for a user's chat.
  *
- * CRITICAL FIX: Before checking expiry, re-read the entry from Redis to get
- * the latest `lastAgentActivityAt`. Without this, a stale read from a few
- * hundred milliseconds ago could cause us to falsely expire an active session
- * because a concurrent `recordAgentActivity` updated the field after our read.
+ * Uses SET NX on a lock key to prevent duplicate creations across Cloud Run
+ * instances. The lock is short-lived (30 s) and auto-expires.
+ *
+ * Returns a {@link BrowserSession} with the Kernel live view URL and CDP URL.
  */
-async function atomicCheckAndClaimBrowser(
-  sessionId: string,
-  userId: string
-): Promise<KernelBrowserEntry | null> {
-  const entry = await loadBrowserEntry(sessionId);
-
-  if (!entry) {
-    return null;
-  }
-
-  // CRITICAL: Verify ownership
-  if (entry.userId !== userId) {
-    logger.securityViolation({
-      sessionId,
-      userId,
-      expectedUserId: entry.userId,
-      actualUserId: userId,
-      operation: 'atomicCheckAndClaim',
-      securityEvent: 'cross_user_session_access_attempt',
-    });
-    throw new Error(
-      `Session ${sessionId} belongs to a different user. This browser session cannot be shared.`
-    );
-  }
-
-  // Re-read to get the absolute latest lastAgentActivityAt before expiry decision.
-  // A concurrent recordAgentActivity may have updated it between our first read
-  // and this check. Without this, we could falsely expire an active session.
-  const freshEntry = await loadBrowserEntry(sessionId);
-  const entryForExpiry = freshEntry ?? entry;
-
-  // Check if expired
-  const expired = await maybeExpireSession(sessionId, entryForExpiry);
-  if (expired) {
-    logger.browserExpired({
-      sessionId,
-      userId,
-      operation: 'atomicCheckAndClaim',
-      browserSessionId: entry.browser.session_id,
-    });
-    return null;
-  }
-
-  // Refresh and return
-  const refreshed = await persistEntry(sessionId, entryForExpiry, userId);
-  logger.browserReused({
-    sessionId,
-    userId,
-    operation: 'atomicCheckAndClaim',
-    browserSessionId: refreshed.browser.session_id,
-  });
-  return refreshed;
-}
-
-async function waitForPendingBrowser(sessionId: string): Promise<KernelBrowser | null> {
-  const deadline = Date.now() + PENDING_MAX_WAIT_MS;
-
-  while (Date.now() < deadline) {
-    const entry = await loadBrowserEntry(sessionId);
-    if (entry) {
-      const expired = await maybeExpireSession(sessionId, entry);
-      if (expired) {
-        return null;
-      }
-      const refreshed = await persistEntry(sessionId, entry);
-      console.log(
-        `[Kernel] Observed browser creation completion for session ${sessionId}: ${refreshed.browser.session_id}`
-      );
-      return refreshed.browser;
-    }
-
-    const marker = await redis.get<KernelBrowserRedisValue>(getRedisKey(sessionId));
-    if (!isPendingEntry(marker)) {
-      return null;
-    }
-
-    await sleep(PENDING_POLL_INTERVAL_MS);
-  }
-
-  return null;
-}
-
-export async function createKernelBrowser(
+export async function getOrCreateBrowser(
   sessionId: string,
   userId: string,
-  options?: { isMobile?: boolean }
-): Promise<KernelBrowser> {
+  options?: { isMobile?: boolean },
+): Promise<BrowserSession> {
   if (!userId) {
     throw new Error('[Kernel] userId is required for browser session isolation');
   }
 
-  console.log(`[Kernel] createKernelBrowser called for session ${sessionId}, user ${userId}`);
+  const key = sessionKey(userId, sessionId);
 
-  const redisKey = getRedisKey(sessionId);
+  // 1. Check for existing session
+  const existing = await redis.get<BrowserSession>(key);
+  if (existing) {
+    // Defense-in-depth: verify ownership even though key is user-scoped
+    if (existing.userId !== userId) {
+      logger.securityViolation({
+        sessionId,
+        userId,
+        operation: 'getOrCreateBrowser',
+        securityEvent: 'userId_mismatch_in_user_scoped_key',
+        expectedUserId: existing.userId,
+        actualUserId: userId,
+      });
+      throw new Error('Session ownership mismatch');
+    }
 
-  // Check if browser already exists in Redis with ATOMIC ownership verification
-  const existingEntry = await atomicCheckAndClaimBrowser(sessionId, userId);
-  if (existingEntry) {
-    return existingEntry.browser;
-  }
-
-  const pendingMarker = await redis.get<KernelBrowserRedisValue>(redisKey);
-  if (isPendingEntry(pendingMarker)) {
-    const pendingBrowser = await waitForPendingBrowser(sessionId);
-    if (pendingBrowser) {
-      return pendingBrowser;
+    // Check if agent has been idle too long
+    if (Date.now() - existing.lastAgentActivityAt > AGENT_IDLE_TIMEOUT_MS) {
+      logger.browserExpired({
+        sessionId,
+        userId,
+        operation: 'getOrCreateBrowser',
+        browserSessionId: existing.kernelSessionId,
+      });
+      await deleteBrowser(sessionId, userId);
+      // Fall through to create new
+    } else {
+      // Refresh TTL and return
+      await redis.expire(key, SESSION_TTL_SECONDS);
+      logger.browserReused({
+        sessionId,
+        userId,
+        operation: 'getOrCreateBrowser',
+        browserSessionId: existing.kernelSessionId,
+      });
+      return existing;
     }
   }
 
-  // Check if there's already a pending creation for this session (per-instance race prevention)
-  const pending = pendingCreations.get(sessionId);
-  if (pending) {
-    console.log(`[Kernel] Waiting for pending browser creation for session ${sessionId}...`);
-    return pending;
-  }
-
-  logger.info('Initiating new browser creation', {
-    sessionId,
-    userId,
-    operation: 'createBrowser',
+  // 2. Acquire creation lock (SET NX — atomic, no in-memory state)
+  const lk = lockKey(userId, sessionId);
+  const acquired = await redis.set(lk, 'creating', {
+    nx: true,
+    ex: LOCK_TTL_SECONDS,
   });
 
-  // Create a promise and store it to prevent duplicate creations within this instance
-  const creationPromise = (async () => {
-    let lockToken: string | null = null;
-    const creationStartTime = Date.now();
-    try {
-      try {
-        lockToken = await acquireDistributedLock(sessionId, userId);
-      } catch (lockError) {
-        if (lockError instanceof Error && lockError.message === 'browser-exists-after-lock') {
-          // Another instance created a browser while we were waiting
-          // CRITICAL: Verify ownership before returning it
-          const recheckEntry = await atomicCheckAndClaimBrowser(sessionId, userId);
-          if (recheckEntry) {
-            console.log(
-              `[Kernel] Another instance created browser for session ${sessionId}, user ${userId}: ${recheckEntry.browser.session_id}`
-            );
-            return recheckEntry.browser;
-          }
-          // If atomicCheckAndClaimBrowser returns null, the browser doesn't exist or expired
-          // Fall through to create a new one
-          console.log(
-            `[Kernel] Browser was created but expired/invalid for session ${sessionId}, user ${userId}. Creating new one.`
-          );
-        } else {
-          throw lockError;
-        }
-      }
-
-      // Double-check Redis in case another instance created it while we were acquiring lock
-      // CRITICAL: Use atomic check with userId verification
-      const recheckEntry = await atomicCheckAndClaimBrowser(sessionId, userId);
-      if (recheckEntry) {
-        console.log(
-          `[Kernel] Browser was created by another instance for session ${sessionId}, user ${userId}: ${recheckEntry.browser.session_id}`
-        );
-        return recheckEntry.browser;
-      }
-
-      // Advertise pending creation so other instances can wait instead of racing
-      await redis.set(redisKey, { status: 'pending', lastAccessedAt: Date.now() }, {
-        ex: BROWSER_TTL_SECONDS,
-      });
-
-      const viewport = options?.isMobile
-        ? { width: 1024, height: 768 }
-        : { width: 1920, height: 1080 };
-
-      const browser = (await kernel.browsers.create({
-        viewport,
-        timeout_seconds: 300, // 5 minutes
-        kiosk_mode: true, // Hide URL bar, tabs, and browser chrome in live view
-        stealth: true, // Residential proxy + auto CAPTCHA solver
-      })) as KernelBrowser;
-
-      const creationDuration = Date.now() - creationStartTime;
-      logger.performanceMetric({
-        sessionId,
-        userId,
-        operation: 'createBrowser',
-        durationMs: creationDuration,
-      });
-      logger.browserCreated({
-        sessionId,
-        userId,
-        operation: 'createBrowser',
-        browserSessionId: browser.session_id,
-        cdpUrl: browser.cdp_ws_url,
-        liveViewUrl: browser.browser_live_view_url,
-      });
-
-      // Store in Redis with TTL and userId for ownership tracking
-      // Use atomic Lua script to prevent race where another instance might have just created it
-      const entry: KernelBrowserEntry = {
-        browser,
-        userId, // CRITICAL: Store userId for ownership verification
-        lastAccessedAt: Date.now(),
-        lastAgentActivityAt: Date.now(),
-        liveViewConnections: 0,
-        lastLiveViewHeartbeatAt: null,
-      };
-
-      // Store in Redis - verify no race condition occurred
-      const existingCheck = await loadBrowserEntry(sessionId);
-      if (existingCheck && existingCheck.userId !== userId) {
-        logger.raceConditionDetected({
-          sessionId,
-          userId,
-          operation: 'createBrowser',
-          details: `Another user (${existingCheck.userId}) created browser during our creation window despite lock`,
-        });
-        // Clean up the Kernel browser we just created since we can't use it
-        try {
-          await kernel.browsers.deleteByID(browser.session_id);
-          logger.info('Cleaned up orphaned browser due to race condition', {
-            sessionId,
-            userId,
-            operation: 'createBrowser',
-            browserSessionId: browser.session_id,
-          });
-        } catch (cleanupError) {
-          logger.error('Failed to clean up orphaned browser', {
-            sessionId,
-            userId,
-            operation: 'createBrowser',
-            browserSessionId: browser.session_id,
-          });
-        }
-        throw new Error('Race condition detected: browser created by different user');
-      }
-
-      await redis.set(redisKey, entry, { ex: BROWSER_TTL_SECONDS });
-      logger.info('Browser entry stored in Redis', {
-        sessionId,
-        userId,
-        operation: 'createBrowser',
-      });
-
-      return browser;
-    } catch (error) {
-      console.error('[Kernel] Failed to create browser:', error);
-      // Clean up pending marker on failure so another attempt can proceed
-      await redis.del(redisKey);
-      throw error;
-    } finally {
-      // Always clean up the pending promise
-      pendingCreations.delete(sessionId);
-      if (lockToken) {
-        await releaseDistributedLock(sessionId, lockToken);
+  if (acquired !== 'OK') {
+    // Another request is creating — poll until it appears or timeout
+    console.log(
+      `[Kernel] Browser creation in progress for ${sessionId}, waiting…`,
+    );
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      const created = await redis.get<BrowserSession>(key);
+      if (created && created.userId === userId) {
+        return created;
       }
     }
-  })();
-
-  pendingCreations.set(sessionId, creationPromise);
-  return creationPromise;
-}
-
-export async function getKernelBrowser(
-  sessionId: string,
-  userId: string
-): Promise<KernelBrowser | null> {
-  if (!userId) {
-    throw new Error('[Kernel] userId is required for browser session access');
+    throw new Error('Browser creation timed out — please retry');
   }
 
-  console.log(`[Kernel] getKernelBrowser called for session ${sessionId}, user ${userId}`);
-
-  // Use atomic check with userId verification
-  const entry = await atomicCheckAndClaimBrowser(sessionId, userId);
-  if (entry) {
-    return entry.browser;
-  }
-
-  const marker = await redis.get<KernelBrowserRedisValue>(getRedisKey(sessionId));
-  if (isPendingEntry(marker)) {
-    const pendingBrowser = await waitForPendingBrowser(sessionId);
-    if (pendingBrowser) {
-      // Verify ownership of the pending browser that was just created
-      const verifyEntry = await atomicCheckAndClaimBrowser(sessionId, userId);
-      if (!verifyEntry) {
-        console.error(
-          `[Kernel] Pending browser for session ${sessionId} does not belong to user ${userId}`
-        );
-        return null;
-      }
-      return verifyEntry.browser;
-    }
-  }
-
-  return null;
-}
-
-export async function deleteKernelBrowser(
-  sessionId: string,
-  existingEntry?: KernelBrowserEntry | null
-): Promise<void> {
-  const redisKey = getRedisKey(sessionId);
-  let entry = existingEntry ?? (await loadBrowserEntry(sessionId));
-
-  if (!entry) {
-    const marker = await redis.get<KernelBrowserRedisValue>(redisKey);
-    if (isPendingEntry(marker)) {
-      console.log(`[Kernel] Browser creation still pending for session ${sessionId}, skipping delete`);
-    } else {
-      console.log(`[Kernel] No browser found for session ${sessionId} to delete`);
-    }
-    return;
-  }
-
-  const browser = entry.browser;
-  console.log(`[Kernel] Deleting browser ${browser.session_id} for session ${sessionId}`);
-
-  // Remove from Redis FIRST to prevent reuse during deletion
-  await redis.del(redisKey);
-
+  // 3. Create browser via Kernel SDK
   try {
-    await kernel.browsers.deleteByID(browser.session_id);
-    console.log(`[Kernel] Browser ${browser.session_id} deleted successfully`);
-  } catch (error: unknown) {
-    // Don't throw on 404 - browser may have already timed out
-    const err = error as { status?: number; message?: string };
-    if (err.status === 404) {
-      console.log(`[Kernel] Browser ${browser.session_id} already deleted (404)`);
-    } else {
-      console.error(
-        `[Kernel] Failed to delete browser ${browser.session_id}:`,
-        error
-      );
+    // Double-check after lock (another instance may have written between check
+    // and lock acquisition)
+    const doubleCheck = await redis.get<BrowserSession>(key);
+    if (doubleCheck && doubleCheck.userId === userId) {
+      return doubleCheck;
     }
-  }
-}
 
-export async function getLiveViewUrl(
-  sessionId: string,
-  userId: string
-): Promise<string | null> {
-  if (!userId) {
-    throw new Error('[Kernel] userId is required for browser session access');
-  }
+    const viewport = options?.isMobile
+      ? { width: 1024, height: 768 }
+      : { width: 1920, height: 1080 };
 
-  const entry = await atomicCheckAndClaimBrowser(sessionId, userId);
-  if (!entry) {
-    return null;
-  }
+    const startTime = Date.now();
 
-  return entry.browser.browser_live_view_url;
-}
+    const browser = (await kernel.browsers.create({
+      viewport,
+      timeout_seconds: 300,
+      kiosk_mode: true,
+      stealth: true,
+    })) as {
+      session_id: string;
+      cdp_ws_url: string;
+      browser_live_view_url: string;
+    };
 
-export async function getCdpUrl(
-  sessionId: string,
-  userId: string
-): Promise<string | null> {
-  if (!userId) {
-    throw new Error('[Kernel] userId is required for browser session access');
-  }
+    const session: BrowserSession = {
+      kernelSessionId: browser.session_id,
+      liveViewUrl: browser.browser_live_view_url,
+      cdpWsUrl: browser.cdp_ws_url,
+      userId,
+      createdAt: Date.now(),
+      lastAgentActivityAt: Date.now(),
+    };
 
-  const entry = await atomicCheckAndClaimBrowser(sessionId, userId);
-  if (!entry) {
-    return null;
-  }
+    await redis.set(key, session, { ex: SESSION_TTL_SECONDS });
 
-  return entry.browser.cdp_ws_url;
-}
-
-export async function hasActiveBrowser(
-  sessionId: string,
-  userId: string
-): Promise<boolean> {
-  if (!userId) {
-    throw new Error('[Kernel] userId is required for browser session access');
-  }
-
-  const entry = await atomicCheckAndClaimBrowser(sessionId, userId);
-  return entry !== null;
-}
-
-// Debug function to see all active browsers (scans Redis keys)
-export async function listActiveBrowsers(): Promise<string[]> {
-  const keys = await redis.keys(`${REDIS_KEY_PREFIX}*`);
-  const sessions: string[] = [];
-
-  for (const key of keys) {
-    const value = await redis.get<KernelBrowserRedisValue>(key);
-    if (isBrowserEntry(value)) {
-      const sessionId = key.replace(REDIS_KEY_PREFIX, '');
-      if (await maybeExpireSession(sessionId, value)) {
-        continue;
-      }
-      await persistEntry(sessionId, value);
-      sessions.push(sessionId);
-    }
-  }
-
-  return sessions;
-}
-
-export async function recordAgentActivity(
-  sessionId: string,
-  userId: string
-): Promise<void> {
-  if (!userId) {
-    throw new Error('[Kernel] userId is required for browser session access');
-  }
-
-  const entry = await loadBrowserEntry(sessionId);
-  if (entry && entry.userId !== userId) {
-    console.error(
-      `[Kernel] recordAgentActivity: User ${userId} attempted to access session ${sessionId} ` +
-      `owned by ${entry.userId}`
-    );
-    throw new Error('Cannot record activity for session belonging to different user');
-  }
-
-  await updateBrowserEntry(sessionId, entry => {
-    entry.lastAgentActivityAt = Date.now();
-    return entry;
-  });
-}
-
-export async function recordLiveViewConnection(
-  sessionId: string,
-  userId: string
-): Promise<void> {
-  if (!userId) {
-    throw new Error('[Kernel] userId is required for browser session access');
-  }
-
-  console.log(`[Kernel] Live view connected for session ${sessionId}, user ${userId}`);
-
-  const entry = await loadBrowserEntry(sessionId);
-  if (entry && entry.userId !== userId) {
-    console.error(
-      `[Kernel] CRITICAL: Live view connection attempt by user ${userId} for session ${sessionId} ` +
-      `owned by ${entry.userId}. This indicates a session sharing bug!`
-    );
-    throw new Error('Cannot connect to live view for session belonging to different user');
-  }
-
-  const updated = await updateBrowserEntry(sessionId, entry => {
-    entry.liveViewConnections = 1;
-    entry.lastLiveViewHeartbeatAt = Date.now();
-    return entry;
-  });
-
-  // MONITORING: Alert if multiple live view connections detected
-  if (updated && updated.liveViewConnections > 1) {
-    logger.liveViewAnomaly({
+    const duration = Date.now() - startTime;
+    logger.browserCreated({
       sessionId,
       userId,
-      operation: 'recordLiveViewConnection',
-      connectionCount: updated.liveViewConnections,
-      browserSessionId: updated.browser.session_id,
+      operation: 'getOrCreateBrowser',
+      browserSessionId: browser.session_id,
+      liveViewUrl: browser.browser_live_view_url,
     });
+    logger.performanceMetric({
+      sessionId,
+      userId,
+      operation: 'getOrCreateBrowser',
+      durationMs: duration,
+    });
+
+    await logEvent(userId, sessionId, {
+      type: 'created',
+      timestamp: Date.now(),
+      details: `kernel_session=${browser.session_id}`,
+    });
+
+    return session;
+  } catch (err) {
+    console.error('[Kernel] Failed to create browser:', err);
+    throw err;
+  } finally {
+    // Always release lock
+    await redis.del(lk);
   }
 }
 
-export async function recordLiveViewDisconnection(
+/**
+ * Get an existing browser session.
+ * Returns null if no session exists or it belongs to a different user.
+ */
+export async function getBrowser(
   sessionId: string,
-  userId: string
-): Promise<void> {
+  userId: string,
+): Promise<BrowserSession | null> {
   if (!userId) {
     throw new Error('[Kernel] userId is required for browser session access');
   }
 
-  console.log(`[Kernel] Live view disconnected for session ${sessionId}, user ${userId}`);
+  const key = sessionKey(userId, sessionId);
+  const session = await redis.get<BrowserSession>(key);
 
-  const entry = await loadBrowserEntry(sessionId);
-  if (entry && entry.userId !== userId) {
-    console.warn(
-      `[Kernel] Live view disconnection by user ${userId} for session ${sessionId} ` +
-      `owned by ${entry.userId}. Ignoring.`
-    );
-    return; // Don't throw on disconnect, just log and ignore
+  if (!session) return null;
+
+  if (session.userId !== userId) {
+    logger.securityViolation({
+      sessionId,
+      userId,
+      operation: 'getBrowser',
+      securityEvent: 'userId_mismatch',
+      expectedUserId: session.userId,
+      actualUserId: userId,
+    });
+    return null;
   }
 
-  const updated = await updateBrowserEntry(sessionId, entry => {
-    entry.liveViewConnections = 0;
-    entry.lastLiveViewHeartbeatAt = null;
-    return entry;
-  });
-
-  if (updated) {
-    await maybeExpireSession(sessionId, updated);
-  }
+  return session;
 }
 
-export async function recordLiveViewHeartbeat(
+/**
+ * Delete a browser session.
+ * Removes from Redis first (prevents reuse during deletion), then tells Kernel
+ * to destroy the browser instance.
+ */
+export async function deleteBrowser(
   sessionId: string,
-  userId: string
+  userId: string,
 ): Promise<void> {
-  if (!userId) {
-    throw new Error('[Kernel] userId is required for browser session access');
-  }
+  const key = sessionKey(userId, sessionId);
+  const session = await redis.get<BrowserSession>(key);
 
-  const entry = await loadBrowserEntry(sessionId);
+  if (!session) return;
 
-  // Session doesn't exist - agent has been idle and session expired
-  if (!entry) {
-    console.log(
-      `[Kernel] Heartbeat for expired session ${sessionId}. Agent has been idle >5min.`
-    );
-    throw new Error('Session expired due to agent inactivity');
-  }
+  // Remove from Redis first
+  await redis.del(key);
 
-  // Wrong user
-  if (entry.userId !== userId) {
-    console.warn(
-      `[Kernel] Heartbeat from user ${userId} for session ${sessionId} owned by ${entry.userId}. Ignoring.`
-    );
-    throw new Error('Session belongs to different user');
-  }
-
-  // Update heartbeat timestamp
-  await updateBrowserEntry(sessionId, entry => {
-    if (entry.liveViewConnections <= 0) {
-      return entry;
+  // Delete from Kernel
+  try {
+    await kernel.browsers.deleteByID(session.kernelSessionId);
+    console.log(`[Kernel] Deleted browser ${session.kernelSessionId}`);
+  } catch (err: unknown) {
+    const error = err as { status?: number };
+    if (error.status === 404) {
+      console.log(
+        `[Kernel] Browser ${session.kernelSessionId} already deleted (404)`,
+      );
+    } else {
+      console.error('[Kernel] Failed to delete browser:', err);
     }
-    entry.lastLiveViewHeartbeatAt = Date.now();
-    return entry;
+  }
+
+  await logEvent(userId, sessionId, {
+    type: 'deleted',
+    timestamp: Date.now(),
   });
+}
+
+/**
+ * Refresh session TTL and return current session state.
+ *
+ * Used by the client heartbeat to:
+ *   1. Keep the session alive in Redis
+ *   2. Detect if the browser was recreated (live view URL changed)
+ *   3. Detect if the session expired due to agent inactivity
+ *
+ * Returns null if the session has expired.
+ */
+export async function refreshSession(
+  sessionId: string,
+  userId: string,
+): Promise<BrowserSession | null> {
+  if (!userId) {
+    throw new Error('[Kernel] userId is required for browser session access');
+  }
+
+  const key = sessionKey(userId, sessionId);
+  const session = await redis.get<BrowserSession>(key);
+
+  if (!session) return null;
+
+  if (session.userId !== userId) return null;
+
+  // Check agent idle timeout
+  if (Date.now() - session.lastAgentActivityAt > AGENT_IDLE_TIMEOUT_MS) {
+    console.log(
+      `[Kernel] Session ${sessionId} expired (agent idle > 5 min)`,
+    );
+    await deleteBrowser(sessionId, userId);
+    await logEvent(userId, sessionId, {
+      type: 'expired',
+      timestamp: Date.now(),
+      details: 'agent_idle_timeout',
+    });
+    return null;
+  }
+
+  // Refresh TTL
+  await redis.expire(key, SESSION_TTL_SECONDS);
+
+  await logEvent(userId, sessionId, {
+    type: 'heartbeat',
+    timestamp: Date.now(),
+  });
+
+  return session;
+}
+
+/**
+ * Record agent activity (tool usage).
+ *
+ * Refreshes the `lastAgentActivityAt` timestamp so the session doesn't expire
+ * while the agent is actively using the browser.
+ */
+export async function recordAgentActivity(
+  sessionId: string,
+  userId: string,
+): Promise<void> {
+  if (!userId) {
+    throw new Error('[Kernel] userId is required for browser session access');
+  }
+
+  const key = sessionKey(userId, sessionId);
+  const session = await redis.get<BrowserSession>(key);
+
+  if (!session) return;
+
+  if (session.userId !== userId) {
+    logger.securityViolation({
+      sessionId,
+      userId,
+      operation: 'recordAgentActivity',
+      securityEvent: 'cross_user_activity_attempt',
+      expectedUserId: session.userId,
+      actualUserId: userId,
+    });
+    throw new Error(
+      'Cannot record activity for session belonging to different user',
+    );
+  }
+
+  // Simple atomic write — update timestamp and refresh TTL
+  session.lastAgentActivityAt = Date.now();
+  await redis.set(key, session, { ex: SESSION_TTL_SECONDS });
+
+  await logEvent(userId, sessionId, {
+    type: 'activity',
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Get CDP WebSocket URL for agent-browser CLI.
+ */
+export async function getCdpUrl(
+  sessionId: string,
+  userId: string,
+): Promise<string | null> {
+  const session = await getBrowser(sessionId, userId);
+  return session?.cdpWsUrl ?? null;
+}
+
+/**
+ * Get live view URL for iframe embedding.
+ */
+export async function getLiveViewUrl(
+  sessionId: string,
+  userId: string,
+): Promise<string | null> {
+  const session = await getBrowser(sessionId, userId);
+  return session?.liveViewUrl ?? null;
+}
+
+/**
+ * Check if a browser session is active.
+ */
+export async function hasActiveBrowser(
+  sessionId: string,
+  userId: string,
+): Promise<boolean> {
+  const session = await getBrowser(sessionId, userId);
+  if (!session) return false;
+  return Date.now() - session.lastAgentActivityAt <= AGENT_IDLE_TIMEOUT_MS;
+}
+
+/**
+ * Get recent events for a session (read from the per-session message queue).
+ */
+export async function getSessionEvents(
+  sessionId: string,
+  userId: string,
+  limit: number = 10,
+): Promise<BrowserEvent[]> {
+  const key = eventKey(userId, sessionId);
+  const raw = await redis.lrange(key, 0, limit - 1);
+  return raw.map((e) =>
+    typeof e === 'string' ? (JSON.parse(e) as BrowserEvent) : (e as BrowserEvent),
+  );
 }
