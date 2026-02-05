@@ -350,9 +350,17 @@ ls -lt dsl/*.yml | head -1
 DIFY_CONSOLE_API_BASE=https://api.dify.ai/console/api
 DIFY_EMAIL=your-email@example.com
 DIFY_PASSWORD=your-password
-# パスワードがbase64エンコードされている場合
-DIFY_PASSWORD_BASE64=false
+# パスワードのbase64エンコード（デフォルト: true）
+# 平文パスワードだと "Invalid encrypted data" エラーになるため、true を推奨
+DIFY_PASSWORD_BASE64=true
+# または
+PASSWORD_BASE64=true
 ```
+
+**パスワード形式の設定:**
+- **デフォルト動作**: `DIFY_PASSWORD_BASE64`が設定されていない場合、自動的に`true`（base64エンコード有効）になります
+- **明示的な設定**: `DIFY_PASSWORD_BASE64=false`または`PASSWORD_BASE64=false`を設定した場合のみ、base64エンコードが無効化されます
+- **推奨設定**: ほとんどの環境で`true`が必要です（平文パスワードだと認証エラーが発生します）
 
 **動作フロー:**
 1. DSLが生成されると、DBとローカルファイルに保存
@@ -360,6 +368,12 @@ DIFY_PASSWORD_BASE64=false
 3. DSLファイルをDifyにインポート
 4. ワークフローを公開
 5. 公開URLを取得（ワークフローの種類に応じて`/workflow/`または`/chat/`パスを自動判定）
+6. **成功時**: 公開URLがチャット画面に表示されます（緑色のボックス、クリック可能なリンク）
+7. **失敗時**: エラーメッセージはサーバーのコンソールログにのみ出力されます（チャットには表示されません）
+
+**公開URLの表示:**
+- 自動インポートが成功した場合のみ、チャット画面に公開URLが表示されます
+- エラーが発生した場合、チャット処理は継続されますが、エラーメッセージはチャットには表示されません（サーバーログを確認してください）
 
 **認証ファイル:**
 - `.dify_auth` - アクセストークン（Git管理から除外）
@@ -379,7 +393,10 @@ DIFY_PASSWORD_BASE64=false
 - Dify Console APIの設定がない場合、DSLはローカルに保存されるが自動インポートは実行されない（既存の動作を維持）
 - `.dify_auth`と`.dify_csrf`は認証情報を含むため、`.gitignore`に追加されている
 - DSL検証により、正しいDify DSL形式のみが保存されます（説明文や途中のテキストは除外）
-- DSL保存と自動インポートは`createUIMessageStream`の`onFinish`で1回だけ実行されます（重複保存を防止）
+- DSL保存と自動インポートは`streamText`の`onFinish`で1回だけ実行されます（重複保存を防止）
+- パスワードのbase64エンコードはデフォルトで有効です（`DIFY_PASSWORD_BASE64=false`を明示的に設定しない限り）
+- 自動インポートのエラーはチャットには表示されません（サーバーのコンソールログを確認してください）
+- 環境変数を変更した場合は、開発サーバーを再起動してください
 
 ## 7. つまずきやすいポイント
 - `.env.local` の値が不足していると起動やAI機能が失敗する
