@@ -1,9 +1,9 @@
-import { tool } from 'ai';
+import { tool, type ToolExecutionOptions } from 'ai';
 import { z } from 'zod';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import {
-  createKernelBrowser,
+  getOrCreateBrowser,
   recordAgentActivity,
 } from '@/lib/kernel/browser';
 
@@ -112,13 +112,16 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
     inputSchema: z.object({
       command: z.string().describe('The agent-browser command to execute'),
     }),
-    execute: async ({ command }: { command: string }) => {
+    execute: async (
+      { command }: { command: string },
+      { abortSignal }: ToolExecutionOptions,
+    ) => {
       try {
         // Ensure we have a Kernel browser instance for this session
         // This creates a new browser or returns existing one with userId validation
-        const browser = await createKernelBrowser(sessionId, userId);
+        const browser = await getOrCreateBrowser(sessionId, userId);
         await recordAgentActivity(sessionId, userId);
-        const cdpUrl = browser.cdp_ws_url;
+        const cdpUrl = browser.cdpWsUrl;
 
         console.log('[browser-tool] Session:', sessionId);
         console.log('[browser-tool] CDP URL:', cdpUrl);
@@ -131,6 +134,7 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
         const { stdout, stderr } = await execFileAsync('npx', args, {
           timeout: 120000, // 2 minute timeout per command
           maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large snapshots
+          ...(abortSignal ? { signal: abortSignal } : {}), // Kills subprocess when user clicks Stop or Take Over
         });
 
         console.log('[browser-tool] Success. stdout length:', stdout?.length);
@@ -149,7 +153,18 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
           stdout?: string;
           stderr?: string;
           message?: string;
+          code?: string;
         };
+
+        // Handle abort (user clicked Stop or Take Over)
+        if (execError.code === 'ABORT_ERR' || abortSignal?.aborted) {
+          console.log('[browser-tool] Command aborted by user');
+          return {
+            success: false,
+            output: execError.stdout || null,
+            error: 'Browser command stopped by user',
+          };
+        }
 
         console.error('[browser-tool] Error:', {
           killed: execError.killed,

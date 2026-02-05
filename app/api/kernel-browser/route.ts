@@ -1,11 +1,8 @@
 import { auth } from '@/app/(auth)/auth';
 import {
-  createKernelBrowser,
-  deleteKernelBrowser,
-  getLiveViewUrl,
-  recordLiveViewConnection,
-  recordLiveViewDisconnection,
-  recordLiveViewHeartbeat,
+  getOrCreateBrowser,
+  deleteBrowser,
+  refreshSession,
 } from '@/lib/kernel/browser';
 
 export async function POST(request: Request) {
@@ -14,66 +11,51 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const userId = session.user.id;
+
   try {
     const { action, sessionId, isMobile } = await request.json();
 
     if (!sessionId) {
       return Response.json(
         { error: 'sessionId is required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Validate session ownership: sessionId must end with `-{userId}`
-    if (!sessionId.endsWith(`-${session.user.id}`)) {
+    if (!sessionId.endsWith(`-${userId}`)) {
       return Response.json(
         { error: 'Forbidden: session does not belong to user' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     if (action === 'create') {
-      const browser = await createKernelBrowser(sessionId, session.user.id, { isMobile });
+      const browser = await getOrCreateBrowser(sessionId, userId, { isMobile });
       return Response.json({
-        liveViewUrl: browser.browser_live_view_url,
-        sessionId: browser.session_id,
+        liveViewUrl: browser.liveViewUrl,
+        sessionId: browser.kernelSessionId,
       });
     }
 
     if (action === 'delete') {
-      await deleteKernelBrowser(sessionId);
+      await deleteBrowser(sessionId, userId);
       return Response.json({ success: true });
     }
 
-    if (action === 'getLiveView') {
-      const url = await getLiveViewUrl(sessionId, session.user.id);
-      return Response.json({ liveViewUrl: url });
-    }
-
-    if (action === 'liveViewConnected') {
-      await recordLiveViewConnection(sessionId, session.user.id);
-      return Response.json({ success: true });
-    }
-
-    if (action === 'liveViewDisconnected') {
-      await recordLiveViewDisconnection(sessionId, session.user.id);
-      return Response.json({ success: true });
-    }
-
-    if (action === 'liveViewHeartbeat') {
-      try {
-        await recordLiveViewHeartbeat(sessionId, session.user.id);
-        // Return the current live view URL so the client can detect if the
-        // server-side browser was recreated (new Kernel host = new URL).
-        const currentLiveViewUrl = await getLiveViewUrl(sessionId, session.user.id);
-        return Response.json({ success: true, liveViewUrl: currentLiveViewUrl });
-      } catch (error) {
-        // If heartbeat fails (session expired), return 404 so client disconnects
-        if (error instanceof Error && error.message.includes('different user')) {
-          return Response.json({ error: 'Session expired or invalid' }, { status: 404 });
-        }
-        throw error;
+    if (action === 'heartbeat') {
+      const browser = await refreshSession(sessionId, userId);
+      if (!browser) {
+        return Response.json(
+          { error: 'Session expired or not found' },
+          { status: 404 },
+        );
       }
+      return Response.json({
+        success: true,
+        liveViewUrl: browser.liveViewUrl,
+      });
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });
@@ -84,7 +66,7 @@ export async function POST(request: Request) {
         error:
           error instanceof Error ? error.message : 'Failed to manage browser',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
