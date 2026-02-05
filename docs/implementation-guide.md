@@ -52,8 +52,16 @@ cp .env.example .env.local
   Redis 接続文字列
 - `BLOB_READ_WRITE_TOKEN`  
   Vercel Blob 用トークン
+- `DIFY_CONSOLE_API_BASE`  
+  オプショナル。Dify Console APIのベースURL（例: `https://api.dify.ai/console/api`）。設定するとDSL自動インポート機能が有効になります。
+- `DIFY_EMAIL`  
+  オプショナル。Dify Console APIへのログイン用メールアドレス。
+- `DIFY_PASSWORD`  
+  オプショナル。Dify Console APIへのログイン用パスワード（シングルクォートで囲む）。
+- `DIFY_PASSWORD_BASE64`  
+  オプショナル。パスワードがbase64エンコードされている場合に`true`を設定。
 
-注意: `.env.local` はコミットしないでください。
+注意: `.env.local` はコミットしないでください。また、Dify認証ファイル（`.dify_auth`、`.dify_csrf`）もGit管理から除外されています。
 
 #### 2.3.1 LLMの呼び出し先切替（AI Gateway ↔ Direct）の実装箇所
 
@@ -240,6 +248,8 @@ pnpm format      # フォーマット
 - `rule_ver5.md` を system prompt に組み込み、DSL生成の対話フローを実行
 - Difyモードではツール呼び出しを無効化（チャット出力のみ）
 - 生成したDSL（```yaml```コードブロック）はDBへ自動保存
+- 生成したDSLはローカルファイルシステム（`dsl/`ディレクトリ）にも保存
+- Dify Console APIが設定されている場合、DSLを自動的にDifyにインポート・公開
 
 ### 6.2 実装ファイル
 - ルート/ページ
@@ -249,11 +259,16 @@ pnpm format      # フォーマット
 - プロンプト/API
   - `lib/ai/prompts.ts` (systemPromptIdと`rule_ver5.md`の合成)
   - `app/(chat)/api/chat/schema.ts` (`systemPromptId` 追加)
-  - `app/(chat)/api/chat/route.ts` (Difyモード時のプロンプト切り替え/ツール無効化)
+  - `app/(chat)/api/chat/route.ts` (Difyモード時のプロンプト切り替え/ツール無効化/DSL保存/自動インポート)
 - DB
   - `lib/db/schema.ts` (`DifyWorkflowDsl` テーブル)
   - `lib/db/queries.ts` (`saveDifyWorkflowDsl`)
   - `lib/db/migrations/0009_dify_workflow_dsl.sql`（マイグレーション）
+- Dify Console API クライアント
+  - `lib/dify/client.ts` (DifyClientクラス: ログイン、DSLインポート、公開、URL取得)
+  - `lib/dify/types.ts` (Dify APIの型定義)
+- ファイルシステム
+  - `dsl/` ディレクトリ（生成されたDSLファイルの保存先）
 - UI
   - `components/chat.tsx` (systemPromptId / chatPathPrefix / newChatPath / inputPlaceholder)
   - `components/multimodal-input.tsx` (送信後URLとplaceholder)
@@ -270,7 +285,9 @@ pnpm format      # フォーマット
 - 既存チャット（Difyモード）: `http://localhost:3000/dify/chat/<chatId>`
 - 注意: `/dify/chat`（id無し）は未実装のため 404
 
-### 6.3.2 DSL保存の確認方法（Neon）
+### 6.3.2 DSL保存の確認方法
+
+#### データベース（Neon）
 NeonのSQL Editorで以下を実行して確認します。
 
 ```sql
@@ -289,11 +306,68 @@ where "chatId" = '<CHAT_ID>'
 order by "version" asc;
 ```
 
-### 6.4 注意点
+#### ローカルファイルシステム
+プロジェクトルートの`dsl/`ディレクトリに保存されたDSLファイルを確認できます。
+
+```bash
+# DSLファイル一覧を表示
+ls -la dsl/*.yml
+
+# 最新のDSLファイルを確認
+ls -lt dsl/*.yml | head -1
+```
+
+ファイル名形式: `{workflowName}_{chatId}_{timestamp}.yml`
+
+### 6.4 DSLの保存と自動インポート
+
+#### 6.4.1 DSL保存の仕組み
+生成されたDSLは以下の2箇所に保存されます：
+
+1. **データベース** (`DifyWorkflowDsl`テーブル)
+   - チャットID、ユーザーID、メッセージID、バージョン、ワークフロー名、モード、DSL YAMLを保存
+   - バージョン管理が可能（同じチャットIDで複数バージョンを保存）
+
+2. **ローカルファイルシステム** (`dsl/`ディレクトリ)
+   - ファイル名形式: `{workflowName}_{chatId}_{timestamp}.yml`
+   - プロジェクトルートの`dsl/`ディレクトリに保存
+
+#### 6.4.2 Dify Console APIによる自動インポート（オプショナル）
+`.env.local`に以下の環境変数を設定すると、DSL生成後に自動的にDifyにインポート・公開されます：
+
+```bash
+# Dify Console API設定（オプショナル）
+DIFY_CONSOLE_API_BASE=https://api.dify.ai/console/api
+DIFY_EMAIL=your-email@example.com
+DIFY_PASSWORD=your-password
+# パスワードがbase64エンコードされている場合
+DIFY_PASSWORD_BASE64=false
+```
+
+**動作フロー:**
+1. DSLが生成されると、DBとローカルファイルに保存
+2. Dify Console APIの設定がある場合、自動的にログイン（認証トークンは`.dify_auth`と`.dify_csrf`にキャッシュ）
+3. DSLファイルをDifyにインポート
+4. ワークフローを公開
+5. 公開URLを取得（ワークフローの種類に応じて`/workflow/`または`/chat/`パスを自動判定）
+
+**認証ファイル:**
+- `.dify_auth` - アクセストークン（Git管理から除外）
+- `.dify_csrf` - CSRFトークン（Git管理から除外）
+
+#### 6.4.3 ワークフローの種類に応じたURLパス判定
+`DifyClient.getPublishUrl()`は、ワークフローの種類（`mode`）に応じて適切なURLパスを返します：
+
+- `mode: "workflow"` → `http://localhost/workflow/{access_token}`
+- `mode: "chat"`, `"advanced-chat"`, `"agent-chat"` → `http://localhost/chat/{access_token}`
+
+### 6.5 注意点
 - `app/(group)` はURLに反映されないため、Difyは `app/dify` を使用
 - サイドバーの履歴リンクは `/chat/<id>` のまま（通常チャットと履歴は共有）
   - Dify専用履歴や `/dify/chat/<id>` へのリンク分離が必要なら別対応
 - `pnpm db:migrate` が通っていないとテーブルが作成されないため、DSL自動保存も動作しない
+- Dify Console APIの設定がない場合、DSLはローカルに保存されるが自動インポートは実行されない（既存の動作を維持）
+- `.dify_auth`と`.dify_csrf`は認証情報を含むため、`.gitignore`に追加されている
 
 ## 7. つまずきやすいポイント
 - `.env.local` の値が不足していると起動やAI機能が失敗する

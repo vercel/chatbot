@@ -231,14 +231,22 @@ get_publish_url () {
   local base_url="${CONSOLE_API_BASE%/console/api}"
 
   # 1) まず app 情報から site.access_token を取得（最優先）
-  local app_json token
+  local app_json token mode path
   app_json="$(curl -fsS "$CONSOLE_API_BASE/apps/$app_id" "${AUTH_CURL_ARGS[@]}" 2>/dev/null || true)"
 
   if [ -n "$app_json" ]; then
     # Difyのバージョン差を吸収（.data.site.access_token / .site.access_token）
     token="$(echo "$app_json" | jq -r '.data.site.access_token // .site.access_token // empty' 2>/dev/null || true)"
     if [ -n "$token" ] && [ "$token" != "null" ]; then
-      echo "${base_url}/workflow/${token} or ${base_url}/chat/${token}"
+      # ワークフローの種類（mode）を取得して適切なパスを決定
+      mode="$(echo "$app_json" | jq -r '.data.mode // .mode // empty' 2>/dev/null || true)"
+      # workflowモードの場合は/workflow/、それ以外（chat/advanced-chat/agent-chat）は/chat/
+      if [ "$mode" = "workflow" ]; then
+        path="workflow"
+      else
+        path="chat"
+      fi
+      echo "${base_url}/${path}/${token}"
       return 0
     fi
   fi

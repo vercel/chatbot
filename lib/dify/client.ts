@@ -278,6 +278,14 @@ export class DifyClient {
   }
 
   /**
+   * ワークフローの種類に応じた適切なパスを決定
+   */
+  private getPathByMode(mode?: string | null): string {
+    // workflowモードの場合は/workflow/、それ以外（chat/advanced-chat/agent-chat）は/chat/
+    return mode === "workflow" ? "workflow" : "chat";
+  }
+
+  /**
    * 公開URLを取得
    */
   async getPublishUrl(appId: string): Promise<string | null> {
@@ -302,7 +310,11 @@ export class DifyClient {
           appInfo.data?.data?.site?.access_token;
 
         if (accessToken && accessToken !== "null") {
-          return `${baseUrl}/workflow/${accessToken} or ${baseUrl}/chat/${accessToken}`;
+          // ワークフローの種類（mode）を取得
+          const mode =
+            appInfo.data?.mode ?? appInfo.mode ?? appInfo.data?.data?.mode;
+          const path = this.getPathByMode(mode);
+          return `${baseUrl}/${path}/${accessToken}`;
         }
       }
     } catch {

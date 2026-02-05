@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { geolocation } from "@vercel/functions";
 import {
   convertToModelMessages,
@@ -9,8 +11,6 @@ import {
 } from "ai";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
-import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { ZodError } from "zod";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
@@ -27,19 +27,19 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
-  saveDifyWorkflowDsl,
   saveChat,
+  saveDifyWorkflowDsl,
   saveMessages,
   updateChatTitleById,
   updateMessage,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
+import { getDifyClient } from "@/lib/dify/client";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
-import { getDifyClient } from "@/lib/dify/client";
 
 export const maxDuration = 60;
 
@@ -232,6 +232,7 @@ export async function POST(request: Request) {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
           },
+          // streamTextのonFinishは使用しない（createUIMessageStreamのonFinishで処理）
         });
 
         dataStream.merge(result.toUIMessageStream({ sendReasoning: true }));
@@ -311,15 +312,36 @@ export async function POST(request: Request) {
               return yaml ? yaml : null;
             };
 
+            /**
+             * DSLが有効か検証（正しいDify DSL形式か確認）
+             */
+            const isValidDsl = (yaml: string): boolean => {
+              // 最小限の行数チェック（説明文など短いテキストを除外）
+              if (yaml.split("\n").length < 10) {
+                return false;
+              }
+
+              // Dify DSLの必須フィールドをチェック
+              const hasAppOrKind =
+                /^\s*(app:|kind:\s*app)/m.test(yaml) ||
+                /^kind:\s*app/m.test(yaml);
+              const hasWorkflowOrGraph =
+                /workflow:/m.test(yaml) || /graph:/m.test(yaml);
+
+              return hasAppOrKind && hasWorkflowOrGraph;
+            };
+
             const inferMode = (yaml: string) => {
               const match = yaml.match(
                 /(^|\n)\s*mode:\s*(advanced-chat|workflow|agent-chat)\b/i
               );
-              return (match?.[2]?.toLowerCase() as
-                | "advanced-chat"
-                | "workflow"
-                | "agent-chat"
-                | undefined) ?? null;
+              return (
+                (match?.[2]?.toLowerCase() as
+                  | "advanced-chat"
+                  | "workflow"
+                  | "agent-chat"
+                  | undefined) ?? null
+              );
             };
 
             const inferWorkflowName = (yaml: string) => {
@@ -334,9 +356,11 @@ export async function POST(request: Request) {
             };
 
             if (latestAssistant?.parts) {
-              const text = extractTextFromParts(latestAssistant.parts as unknown[]);
+              const text = extractTextFromParts(
+                latestAssistant.parts as unknown[]
+              );
               const yaml = extractYamlCodeBlock(text);
-              if (yaml) {
+              if (yaml && isValidDsl(yaml)) {
                 try {
                   const workflowName = inferWorkflowName(yaml);
                   await saveDifyWorkflowDsl({
@@ -354,22 +378,22 @@ export async function POST(request: Request) {
                     dslYaml: yaml,
                     workflowName,
                   });
-                  if (tempFilePath) {
-                    console.log(
-                      `DSL file saved to temporary location: ${tempFilePath}`
-                    );
 
-                    // 自動インポートと公開（オプショナル）
+                  // 自動インポートと公開（オプショナル）
+                  if (tempFilePath) {
                     const difyClient = getDifyClient();
-                    if (difyClient && tempFilePath) {
+                    if (difyClient) {
                       try {
-                        const result = await difyClient.importAndPublish(
-                          tempFilePath
-                        );
-                        console.log(
-                          `Dify workflow imported and published: ${result.appId}`
-                        );
-                        console.log(`Publish URL: ${result.publishUrl}`);
+                        const importResult =
+                          await difyClient.importAndPublish(tempFilePath);
+                        // 公開URLをチャットに表示（カスタムデータ型として）
+                        if (importResult.publishUrl) {
+                          // 注意: onFinish内ではdataStreamにアクセスできないため、
+                          // 公開URLは別の方法で通知する必要があります
+                          console.log(
+                            `Dify workflow published: ${importResult.publishUrl}`
+                          );
+                        }
                       } catch (error) {
                         // Difyインポートが失敗してもチャット処理は継続
                         console.error(
