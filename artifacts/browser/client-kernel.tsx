@@ -32,6 +32,14 @@ interface BrowserStatusEvent {
   timestamp: string;
 }
 
+// =============================================================================
+// Idle timeout: disconnect after 5 minutes of no user interaction.
+// The agent idle timeout (server-side, 5 min) covers agent inactivity.
+// This covers user inactivity (e.g., user walks away from computer).
+// =============================================================================
+const USER_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const IDLE_CHECK_INTERVAL_MS = 30_000; // Check every 30 seconds
+
 interface KernelBrowserClientProps {
   sessionId: string;
   controlMode: 'agent' | 'user';
@@ -86,6 +94,14 @@ export function KernelBrowserClient({
   // Keep sessionId in a ref so the beforeunload handler always has the latest value
   const sessionIdRef = useRef(sessionId);
   sessionIdRef.current = sessionId;
+
+  // Keep chatStatus in a ref so idle timeout can check without re-running effect
+  const chatStatusRef = useRef(chatStatus);
+  chatStatusRef.current = chatStatus;
+
+  // Keep stop() in a ref so cleanup can abort the AI stream without re-running effects
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
 
   // =========================================================================
   // Heartbeat — simple TTL refresh + URL change detection
@@ -313,13 +329,114 @@ export function KernelBrowserClient({
     };
   }, []);
 
-  // Cleanup heartbeat and SSE on unmount
+  // Cleanup on unmount: abort AI stream, stop heartbeat/SSE, delete browser.
+  // This handles SPA navigation (e.g., switching chats). Full page navigation
+  // is handled by the beforeunload sendBeacon above.
+  //
+  // Order matters: stop() aborts the AI stream which triggers the abort signal
+  // in the browser tool handler, causing awaitResult to return immediately and
+  // the command worker to stop. Without this, deleting the browser removes the
+  // Redis streams while the worker and awaitResult are still polling them,
+  // which causes the agent to recreate a new browser and re-navigate.
   useEffect(() => {
     return () => {
+      // 1. Abort the AI stream — triggers abort signal → worker stops, awaitResult exits
+      stopRef.current?.();
+      // 2. Stop client-side connections
       stopHeartbeat();
       stopEventSource();
+      // 3. Delete browser session (server also stops worker via stopWorker)
+      if (isConnectedRef.current) {
+        fetch('/api/kernel-browser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete',
+            sessionId: sessionIdRef.current,
+          }),
+        }).catch(() => {
+          // Best-effort cleanup
+        });
+      }
     };
   }, [stopHeartbeat, stopEventSource]);
+
+  // =========================================================================
+  // User idle timeout — disconnect after prolonged user inactivity.
+  // Tracks mouse, keyboard, scroll, touch, and visibility events.
+  // Pauses while the agent is actively streaming (user may be watching).
+  // =========================================================================
+  useEffect(() => {
+    if (!isConnected) return;
+
+    let lastUserActivity = Date.now();
+
+    const onActivity = () => {
+      lastUserActivity = Date.now();
+    };
+
+    const activityEvents = [
+      'mousemove',
+      'mousedown',
+      'keydown',
+      'scroll',
+      'touchstart',
+    ];
+    activityEvents.forEach((event) => {
+      document.addEventListener(event, onActivity, { passive: true });
+    });
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        onActivity();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const idleCheckInterval = setInterval(() => {
+      // Don't time out while the agent is actively working
+      const status = chatStatusRef.current;
+      if (status === 'streaming' || status === 'submitted') {
+        lastUserActivity = Date.now();
+        return;
+      }
+
+      if (Date.now() - lastUserActivity > USER_IDLE_TIMEOUT_MS) {
+        clearInterval(idleCheckInterval);
+        console.log(
+          '[Kernel] User idle timeout — disconnecting browser session',
+        );
+
+        // Abort AI stream first so the tool handler exits cleanly
+        stopRef.current?.();
+
+        fetch('/api/kernel-browser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete',
+            sessionId: sessionIdRef.current,
+          }),
+        }).catch(() => {});
+
+        setSessionExpired(true);
+        setLiveViewUrl(null);
+        setIsConnected(false);
+        onConnectionChangeRef.current?.(false);
+        stopHeartbeat();
+        stopEventSource();
+        toast.info('Browser session closed due to inactivity');
+      }
+    }, IDLE_CHECK_INTERVAL_MS);
+
+    return () => {
+      clearInterval(idleCheckInterval);
+      activityEvents.forEach((event) => {
+        document.removeEventListener(event, onActivity);
+      });
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [isConnected, stopHeartbeat, stopEventSource]);
 
   // Track previous chatStatus to detect when the chat stops.
   // When chatStatus transitions from 'streaming'/'submitted' → 'ready'/'error',
