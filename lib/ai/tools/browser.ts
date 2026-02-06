@@ -1,56 +1,20 @@
 import { tool, type ToolExecutionOptions } from 'ai';
 import { z } from 'zod';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
+import { randomUUID } from 'crypto';
+import { enqueueCommand, awaitResult } from '@/lib/kernel/message-queue';
+import { ensureWorker } from '@/lib/kernel/command-worker';
 import {
   getOrCreateBrowser,
   recordAgentActivity,
 } from '@/lib/kernel/browser';
 
-const execFileAsync = promisify(execFile);
-
-/**
- * Parse a command string into an array of arguments, respecting quoted strings.
- * e.g. `fill @e1 "hello world"` → `['fill', '@e1', 'hello world']`
- */
-function parseCommand(command: string): string[] {
-  const args: string[] = [];
-  let current = '';
-  let inQuote: string | null = null;
-
-  for (let i = 0; i < command.length; i++) {
-    const ch = command[i];
-
-    if (inQuote) {
-      if (ch === '\\' && i + 1 < command.length) {
-        // Escaped character inside quotes — include the next char literally
-        current += command[++i];
-      } else if (ch === inQuote) {
-        inQuote = null;
-      } else {
-        current += ch;
-      }
-    } else if (ch === '"' || ch === "'") {
-      inQuote = ch;
-    } else if (ch === ' ' || ch === '\t') {
-      if (current) {
-        args.push(current);
-        current = '';
-      }
-    } else {
-      current += ch;
-    }
-  }
-  if (current) args.push(current);
-  return args;
-}
-
 /**
  * Creates a browser automation tool for a specific session.
  * Uses agent-browser CLI with native Kernel provider for remote browser control.
  *
- * The tool connects to a Kernel.sh managed browser instance and executes
- * commands using the agent-browser CLI.
+ * Commands are submitted to a Redis Streams message queue and executed by a
+ * background worker. This decouples command submission from execution, enabling
+ * sequential processing, retries, and real-time status events for the client.
  *
  * @param sessionId - The chat/session ID for browser isolation
  * @param userId - The user ID for ownership validation and security
@@ -117,76 +81,71 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
       { abortSignal }: ToolExecutionOptions,
     ) => {
       try {
-        // Ensure we have a Kernel browser instance for this session
-        // This creates a new browser or returns existing one with userId validation
-        const browser = await getOrCreateBrowser(sessionId, userId);
+        // Ensure we have a Kernel browser instance (creates one if needed)
+        await getOrCreateBrowser(sessionId, userId);
         await recordAgentActivity(sessionId, userId);
-        const cdpUrl = browser.cdpWsUrl;
 
-        console.log('[browser-tool] Session:', sessionId);
-        console.log('[browser-tool] CDP URL:', cdpUrl);
+        // Ensure the background worker is running for this session
+        const worker = ensureWorker(userId, sessionId);
 
-        // Use --cdp flag to connect agent-browser to Kernel's browser via CDP WebSocket
-        // Use execFile (no shell) so URLs with #, &, ? etc. aren't mangled by the shell
-        const args = ['agent-browser', '--cdp', cdpUrl, ...parseCommand(command)];
-        console.log('[browser-tool] Executing: npx', args.join(' '));
+        // If the user aborts, stop the worker
+        if (abortSignal) {
+          abortSignal.addEventListener('abort', () => worker.stop(), {
+            once: true,
+          });
+        }
 
-        const { stdout, stderr } = await execFileAsync('npx', args, {
-          timeout: 120000, // 2 minute timeout per command
-          maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large snapshots
-          ...(abortSignal ? { signal: abortSignal } : {}), // Kills subprocess when user clicks Stop or Take Over
+        const correlationId = randomUUID();
+
+        console.log('[browser-tool] Enqueueing command:', command);
+        console.log('[browser-tool] Correlation ID:', correlationId);
+
+        // Submit command to the queue
+        await enqueueCommand({
+          correlationId,
+          command,
+          sessionId,
+          userId,
+          timestamp: Date.now(),
         });
 
-        console.log('[browser-tool] Success. stdout length:', stdout?.length);
-        if (stderr) console.log('[browser-tool] stderr:', stderr);
+        // Wait for the worker to execute and publish the result
+        const result = await awaitResult(
+          userId,
+          sessionId,
+          correlationId,
+          abortSignal,
+        );
+
+        console.log(
+          '[browser-tool] Result received:',
+          result.success ? 'success' : 'failure',
+        );
 
         return {
-          success: true,
-          output: stdout || 'Command completed successfully',
-          // Don't include stderr as error for successful commands
-          // (npx outputs notices to stderr that aren't actual errors)
-          error: null,
+          success: result.success,
+          output: result.output || (result.success ? 'Command completed successfully' : null),
+          error: result.error,
         };
       } catch (error: unknown) {
-        const execError = error as {
-          killed?: boolean;
-          stdout?: string;
-          stderr?: string;
-          message?: string;
-          code?: string;
-        };
+        const message =
+          error instanceof Error ? error.message : 'Command failed';
 
         // Handle abort (user clicked Stop or Take Over)
-        if (execError.code === 'ABORT_ERR' || abortSignal?.aborted) {
+        if (abortSignal?.aborted) {
           console.log('[browser-tool] Command aborted by user');
           return {
             success: false,
-            output: execError.stdout || null,
+            output: null,
             error: 'Browser command stopped by user',
           };
         }
 
-        console.error('[browser-tool] Error:', {
-          killed: execError.killed,
-          message: execError.message,
-          stderr: execError.stderr,
-          stdout: execError.stdout,
-        });
-
-        // Handle timeout specifically
-        if (execError.killed) {
-          return {
-            success: false,
-            output: null,
-            error: 'Command timed out after 2 minutes',
-          };
-        }
-
+        console.error('[browser-tool] Error:', message);
         return {
           success: false,
-          output: execError.stdout || null, // May have partial output
-          error:
-            execError.stderr || execError.message || 'Command failed',
+          output: null,
+          error: message,
         };
       }
     },
