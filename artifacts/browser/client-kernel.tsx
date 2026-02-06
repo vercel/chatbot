@@ -361,19 +361,14 @@ export function KernelBrowserClient({
 
         {/* Fullscreen browser iframe */}
         <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
-          <div className="w-full h-full flex items-center justify-center">
-            <div
-              className="relative w-full h-full max-w-[1920px] max-h-[1080px]"
-              style={{ aspectRatio: '16 / 9' }}
-            >
-              <iframe
-                key={liveViewUrl}
-                src={iframeUrl || undefined}
-                className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-2xl"
-                allow="clipboard-read; clipboard-write"
-                title="Browser View"
-              />
-            </div>
+          <div className="w-full h-full overflow-hidden bg-black rounded-lg">
+            <iframe
+              key={liveViewUrl}
+              src={iframeUrl || undefined}
+              className="w-full h-full border-0 bg-white rounded-lg shadow-2xl"
+              allow="clipboard-read; clipboard-write"
+              title="Browser View"
+            />
           </div>
         </div>
       </div>
@@ -448,19 +443,14 @@ export function KernelBrowserClient({
                 ) : !isConnected ? (
                   <BrowserLoadingState />
                 ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <div
-                      className="relative w-full max-h-full"
-                      style={{ aspectRatio: '4 / 3' }}
-                    >
-                      <iframe
-                        key={liveViewUrl}
-                        src={iframeUrl || undefined}
-                        className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-lg"
-                        allow="clipboard-read; clipboard-write"
-                        title="Browser View"
-                      />
-                    </div>
+                  <div className="h-full overflow-hidden bg-black rounded-lg">
+                    <iframe
+                      key={liveViewUrl}
+                      src={iframeUrl || undefined}
+                      className="w-full h-full border-0 bg-white shadow-lg"
+                      allow="clipboard-read; clipboard-write"
+                      title="Browser View"
+                    />
                   </div>
                 )}
               </div>
@@ -510,20 +500,15 @@ export function KernelBrowserClient({
       )}
 
       {/* Browser iframe */}
-      <div className="flex-1 relative m-4 overflow-hidden min-h-0">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div
-            className="relative w-full max-h-full"
-            style={{ aspectRatio: '16 / 9' }}
-          >
-            <iframe
-              key={liveViewUrl}
-              src={iframeUrl || undefined}
-              className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg"
-              allow="clipboard-read; clipboard-write"
-              title="Browser View"
-            />
-          </div>
+      <div className="flex-1 m-4 overflow-hidden min-h-0">
+        <div className="h-full overflow-hidden bg-black rounded-lg">
+          <iframe
+            key={liveViewUrl}
+            src={iframeUrl || undefined}
+            className="w-full h-full border-0 bg-white"
+            allow="clipboard-read; clipboard-write"
+            title="Browser View"
+          />
         </div>
       </div>
     </div>
