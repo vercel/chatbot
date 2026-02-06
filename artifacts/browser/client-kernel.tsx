@@ -99,6 +99,10 @@ export function KernelBrowserClient({
   const chatStatusRef = useRef(chatStatus);
   chatStatusRef.current = chatStatus;
 
+  // Keep stop() in a ref so cleanup can abort the AI stream without re-running effects
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
+
   // =========================================================================
   // Heartbeat — simple TTL refresh + URL change detection
   // =========================================================================
@@ -325,14 +329,23 @@ export function KernelBrowserClient({
     };
   }, []);
 
-  // Cleanup on unmount: stop heartbeat, SSE, and delete browser session.
+  // Cleanup on unmount: abort AI stream, stop heartbeat/SSE, delete browser.
   // This handles SPA navigation (e.g., switching chats). Full page navigation
   // is handled by the beforeunload sendBeacon above.
+  //
+  // Order matters: stop() aborts the AI stream which triggers the abort signal
+  // in the browser tool handler, causing awaitResult to return immediately and
+  // the command worker to stop. Without this, deleting the browser removes the
+  // Redis streams while the worker and awaitResult are still polling them,
+  // which causes the agent to recreate a new browser and re-navigate.
   useEffect(() => {
     return () => {
+      // 1. Abort the AI stream — triggers abort signal → worker stops, awaitResult exits
+      stopRef.current?.();
+      // 2. Stop client-side connections
       stopHeartbeat();
       stopEventSource();
-
+      // 3. Delete browser session (server also stops worker via stopWorker)
       if (isConnectedRef.current) {
         fetch('/api/kernel-browser', {
           method: 'POST',
@@ -393,6 +406,9 @@ export function KernelBrowserClient({
         console.log(
           '[Kernel] User idle timeout — disconnecting browser session',
         );
+
+        // Abort AI stream first so the tool handler exits cleanly
+        stopRef.current?.();
 
         fetch('/api/kernel-browser', {
           method: 'POST',
