@@ -370,6 +370,7 @@ export function KernelBrowserClient({
                 key={liveViewUrl}
                 src={iframeUrl || undefined}
                 className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-2xl"
+                style={{ willChange: 'transform' }}
                 allow="clipboard-read; clipboard-write"
                 title="Browser View"
               />
@@ -457,6 +458,7 @@ export function KernelBrowserClient({
                         key={liveViewUrl}
                         src={iframeUrl || undefined}
                         className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-lg"
+                        style={{ willChange: 'transform' }}
                         allow="clipboard-read; clipboard-write"
                         title="Browser View"
                       />
@@ -520,6 +522,7 @@ export function KernelBrowserClient({
               key={liveViewUrl}
               src={iframeUrl || undefined}
               className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg"
+              style={{ willChange: 'transform' }}
               allow="clipboard-read; clipboard-write"
               title="Browser View"
             />
