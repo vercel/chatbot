@@ -4,7 +4,7 @@ import { logger } from './logger';
 
 const kernel = new Kernel();
 
-const redis = new Redis({
+export const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
@@ -26,10 +26,14 @@ const redis = new Redis({
 const SESSION_KEY_PREFIX = 'kb:session:';
 const LOCK_KEY_PREFIX = 'kb:lock:';
 const EVENT_KEY_PREFIX = 'kb:events:';
+const CMD_STREAM_PREFIX = 'mq:cmd:';
+const RES_STREAM_PREFIX = 'mq:res:';
+const STATUS_STREAM_PREFIX = 'mq:status:';
 
 const SESSION_TTL_SECONDS = 10 * 60; // 10 minutes
 const LOCK_TTL_SECONDS = 30; // 30 seconds for creation lock
 const EVENT_TTL_SECONDS = 5 * 60; // 5 minutes for event log
+export const STREAM_TTL_SECONDS = 10 * 60; // 10 minutes — same as session
 const AGENT_IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes without agent tool usage
 
 // =============================================================================
@@ -65,6 +69,18 @@ function lockKey(userId: string, sessionId: string): string {
 
 function eventKey(userId: string, sessionId: string): string {
   return `${EVENT_KEY_PREFIX}${userId}:${sessionId}`;
+}
+
+export function cmdStreamKey(userId: string, sessionId: string): string {
+  return `${CMD_STREAM_PREFIX}${userId}:${sessionId}`;
+}
+
+export function resStreamKey(userId: string, sessionId: string): string {
+  return `${RES_STREAM_PREFIX}${userId}:${sessionId}`;
+}
+
+export function statusStreamKey(userId: string, sessionId: string): string {
+  return `${STATUS_STREAM_PREFIX}${userId}:${sessionId}`;
 }
 
 // =============================================================================
@@ -290,8 +306,13 @@ export async function deleteBrowser(
 
   if (!session) return;
 
-  // Remove from Redis first
-  await redis.del(key);
+  // Remove session + associated streams from Redis first
+  await redis.del(
+    key,
+    cmdStreamKey(userId, sessionId),
+    resStreamKey(userId, sessionId),
+    statusStreamKey(userId, sessionId),
+  );
 
   // Delete from Kernel
   try {
