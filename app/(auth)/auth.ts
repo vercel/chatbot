@@ -37,6 +37,8 @@ export const {
   signOut,
 } = NextAuth({
   ...authConfig,
+  secret: process.env.AUTH_SECRET,
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {},
@@ -68,8 +70,22 @@ export const {
       id: "guest",
       credentials: {},
       async authorize() {
-        const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: "guest" };
+        try {
+          const guestUsers = await createGuestUser();
+          if (!guestUsers || guestUsers.length === 0) {
+            console.error("Failed to create guest user: no user returned");
+            return null;
+          }
+          const [guestUser] = guestUsers;
+          if (!guestUser || !guestUser.id) {
+            console.error("Failed to create guest user: invalid user data");
+            return null;
+          }
+          return { ...guestUser, type: "guest" };
+        } catch (error) {
+          console.error("Failed to create guest user:", error);
+          return null;
+        }
       },
     }),
   ],
