@@ -185,7 +185,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                 key={item}
               >
                 <div
-                  className="h-4 max-w-(--skeleton-width) flex-1 rounded-md bg-sidebar-accent-foreground/10"
+                  className="h-4 max-w-(--skeleton-width) flex-1 rounded-md bg-primary/10-foreground/10"
                   style={
                     {
                       "--skeleton-width": `${item}%`,
