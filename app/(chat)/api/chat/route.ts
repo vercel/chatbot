@@ -176,7 +176,7 @@ export async function POST(request: Request) {
       const stream = createUIMessageStream({
         execute: async ({ writer: dataStream }) => {
           const result = streamText({
-            model: webAutomationModel,
+            model: vertexModel,
             system: webAutomationSystemPrompt,
             messages: await convertToModelMessages(uiMessages),
             tools: {
