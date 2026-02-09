@@ -26,6 +26,7 @@ import type { Attachment, ChatMessage } from "@/lib/types";
 import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { Artifact } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
+import { LightModeBg } from "./elements/light-mode-bg";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 import { getChatHistoryPaginationKey } from "./sidebar-history";
@@ -187,8 +188,14 @@ export function Chat({
 
   return (
     <>
-      <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background">
-        <ChatHeader
+      <div className="relative overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col">
+        <LightModeBg
+          className="absolute inset-0 z-0 h-full w-full"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden
+        />
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+          <ChatHeader
           chatId={id}
           isReadonly={isReadonly}
           selectedVisibilityType={initialVisibilityType}
@@ -207,7 +214,7 @@ export function Chat({
           votes={votes}
         />
 
-        <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
+        <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-transparent px-2 pb-3 md:px-4 md:pb-4">
           {!isReadonly && (
             <MultimodalInput
               attachments={attachments}
@@ -225,6 +232,7 @@ export function Chat({
               stop={stop}
             />
           )}
+        </div>
         </div>
       </div>
 
