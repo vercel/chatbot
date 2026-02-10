@@ -184,7 +184,8 @@ export async function POST(request: Request) {
               gapAnalysis,
               browser: createBrowserTool(sessionId, session.user.id),
             },
-            stopWhen: stepCountIs(100),
+            stopWhen: stepCountIs(500),
+            abortSignal: request.signal,
             experimental_telemetry: {
               isEnabled: isProductionEnvironment,
               functionId: 'web-automation-agent',
