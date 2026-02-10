@@ -15,37 +15,11 @@ import {
 } from '@/components/ui/sheet';
 import type { ChatStatus } from '@/components/create-artifact';
 
-// =============================================================================
-// Types for SSE status events from the message queue
-// =============================================================================
-
-interface BrowserStatusEvent {
-  type:
-    | 'command_queued'
-    | 'command_started'
-    | 'command_completed'
-    | 'command_failed'
-    | 'session_expired';
-  correlationId: string;
-  command: string;
-  details: string;
-  timestamp: string;
-}
-
-// =============================================================================
-// Idle timeout: disconnect after 5 minutes of no user interaction.
-// The agent idle timeout (server-side, 5 min) covers agent inactivity.
-// This covers user inactivity (e.g., user walks away from computer).
-// =============================================================================
-const USER_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
-const IDLE_CHECK_INTERVAL_MS = 30_000; // Check every 30 seconds
-
 interface KernelBrowserClientProps {
   sessionId: string;
   controlMode: 'agent' | 'user';
   onControlModeChange: (mode: 'agent' | 'user') => void;
   onConnectionChange?: (connected: boolean) => void;
-  onBrowserEvent?: (event: BrowserStatusEvent) => void;
   chatStatus?: ChatStatus;
   stop?: () => void;
   isFullscreen?: boolean;
@@ -57,7 +31,6 @@ export function KernelBrowserClient({
   controlMode,
   onControlModeChange,
   onConnectionChange,
-  onBrowserEvent,
   chatStatus,
   stop,
   isFullscreen = false,
@@ -68,214 +41,84 @@ export function KernelBrowserClient({
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [sessionExpired, setSessionExpired] = useState(false);
-  const [lastCommand, setLastCommand] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
-  // Stable refs to avoid dependency changes triggering re-initialization
+  // Use refs to avoid dependency changes triggering re-initialization
   const onConnectionChangeRef = useRef(onConnectionChange);
   onConnectionChangeRef.current = onConnectionChange;
 
-  const onBrowserEventRef = useRef(onBrowserEvent);
-  onBrowserEventRef.current = onBrowserEvent;
-
+  // Use ref for isConnected to avoid stale closure in event handlers
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
 
   // Track if we've already initialized for this session
   const initializedSessionRef = useRef<string | null>(null);
-  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const initInFlightRef = useRef(false);
 
-  // Ref for liveViewUrl so heartbeat can compare without re-creating callbacks
-  const liveViewUrlRef = useRef(liveViewUrl);
-  liveViewUrlRef.current = liveViewUrl;
-
-  // Keep sessionId in a ref so the beforeunload handler always has the latest value
-  const sessionIdRef = useRef(sessionId);
-  sessionIdRef.current = sessionId;
-
-  // Keep chatStatus in a ref so idle timeout can check without re-running effect
-  const chatStatusRef = useRef(chatStatus);
-  chatStatusRef.current = chatStatus;
-
-  // Keep stop() in a ref so cleanup can abort the AI stream without re-running effects
-  const stopRef = useRef(stop);
-  stopRef.current = stop;
-
-  // =========================================================================
-  // Heartbeat — simple TTL refresh + URL change detection
-  // =========================================================================
-
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
+  const initBrowser = useCallback(async (force = false) => {
+    // Skip if already initialized for this session (unless forced)
+    if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
+      return;
     }
-  }, []);
+    // Skip if a request is already in-flight
+    if (initInFlightRef.current) {
+      return;
+    }
 
-  const heartbeat = useCallback(async () => {
     try {
-      const response = await fetch('/api/kernel-browser', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ action: 'heartbeat', sessionId }),
-      });
+      initInFlightRef.current = true;
+      setLoading(true);
+      setError(null);
 
-      if (!response.ok) {
-        // Session expired — disconnect
-        console.log('[Kernel] Session expired, disconnecting');
-        setSessionExpired(true);
-        setLiveViewUrl(null);
-        setIsConnected(false);
-        onConnectionChangeRef.current?.(false);
-        stopHeartbeat();
-        toast.info('Browser session closed due to inactivity');
-        return;
-      }
+      // force=true (refresh button) → create a new browser directly
+      // force=false (normal mount) → poll for the browser the tool creates
+      const action = force ? 'create' : 'get';
+      const maxAttempts = force ? 1 : 30; // poll up to 30s for tool to create
+      let attempts = 0;
 
-      const data = await response.json();
-
-      // Detect if the browser was recreated (Kernel host changed → new URL)
-      if (data.liveViewUrl && data.liveViewUrl !== liveViewUrlRef.current) {
-        console.log('[Kernel] Browser was recreated, updating live view URL', {
-          old: liveViewUrlRef.current,
-          new: data.liveViewUrl,
-        });
-        setLiveViewUrl(data.liveViewUrl);
-      }
-    } catch (err) {
-      console.warn('[Kernel] Heartbeat failed:', err);
-    }
-  }, [sessionId, stopHeartbeat]);
-
-  const startHeartbeat = useCallback(() => {
-    stopHeartbeat();
-    // Heartbeat now serves only as a TTL refresh fallback — real-time updates
-    // come via SSE. Reduced frequency from 30s to 60s.
-    heartbeatIntervalRef.current = setInterval(() => {
-      void heartbeat();
-    }, 60_000);
-  }, [heartbeat, stopHeartbeat]);
-
-  // =========================================================================
-  // SSE — real-time status events from the message queue
-  // =========================================================================
-
-  const stopEventSource = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-  }, []);
-
-  const startEventSource = useCallback(() => {
-    stopEventSource();
-
-    const url = `/api/kernel-browser/events?sessionId=${encodeURIComponent(sessionId)}`;
-    const es = new EventSource(url);
-    eventSourceRef.current = es;
-
-    es.addEventListener('status', (e: MessageEvent) => {
-      try {
-        const event = JSON.parse(e.data) as BrowserStatusEvent;
-        console.log('[Kernel SSE] Status event:', event.type, event.command);
-
-        // Track the last command for UI display
-        if (event.type === 'command_started') {
-          setLastCommand(event.command);
-        } else if (
-          event.type === 'command_completed' ||
-          event.type === 'command_failed'
-        ) {
-          setLastCommand(null);
-        }
-
-        if (event.type === 'session_expired') {
-          setSessionExpired(true);
-          setLiveViewUrl(null);
-          setIsConnected(false);
-          onConnectionChangeRef.current?.(false);
-          stopHeartbeat();
-          stopEventSource();
-          toast.info('Browser session closed due to inactivity');
-        }
-
-        // Forward to parent for custom handling
-        onBrowserEventRef.current?.(event);
-      } catch {
-        // Ignore malformed events
-      }
-    });
-
-    es.addEventListener('timeout', () => {
-      console.log('[Kernel SSE] Stream timed out, reconnecting...');
-      // Browser will auto-reconnect EventSource, but we restart cleanly
-      stopEventSource();
-      // Small delay before reconnect to avoid tight loops
-      setTimeout(() => {
-        if (isConnectedRef.current) {
-          startEventSource();
-        }
-      }, 1000);
-    });
-
-    es.addEventListener('error', () => {
-      console.warn('[Kernel SSE] Connection error');
-      // EventSource auto-reconnects on error, but if the session is gone
-      // we shouldn't keep trying
-      if (!isConnectedRef.current) {
-        stopEventSource();
-      }
-    });
-  }, [sessionId, stopEventSource, stopHeartbeat]);
-
-  // =========================================================================
-  // Browser lifecycle
-  // =========================================================================
-
-  const initBrowser = useCallback(
-    async (force = false) => {
-      // Skip if already initialized for this session (unless forced)
-      if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        setSessionExpired(false);
-
+      while (attempts < maxAttempts) {
         const response = await fetch('/api/kernel-browser', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'create', sessionId, isMobile }),
+          body: JSON.stringify({ action, sessionId, isMobile }),
         });
 
-        if (!response.ok) {
+        if (response.ok) {
+          const data = await response.json();
+          if (data.liveViewUrl) {
+            setLiveViewUrl(data.liveViewUrl);
+            setIsConnected(true);
+            initializedSessionRef.current = sessionId;
+            onConnectionChangeRef.current?.(true);
+            return;
+          }
+        } else if (force) {
+          // For create, surface error immediately
           const data = await response.json();
           throw new Error(data.error || 'Failed to create browser');
         }
 
-        const data = await response.json();
-        setLiveViewUrl(data.liveViewUrl);
-        setIsConnected(true);
-        initializedSessionRef.current = sessionId;
-        onConnectionChangeRef.current?.(true);
-        startHeartbeat();
-        startEventSource();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to connect';
-        setError(message);
-        setIsConnected(false);
-        onConnectionChangeRef.current?.(false);
-      } finally {
-        setLoading(false);
+        attempts++;
+        if (attempts < maxAttempts) {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
       }
-    },
-    [sessionId, liveViewUrl, isMobile, startHeartbeat],
-  );
+
+      throw new Error('Browser session not available yet. Please try again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to connect';
+      setError(message);
+      setIsConnected(false);
+      onConnectionChangeRef.current?.(false);
+    } finally {
+      setLoading(false);
+      initInFlightRef.current = false;
+    }
+  }, [sessionId, liveViewUrl, isMobile]);
+
+  // Keep sessionId in a ref so the beforeunload handler always has the latest value
+  const sessionIdRef = useRef(sessionId);
+  sessionIdRef.current = sessionId;
 
   // Initialize browser on mount
   useEffect(() => {
@@ -284,14 +127,12 @@ export function KernelBrowserClient({
     }
   }, [sessionId, initBrowser]);
 
-  // Clean up browser when the user closes/navigates away from the page
+  // Clean up browser when component unmounts (chat navigation) or page closes.
+  // Uses sendBeacon for fire-and-forget cleanup that works in both cases.
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const cleanup = () => {
       try {
-        const payload = JSON.stringify({
-          action: 'delete',
-          sessionId: sessionIdRef.current,
-        });
+        const payload = JSON.stringify({ action: 'delete', sessionId: sessionIdRef.current });
         navigator.sendBeacon(
           '/api/kernel-browser',
           new Blob([payload], { type: 'application/json' }),
@@ -301,9 +142,11 @@ export function KernelBrowserClient({
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', cleanup);
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('beforeunload', cleanup);
+      // Component unmounting (SPA navigation) — delete the browser immediately
+      cleanup();
     };
   }, []);
 
@@ -316,151 +159,14 @@ export function KernelBrowserClient({
       }
     };
 
-    window.addEventListener(
-      'switch-browser-control',
-      handleSwitchControl as EventListener,
-    );
+    window.addEventListener('switch-browser-control', handleSwitchControl as EventListener);
 
     return () => {
-      window.removeEventListener(
-        'switch-browser-control',
-        handleSwitchControl as EventListener,
-      );
+      window.removeEventListener('switch-browser-control', handleSwitchControl as EventListener);
     };
   }, []);
 
-  // Cleanup on unmount: abort AI stream, stop heartbeat/SSE, delete browser.
-  // This handles SPA navigation (e.g., switching chats). Full page navigation
-  // is handled by the beforeunload sendBeacon above.
-  //
-  // Order matters: stop() aborts the AI stream which triggers the abort signal
-  // in the browser tool handler, causing awaitResult to return immediately and
-  // the command worker to stop. Without this, deleting the browser removes the
-  // Redis streams while the worker and awaitResult are still polling them,
-  // which causes the agent to recreate a new browser and re-navigate.
-  useEffect(() => {
-    return () => {
-      // 1. Abort the AI stream — triggers abort signal → worker stops, awaitResult exits
-      stopRef.current?.();
-      // 2. Stop client-side connections
-      stopHeartbeat();
-      stopEventSource();
-      // 3. Delete browser session (server also stops worker via stopWorker)
-      if (isConnectedRef.current) {
-        fetch('/api/kernel-browser', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'delete',
-            sessionId: sessionIdRef.current,
-          }),
-        }).catch(() => {
-          // Best-effort cleanup
-        });
-      }
-    };
-  }, [stopHeartbeat, stopEventSource]);
-
-  // =========================================================================
-  // User idle timeout — disconnect after prolonged user inactivity.
-  // Tracks mouse, keyboard, scroll, touch, and visibility events.
-  // Pauses while the agent is actively streaming (user may be watching).
-  // =========================================================================
-  useEffect(() => {
-    if (!isConnected) return;
-
-    let lastUserActivity = Date.now();
-
-    const onActivity = () => {
-      lastUserActivity = Date.now();
-    };
-
-    const activityEvents = [
-      'mousemove',
-      'mousedown',
-      'keydown',
-      'scroll',
-      'touchstart',
-    ];
-    activityEvents.forEach((event) => {
-      document.addEventListener(event, onActivity, { passive: true });
-    });
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        onActivity();
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-
-    const idleCheckInterval = setInterval(() => {
-      // Don't time out while the agent is actively working
-      const status = chatStatusRef.current;
-      if (status === 'streaming' || status === 'submitted') {
-        lastUserActivity = Date.now();
-        return;
-      }
-
-      if (Date.now() - lastUserActivity > USER_IDLE_TIMEOUT_MS) {
-        clearInterval(idleCheckInterval);
-        console.log(
-          '[Kernel] User idle timeout — disconnecting browser session',
-        );
-
-        // Abort AI stream first so the tool handler exits cleanly
-        stopRef.current?.();
-
-        fetch('/api/kernel-browser', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'delete',
-            sessionId: sessionIdRef.current,
-          }),
-        }).catch(() => {});
-
-        setSessionExpired(true);
-        setLiveViewUrl(null);
-        setIsConnected(false);
-        onConnectionChangeRef.current?.(false);
-        stopHeartbeat();
-        stopEventSource();
-        toast.info('Browser session closed due to inactivity');
-      }
-    }, IDLE_CHECK_INTERVAL_MS);
-
-    return () => {
-      clearInterval(idleCheckInterval);
-      activityEvents.forEach((event) => {
-        document.removeEventListener(event, onActivity);
-      });
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-    };
-  }, [isConnected, stopHeartbeat, stopEventSource]);
-
-  // Track previous chatStatus to detect when the chat stops.
-  // When chatStatus transitions from 'streaming'/'submitted' → 'ready'/'error',
-  // the AI has stopped (user clicked stop or generation completed).
-  // The abort signal in the browser tool kills the agent-browser subprocess,
-  // disconnecting CDP from the Kernel browser. The browser stays alive and
-  // visible in the live view so the user can see the final state.
-  const prevChatStatusRef = useRef(chatStatus);
-  useEffect(() => {
-    const prev = prevChatStatusRef.current;
-    prevChatStatusRef.current = chatStatus;
-
-    // If chat was actively streaming and now stopped, and user hasn't already
-    // taken control, the browser is idle — no agent commands are running.
-    if (
-      (prev === 'streaming' || prev === 'submitted') &&
-      (chatStatus === 'ready' || chatStatus === 'error') &&
-      controlMode === 'agent'
-    ) {
-      console.log('[Kernel] Chat stopped while in agent mode — browser is idle');
-    }
-  }, [chatStatus, controlMode]);
-
-  // Global keyboard listener for fullscreen mode — Escape to exit
+  // Global keyboard listener for fullscreen mode - Escape to exit
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isFullscreen && controlMode === 'user') {
@@ -474,10 +180,6 @@ export function KernelBrowserClient({
       return () => document.removeEventListener('keydown', handleGlobalKeyDown);
     }
   }, [isFullscreen, controlMode]);
-
-  // =========================================================================
-  // Control mode
-  // =========================================================================
 
   const switchControlMode = (mode: 'agent' | 'user') => {
     if (!isConnectedRef.current) {
@@ -505,10 +207,24 @@ export function KernelBrowserClient({
     toast.success(`Control switched to ${mode} mode`);
   };
 
-  // =========================================================================
-  // Iframe URL — memoized to prevent unnecessary reloads
-  // =========================================================================
+  const disconnectBrowser = async () => {
+    try {
+      await fetch('/api/kernel-browser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', sessionId }),
+      });
+      setIsConnected(false);
+      setLiveViewUrl(null);
+      onConnectionChange?.(false);
+    } catch (err) {
+      console.error('Failed to disconnect browser:', err);
+    }
+  };
 
+  // Build the iframe URL with readOnly based on control mode
+  // In agent mode: readOnly=true (user cannot interact)
+  // In user mode: no readOnly param (user can interact directly)
   const iframeUrl = useMemo(() => {
     if (!liveViewUrl) return null;
 
@@ -521,10 +237,6 @@ export function KernelBrowserClient({
     return url.toString();
   }, [liveViewUrl, controlMode]);
 
-  // =========================================================================
-  // Render
-  // =========================================================================
-
   if (loading) {
     return <BrowserLoadingState />;
   }
@@ -534,9 +246,6 @@ export function KernelBrowserClient({
   }
 
   if (!liveViewUrl) {
-    if (sessionExpired) {
-      return <BrowserTimeoutState onRetry={() => initBrowser(true)} />;
-    }
     return (
       <div className="flex items-center justify-center h-full bg-zinc-900 text-zinc-400">
         No browser available
@@ -554,13 +263,10 @@ export function KernelBrowserClient({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">
-                  You're editing manually
-                </span>
+                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">You're editing manually</span>
               </div>
               <span className="text-xs sm:text-sm browser-fullscreen-text font-inter hidden sm:block">
-                The AI will continue with your changes when you give back
-                control.
+                The AI will continue with your changes when you give back control.
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -578,11 +284,17 @@ export function KernelBrowserClient({
 
         {/* Fullscreen browser iframe */}
         <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
-          <div className="w-full h-full overflow-hidden bg-black rounded-lg">
+          <div className="w-full h-full flex items-center justify-center">
             <iframe
               key={liveViewUrl}
               src={iframeUrl || undefined}
-              className="w-full h-full border-0 bg-white rounded-lg shadow-2xl"
+              className="border-0 bg-white rounded-lg shadow-2xl"
+              style={{
+                width: '1280px',
+                height: '800px',
+                maxWidth: '100%',
+                maxHeight: '100%',
+              }}
               allow="clipboard-read; clipboard-write"
               title="Browser View"
             />
@@ -635,11 +347,7 @@ export function KernelBrowserClient({
                     type="button"
                     variant="default"
                     size="sm"
-                    onClick={() =>
-                      switchControlMode(
-                        controlMode === 'user' ? 'agent' : 'user',
-                      )
-                    }
+                    onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
                   >
                     {controlMode === 'user' ? (
                       'Give back control'
@@ -703,11 +411,7 @@ export function KernelBrowserClient({
               type="button"
               variant="default"
               size="sm"
-              onClick={() =>
-                switchControlMode(
-                  controlMode === 'user' ? 'agent' : 'user',
-                )
-              }
+              onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
             >
               <MousePointerClick className="w-4 h-4" />
               {controlMode === 'user' ? 'Give back control' : 'Take control'}
@@ -716,17 +420,22 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe */}
-      <div className="flex-1 m-4 overflow-hidden min-h-0">
-        <div className="h-full overflow-hidden bg-black rounded-lg">
-          <iframe
-            key={liveViewUrl}
-            src={iframeUrl || undefined}
-            className="w-full h-full border-0 bg-white"
-            allow="clipboard-read; clipboard-write"
-            title="Browser View"
-          />
-        </div>
+      {/* Browser iframe - fixed pixel dimensions to prevent layout recalculation flicker */}
+      <div className="flex-1 overflow-hidden m-4 min-h-0 flex items-center justify-center">
+        <iframe
+          key={liveViewUrl}
+          src={iframeUrl || undefined}
+          className="border-0 bg-white rounded-lg"
+          style={{
+            width: '1280px',
+            height: '800px',
+            maxWidth: '100%',
+            maxHeight: '100%',
+            pointerEvents: controlMode === 'agent' ? 'none' : 'auto',
+          }}
+          allow="clipboard-read; clipboard-write"
+          title="Browser View"
+        />
       </div>
     </div>
   );

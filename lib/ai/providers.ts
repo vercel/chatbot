@@ -17,12 +17,8 @@ import {
 } from './models.test';
 import { isTestEnvironment } from '../constants';
 
-// Anthropic model for web automation - used directly with streamText when USE_AI_SDK_AGENT=true
-export const webAutomationModel = anthropic('claude-sonnet-4-5');
-// Claude Sonnet 4.5 via Vertex AI - using Vertex provider
-export const vertexModel = vertexAnthropic('claude-sonnet-4-5');
-export const testModel = google('gemini-2.5-flash');
-
+// Anthropic model for web automation via Vertex AI
+export const webAutomationModel = vertexAnthropic('claude-opus-4-6');
 
 export const myProvider = isTestEnvironment
   ? customProvider({

@@ -11,9 +11,7 @@ import type { DefaultJWT } from 'next-auth/jwt';
 // Feature flag for guest login in preview environments
 const useGuestLogin = process.env.USE_GUEST_LOGIN === 'true';
 
-// Fixed guest user for preview environments (using a valid UUID)
-const GUEST_USER_ID = '00000000-0000-0000-0000-000000000001';
-const GUEST_USER_EMAIL = 'guest@preview.local';
+// Guest users get a unique ID per session so preview testers are isolated
 
 export type UserType = 'regular';
 
@@ -110,10 +108,13 @@ export const {
           return null;
         }
 
-        // Create or get the guest user
+        // Each guest gets a unique ID so preview testers are isolated
+        const guestId = crypto.randomUUID();
+        const guestEmail = `guest-${guestId.slice(0, 8)}@preview.local`;
+
         const guestUser = await ensureUserExists({
-          id: GUEST_USER_ID,
-          email: GUEST_USER_EMAIL,
+          id: guestId,
+          email: guestEmail,
         });
 
         return { ...guestUser, type: 'regular' as const };

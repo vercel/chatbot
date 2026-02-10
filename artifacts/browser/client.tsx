@@ -257,26 +257,34 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     };
 
     const switchControlMode = (mode: 'agent' | 'user') => {
-      if (!metadata?.sessionId || !wsRef.current) {
+      if (!metadata?.sessionId) {
         toast.error('Not connected to browser session');
-        console.error('Cannot switch control mode - missing sessionId or WebSocket connection');
+        console.error('Cannot switch control mode - missing sessionId');
         return;
       }
 
       console.log(`Switching control mode to: ${mode} for session: ${metadata.sessionId}`);
-      console.log('WebSocket readyState:', wsRef.current.readyState);
 
-      if (wsRef.current.readyState !== WebSocket.OPEN) {
-        toast.error('WebSocket connection is not open');
-        console.error('WebSocket is not in OPEN state:', wsRef.current.readyState);
-        return;
+      // AI SDK path: Kernel iframe handles input natively, no WebSocket needed
+      if (!useAiSdkAgent) {
+        if (!wsRef.current) {
+          toast.error('Not connected to browser session');
+          console.error('Cannot switch control mode - missing WebSocket connection');
+          return;
+        }
+
+        if (wsRef.current.readyState !== WebSocket.OPEN) {
+          toast.error('WebSocket connection is not open');
+          console.error('WebSocket is not in OPEN state:', wsRef.current.readyState);
+          return;
+        }
+
+        wsRef.current.send(JSON.stringify({
+          type: 'control-mode',
+          sessionId: metadata.sessionId,
+          data: { mode }
+        }));
       }
-
-      wsRef.current.send(JSON.stringify({
-        type: 'control-mode',
-        sessionId: metadata.sessionId,
-        data: { mode }
-      }));
 
       // On mobile, keep the sheet open when switching to user mode
       // On desktop, automatically enable fullscreen when switching to user mode
@@ -300,7 +308,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
         }));
       }
 
-      console.log(`Control mode switch message sent for ${mode}`);
+      console.log(`Control mode switched to ${mode}`);
     };
 
     const sendUserInput = (inputData: any) => {
@@ -831,7 +839,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   </Button>
                 </div>
               )}
-              {/* Browser content */}
+              {/* Browser content with scroll */}
               <div className="flex-1 overflow-hidden min-h-0 p-4">
                 {metadata.error ? (
                   <BrowserErrorState onRetry={connectToBrowserStream} />

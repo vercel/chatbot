@@ -25,7 +25,7 @@ import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
-import { myProvider, testModel, vertexModel, webAutomationModel } from '@/lib/ai/providers';
+import { myProvider, webAutomationModel } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
@@ -176,7 +176,7 @@ export async function POST(request: Request) {
       const stream = createUIMessageStream({
         execute: async ({ writer: dataStream }) => {
           const result = streamText({
-            model: vertexModel,
+            model: webAutomationModel,
             system: webAutomationSystemPrompt,
             messages: await convertToModelMessages(uiMessages),
             tools: {
@@ -184,7 +184,8 @@ export async function POST(request: Request) {
               gapAnalysis,
               browser: createBrowserTool(sessionId, session.user.id),
             },
-            stopWhen: stepCountIs(100),
+            stopWhen: stepCountIs(500),
+            abortSignal: request.signal,
             experimental_telemetry: {
               isEnabled: isProductionEnvironment,
               functionId: 'web-automation-agent',

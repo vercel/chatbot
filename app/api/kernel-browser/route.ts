@@ -2,9 +2,8 @@ import { auth } from '@/app/(auth)/auth';
 import {
   getOrCreateBrowser,
   deleteBrowser,
-  refreshSession,
+  getBrowser,
 } from '@/lib/kernel/browser';
-import { stopWorker } from '@/lib/kernel/command-worker';
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -32,8 +31,21 @@ export async function POST(request: Request) {
       );
     }
 
+    if (action === 'get') {
+      const browser = await getBrowser(sessionId, userId);
+      if (!browser) {
+        return Response.json({ liveViewUrl: null });
+      }
+      return Response.json({
+        liveViewUrl: browser.liveViewUrl,
+        sessionId: browser.kernelSessionId,
+      });
+    }
+
     if (action === 'create') {
-      const browser = await getOrCreateBrowser(sessionId, userId, { isMobile });
+      const browser = await getOrCreateBrowser(sessionId, userId, {
+        isMobile,
+      });
       return Response.json({
         liveViewUrl: browser.liveViewUrl,
         sessionId: browser.kernelSessionId,
@@ -41,15 +53,12 @@ export async function POST(request: Request) {
     }
 
     if (action === 'delete') {
-      // Stop the command worker first so it doesn't keep executing commands
-      // on a browser that's about to be destroyed, racing with the stream deletion.
-      stopWorker(userId, sessionId);
       await deleteBrowser(sessionId, userId);
       return Response.json({ success: true });
     }
 
     if (action === 'heartbeat') {
-      const browser = await refreshSession(sessionId, userId);
+      const browser = await getBrowser(sessionId, userId);
       if (!browser) {
         return Response.json(
           { error: 'Session expired or not found' },
