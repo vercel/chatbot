@@ -321,7 +321,10 @@ export function KernelBrowserClient({
         {/* Mobile: Bottom sheet with browser content */}
         <div className="pointer-events-auto">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]">
+            <SheetContent
+              side="bottom"
+              className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]"
+            >
               <SheetHeader className="px-4 py-3 border-b">
                 <SheetTitle className="text-left">Browser View</SheetTitle>
               </SheetHeader>
@@ -331,7 +334,7 @@ export function KernelBrowserClient({
 
               {/* Control mode indicator */}
               {isConnected && (
-                <div className="flex items-center justify-between py-2 px-4 bg-muted/20">
+                <div className="flex-shrink-0 flex items-center justify-between py-2 px-4 bg-muted/20">
                   <AgentStatusIndicator
                     chatStatus={chatStatus}
                     controlMode={controlMode}
@@ -355,23 +358,20 @@ export function KernelBrowserClient({
               )}
 
               {/* Browser content */}
-              <div className="flex-1 overflow-y-scroll p-4">
+              <div className="flex-1 overflow-hidden min-h-0 p-4">
                 {error ? (
                   <BrowserErrorState onRetry={initBrowser} />
                 ) : !isConnected ? (
                   <BrowserLoadingState />
                 ) : (
-                  <div className="flex items-center justify-center">
-                    <div className="relative w-full max-w-[768px] bg-white rounded-lg shadow-lg">
-                      <iframe
-                        key={liveViewUrl}
-                        src={iframeUrl || undefined}
-                        className="w-full border-0 bg-white rounded-lg"
-                        style={{ aspectRatio: '4 / 3' }}
-                        allow="clipboard-read; clipboard-write"
-                        title="Browser View"
-                      />
-                    </div>
+                  <div className="h-full overflow-hidden bg-black rounded-lg">
+                    <iframe
+                      key={liveViewUrl}
+                      src={iframeUrl || undefined}
+                      className="w-full h-full border-0 bg-white shadow-lg"
+                      allow="clipboard-read; clipboard-write"
+                      title="Browser View"
+                    />
                   </div>
                 )}
               </div>
@@ -387,7 +387,7 @@ export function KernelBrowserClient({
     <div className="h-full flex flex-col">
       {/* Control mode indicator and buttons */}
       {isConnected && (
-        <div className="flex items-center justify-between py-2 bg-muted/20">
+        <div className="flex-shrink-0 flex items-center justify-between py-2 bg-muted/20">
           <AgentStatusIndicator
             chatStatus={chatStatus}
             controlMode={controlMode}
@@ -417,13 +417,12 @@ export function KernelBrowserClient({
       )}
 
       {/* Browser iframe */}
-      <div className="flex-1 relative m-4">
+      <div className="flex-1 relative m-4 overflow-hidden min-h-0">
         <div className="absolute inset-0 flex items-center justify-center">
           <iframe
             key={liveViewUrl}
             src={iframeUrl || undefined}
-            className="w-full border-0 bg-white rounded-lg"
-            style={{ aspectRatio: '16 / 9' }}
+            className="w-full h-full border-0 bg-white"
             allow="clipboard-read; clipboard-write"
             title="Browser View"
           />

@@ -8,6 +8,7 @@ import { openai } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
 import { gateway } from '@ai-sdk/gateway';
+import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import {
   artifactModel,
   chatModel,
@@ -16,8 +17,8 @@ import {
 } from './models.test';
 import { isTestEnvironment } from '../constants';
 
-// Anthropic model for web automation - used directly with streamText when USE_AI_SDK_AGENT=true
-export const webAutomationModel = anthropic('claude-opus-4-5-20251101');
+// Anthropic model for web automation via Vertex AI
+export const webAutomationModel = vertexAnthropic('claude-opus-4-6');
 
 export const myProvider = isTestEnvironment
   ? customProvider({
