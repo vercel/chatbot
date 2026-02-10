@@ -416,13 +416,19 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe */}
+      {/* Browser iframe - aspect ratio container centers the 16:10 iframe */}
       <div className="flex-1 relative m-4 overflow-hidden min-h-0">
         <div className="absolute inset-0 flex items-center justify-center">
           <iframe
             key={liveViewUrl}
             src={iframeUrl || undefined}
-            className="w-full h-full border-0 bg-white"
+            className="border-0 bg-white rounded-lg"
+            style={{
+              aspectRatio: '16 / 10',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              pointerEvents: controlMode === 'agent' ? 'none' : 'auto',
+            }}
             allow="clipboard-read; clipboard-write"
             title="Browser View"
           />
