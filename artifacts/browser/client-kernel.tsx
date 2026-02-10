@@ -285,7 +285,7 @@ export function KernelBrowserClient({
         {/* Fullscreen browser iframe */}
         <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
           <div className="w-full h-full flex items-center justify-center">
-            <div className="relative w-full max-w-[1280px]" style={{ paddingBottom: '62.5%' }}>
+            <div className="relative max-w-full max-h-full" style={{ aspectRatio: '16 / 10', width: '1280px' }}>
               <iframe
                 key={liveViewUrl}
                 src={iframeUrl || undefined}
@@ -416,9 +416,9 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe - padding-bottom hack for 16:10 ratio without aspect-ratio CSS */}
+      {/* Browser iframe - aspect-ratio on wrapper div (not iframe) to avoid stream-triggered layout recalc */}
       <div className="flex-1 overflow-hidden m-4 min-h-0 flex items-center justify-center">
-        <div className="relative w-full max-w-[1280px]" style={{ paddingBottom: '62.5%' }}>
+        <div className="relative max-w-full max-h-full" style={{ aspectRatio: '16 / 10', width: '1280px' }}>
           <iframe
             key={liveViewUrl}
             src={iframeUrl || undefined}
