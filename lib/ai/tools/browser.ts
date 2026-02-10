@@ -1,13 +1,11 @@
-import { tool } from 'ai';
+import { tool, type ToolExecutionOptions } from 'ai';
 import { z } from 'zod';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import {
-  createKernelBrowser,
-  recordAgentActivity,
-} from '@/lib/kernel/browser';
+import { getOrCreateBrowser } from '@/lib/kernel/browser';
 
 const execFileAsync = promisify(execFile);
+const COMMAND_TIMEOUT_MS = 120_000; // 2 minutes
 
 /**
  * Parse a command string into an array of arguments, respecting quoted strings.
@@ -23,7 +21,6 @@ function parseCommand(command: string): string[] {
 
     if (inQuote) {
       if (ch === '\\' && i + 1 < command.length) {
-        // Escaped character inside quotes — include the next char literally
         current += command[++i];
       } else if (ch === inQuote) {
         inQuote = null;
@@ -49,8 +46,7 @@ function parseCommand(command: string): string[] {
  * Creates a browser automation tool for a specific session.
  * Uses agent-browser CLI with native Kernel provider for remote browser control.
  *
- * The tool connects to a Kernel.sh managed browser instance and executes
- * commands using the agent-browser CLI.
+ * Executes agent-browser CLI directly via execFile — no queue/worker indirection.
  *
  * @param sessionId - The chat/session ID for browser isolation
  * @param userId - The user ID for ownership validation and security
@@ -112,35 +108,41 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
     inputSchema: z.object({
       command: z.string().describe('The agent-browser command to execute'),
     }),
-    execute: async ({ command }: { command: string }) => {
+    execute: async (
+      { command }: { command: string },
+      { abortSignal }: ToolExecutionOptions,
+    ) => {
       try {
-        // Ensure we have a Kernel browser instance for this session
-        // This creates a new browser or returns existing one with userId validation
-        const browser = await createKernelBrowser(sessionId, userId);
-        await recordAgentActivity(sessionId, userId);
-        const cdpUrl = browser.cdp_ws_url;
+        // Ensure we have a Kernel browser instance (creates one if needed)
+        const browser = await getOrCreateBrowser(sessionId, userId);
+        const cdpUrl = browser.cdpWsUrl;
 
         console.log('[browser-tool] Session:', sessionId);
         console.log('[browser-tool] CDP URL:', cdpUrl);
 
-        // Use --cdp flag to connect agent-browser to Kernel's browser via CDP WebSocket
-        // Use execFile (no shell) so URLs with #, &, ? etc. aren't mangled by the shell
-        const args = ['agent-browser', '--cdp', cdpUrl, ...parseCommand(command)];
+        const args = [
+          'agent-browser',
+          '--cdp',
+          cdpUrl,
+          ...parseCommand(command),
+        ];
         console.log('[browser-tool] Executing: npx', args.join(' '));
 
         const { stdout, stderr } = await execFileAsync('npx', args, {
-          timeout: 120000, // 2 minute timeout per command
+          timeout: COMMAND_TIMEOUT_MS,
           maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large snapshots
+          signal: abortSignal,
         });
 
-        console.log('[browser-tool] Success. stdout length:', stdout?.length);
+        console.log(
+          '[browser-tool] Success. stdout length:',
+          stdout?.length,
+        );
         if (stderr) console.log('[browser-tool] stderr:', stderr);
 
         return {
           success: true,
           output: stdout || 'Command completed successfully',
-          // Don't include stderr as error for successful commands
-          // (npx outputs notices to stderr that aren't actual errors)
           error: null,
         };
       } catch (error: unknown) {
@@ -149,7 +151,21 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
           stdout?: string;
           stderr?: string;
           message?: string;
+          code?: string;
         };
+
+        // Handle abort (user clicked Stop or Take Over)
+        if (
+          abortSignal?.aborted ||
+          execError.code === 'ABORT_ERR'
+        ) {
+          console.log('[browser-tool] Command aborted by user');
+          return {
+            success: false,
+            output: null,
+            error: 'Browser command stopped by user',
+          };
+        }
 
         console.error('[browser-tool] Error:', {
           killed: execError.killed,
@@ -158,7 +174,6 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
           stdout: execError.stdout,
         });
 
-        // Handle timeout specifically
         if (execError.killed) {
           return {
             success: false,
@@ -169,9 +184,8 @@ eval is only acceptable for reading values (e.g. checking if an element exists).
 
         return {
           success: false,
-          output: execError.stdout || null, // May have partial output
-          error:
-            execError.stderr || execError.message || 'Command failed',
+          output: execError.stdout || null,
+          error: execError.stderr || execError.message || 'Command failed',
         };
       }
     },

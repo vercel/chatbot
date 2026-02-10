@@ -41,7 +41,6 @@ export function KernelBrowserClient({
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [sessionExpired, setSessionExpired] = useState(false);
   const isMobile = useIsMobile();
 
   // Use refs to avoid dependency changes triggering re-initialization
@@ -54,133 +53,68 @@ export function KernelBrowserClient({
 
   // Track if we've already initialized for this session
   const initializedSessionRef = useRef<string | null>(null);
-  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const liveViewActiveRef = useRef(false);
-  // Ref for liveViewUrl so heartbeat handler can compare without re-creating the callback
-  const liveViewUrlRef = useRef(liveViewUrl);
-  liveViewUrlRef.current = liveViewUrl;
-
-  const sendLiveViewEvent = useCallback(
-    async (event: 'connected' | 'disconnected' | 'heartbeat') => {
-      try {
-        const response = await fetch('/api/kernel-browser', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          keepalive: event === 'disconnected',
-          body: JSON.stringify({
-            action:
-              event === 'connected'
-                ? 'liveViewConnected'
-                : event === 'disconnected'
-                ? 'liveViewDisconnected'
-                : 'liveViewHeartbeat',
-            sessionId,
-          }),
-        });
-
-        // If heartbeat returns error, the session has expired
-        // Disconnect the live view to let Kernel's timeout delete the browser
-        if (event === 'heartbeat' && !response.ok) {
-          console.log('[Kernel] Session expired due to agent inactivity, disconnecting live view');
-          setSessionExpired(true);
-          await notifyDisconnected();
-          setLiveViewUrl(null);
-          setIsConnected(false);
-          onConnectionChangeRef.current?.(false);
-          toast.info('Browser session closed due to inactivity');
-          return;
-        }
-
-        // On successful heartbeat, check if the server-side browser was recreated.
-        // If the live view URL changed, update the iframe to point to the new browser.
-        if (event === 'heartbeat' && response.ok) {
-          const data = await response.json();
-          if (data.liveViewUrl && data.liveViewUrl !== liveViewUrlRef.current) {
-            console.log(
-              '[Kernel] Browser was recreated server-side, updating live view URL',
-              { old: liveViewUrlRef.current, new: data.liveViewUrl }
-            );
-            setLiveViewUrl(data.liveViewUrl);
-          }
-        }
-      } catch (error) {
-        console.warn(`Failed to send live view ${event} event`, error);
-        // On heartbeat failure, assume session expired
-        if (event === 'heartbeat') {
-          setSessionExpired(true);
-          await notifyDisconnected();
-          setLiveViewUrl(null);
-          setIsConnected(false);
-          onConnectionChangeRef.current?.(false);
-        }
-      }
-    },
-    [sessionId]
-  );
-
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
-  }, []);
-
-  const notifyDisconnected = useCallback(async () => {
-    if (!liveViewActiveRef.current) return;
-    liveViewActiveRef.current = false;
-    stopHeartbeat();
-    await sendLiveViewEvent('disconnected');
-  }, [sendLiveViewEvent, stopHeartbeat]);
-
-  const startHeartbeat = useCallback(async () => {
-    stopHeartbeat();
-    await sendLiveViewEvent('connected');
-    liveViewActiveRef.current = true;
-    heartbeatIntervalRef.current = setInterval(() => {
-      if (liveViewActiveRef.current) {
-        void sendLiveViewEvent('heartbeat');
-      }
-    }, 30_000);
-  }, [sendLiveViewEvent, stopHeartbeat]);
+  const initInFlightRef = useRef(false);
 
   const initBrowser = useCallback(async (force = false) => {
     // Skip if already initialized for this session (unless forced)
     if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
       return;
     }
+    // Skip if a request is already in-flight
+    if (initInFlightRef.current) {
+      return;
+    }
 
     try {
+      initInFlightRef.current = true;
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/kernel-browser', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', sessionId, isMobile }),
-      });
+      // force=true (refresh button) → create a new browser directly
+      // force=false (normal mount) → poll for the browser the tool creates
+      const action = force ? 'create' : 'get';
+      const maxAttempts = force ? 1 : 30; // poll up to 30s for tool to create
+      let attempts = 0;
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create browser');
+      while (attempts < maxAttempts) {
+        const response = await fetch('/api/kernel-browser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, sessionId, isMobile }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.liveViewUrl) {
+            setLiveViewUrl(data.liveViewUrl);
+            setIsConnected(true);
+            initializedSessionRef.current = sessionId;
+            onConnectionChangeRef.current?.(true);
+            return;
+          }
+        } else if (force) {
+          // For create, surface error immediately
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to create browser');
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
       }
 
-      const data = await response.json();
-      setLiveViewUrl(data.liveViewUrl);
-      setIsConnected(true);
-      initializedSessionRef.current = sessionId;
-      onConnectionChangeRef.current?.(true);
-      await startHeartbeat();
+      throw new Error('Browser session not available yet. Please try again.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to connect';
       setError(message);
       setIsConnected(false);
       onConnectionChangeRef.current?.(false);
-      await notifyDisconnected();
     } finally {
       setLoading(false);
+      initInFlightRef.current = false;
     }
-  }, [sessionId, liveViewUrl, notifyDisconnected, startHeartbeat]);
+  }, [sessionId, liveViewUrl, isMobile]);
 
   // Keep sessionId in a ref so the beforeunload handler always has the latest value
   const sessionIdRef = useRef(sessionId);
@@ -193,9 +127,10 @@ export function KernelBrowserClient({
     }
   }, [sessionId, initBrowser]);
 
-  // Clean up browser only when the user closes/navigates away from the page
+  // Clean up browser when component unmounts (chat navigation) or page closes.
+  // Uses sendBeacon for fire-and-forget cleanup that works in both cases.
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const cleanup = () => {
       try {
         const payload = JSON.stringify({ action: 'delete', sessionId: sessionIdRef.current });
         navigator.sendBeacon(
@@ -207,9 +142,11 @@ export function KernelBrowserClient({
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', cleanup);
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('beforeunload', cleanup);
+      // Component unmounting (SPA navigation) — delete the browser immediately
+      cleanup();
     };
   }, []);
 
@@ -228,13 +165,6 @@ export function KernelBrowserClient({
       window.removeEventListener('switch-browser-control', handleSwitchControl as EventListener);
     };
   }, []);
-
-  useEffect(() => {
-    return () => {
-      stopHeartbeat();
-      void notifyDisconnected();
-    };
-  }, [stopHeartbeat, notifyDisconnected]);
 
   // Global keyboard listener for fullscreen mode - Escape to exit
   useEffect(() => {
@@ -287,7 +217,6 @@ export function KernelBrowserClient({
       setIsConnected(false);
       setLiveViewUrl(null);
       onConnectionChange?.(false);
-      await notifyDisconnected();
     } catch (err) {
       console.error('Failed to disconnect browser:', err);
     }
@@ -296,7 +225,6 @@ export function KernelBrowserClient({
   // Build the iframe URL with readOnly based on control mode
   // In agent mode: readOnly=true (user cannot interact)
   // In user mode: no readOnly param (user can interact directly)
-  // Memoize to prevent unnecessary iframe reloads
   const iframeUrl = useMemo(() => {
     if (!liveViewUrl) return null;
 
@@ -318,10 +246,6 @@ export function KernelBrowserClient({
   }
 
   if (!liveViewUrl) {
-    // If session expired, show the timeout state with retry option
-    if (sessionExpired) {
-      return <BrowserTimeoutState onRetry={() => initBrowser(true)} />;
-    }
     return (
       <div className="flex items-center justify-center h-full bg-zinc-900 text-zinc-400">
         No browser available
@@ -363,7 +287,7 @@ export function KernelBrowserClient({
           <div className="w-full h-full flex items-center justify-center">
             <div className="relative w-full h-full max-w-[1920px] max-h-[1080px]" style={{ aspectRatio: '16 / 9' }}>
               <iframe
-                key={liveViewUrl} // Stable key prevents unnecessary remounts
+                key={liveViewUrl}
                 src={iframeUrl || undefined}
                 className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-2xl"
                 allow="clipboard-read; clipboard-write"
@@ -376,7 +300,7 @@ export function KernelBrowserClient({
     );
   }
 
-  // Mobile drawer mode - matches legacy client.tsx mobile experience
+  // Mobile drawer mode
   if (isMobile) {
     return (
       <div className="pointer-events-none">
@@ -492,7 +416,7 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe - matches client.tsx layout: flex-1 relative m-4 with centered content */}
+      {/* Browser iframe */}
       <div className="flex-1 relative m-4">
         <div className="absolute inset-0 flex items-center justify-center">
           <iframe
