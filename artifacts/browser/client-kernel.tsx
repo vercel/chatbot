@@ -285,7 +285,7 @@ export function KernelBrowserClient({
         {/* Fullscreen browser iframe */}
         <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
           <div className="w-full h-full flex items-center justify-center">
-            <div className="relative w-full h-full max-w-[1920px] max-h-[1080px]" style={{ aspectRatio: '16 / 9' }}>
+            <div className="relative w-full max-w-[1280px]" style={{ paddingBottom: '62.5%' }}>
               <iframe
                 key={liveViewUrl}
                 src={iframeUrl || undefined}
@@ -416,17 +416,14 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe - aspect ratio container centers the 16:10 iframe */}
-      <div className="flex-1 relative m-4 overflow-hidden min-h-0">
-        <div className="absolute inset-0 flex items-center justify-center">
+      {/* Browser iframe - padding-bottom hack for 16:10 ratio without aspect-ratio CSS */}
+      <div className="flex-1 overflow-hidden m-4 min-h-0 flex items-center justify-center">
+        <div className="relative w-full max-w-[1280px]" style={{ paddingBottom: '62.5%' }}>
           <iframe
             key={liveViewUrl}
             src={iframeUrl || undefined}
-            className="border-0 bg-white rounded-lg"
+            className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg"
             style={{
-              aspectRatio: '16 / 10',
-              maxWidth: '100%',
-              maxHeight: '100%',
               pointerEvents: controlMode === 'agent' ? 'none' : 'auto',
             }}
             allow="clipboard-read; clipboard-write"
