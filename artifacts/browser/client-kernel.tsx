@@ -285,15 +285,19 @@ export function KernelBrowserClient({
         {/* Fullscreen browser iframe */}
         <div className="flex-1 overflow-hidden browser-fullscreen-bg pt-20 pb-4 sm:pb-12 px-2 sm:px-4 md:px-12">
           <div className="w-full h-full flex items-center justify-center">
-            <div className="relative max-w-full max-h-full" style={{ aspectRatio: '16 / 10', width: '1280px' }}>
-              <iframe
-                key={liveViewUrl}
-                src={iframeUrl || undefined}
-                className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg shadow-2xl"
-                allow="clipboard-read; clipboard-write"
-                title="Browser View"
-              />
-            </div>
+            <iframe
+              key={liveViewUrl}
+              src={iframeUrl || undefined}
+              className="border-0 bg-white rounded-lg shadow-2xl"
+              style={{
+                width: '1280px',
+                height: '800px',
+                maxWidth: '100%',
+                maxHeight: '100%',
+              }}
+              allow="clipboard-read; clipboard-write"
+              title="Browser View"
+            />
           </div>
         </div>
       </div>
@@ -416,20 +420,22 @@ export function KernelBrowserClient({
         </div>
       )}
 
-      {/* Browser iframe - aspect-ratio on wrapper div (not iframe) to avoid stream-triggered layout recalc */}
+      {/* Browser iframe - fixed pixel dimensions to prevent layout recalculation flicker */}
       <div className="flex-1 overflow-hidden m-4 min-h-0 flex items-center justify-center">
-        <div className="relative max-w-full max-h-full" style={{ aspectRatio: '16 / 10', width: '1280px' }}>
-          <iframe
-            key={liveViewUrl}
-            src={iframeUrl || undefined}
-            className="absolute inset-0 w-full h-full border-0 bg-white rounded-lg"
-            style={{
-              pointerEvents: controlMode === 'agent' ? 'none' : 'auto',
-            }}
-            allow="clipboard-read; clipboard-write"
-            title="Browser View"
-          />
-        </div>
+        <iframe
+          key={liveViewUrl}
+          src={iframeUrl || undefined}
+          className="border-0 bg-white rounded-lg"
+          style={{
+            width: '1280px',
+            height: '800px',
+            maxWidth: '100%',
+            maxHeight: '100%',
+            pointerEvents: controlMode === 'agent' ? 'none' : 'auto',
+          }}
+          allow="clipboard-read; clipboard-write"
+          title="Browser View"
+        />
       </div>
     </div>
   );
