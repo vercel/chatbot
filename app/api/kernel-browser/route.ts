@@ -4,7 +4,6 @@ import {
   deleteBrowser,
   getBrowser,
 } from '@/lib/kernel/browser';
-import { stopWorker } from '@/lib/kernel/command-worker';
 
 export async function POST(request: Request) {
   const session = await auth();
