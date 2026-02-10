@@ -121,59 +121,91 @@ const browserCommandMap: Record<string, { verb: string; icon: React.ComponentTyp
   'drag': { verb: 'Dragging', icon: Move },
   'upload': { verb: 'Uploading', icon: Upload },
   'eval': { verb: 'Running script', icon: Code },
+  'evaluate': { verb: 'Running script', icon: Code },
+  'gettext': { verb: 'Getting text', icon: Search },
+  'getbylabel': { verb: 'Using label', icon: Type },
+  'inputvalue': { verb: 'Getting value', icon: Search },
+  'waitforloadstate': { verb: 'Waiting for page', icon: Clock },
   'back': { verb: 'Going back', icon: ArrowLeft },
   'forward': { verb: 'Going forward', icon: Globe },
   'reload': { verb: 'Reloading', icon: Globe },
   'close': { verb: 'Closing', icon: X },
 };
 
-// Parse agent-browser command to get display text and icon
-const parseBrowserCommand = (command?: string): { text: string; icon: React.ComponentType<any> } => {
-  if (!command) return { text: 'Browser', icon: Monitor };
+// Parse structured browser command input to get display text and icon
+const parseBrowserAction = (input?: Record<string, any>): { text: string; icon: React.ComponentType<any> } => {
+  if (!input?.action) return { text: 'Browser', icon: Monitor };
 
-  const firstWord = command.trim().split(/\s+/)[0].toLowerCase();
-  const mapping = browserCommandMap[firstWord];
+  const action = input.action.toLowerCase();
+  const mapping = browserCommandMap[action];
 
-  if (mapping) {
-    // For simple commands, just show the verb
-    if (['snapshot', 'screenshot', 'back', 'forward', 'reload', 'close'].includes(firstWord)) {
-      return { text: mapping.verb, icon: mapping.icon };
-    }
+  if (!mapping) {
+    return { text: `Browser: ${action}`, icon: Monitor };
+  }
 
-    // Extract quoted value (the meaningful part, not the selector)
-    const quotedMatch = command.match(/"([^"]+)"/);
-    if (quotedMatch) {
-      const value = quotedMatch[1].length > 35 ? quotedMatch[1].substring(0, 35) + '...' : quotedMatch[1];
-      return { text: `${mapping.verb} "${value}"`, icon: mapping.icon };
-    }
-
-    // For open/goto/navigate, show the URL (second argument, no quotes)
-    if (['open', 'goto', 'navigate'].includes(firstWord)) {
-      const url = command.trim().split(/\s+/)[1] || '';
-      const displayUrl = url.length > 40 ? url.substring(0, 40) + '...' : url;
-      return { text: `${mapping.verb} ${displayUrl}`, icon: mapping.icon };
-    }
-
-    // For press, show the key
-    if (firstWord === 'press') {
-      const key = command.trim().split(/\s+/)[1] || '';
-      return { text: `${mapping.verb} ${key}`, icon: mapping.icon };
-    }
-
-    // For other commands without quotes, just show the verb
+  // Simple commands with no meaningful extra info
+  if (['snapshot', 'screenshot', 'back', 'forward', 'reload', 'close'].includes(action)) {
     return { text: mapping.verb, icon: mapping.icon };
   }
 
-  // Fallback for unknown commands
-  return { text: `Browser: ${command.substring(0, 40)}${command.length > 40 ? '...' : ''}`, icon: Monitor };
+  // Navigate — show URL
+  if (action === 'navigate' && input.url) {
+    const url = String(input.url);
+    const displayUrl = url.length > 40 ? url.substring(0, 40) + '...' : url;
+    return { text: `${mapping.verb} ${displayUrl}`, icon: mapping.icon };
+  }
+
+  // Fill — show value
+  if (action === 'fill' && input.value) {
+    const value = String(input.value);
+    const display = value.length > 35 ? value.substring(0, 35) + '...' : value;
+    return { text: `${mapping.verb} "${display}"`, icon: mapping.icon };
+  }
+
+  // Type — show text
+  if (action === 'type' && input.text) {
+    const text = String(input.text);
+    const display = text.length > 35 ? text.substring(0, 35) + '...' : text;
+    return { text: `${mapping.verb} "${display}"`, icon: mapping.icon };
+  }
+
+  // Press — show key
+  if (action === 'press' && input.key) {
+    return { text: `${mapping.verb} ${input.key}`, icon: mapping.icon };
+  }
+
+  // Select — show values
+  if (action === 'select' && input.values) {
+    const vals = Array.isArray(input.values) ? input.values.join(', ') : String(input.values);
+    const display = vals.length > 35 ? vals.substring(0, 35) + '...' : vals;
+    return { text: `${mapping.verb} "${display}"`, icon: mapping.icon };
+  }
+
+  // Wait — show timeout or selector
+  if (action === 'wait') {
+    if (input.timeout) return { text: `${mapping.verb} ${input.timeout}ms`, icon: mapping.icon };
+    if (input.selector) return { text: `${mapping.verb} for ${input.selector}`, icon: mapping.icon };
+    return { text: mapping.verb, icon: mapping.icon };
+  }
+
+  // getbylabel — show label and subaction
+  if (action === 'getbylabel' && input.label) {
+    const label = String(input.label);
+    const display = label.length > 30 ? label.substring(0, 30) + '...' : label;
+    const subVerb = input.subaction === 'fill' ? 'Filling' : input.subaction === 'click' ? 'Clicking' : 'Using';
+    return { text: `${subVerb} "${display}"`, icon: input.subaction === 'fill' ? Type : MousePointer };
+  }
+
+  // Fallback — just show the verb
+  return { text: mapping.verb, icon: mapping.icon };
 };
 
 // Helper function to get tool display name with icon
 export const getToolDisplayInfo = (toolName: string, input?: any): { text: string; icon: React.ComponentType<any> } => {
-  // Handle AI SDK browser tool (agent-browser CLI)
+  // Handle AI SDK browser tool (agent-browser)
   const cleanToolName = toolName.replace('tool-', '');
   if (cleanToolName === 'browser') {
-    return parseBrowserCommand(input?.command);
+    return parseBrowserAction(input);
   }
 
   const toolMappings: Record<string, (input?: any) => string> = {

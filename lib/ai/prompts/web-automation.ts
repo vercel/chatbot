@@ -84,7 +84,7 @@ This prevents back-and-forth where the agent fills some fields, discovers gaps, 
   - Then type the data in the appropriate format
 - If a field doesn't accept input on first try, click it to activate before typing
 - ALWAYS re-snapshot after interactions that change the page (clicking radio buttons, selecting dropdowns, navigating). Refs go stale after DOM changes.
-- On complex pages with lots of navigation/sidebar elements, use \`snapshot -s "form"\` to scope the snapshot to just the form area — this dramatically reduces noise
+- On complex pages with lots of navigation/sidebar elements, use \`{ action: "snapshot", selector: "form" }\` to scope the snapshot to just the form area — this dramatically reduces noise
 - If \`select\` fails on a dropdown, it's likely a custom widget (Select2/Chosen). Click the dropdown trigger, wait, snapshot, then click the option.
 - Do not submit at the end, summarize what you filled out and ask the caseworker to review
 - Do not close the browser unless the user asks you to

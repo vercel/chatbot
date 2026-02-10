@@ -1,4 +1,5 @@
 import Kernel from '@onkernel/sdk';
+import { BrowserManager } from 'agent-browser/dist/browser.js';
 
 const kernel = new Kernel();
 
@@ -11,6 +12,7 @@ export interface BrowserSession {
   liveViewUrl: string;
   cdpWsUrl: string;
   userId: string;
+  browserManager: BrowserManager;
 }
 
 // =============================================================================
@@ -84,11 +86,19 @@ export async function getOrCreateBrowser(
         browser_live_view_url: string;
       };
 
+      const manager = new BrowserManager();
+      await manager.launch({
+        id: 'launch',
+        action: 'launch',
+        cdpUrl: browser.cdp_ws_url,
+      });
+
       const session: BrowserSession = {
         kernelSessionId: browser.session_id,
         liveViewUrl: browser.browser_live_view_url,
         cdpWsUrl: browser.cdp_ws_url,
         userId,
+        browserManager: manager,
       };
 
       sessions.set(key, session);
@@ -153,6 +163,13 @@ export async function deleteBrowser(
   // Remove from cache first
   sessions.delete(key);
 
+  // Close BrowserManager (disconnects Playwright from CDP)
+  try {
+    await session.browserManager.close();
+  } catch (err) {
+    console.error('[Kernel] Failed to close BrowserManager:', err);
+  }
+
   // Delete from Kernel
   try {
     await kernel.browsers.deleteByID(session.kernelSessionId);
@@ -169,13 +186,3 @@ export async function deleteBrowser(
   }
 }
 
-/**
- * Get CDP WebSocket URL for agent-browser CLI.
- */
-export async function getCdpUrl(
-  sessionId: string,
-  userId: string,
-): Promise<string | null> {
-  const session = await getBrowser(sessionId, userId);
-  return session?.cdpWsUrl ?? null;
-}
