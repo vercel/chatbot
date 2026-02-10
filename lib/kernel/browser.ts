@@ -144,7 +144,7 @@ export async function getBrowser(
     return pending;
   }
 
-  return null;
+  return session;
 }
 
 /**

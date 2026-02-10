@@ -15,11 +15,37 @@ import {
 } from '@/components/ui/sheet';
 import type { ChatStatus } from '@/components/create-artifact';
 
+// =============================================================================
+// Types for SSE status events from the message queue
+// =============================================================================
+
+interface BrowserStatusEvent {
+  type:
+    | 'command_queued'
+    | 'command_started'
+    | 'command_completed'
+    | 'command_failed'
+    | 'session_expired';
+  correlationId: string;
+  command: string;
+  details: string;
+  timestamp: string;
+}
+
+// =============================================================================
+// Idle timeout: disconnect after 5 minutes of no user interaction.
+// The agent idle timeout (server-side, 5 min) covers agent inactivity.
+// This covers user inactivity (e.g., user walks away from computer).
+// =============================================================================
+const USER_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const IDLE_CHECK_INTERVAL_MS = 30_000; // Check every 30 seconds
+
 interface KernelBrowserClientProps {
   sessionId: string;
   controlMode: 'agent' | 'user';
   onControlModeChange: (mode: 'agent' | 'user') => void;
   onConnectionChange?: (connected: boolean) => void;
+  onBrowserEvent?: (event: BrowserStatusEvent) => void;
   chatStatus?: ChatStatus;
   stop?: () => void;
   isFullscreen?: boolean;
@@ -31,6 +57,7 @@ export function KernelBrowserClient({
   controlMode,
   onControlModeChange,
   onConnectionChange,
+  onBrowserEvent,
   chatStatus,
   stop,
   isFullscreen = false,
@@ -43,11 +70,13 @@ export function KernelBrowserClient({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  // Use refs to avoid dependency changes triggering re-initialization
+  // Stable refs to avoid dependency changes triggering re-initialization
   const onConnectionChangeRef = useRef(onConnectionChange);
   onConnectionChangeRef.current = onConnectionChange;
 
-  // Use ref for isConnected to avoid stale closure in event handlers
+  const onBrowserEventRef = useRef(onBrowserEvent);
+  onBrowserEventRef.current = onBrowserEvent;
+
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
 
@@ -116,9 +145,132 @@ export function KernelBrowserClient({
     }
   }, [sessionId, liveViewUrl, isMobile]);
 
-  // Keep sessionId in a ref so the beforeunload handler always has the latest value
-  const sessionIdRef = useRef(sessionId);
-  sessionIdRef.current = sessionId;
+  const startHeartbeat = useCallback(() => {
+    stopHeartbeat();
+    // Heartbeat now serves only as a TTL refresh fallback — real-time updates
+    // come via SSE. Reduced frequency from 30s to 60s.
+    heartbeatIntervalRef.current = setInterval(() => {
+      void heartbeat();
+    }, 60_000);
+  }, [heartbeat, stopHeartbeat]);
+
+  // =========================================================================
+  // SSE — real-time status events from the message queue
+  // =========================================================================
+
+  const stopEventSource = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+  }, []);
+
+  const startEventSource = useCallback(() => {
+    stopEventSource();
+
+    const url = `/api/kernel-browser/events?sessionId=${encodeURIComponent(sessionId)}`;
+    const es = new EventSource(url);
+    eventSourceRef.current = es;
+
+    es.addEventListener('status', (e: MessageEvent) => {
+      try {
+        const event = JSON.parse(e.data) as BrowserStatusEvent;
+        console.log('[Kernel SSE] Status event:', event.type, event.command);
+
+        // Track the last command for UI display
+        if (event.type === 'command_started') {
+          setLastCommand(event.command);
+        } else if (
+          event.type === 'command_completed' ||
+          event.type === 'command_failed'
+        ) {
+          setLastCommand(null);
+        }
+
+        if (event.type === 'session_expired') {
+          setSessionExpired(true);
+          setLiveViewUrl(null);
+          setIsConnected(false);
+          onConnectionChangeRef.current?.(false);
+          stopHeartbeat();
+          stopEventSource();
+          toast.info('Browser session closed due to inactivity');
+        }
+
+        // Forward to parent for custom handling
+        onBrowserEventRef.current?.(event);
+      } catch {
+        // Ignore malformed events
+      }
+    });
+
+    es.addEventListener('timeout', () => {
+      console.log('[Kernel SSE] Stream timed out, reconnecting...');
+      // Browser will auto-reconnect EventSource, but we restart cleanly
+      stopEventSource();
+      // Small delay before reconnect to avoid tight loops
+      setTimeout(() => {
+        if (isConnectedRef.current) {
+          startEventSource();
+        }
+      }, 1000);
+    });
+
+    es.addEventListener('error', () => {
+      console.warn('[Kernel SSE] Connection error');
+      // EventSource auto-reconnects on error, but if the session is gone
+      // we shouldn't keep trying
+      if (!isConnectedRef.current) {
+        stopEventSource();
+      }
+    });
+  }, [sessionId, stopEventSource, stopHeartbeat]);
+
+  // =========================================================================
+  // Browser lifecycle
+  // =========================================================================
+
+  const initBrowser = useCallback(
+    async (force = false) => {
+      // Skip if already initialized for this session (unless forced)
+      if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        setSessionExpired(false);
+
+        const response = await fetch('/api/kernel-browser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', sessionId, isMobile }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to create browser');
+        }
+
+        const data = await response.json();
+        setLiveViewUrl(data.liveViewUrl);
+        setIsConnected(true);
+        initializedSessionRef.current = sessionId;
+        onConnectionChangeRef.current?.(true);
+        startHeartbeat();
+        startEventSource();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to connect';
+        setError(message);
+        setIsConnected(false);
+        onConnectionChangeRef.current?.(false);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sessionId, liveViewUrl, isMobile, startHeartbeat],
+  );
 
   // Initialize browser on mount
   useEffect(() => {
@@ -132,7 +284,10 @@ export function KernelBrowserClient({
   useEffect(() => {
     const cleanup = () => {
       try {
-        const payload = JSON.stringify({ action: 'delete', sessionId: sessionIdRef.current });
+        const payload = JSON.stringify({
+          action: 'delete',
+          sessionId: sessionIdRef.current,
+        });
         navigator.sendBeacon(
           '/api/kernel-browser',
           new Blob([payload], { type: 'application/json' }),
@@ -159,10 +314,16 @@ export function KernelBrowserClient({
       }
     };
 
-    window.addEventListener('switch-browser-control', handleSwitchControl as EventListener);
+    window.addEventListener(
+      'switch-browser-control',
+      handleSwitchControl as EventListener,
+    );
 
     return () => {
-      window.removeEventListener('switch-browser-control', handleSwitchControl as EventListener);
+      window.removeEventListener(
+        'switch-browser-control',
+        handleSwitchControl as EventListener,
+      );
     };
   }, []);
 
@@ -180,6 +341,10 @@ export function KernelBrowserClient({
       return () => document.removeEventListener('keydown', handleGlobalKeyDown);
     }
   }, [isFullscreen, controlMode]);
+
+  // =========================================================================
+  // Control mode
+  // =========================================================================
 
   const switchControlMode = (mode: 'agent' | 'user') => {
     if (!isConnectedRef.current) {
@@ -237,6 +402,10 @@ export function KernelBrowserClient({
     return url.toString();
   }, [liveViewUrl, controlMode]);
 
+  // =========================================================================
+  // Render
+  // =========================================================================
+
   if (loading) {
     return <BrowserLoadingState />;
   }
@@ -263,10 +432,13 @@ export function KernelBrowserClient({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">You're editing manually</span>
+                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">
+                  You're editing manually
+                </span>
               </div>
               <span className="text-xs sm:text-sm browser-fullscreen-text font-inter hidden sm:block">
-                The AI will continue with your changes when you give back control.
+                The AI will continue with your changes when you give back
+                control.
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -321,7 +493,10 @@ export function KernelBrowserClient({
         {/* Mobile: Bottom sheet with browser content */}
         <div className="pointer-events-auto">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]">
+            <SheetContent
+              side="bottom"
+              className="h-[85vh] p-0 overflow-y-scroll flex flex-col z-[100]"
+            >
               <SheetHeader className="px-4 py-3 border-b">
                 <SheetTitle className="text-left">Browser View</SheetTitle>
               </SheetHeader>
@@ -331,7 +506,7 @@ export function KernelBrowserClient({
 
               {/* Control mode indicator */}
               {isConnected && (
-                <div className="flex items-center justify-between py-2 px-4 bg-muted/20">
+                <div className="flex-shrink-0 flex items-center justify-between py-2 px-4 bg-muted/20">
                   <AgentStatusIndicator
                     chatStatus={chatStatus}
                     controlMode={controlMode}
@@ -340,7 +515,11 @@ export function KernelBrowserClient({
                     type="button"
                     variant="default"
                     size="sm"
-                    onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
+                    onClick={() =>
+                      switchControlMode(
+                        controlMode === 'user' ? 'agent' : 'user',
+                      )
+                    }
                   >
                     {controlMode === 'user' ? (
                       'Give back control'
@@ -355,23 +534,20 @@ export function KernelBrowserClient({
               )}
 
               {/* Browser content */}
-              <div className="flex-1 overflow-y-scroll p-4">
+              <div className="flex-1 overflow-hidden min-h-0 p-4">
                 {error ? (
                   <BrowserErrorState onRetry={initBrowser} />
                 ) : !isConnected ? (
                   <BrowserLoadingState />
                 ) : (
-                  <div className="flex items-center justify-center">
-                    <div className="relative w-full max-w-[768px] bg-white rounded-lg shadow-lg">
-                      <iframe
-                        key={liveViewUrl}
-                        src={iframeUrl || undefined}
-                        className="w-full border-0 bg-white rounded-lg"
-                        style={{ aspectRatio: '4 / 3' }}
-                        allow="clipboard-read; clipboard-write"
-                        title="Browser View"
-                      />
-                    </div>
+                  <div className="h-full overflow-hidden bg-black rounded-lg">
+                    <iframe
+                      key={liveViewUrl}
+                      src={iframeUrl || undefined}
+                      className="w-full h-full border-0 bg-white shadow-lg"
+                      allow="clipboard-read; clipboard-write"
+                      title="Browser View"
+                    />
                   </div>
                 )}
               </div>
@@ -387,7 +563,7 @@ export function KernelBrowserClient({
     <div className="h-full flex flex-col">
       {/* Control mode indicator and buttons */}
       {isConnected && (
-        <div className="flex items-center justify-between py-2 bg-muted/20">
+        <div className="flex-shrink-0 flex items-center justify-between py-2 bg-muted/20">
           <AgentStatusIndicator
             chatStatus={chatStatus}
             controlMode={controlMode}
@@ -407,7 +583,11 @@ export function KernelBrowserClient({
               type="button"
               variant="default"
               size="sm"
-              onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
+              onClick={() =>
+                switchControlMode(
+                  controlMode === 'user' ? 'agent' : 'user',
+                )
+              }
             >
               <MousePointerClick className="w-4 h-4" />
               {controlMode === 'user' ? 'Give back control' : 'Take control'}
@@ -422,8 +602,7 @@ export function KernelBrowserClient({
           <iframe
             key={liveViewUrl}
             src={iframeUrl || undefined}
-            className="w-full border-0 bg-white rounded-lg"
-            style={{ aspectRatio: '16 / 9' }}
+            className="w-full h-full border-0 bg-white"
             allow="clipboard-read; clipboard-write"
             title="Browser View"
           />

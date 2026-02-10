@@ -813,7 +813,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               
               {/* Control mode indicator */}
               {metadata.isConnected && (
-                <div className="flex items-center justify-between py-2 px-4 bg-muted/20">
+                <div className="flex-shrink-0 flex items-center justify-between py-2 px-4 bg-muted/20">
                   <AgentStatusIndicator
                     chatStatus={chatStatus}
                     controlMode={metadata.controlMode}
@@ -839,8 +839,8 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   </Button>
                 </div>
               )}
-              {/* Browser content with scroll */}
-              <div className="flex-1 overflow-y-scroll p-4">
+              {/* Browser content */}
+              <div className="flex-1 overflow-hidden min-h-0 p-4">
                 {metadata.error ? (
                   <BrowserErrorState onRetry={connectToBrowserStream} />
                 ) : !metadata.isConnected ? (
@@ -894,7 +894,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       <div className="h-full flex flex-col">
         {/* Control mode indicator */}
         {metadata.isConnected && (
-          <div className="flex items-center justify-between py-2 bg-muted/20">
+          <div className="flex-shrink-0 flex items-center justify-between py-2 bg-muted/20">
             <AgentStatusIndicator
               chatStatus={chatStatus}
               controlMode={metadata.controlMode}
@@ -916,7 +916,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           </div>
         )}
         {/* Main browser display area */}
-        <div className="flex-1 relative m-4">
+        <div className="flex-1 relative m-4 overflow-hidden min-h-0">
           {renderBrowserContent()}
           </div>
         </div>

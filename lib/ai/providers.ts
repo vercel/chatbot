@@ -8,6 +8,7 @@ import { openai } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
 import { gateway } from '@ai-sdk/gateway';
+import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import {
   artifactModel,
   chatModel,
@@ -17,7 +18,11 @@ import {
 import { isTestEnvironment } from '../constants';
 
 // Anthropic model for web automation - used directly with streamText when USE_AI_SDK_AGENT=true
-export const webAutomationModel = anthropic('claude-opus-4-5-20251101');
+export const webAutomationModel = anthropic('claude-sonnet-4-5');
+// Claude Sonnet 4.5 via Vertex AI - using Vertex provider
+export const vertexModel = vertexAnthropic('claude-sonnet-4-5');
+export const testModel = google('gemini-2.5-flash');
+
 
 export const myProvider = isTestEnvironment
   ? customProvider({
