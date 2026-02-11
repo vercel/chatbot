@@ -32,6 +32,7 @@ import type { Attachment, ChatMessage } from '@/lib/types';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from './ui/alert';
+import { isProductionEnvironment } from '@/lib/constants';
 
 function PureMultimodalInput({
   chatId,
@@ -270,7 +271,8 @@ function PureMultimodalInput({
       {messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 &&
-        isLoggedIn && (
+        isLoggedIn &&
+        !isProductionEnvironment && (
           <SuggestedActions
             sendMessage={sendMessage}
             chatId={chatId}

@@ -28,13 +28,14 @@ export type {
   FormFieldData,
   FormFieldsResponse,
 } from './models/apricot-models';
+import { isProductionEnvironment } from './constants';
 
 // ===== Configuration =====
 // Use 'api' for production only (ENVIRONMENT=prod), 'sandbox' for all other environments including dev
-const env = process.env.ENVIRONMENT === 'prod' ? 'api' : 'sandbox';
+const env = isProductionEnvironment ? 'api' : 'sandbox';
 
 // Log environment on module load for debugging
-console.log(`[Apricot API] Environment: "${env}" | ENVIRONMENT: "${process.env.ENVIRONMENT || 'undefined'}"`);
+console.log(`[Apricot API] Environment: "${env}" | ENVIRONMENT: "${isProductionEnvironment ? 'prod' : 'dev'}"`);
 console.log(`[Apricot API] Expected: prod (ENVIRONMENT=prod) → "api", all others → "sandbox"`);
 
 // API configuration from environment variables
