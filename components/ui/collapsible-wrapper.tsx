@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp, CircleCheck } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -29,7 +29,7 @@ export function CollapsibleWrapper({
 }: CollapsibleWrapperProps) {
   const [open, setOpen] = useState(false);
   
-  const baseClassName = isError ? "border-0 rounded-md" : "border-0 rounded-md";
+  const baseClassName = "rounded-xl border border-accent bg-background";
   const finalClassName = className ? `${baseClassName} ${className}` : baseClassName;
   
   return (
@@ -45,13 +45,13 @@ export function CollapsibleWrapper({
         </div>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="p-1 h-auto text-muted-foreground hover:text-primary hover:bg-accent">
-            {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
             <span className="sr-only">Toggle details</span>
           </Button>
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent className="px-3 pb-3">
-        <div className="border-t pt-3">
+        <div className="border-t border-border pt-3">
           {input && !isError && (
             <>
               <div className="text-xs text-muted-foreground mb-2">Input:</div>

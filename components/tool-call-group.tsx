@@ -9,6 +9,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { getToolDisplayInfo } from './tool-icon';
+import { Button } from './ui/button';
 import { Spinner } from './ui/spinner';
 import { cn } from '@/lib/utils';
 
@@ -260,7 +261,7 @@ export function ToolCallGroup({
   const summary = generateGroupSummary(summaryParts);
 
   return (
-    <Alert className="bg-accent/25 border-accent dark:bg-accent/10 p-3">
+    <Alert className="rounded-xl border-accent bg-background p-3">
       <AlertDescription>
         <Collapsible open={open} onOpenChange={setOpen}>
           {/* Summary line — always visible, clickable to expand */}
@@ -271,25 +272,28 @@ export function ToolCallGroup({
                 {summary.map(({ noun, count }) => (
                   <span
                     key={noun}
-                    className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground whitespace-nowrap border border-accent dark:border-accent/50 rounded px-1.5 py-0.5"
+                    className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground whitespace-nowrap border border-border rounded px-1.5 py-0.5"
                   >
                     {count} {count === 1 ? noun : noun + 's'}
                   </span>
                 ))}
               </div>
             </div>
-            <ChevronDown
-              size={14}
-              className={cn(
-                'text-muted-foreground transition-transform duration-200 shrink-0 mt-0.5',
-                open && 'rotate-180',
-              )}
-            />
+            <Button variant="ghost" size="sm" className="p-1 h-auto text-muted-foreground hover:text-primary hover:bg-accent">
+              <ChevronDown
+                size={14}
+                className={cn(
+                  'transition-transform duration-200',
+                  open && 'rotate-180',
+                )}
+              />
+              <span className="sr-only">Toggle details</span>
+            </Button>
           </CollapsibleTrigger>
 
           {/* Expanded: full sequential list */}
           <CollapsibleContent>
-            <div className="flex flex-col gap-0 mt-2 border-t border-accent pt-1">
+            <div className="flex flex-col gap-0 mt-2 border-t border-border pt-1">
               {(isLastRunning ? summaryParts : deduped).map((part) => (
                 <SingleToolLine
                   key={part.toolCallId}
