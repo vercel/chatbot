@@ -51,6 +51,7 @@ async function DifyChatPage({ params }: { params: Promise<{ id: string }> }) {
 
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get("chat-model");
+  const fixedDifyModelId = process.env.AI_DIFY_MODEL;
 
   const chatProps = {
     autoResume: true,
@@ -64,18 +65,16 @@ async function DifyChatPage({ params }: { params: Promise<{ id: string }> }) {
     inputPlaceholder: "Describe the workflow you want to build...",
   };
 
-  if (!chatModelFromCookie) {
-    return (
-      <>
-        <Chat {...chatProps} initialChatModel={DEFAULT_CHAT_MODEL} />
-        <DataStreamHandler />
-      </>
-    );
-  }
+  const initialChatModel =
+    fixedDifyModelId ?? chatModelFromCookie?.value ?? DEFAULT_CHAT_MODEL;
 
   return (
     <>
-      <Chat {...chatProps} initialChatModel={chatModelFromCookie.value} />
+      <Chat
+        {...chatProps}
+        fixedChatModelId={fixedDifyModelId}
+        initialChatModel={initialChatModel}
+      />
       <DataStreamHandler />
     </>
   );

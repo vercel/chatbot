@@ -16,7 +16,8 @@ export type Surface =
   | "vote"
   | "document"
   | "suggestions"
-  | "activate_gateway";
+  | "activate_gateway"
+  | "provider_config";
 
 export type ErrorCode = `${ErrorType}:${Surface}`;
 
@@ -33,6 +34,7 @@ export const visibilityBySurface: Record<Surface, ErrorVisibility> = {
   document: "response",
   suggestions: "response",
   activate_gateway: "response",
+  provider_config: "response",
 };
 
 export class ChatSDKError extends Error {
@@ -86,6 +88,9 @@ export function getMessageByErrorCode(errorCode: ErrorCode): string {
 
     case "bad_request:activate_gateway":
       return "AI Gateway requires a valid credit card on file to service requests. Please visit https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card to add a card and unlock your free credits.";
+
+    case "bad_request:provider_config":
+      return "LLM provider is not configured. Please set AI_PROVIDER_MODE and the corresponding API key in your environment.";
 
     case "unauthorized:auth":
       return "You need to sign in before continuing.";

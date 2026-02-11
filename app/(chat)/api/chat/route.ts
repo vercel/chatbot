@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { geolocation } from "@vercel/functions";
 import {
   convertToModelMessages,
@@ -9,9 +11,6 @@ import {
 } from "ai";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
-import { mkdir, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { ZodError } from "zod";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
@@ -28,13 +27,14 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
-  saveDifyWorkflowDsl,
   saveChat,
+  saveDifyWorkflowDsl,
   saveMessages,
   updateChatTitleById,
   updateMessage,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
+import { getDifyClient } from "@/lib/dify/client";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
@@ -63,7 +63,7 @@ async function saveDslToTempFile({
   workflowName?: string | null;
 }): Promise<string | null> {
   try {
-    const dslDir = join(homedir(), "ai-chatbot", "dsl");
+    const dslDir = join(process.cwd(), "dsl");
     await mkdir(dslDir, { recursive: true });
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -88,12 +88,17 @@ export async function POST(request: Request) {
   try {
     requestJson = await request.json();
     requestBody = postRequestBodySchema.parse(requestJson);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      const errorDetails = error.issues
-        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-        .join("; ");
-      console.error("Validation error:", errorDetails, "Request body:", JSON.stringify(requestJson));
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const errorDetails = error.issues
+          .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+          .join("; ");
+      console.error(
+        "Validation error:",
+        errorDetails,
+        "Request body:",
+        JSON.stringify(requestJson)
+      );
       return new ChatSDKError("bad_request:api", errorDetails).toResponse();
     }
     console.error("Request parsing error:", error);
@@ -178,10 +183,12 @@ export async function POST(request: Request) {
       });
     }
 
-    const isReasoningModel =
-      selectedChatModel.includes("reasoning") ||
-      selectedChatModel.includes("thinking");
     const isDifyMode = systemPromptId === "dify-rule-ver5";
+    const resolvedChatModel =
+      (isDifyMode ? process.env.AI_DIFY_MODEL : undefined) ?? selectedChatModel;
+    const isReasoningModel =
+      resolvedChatModel.includes("reasoning") ||
+      resolvedChatModel.includes("thinking");
     const shouldUseTools = !isReasoningModel && !isDifyMode;
 
     const modelMessages = await convertToModelMessages(uiMessages);
@@ -189,10 +196,11 @@ export async function POST(request: Request) {
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
+
         const result = streamText({
-          model: getLanguageModel(selectedChatModel),
+          model: getLanguageModel(resolvedChatModel),
           system: systemPrompt({
-            selectedChatModel,
+            selectedChatModel: resolvedChatModel,
             requestHints,
             systemPromptId,
           }),
@@ -224,6 +232,83 @@ export async function POST(request: Request) {
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
+          },
+          onFinish: async ({ text }) => {
+            // Difyモードの場合、DSL自動インポートを実行（dataStreamにアクセス可能）
+            const isDifyMode = systemPromptId === "dify-rule-ver5";
+            if (isDifyMode && session?.user?.id) {
+              const extractYamlCodeBlock = (text: string): string | null => {
+                const matches = [
+                  ...text.matchAll(/```(?:ya?ml)?\s*([\s\S]*?)```/gi),
+                ];
+                const last = matches.at(-1);
+                const yaml = last?.[1]?.trim();
+                return yaml ? yaml : null;
+              };
+
+              const isValidDsl = (yaml: string): boolean => {
+                if (yaml.split("\n").length < 10) {
+                  return false;
+                }
+                const hasAppOrKind =
+                  /^\s*(app:|kind:\s*app)/m.test(yaml) ||
+                  /^kind:\s*app/m.test(yaml);
+                const hasWorkflowOrGraph =
+                  /workflow:/m.test(yaml) || /graph:/m.test(yaml);
+                return hasAppOrKind && hasWorkflowOrGraph;
+              };
+
+              const inferWorkflowName = (yaml: string) => {
+                const head = yaml.split("\n").slice(0, 60).join("\n");
+                const match =
+                  head.match(/(^|\n)\s*name:\s*['"]?([^'"\n]+)['"]?/i) ??
+                  head.match(
+                    /(^|\n)\s*app:\s*\n\s+name:\s*['"]?([^'"\n]+)['"]?/i
+                  );
+                return match?.[2]?.trim() ?? null;
+              };
+
+              const yaml = extractYamlCodeBlock(text);
+              if (yaml && isValidDsl(yaml)) {
+                try {
+                  const workflowName = inferWorkflowName(yaml);
+                  const tempFilePath = await saveDslToTempFile({
+                    chatId: id,
+                    dslYaml: yaml,
+                    workflowName,
+                  });
+
+                  if (tempFilePath) {
+                    const difyClient = getDifyClient();
+                    if (difyClient) {
+                      try {
+                        const importResult =
+                          await difyClient.importAndPublish(tempFilePath);
+                        // 公開URLをチャットに表示（成功時のみ）
+                        if (importResult.publishUrl) {
+                          dataStream.write({
+                            type: "data-dify-publish-url",
+                            id: "dify-publish-url",
+                            data: {
+                              url: importResult.publishUrl,
+                              appId: importResult.appId,
+                            },
+                          });
+                        }
+                      } catch (error) {
+                        // エラーはコンソールログのみ（チャットには表示しない）
+                        console.error(
+                          "[Dify Auto-Import] Failed to auto-import DSL to Dify:",
+                          error
+                        );
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error("Failed to process DSL:", error);
+                }
+              }
+            }
           },
         });
 
@@ -304,15 +389,36 @@ export async function POST(request: Request) {
               return yaml ? yaml : null;
             };
 
+            /**
+             * DSLが有効か検証（正しいDify DSL形式か確認）
+             */
+            const isValidDsl = (yaml: string): boolean => {
+              // 最小限の行数チェック（説明文など短いテキストを除外）
+              if (yaml.split("\n").length < 10) {
+                return false;
+              }
+
+              // Dify DSLの必須フィールドをチェック
+              const hasAppOrKind =
+                /^\s*(app:|kind:\s*app)/m.test(yaml) ||
+                /^kind:\s*app/m.test(yaml);
+              const hasWorkflowOrGraph =
+                /workflow:/m.test(yaml) || /graph:/m.test(yaml);
+
+              return hasAppOrKind && hasWorkflowOrGraph;
+            };
+
             const inferMode = (yaml: string) => {
               const match = yaml.match(
                 /(^|\n)\s*mode:\s*(advanced-chat|workflow|agent-chat)\b/i
               );
-              return (match?.[2]?.toLowerCase() as
-                | "advanced-chat"
-                | "workflow"
-                | "agent-chat"
-                | undefined) ?? null;
+              return (
+                (match?.[2]?.toLowerCase() as
+                  | "advanced-chat"
+                  | "workflow"
+                  | "agent-chat"
+                  | undefined) ?? null
+              );
             };
 
             const inferWorkflowName = (yaml: string) => {
@@ -327,9 +433,11 @@ export async function POST(request: Request) {
             };
 
             if (latestAssistant?.parts) {
-              const text = extractTextFromParts(latestAssistant.parts as unknown[]);
+              const text = extractTextFromParts(
+                latestAssistant.parts as unknown[]
+              );
               const yaml = extractYamlCodeBlock(text);
-              if (yaml) {
+              if (yaml && isValidDsl(yaml)) {
                 try {
                   const workflowName = inferWorkflowName(yaml);
                   await saveDifyWorkflowDsl({
@@ -341,15 +449,12 @@ export async function POST(request: Request) {
                     mode: inferMode(yaml),
                   });
 
-                  // Save DSL file to temporary directory
-                  const tempFilePath = await saveDslToTempFile({
+                  // 自動インポートは streamText の onFinish で実行されるため、ここでは保存のみ
+                  await saveDslToTempFile({
                     chatId: id,
                     dslYaml: yaml,
                     workflowName,
                   });
-                  if (tempFilePath) {
-                    console.log(`DSL file saved to temporary location: ${tempFilePath}`);
-                  }
                 } catch {
                   // Don't fail the chat if DSL persistence fails (e.g. migrations not applied yet).
                 }

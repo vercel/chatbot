@@ -122,6 +122,45 @@ const PurePreviewMessage = ({
               }
             }
 
+            // Handle Dify publish URL
+            if (type === "data-dify-publish-url") {
+              const data = part.data as { url: string; appId: string };
+              return (
+                <div
+                  key={key}
+                  className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"
+                >
+                  <div className="font-semibold text-green-800">
+                    ✅ Difyワークフローを公開しました
+                  </div>
+                  <a
+                    href={data.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 block break-all text-blue-600 underline hover:text-blue-800"
+                  >
+                    {data.url}
+                  </a>
+                </div>
+              );
+            }
+
+            // Handle Dify error
+            if (type === "data-dify-error") {
+              const data = part.data as { message: string };
+              return (
+                <div
+                  key={key}
+                  className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm"
+                >
+                  <div className="font-semibold text-red-800">
+                    ⚠️ Difyへの自動インポートに失敗しました
+                  </div>
+                  <div className="mt-1 text-red-700">{data.message}</div>
+                </div>
+              );
+            }
+
             if (type === "text") {
               if (mode === "view") {
                 return (

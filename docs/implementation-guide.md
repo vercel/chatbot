@@ -38,14 +38,66 @@ cp .env.example .env.local
   例: `openssl rand -base64 32` で生成
 - `AI_GATEWAY_API_KEY`  
   Vercel 以外の環境で AI Gateway を使う場合に必要
+- `AI_PROVIDER_MODE`  
+  `gateway`(デフォルト) か `direct` を指定します。`direct` の場合は自前のAPIキーで直接LLMを呼び出します。
+- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`  
+  `AI_PROVIDER_MODE=direct` のときに必要（使うプロバイダに応じて設定）
+- `AI_DEFAULT_MODEL` / `AI_TITLE_MODEL` / `AI_ARTIFACT_MODEL`  
+  任意。`AI_PROVIDER_MODE=direct` のとき、タイトル生成やArtifacts生成で使うモデルを `provider/model` 形式で上書きできます。
+- `AI_DIFY_MODEL`  
+  任意。`/dify` の DSL 自動生成で使うモデルを固定します（`provider/model` 形式）。
 - `POSTGRES_URL`  
   DB 接続文字列
 - `REDIS_URL`  
   Redis 接続文字列
 - `BLOB_READ_WRITE_TOKEN`  
   Vercel Blob 用トークン
+- `DIFY_CONSOLE_API_BASE`  
+  オプショナル。Dify Console APIのベースURL（例: `https://api.dify.ai/console/api`）。設定するとDSL自動インポート機能が有効になります。
+- `DIFY_EMAIL`  
+  オプショナル。Dify Console APIへのログイン用メールアドレス。
+- `DIFY_PASSWORD`  
+  オプショナル。Dify Console APIへのログイン用パスワード（シングルクォートで囲む）。
+- `DIFY_PASSWORD_BASE64`  
+  オプショナル。パスワードがbase64エンコードされている場合に`true`を設定。
 
-注意: `.env.local` はコミットしないでください。
+注意: `.env.local` はコミットしないでください。また、Dify認証ファイル（`.dify_auth`、`.dify_csrf`）もGit管理から除外されています。
+
+#### 2.3.1 LLMの呼び出し先切替（AI Gateway ↔ Direct）の実装箇所
+
+このプロジェクトでは、LLMの呼び出し先（Vercel AI Gateway / 直接プロバイダ）を **環境変数で切り替え**できるようにしています。
+
+**設定（どちらを使うか）**
+- `AI_PROVIDER_MODE=gateway`（デフォルト）: Vercel AI Gateway 経由（`AI_GATEWAY_API_KEY` または Vercel の OIDC）
+- `AI_PROVIDER_MODE=direct`: 自前のAPIキーで直接呼び出し（`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`）
+  - 注意: `direct` は現状 `openai/*` / `anthropic/*` / `google/*` のみ対応です（それ以外は `gateway` を使ってください）
+  - Vercelにデプロイする場合は、`.env.local` ではなく Vercel の Environment Variables に同じ変数を設定します
+- `AI_DIFY_MODEL`（任意）: `/dify` のDSL自動生成に使うモデルを固定します（例: `openai/gpt-4.1-mini`）
+
+**主な変更箇所（コード）**
+- `lib/ai/providers.ts`  
+  - `AI_PROVIDER_MODE` を読み取り、`getLanguageModel()` / `getTitleModel()` / `getArtifactModel()` の内部で `gateway` / `direct` を分岐
+  - `direct` の場合、モデルID（例: `openai/gpt-4.1-mini`）の先頭（`openai` / `anthropic` / `google`）でルーティング
+  - 必要なAPIキーが未設定の場合は `ChatSDKError("bad_request:provider_config")` を投げる
+- `app/(chat)/api/chat/route.ts`  
+  - チャットのLLM呼び出しは `getLanguageModel(...)` 経由（＝切替は `lib/ai/providers.ts` 側で完結）
+  - `/dify`（`systemPromptId=dify-rule-ver5`）のときは、`AI_DIFY_MODEL` が設定されていれば `selectedChatModel` より優先して使用（サーバ側で強制）
+- `app/dify/page.tsx`, `app/dify/chat/[id]/page.tsx`  
+  - `AI_DIFY_MODEL` が設定されていれば、`/dify` の初期モデルをそれに固定
+- `components/chat.tsx`, `components/multimodal-input.tsx`  
+  - 固定モデルのときはモデル切替UIを非表示にして、意図せずモデルが変わらないようにする
+- `lib/errors.ts`  
+  - 設定ミス時のエラーコード `bad_request:provider_config` を追加（ユーザーに分かりやすく返すため）
+
+**主な変更箇所（依存関係/設定テンプレ）**
+- `.env.example`  
+  - `AI_PROVIDER_MODE` と `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`、および任意の `AI_*_MODEL` を追加
+- `package.json`  
+  - `direct` 用に `@ai-sdk/openai` / `@ai-sdk/anthropic` / `@ai-sdk/google` を追加
+
+**動作確認の目安**
+- `AI_PROVIDER_MODE=direct` で Google のキーが未設定のまま `google/*`（例: `google/gemini-2.5-flash-lite`）を選ぶと、Google API 側のエラーになります（`API key not valid` など）。
+- `AI_PROVIDER_MODE=direct` では、Googleキーが無い場合に自動でAI Gatewayへフォールバックはしません。使うモデル（プロバイダ）とキー設定を一致させてください。
 
 ### 2.4 DB マイグレーション
 ```bash
@@ -196,6 +248,8 @@ pnpm format      # フォーマット
 - `rule_ver5.md` を system prompt に組み込み、DSL生成の対話フローを実行
 - Difyモードではツール呼び出しを無効化（チャット出力のみ）
 - 生成したDSL（```yaml```コードブロック）はDBへ自動保存
+- 生成したDSLはローカルファイルシステム（`dsl/`ディレクトリ）にも保存
+- Dify Console APIが設定されている場合、DSLを自動的にDifyにインポート・公開
 
 ### 6.2 実装ファイル
 - ルート/ページ
@@ -205,11 +259,16 @@ pnpm format      # フォーマット
 - プロンプト/API
   - `lib/ai/prompts.ts` (systemPromptIdと`rule_ver5.md`の合成)
   - `app/(chat)/api/chat/schema.ts` (`systemPromptId` 追加)
-  - `app/(chat)/api/chat/route.ts` (Difyモード時のプロンプト切り替え/ツール無効化)
+  - `app/(chat)/api/chat/route.ts` (Difyモード時のプロンプト切り替え/ツール無効化/DSL保存/自動インポート)
 - DB
   - `lib/db/schema.ts` (`DifyWorkflowDsl` テーブル)
   - `lib/db/queries.ts` (`saveDifyWorkflowDsl`)
   - `lib/db/migrations/0009_dify_workflow_dsl.sql`（マイグレーション）
+- Dify Console API クライアント
+  - `lib/dify/client.ts` (DifyClientクラス: ログイン、DSLインポート、公開、URL取得)
+  - `lib/dify/types.ts` (Dify APIの型定義)
+- ファイルシステム
+  - `dsl/` ディレクトリ（生成されたDSLファイルの保存先）
 - UI
   - `components/chat.tsx` (systemPromptId / chatPathPrefix / newChatPath / inputPlaceholder)
   - `components/multimodal-input.tsx` (送信後URLとplaceholder)
@@ -226,7 +285,9 @@ pnpm format      # フォーマット
 - 既存チャット（Difyモード）: `http://localhost:3000/dify/chat/<chatId>`
 - 注意: `/dify/chat`（id無し）は未実装のため 404
 
-### 6.3.2 DSL保存の確認方法（Neon）
+### 6.3.2 DSL保存の確認方法
+
+#### データベース（Neon）
 NeonのSQL Editorで以下を実行して確認します。
 
 ```sql
@@ -245,11 +306,97 @@ where "chatId" = '<CHAT_ID>'
 order by "version" asc;
 ```
 
-### 6.4 注意点
+#### ローカルファイルシステム
+プロジェクトルートの`dsl/`ディレクトリに保存されたDSLファイルを確認できます。
+
+```bash
+# DSLファイル一覧を表示
+ls -la dsl/*.yml
+
+# 最新のDSLファイルを確認
+ls -lt dsl/*.yml | head -1
+```
+
+ファイル名形式: `{workflowName}_{chatId}_{timestamp}.yml`
+
+### 6.4 DSLの保存と自動インポート
+
+#### 6.4.1 DSL保存の仕組み
+生成されたDSLは以下の2箇所に保存されます：
+
+1. **データベース** (`DifyWorkflowDsl`テーブル)
+   - チャットID、ユーザーID、メッセージID、バージョン、ワークフロー名、モード、DSL YAMLを保存
+   - バージョン管理が可能（同じチャットIDで複数バージョンを保存）
+
+2. **ローカルファイルシステム** (`dsl/`ディレクトリ)
+   - ファイル名形式: `{workflowName}_{chatId}_{timestamp}.yml`
+   - プロジェクトルートの`dsl/`ディレクトリに保存
+
+**DSL検証機能:**
+正しいDify DSL形式のみが保存されるように、以下の検証が行われます：
+
+- **最小行数チェック**: 10行未満のテキストは除外（説明文などの短いテキストを除外）
+- **必須フィールドチェック**: 
+  - `app:`または`kind: app`で始まる
+  - `workflow:`または`graph:`を含む
+
+これにより、LLMが生成した説明文や途中のテキストが誤って保存されることを防ぎます。
+
+#### 6.4.2 Dify Console APIによる自動インポート（オプショナル）
+`.env.local`に以下の環境変数を設定すると、DSL生成後に自動的にDifyにインポート・公開されます：
+
+```bash
+# Dify Console API設定（オプショナル）
+DIFY_CONSOLE_API_BASE=https://api.dify.ai/console/api
+DIFY_EMAIL=your-email@example.com
+DIFY_PASSWORD=your-password
+# パスワードのbase64エンコード（デフォルト: true）
+# 平文パスワードだと "Invalid encrypted data" エラーになるため、true を推奨
+DIFY_PASSWORD_BASE64=true
+# または
+PASSWORD_BASE64=true
+```
+
+**パスワード形式の設定:**
+- **デフォルト動作**: `DIFY_PASSWORD_BASE64`が設定されていない場合、自動的に`true`（base64エンコード有効）になります
+- **明示的な設定**: `DIFY_PASSWORD_BASE64=false`または`PASSWORD_BASE64=false`を設定した場合のみ、base64エンコードが無効化されます
+- **推奨設定**: ほとんどの環境で`true`が必要です（平文パスワードだと認証エラーが発生します）
+
+**動作フロー:**
+1. DSLが生成されると、DBとローカルファイルに保存
+2. Dify Console APIの設定がある場合、自動的にログイン（認証トークンは`.dify_auth`と`.dify_csrf`にキャッシュ）
+3. DSLファイルをDifyにインポート
+4. ワークフローを公開
+5. 公開URLを取得（ワークフローの種類に応じて`/workflow/`または`/chat/`パスを自動判定）
+6. **成功時**: 公開URLがチャット画面に表示されます（緑色のボックス、クリック可能なリンク）
+7. **失敗時**: エラーメッセージはサーバーのコンソールログにのみ出力されます（チャットには表示されません）
+
+**公開URLの表示:**
+- 自動インポートが成功した場合のみ、チャット画面に公開URLが表示されます
+- エラーが発生した場合、チャット処理は継続されますが、エラーメッセージはチャットには表示されません（サーバーログを確認してください）
+
+**認証ファイル:**
+- `.dify_auth` - アクセストークン（Git管理から除外）
+- `.dify_csrf` - CSRFトークン（Git管理から除外）
+
+#### 6.4.3 ワークフローの種類に応じたURLパス判定
+`DifyClient.getPublishUrl()`は、ワークフローの種類（`mode`）に応じて適切なURLパスを返します：
+
+- `mode: "workflow"` → `http://localhost/workflow/{access_token}`
+- `mode: "chat"`, `"advanced-chat"`, `"agent-chat"` → `http://localhost/chat/{access_token}`
+
+### 6.5 注意点
 - `app/(group)` はURLに反映されないため、Difyは `app/dify` を使用
 - サイドバーの履歴リンクは `/chat/<id>` のまま（通常チャットと履歴は共有）
   - Dify専用履歴や `/dify/chat/<id>` へのリンク分離が必要なら別対応
 - `pnpm db:migrate` が通っていないとテーブルが作成されないため、DSL自動保存も動作しない
+- Dify Console APIの設定がない場合、DSLはローカルに保存されるが自動インポートは実行されない（既存の動作を維持）
+- `.dify_auth`と`.dify_csrf`は認証情報を含むため、`.gitignore`に追加されている
+- DSL検証により、正しいDify DSL形式のみが保存されます（説明文や途中のテキストは除外）
+- DSL保存と自動インポートは`streamText`の`onFinish`で1回だけ実行されます（重複保存を防止）
+- パスワードのbase64エンコードはデフォルトで有効です（`DIFY_PASSWORD_BASE64=false`を明示的に設定しない限り）
+- 自動インポートのエラーはチャットには表示されません（サーバーのコンソールログを確認してください）
+- 環境変数を変更した場合は、開発サーバーを再起動してください
 
 ## 7. つまずきやすいポイント
 - `.env.local` の値が不足していると起動やAI機能が失敗する

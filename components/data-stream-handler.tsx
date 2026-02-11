@@ -28,6 +28,20 @@ export function DataStreamHandler() {
         mutate(unstable_serialize(getChatHistoryPaginationKey));
         continue;
       }
+
+      // Handle Dify publish URL
+      if (delta.type === "data-dify-publish-url") {
+        console.log("Dify workflow published:", delta.data);
+        // 公開URLをコンソールに出力（将来的にはトースト通知やUI表示に変更可能）
+        continue;
+      }
+
+      // Handle Dify error
+      if (delta.type === "data-dify-error") {
+        console.error("Dify import error:", delta.data);
+        // エラーをコンソールに出力（将来的にはトースト通知やUI表示に変更可能）
+        continue;
+      }
       const artifactDefinition = artifactDefinitions.find(
         (currentArtifactDefinition) =>
           currentArtifactDefinition.kind === artifact.kind

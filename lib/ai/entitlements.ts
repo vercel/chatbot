@@ -13,7 +13,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    * For users without an account
    */
   guest: {
-    maxMessagesPerDay: isDevelopmentEnvironment ? DEVELOPMENT_LIMIT : 20,
+    maxMessagesPerDay: 50,
   },
 
   /*
