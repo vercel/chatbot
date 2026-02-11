@@ -39,6 +39,7 @@ interface GapAnalysisCardProps {
   missingFields: MissingField[];
   sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
   isSubmitted?: boolean;
+  isSkipped?: boolean;
   className?: string;
 }
 
@@ -48,12 +49,14 @@ export function GapAnalysisCard({
   missingFields,
   sendMessage,
   isSubmitted: initialSubmitted = false,
+  isSkipped: initialSkipped = false,
   className,
 }: GapAnalysisCardProps) {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [submitted, setSubmitted] = useState(initialSubmitted);
+  const [skipped, setSkipped] = useState(initialSkipped);
 
-  const disabled = submitted;
+  const disabled = submitted || skipped;
 
   function updateAnswer(field: string, value: string | string[]) {
     setAnswers((prev) => ({ ...prev, [field]: value }));
@@ -69,6 +72,22 @@ export function GapAnalysisCard({
           : current.filter((v) => v !== option),
       };
     });
+  }
+
+  function handleSkip() {
+    if (!sendMessage) return;
+
+    const name = formName || 'gap analysis';
+    sendMessage({
+      role: 'user',
+      parts: [
+        {
+          type: 'text',
+          text: `Skipped "${name}" for now. Please continue with the next step.`,
+        },
+      ],
+    });
+    setSkipped(true);
   }
 
   function handleSubmit() {
@@ -108,12 +127,12 @@ export function GapAnalysisCard({
     if (multiSelect && options && options.length > 0) {
       const selected = (answers[name] as string[]) ?? [];
       return (
-        <fieldset key={name} className="space-y-2">
-          <Label className="font-semibold">{name}</Label>
-          {condition && (
-            <p className="text-xs text-muted-foreground italic">{condition}</p>
-          )}
-          <div className="flex flex-col gap-2">
+        <fieldset key={name} className="space-y-3">
+          <Label className="font-semibold text-base">{name}</Label>
+          <p className="text-sm text-muted-foreground italic">
+            {condition || 'Select all that apply.'}
+          </p>
+          <div className="flex flex-col gap-3">
             {options.map((option) => (
               <div key={option} className="flex items-center gap-2">
                 <Checkbox
@@ -249,41 +268,62 @@ export function GapAnalysisCard({
     );
   }
 
+  if (skipped) {
+    return (
+      <Alert
+        className={cn(
+          'rounded-xl border-border bg-background p-6',
+          className,
+        )}
+      >
+        <AlertDescription>
+          <p className="font-source-serif text-lg text-muted-foreground">
+            {formName || 'Gap Analysis'}
+          </p>
+          <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Skipped
+          </p>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <Alert
       className={cn(
-        'bg-accent/25 border-accent dark:bg-accent/10',
+        'rounded-xl border-accent bg-background p-6',
         className,
       )}
     >
       <AlertDescription>
-        <div className="flex flex-col gap-px">
-          <div className="font-source-serif font-normal leading-[1.5] text-[14px] text-foreground">
-            <p className="font-bold mb-[14px]">
-              Gap Analysis{formName ? `: ${formName}` : ''}
-            </p>
+        <div className="font-source-serif leading-[1.5] text-foreground">
+          {formName && (
+            <p className="text-lg font-bold mb-1">{formName}</p>
+          )}
 
-            {availableFields.length > 0 && (
-              <div className="mb-[14px]">
-                <p className="font-semibold mb-1">Available from Database</p>
-                {availableFields.map((item, i) => (
-                  <p key={i} className="flex items-center gap-1.5">
-                    <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
-                    <span>
-                      {item.field}: {item.value}
-                    </span>
-                  </p>
-                ))}
-              </div>
-            )}
+          {availableFields.length > 0 && (
+            <div className="mb-5">
+              <p className="text-sm text-muted-foreground italic mb-3">
+                Available from Database
+              </p>
+              {availableFields.map((item, i) => (
+                <p key={i} className="flex items-center gap-2 text-sm">
+                  <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
+                  <span>
+                    {item.field}: {item.value}
+                  </span>
+                </p>
+              ))}
+            </div>
+          )}
 
-            {missingFields.length > 0 && (
-              <div className="mb-[14px] space-y-4">
-                <p className="font-semibold mb-1">Needs Your Input</p>
-                {missingFields.map((field) => renderField(field))}
-              </div>
-            )}
+          {missingFields.length > 0 && (
+            <div className="space-y-5">
+              {missingFields.map((field) => renderField(field))}
+            </div>
+          )}
 
+          <div className="flex items-center gap-3 mt-5">
             {submitted ? (
               <p className="text-muted-foreground flex items-center gap-1.5">
                 <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
@@ -292,9 +332,18 @@ export function GapAnalysisCard({
             ) : (
               missingFields.length > 0 &&
               sendMessage && (
-                <Button onClick={handleSubmit} className="mt-2">
-                  Submit Answers
-                </Button>
+                <>
+                  <Button onClick={handleSubmit}>
+                    Submit
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={handleSkip}
+                    className="font-semibold"
+                  >
+                    Skip for now
+                  </Button>
+                </>
               )
             )}
           </div>

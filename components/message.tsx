@@ -462,7 +462,7 @@ const PurePreviewMessage = ({
                     return;
                   }
                   // Only use CollapsibleWrapper for get-participant-with-household
-                  if (displayName === 'Retrieved participant data') {
+                  if (displayName === 'GetApricotRecord') {
                     return (
                       <CollapsibleWrapper key={toolCallId} displayName={displayName} input={input} icon={Icon} />
                     );
@@ -490,7 +490,7 @@ const PurePreviewMessage = ({
                   }
 
                   // Only use CollapsibleWrapper for get-participant-with-household
-                  if (displayName === 'Retrieved participant data') {
+                  if (displayName === 'GetApricotRecord') {
                     // Check for actual error value, not just presence of 'error' key
                     const hasParticipantError = output && 'error' in output && output.error;
                     return (
