@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  env: {
-    NEXT_PUBLIC_ENVIRONMENT: process.env.ENVIRONMENT,
-  },
   // cacheComponents disabled to allow runtime env vars in API routes
   // See: https://github.com/vercel/next.js/discussions/84894
   cacheComponents: false,
