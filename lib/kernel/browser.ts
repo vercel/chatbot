@@ -1,7 +1,5 @@
 import Kernel from '@onkernel/sdk';
 import { BrowserManager } from 'agent-browser/dist/browser.js';
-import { executeCommand } from 'agent-browser/dist/actions.js';
-import type { Command } from 'agent-browser/dist/types.js';
 
 const kernel = new Kernel();
 
@@ -152,8 +150,10 @@ export async function getBrowser(
 /**
  * Stop in-progress browser operations for a session.
  *
- * Sends a window.stop() evaluate command to halt any in-progress page
- * navigation or resource loading.
+ * Closes the current BrowserManager (which immediately cancels all in-flight
+ * Playwright commands — fill, click, navigate, etc.) and reconnects a fresh
+ * BrowserManager to the same Kernel browser via CDP. The browser itself stays
+ * alive so the live-view iframe is unaffected.
  */
 export async function stopBrowserOperations(
   sessionId: string,
@@ -165,25 +165,32 @@ export async function stopBrowserOperations(
   const session = sessions.get(key);
   if (!session) return;
 
+  const { cdpWsUrl } = session;
+
+  // 1. Close the current BrowserManager — kills all in-flight Playwright actions
   try {
-    const stopCommand = {
-      id: `stop-${Date.now()}`,
-      action: 'evaluate',
-      script: 'window.stop()',
-    } as Command;
-
-    // Race with a short timeout — if Playwright is stuck on a long command,
-    // don't block the stop response indefinitely.
-    await Promise.race([
-      executeCommand(stopCommand, session.browserManager),
-      new Promise<void>((resolve) => setTimeout(resolve, 3000)),
-    ]);
-
-    console.log(
-      `[Kernel] Sent window.stop() for session ${sessionId}`,
-    );
+    await session.browserManager.close();
+    console.log(`[Kernel] Closed BrowserManager for session ${sessionId}`);
   } catch (err) {
-    console.error('[Kernel] Failed to stop browser operations:', err);
+    console.error('[Kernel] Failed to close BrowserManager during stop:', err);
+  }
+
+  // 2. Reconnect a fresh BrowserManager to the same browser so future
+  //    tool calls (after the user gives back control) still work.
+  try {
+    const newManager = new BrowserManager();
+    await newManager.launch({
+      id: 'relaunch',
+      action: 'launch',
+      cdpUrl: cdpWsUrl,
+    });
+
+    session.browserManager = newManager;
+    console.log(`[Kernel] Reconnected BrowserManager for session ${sessionId}`);
+  } catch (err) {
+    // If reconnect fails, remove from cache so the next tool call creates fresh
+    console.error('[Kernel] Failed to reconnect BrowserManager:', err);
+    sessions.delete(key);
   }
 }
 
