@@ -55,6 +55,9 @@ export function KernelBrowserClient({
   const initializedSessionRef = useRef<string | null>(null);
   const initInFlightRef = useRef(false);
 
+  // AbortController for cancelling initBrowser polling when stop is called
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const initBrowser = useCallback(async (force = false) => {
     // Skip if already initialized for this session (unless forced)
     if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
@@ -64,6 +67,13 @@ export function KernelBrowserClient({
     if (initInFlightRef.current) {
       return;
     }
+
+    // Cancel any previous polling and create a new AbortController
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
       initInFlightRef.current = true;
@@ -77,10 +87,15 @@ export function KernelBrowserClient({
       let attempts = 0;
 
       while (attempts < maxAttempts) {
+        if (abortController.signal.aborted) {
+          return; // Silently exit on abort
+        }
+
         const response = await fetch('/api/kernel-browser', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action, sessionId, isMobile }),
+          signal: abortController.signal,
         });
 
         if (response.ok) {
@@ -100,12 +115,23 @@ export function KernelBrowserClient({
 
         attempts++;
         if (attempts < maxAttempts) {
-          await new Promise((r) => setTimeout(r, 1000));
+          // Abort-aware delay between polling attempts
+          await new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(resolve, 1000);
+            abortController.signal.addEventListener('abort', () => {
+              clearTimeout(timer);
+              reject(new DOMException('Aborted', 'AbortError'));
+            }, { once: true });
+          });
         }
       }
 
       throw new Error('Browser session not available yet. Please try again.');
     } catch (err) {
+      // Silently ignore abort errors (user-initiated stop)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
       const message = err instanceof Error ? err.message : 'Failed to connect';
       setError(message);
       setIsConnected(false);
@@ -149,6 +175,33 @@ export function KernelBrowserClient({
       cleanup();
     };
   }, []);
+
+  // Listen for stop events from the chat stop button
+  useEffect(() => {
+    const handleStop = () => {
+      console.log('[Kernel] Stop signal received, cancelling browser operations');
+
+      // Cancel any in-flight initBrowser polling
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Send stop signal to the server to halt in-progress browser operations
+      fetch('/api/kernel-browser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stop', sessionId }),
+      }).catch((err) => {
+        console.error('[Kernel] Failed to send stop signal:', err);
+      });
+    };
+
+    window.addEventListener('kernel-browser-stop', handleStop);
+
+    return () => {
+      window.removeEventListener('kernel-browser-stop', handleStop);
+    };
+  }, [sessionId]);
 
   // Listen for control mode switch events from confirmation components
   useEffect(() => {

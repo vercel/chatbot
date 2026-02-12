@@ -124,6 +124,9 @@ export function Chat({
     // Always call the original stop to abort the stream
     originalStop();
 
+    // Signal the kernel browser to stop its operations
+    window.dispatchEvent(new CustomEvent('kernel-browser-stop'));
+
     // For web automation model using Mastra backend, also send stopChat action
     // When using AI SDK agent, the AbortController handles stopping
     if (initialChatModel === 'web-automation-model' && !useAiSdkAgent) {

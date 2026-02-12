@@ -1,5 +1,7 @@
 import Kernel from '@onkernel/sdk';
 import { BrowserManager } from 'agent-browser/dist/browser.js';
+import { executeCommand } from 'agent-browser/dist/actions.js';
+import type { Command } from 'agent-browser/dist/types.js';
 
 const kernel = new Kernel();
 
@@ -145,6 +147,44 @@ export async function getBrowser(
   }
 
   return null;
+}
+
+/**
+ * Stop in-progress browser operations for a session.
+ *
+ * Sends a window.stop() evaluate command to halt any in-progress page
+ * navigation or resource loading.
+ */
+export async function stopBrowserOperations(
+  sessionId: string,
+  userId: string,
+): Promise<void> {
+  if (!userId) return;
+
+  const key = cacheKey(userId, sessionId);
+  const session = sessions.get(key);
+  if (!session) return;
+
+  try {
+    const stopCommand = {
+      id: `stop-${Date.now()}`,
+      action: 'evaluate',
+      script: 'window.stop()',
+    } as Command;
+
+    // Race with a short timeout — if Playwright is stuck on a long command,
+    // don't block the stop response indefinitely.
+    await Promise.race([
+      executeCommand(stopCommand, session.browserManager),
+      new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+    ]);
+
+    console.log(
+      `[Kernel] Sent window.stop() for session ${sessionId}`,
+    );
+  } catch (err) {
+    console.error('[Kernel] Failed to stop browser operations:', err);
+  }
 }
 
 /**
