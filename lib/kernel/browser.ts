@@ -13,6 +13,8 @@ export interface BrowserSession {
   cdpWsUrl: string;
   userId: string;
   browserManager: BrowserManager;
+  /** Set to true by stopBrowserOperations; checked by the browser tool before executing. */
+  stopped: boolean;
 }
 
 // =============================================================================
@@ -99,6 +101,7 @@ export async function getOrCreateBrowser(
         cdpWsUrl: browser.cdp_ws_url,
         userId,
         browserManager: manager,
+        stopped: false,
       };
 
       sessions.set(key, session);
@@ -167,7 +170,11 @@ export async function stopBrowserOperations(
 
   const { cdpWsUrl } = session;
 
-  // 1. Close the current BrowserManager — kills all in-flight Playwright actions
+  // 1. Set stopped flag IMMEDIATELY — the browser tool checks this before
+  //    every command, so any queued tool calls will bail out right away.
+  session.stopped = true;
+
+  // 2. Close the current BrowserManager — kills all in-flight Playwright actions
   try {
     await session.browserManager.close();
     console.log(`[Kernel] Closed BrowserManager for session ${sessionId}`);
@@ -175,7 +182,7 @@ export async function stopBrowserOperations(
     console.error('[Kernel] Failed to close BrowserManager during stop:', err);
   }
 
-  // 2. Reconnect a fresh BrowserManager to the same browser so future
+  // 3. Reconnect a fresh BrowserManager to the same browser so future
   //    tool calls (after the user gives back control) still work.
   try {
     const newManager = new BrowserManager();
@@ -186,6 +193,7 @@ export async function stopBrowserOperations(
     });
 
     session.browserManager = newManager;
+    session.stopped = false;
     console.log(`[Kernel] Reconnected BrowserManager for session ${sessionId}`);
   } catch (err) {
     // If reconnect fails, remove from cache so the next tool call creates fresh

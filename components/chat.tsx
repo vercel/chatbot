@@ -148,6 +148,20 @@ export function Chat({
     }
   };
 
+  // When the user gives back browser control, send a message so the AI
+  // takes a snapshot and picks up any changes the user made.
+  useEffect(() => {
+    const handleResume = () => {
+      sendMessage({
+        role: 'user' as const,
+        parts: [{ type: 'text', text: 'I\'ve finished making my changes to the page. Please take a snapshot to review what I updated and continue from where you left off.' }],
+      });
+    };
+
+    window.addEventListener('kernel-browser-resume', handleResume);
+    return () => window.removeEventListener('kernel-browser-resume', handleResume);
+  }, [sendMessage]);
+
   const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
 
   useEffect(() => {

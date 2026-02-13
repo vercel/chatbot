@@ -254,6 +254,10 @@ export function KernelBrowserClient({
     } else {
       // Exit fullscreen when giving back control to agent
       onFullscreenChange?.(false);
+
+      // Tell the chat to send a message so the AI snapshots the page
+      // and picks up any changes the user made while in control
+      window.dispatchEvent(new CustomEvent('kernel-browser-resume'));
     }
 
     onControlModeChange(mode);
