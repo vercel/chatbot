@@ -153,10 +153,12 @@ export async function getBrowser(
 /**
  * Stop in-progress browser operations for a session.
  *
- * Closes the current BrowserManager (which immediately cancels all in-flight
- * Playwright commands — fill, click, navigate, etc.) and reconnects a fresh
- * BrowserManager to the same Kernel browser via CDP. The browser itself stays
- * alive so the live-view iframe is unaffected.
+ * 1. Sets a `stopped` flag so the browser tool bails out before any new command.
+ * 2. Uses Kernel's built-in `browsers.playwright.execute()` to halt the page
+ *    immediately on the Kernel server — this runs in a separate execution
+ *    context so it fires even while the local BrowserManager is blocked.
+ *
+ * The browser session stays alive and page state is preserved.
  */
 export async function stopBrowserOperations(
   sessionId: string,
@@ -168,38 +170,40 @@ export async function stopBrowserOperations(
   const session = sessions.get(key);
   if (!session) return;
 
-  const { cdpWsUrl } = session;
-
   // 1. Set stopped flag IMMEDIATELY — the browser tool checks this before
   //    every command, so any queued tool calls will bail out right away.
   session.stopped = true;
 
-  // 2. Close the current BrowserManager — kills all in-flight Playwright actions
+  // 2. Use Kernel's server-side Playwright execution to halt the page.
+  //    This runs in a separate context on the Kernel server, bypassing
+  //    our local BrowserManager's command queue entirely.
   try {
-    await session.browserManager.close();
-    console.log(`[Kernel] Closed BrowserManager for session ${sessionId}`);
-  } catch (err) {
-    console.error('[Kernel] Failed to close BrowserManager during stop:', err);
-  }
-
-  // 3. Reconnect a fresh BrowserManager to the same browser so future
-  //    tool calls (after the user gives back control) still work.
-  try {
-    const newManager = new BrowserManager();
-    await newManager.launch({
-      id: 'relaunch',
-      action: 'launch',
-      cdpUrl: cdpWsUrl,
+    await kernel.browsers.playwright.execute(session.kernelSessionId, {
+      code: 'await page.evaluate(() => window.stop())',
+      timeout_sec: 5,
     });
-
-    session.browserManager = newManager;
-    session.stopped = false;
-    console.log(`[Kernel] Reconnected BrowserManager for session ${sessionId}`);
+    console.log(`[Kernel] Stopped browser operations for session ${sessionId}`);
   } catch (err) {
-    // If reconnect fails, remove from cache so the next tool call creates fresh
-    console.error('[Kernel] Failed to reconnect BrowserManager:', err);
-    sessions.delete(key);
+    console.error('[Kernel] Failed to stop browser via Kernel Playwright:', err);
   }
+}
+
+/**
+ * Clear the stopped flag so tool calls can resume.
+ * Called when the user gives back control to the agent.
+ */
+export function resumeBrowserOperations(
+  sessionId: string,
+  userId: string,
+): void {
+  if (!userId) return;
+
+  const key = cacheKey(userId, sessionId);
+  const session = sessions.get(key);
+  if (!session) return;
+
+  session.stopped = false;
+  console.log(`[Kernel] Resumed browser operations for session ${sessionId}`);
 }
 
 /**

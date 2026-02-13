@@ -255,6 +255,15 @@ export function KernelBrowserClient({
       // Exit fullscreen when giving back control to agent
       onFullscreenChange?.(false);
 
+      // Clear the server-side stopped flag so the browser tool can execute again
+      fetch('/api/kernel-browser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'resume', sessionId }),
+      }).catch((err) => {
+        console.error('[Kernel] Failed to send resume signal:', err);
+      });
+
       // Tell the chat to send a message so the AI snapshots the page
       // and picks up any changes the user made while in control
       window.dispatchEvent(new CustomEvent('kernel-browser-resume'));
