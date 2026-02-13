@@ -3,6 +3,8 @@ import {
   getOrCreateBrowser,
   deleteBrowser,
   getBrowser,
+  stopBrowserOperations,
+  resumeBrowserOperations,
 } from '@/lib/kernel/browser';
 
 export async function POST(request: Request) {
@@ -54,6 +56,16 @@ export async function POST(request: Request) {
 
     if (action === 'delete') {
       await deleteBrowser(sessionId, userId);
+      return Response.json({ success: true });
+    }
+
+    if (action === 'stop') {
+      await stopBrowserOperations(sessionId, userId);
+      return Response.json({ success: true });
+    }
+
+    if (action === 'resume') {
+      resumeBrowserOperations(sessionId, userId);
       return Response.json({ success: true });
     }
 
