@@ -159,6 +159,20 @@ browser({ action: "snapshot", selector: "form" })   // 5. Fresh refs after scrol
 browser({ action: "snapshot" })               // Final verification before submit
 \`\`\`
 
+## Modals, Dialogs & Popups
+
+When a modal or popup appears (cookie consent, terms, confirmation, error, login prompt, etc.), it blocks interaction with the page behind it. Elements behind the modal will time out if you try to interact with them.
+
+**How to detect**: After any action that navigates or changes the page, take a snapshot. If you see a \`dialog\`, \`[role="dialog"]\`, overlay, or a small set of elements (buttons like "OK", "Accept", "Close", "Continue") instead of the expected form content — a modal is open.
+
+**What to do**:
+1. **Stop** what you were doing — do NOT try to fill or click elements behind the modal
+2. **Resolve the modal first** — read its content, then click the appropriate button (Accept, OK, Continue, Close, etc.)
+3. **Re-snapshot after dismissing** — the page behind it may have changed
+4. **Then resume** your previous task
+
+This applies to all types of overlays: cookie banners, session timeout warnings, confirmation dialogs, error popups, terms modals, etc.
+
 ## CAPTCHA & Turnstile Handling
 
 The browser runs in Kernel stealth mode with an **auto-solver** that handles Cloudflare Turnstile, reCAPTCHA, and similar challenges automatically in the background.

@@ -78,8 +78,23 @@ NEVER use "evaluate" to enable disabled buttons, bypass validation, or modify pa
     inputSchema: z
       .object({
         action: z.string().describe('The command action (e.g. "navigate", "click", "snapshot", "fill")'),
+        selector: z.string().optional().describe('Element selector: ref (@e1), CSS (#id), or label'),
+        value: z.string().optional().describe('Value for fill action'),
+        text: z.string().optional().describe('Text for type action'),
+        url: z.string().optional().describe('URL for navigate action'),
+        key: z.string().optional().describe('Key for press action (e.g. "Enter", "Tab")'),
+        label: z.string().optional().describe('Label text for getbylabel action'),
+        subaction: z.string().optional().describe('Sub-action for getbylabel ("click", "fill", "check")'),
+        script: z.string().optional().describe('JavaScript for evaluate action'),
+        values: z.array(z.string()).optional().describe('Option values for select action — must be an array'),
+        timeout: z.number().optional().describe('Timeout in ms for wait action — must be a number'),
+        amount: z.number().optional().describe('Scroll amount in px — must be a number'),
+        delay: z.number().optional().describe('Delay between keystrokes in ms — must be a number'),
+        interactive: z.boolean().optional().describe('Show only interactive elements in snapshot — must be boolean'),
+        clear: z.boolean().optional().describe('Clear field before typing — must be boolean'),
+        direction: z.string().optional().describe('Scroll direction: "up" or "down"'),
+        state: z.string().optional().describe('Load state for waitforloadstate (e.g. "networkidle")'),
       })
-      .passthrough()
       .describe('Structured command object with action and action-specific parameters'),
     execute: async (
       params: Record<string, unknown>,
