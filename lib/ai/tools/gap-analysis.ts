@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const gapAnalysis = tool({
   description:
-    'Display a gap analysis card showing which participant fields are available from the database and which fields the caseworker needs to provide before filling a form. Call this BEFORE filling any form fields.',
+    'Display a gap analysis card showing available and missing fields. The card is interactive — it already displays everything. Do NOT write any text listing available or missing fields before or after calling this tool. No summaries, no bullet points, no "Data I have" / "Missing fields" lists. Just call the tool and follow with one short sentence like "Please provide the missing info above."',
   inputSchema: z.object({
     formName: z
       .string()
