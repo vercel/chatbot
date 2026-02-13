@@ -95,6 +95,15 @@ evaluate is only acceptable for reading values (e.g. checking if an element exis
         // Ensure we have a Kernel browser instance (creates one if needed)
         const session = await getOrCreateBrowser(sessionId, userId);
 
+        // If the session was stopped by a previous stream but this is a fresh
+        // stream (abortSignal not aborted), clear the stale stopped flag so the
+        // agent can resume. The stopped flag only matters within the stream that
+        // triggered the stop — a new stream means the user asked to continue.
+        if (session.stopped && !abortSignal?.aborted) {
+          console.log('[browser-tool] Clearing stale stopped flag for new stream');
+          session.stopped = false;
+        }
+
         // Check session-level stopped flag (set by stopBrowserOperations)
         if (session.stopped) {
           console.log('[browser-tool] Skipping — session stopped by user');
