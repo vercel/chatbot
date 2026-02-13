@@ -245,9 +245,12 @@ browser({ command: "fill @e1 \"correct value\"" })
 ```
 
 ### Page Navigation Mid-Form
+
+**WARNING**: `back`, `forward`, and `reload` can wipe form state — all the values you've already filled will be lost. If a page appears blank or a snapshot returns very little content, wait and re-snapshot first. Only use `back` as a last resort if you've truly navigated away, and expect to re-fill the form.
+
 ```
-# If accidentally navigated away
-browser({ command: "back" })
-browser({ command: "wait --load networkidle" })
-browser({ command: "snapshot -i" })  # Form state may be preserved
+# LAST RESORT — only if truly navigated away. Expect form values to be wiped.
+browser({ action: "back" })
+browser({ action: "waitforloadstate", state: "networkidle" })
+browser({ action: "snapshot" })  # Check what survived — likely need to re-fill
 ```

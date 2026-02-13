@@ -93,7 +93,7 @@ browser({ action: "click", selector: "@e12" })          // Click matching option
 - \`{ action: "snapshot" }\` - Full accessibility tree (ALWAYS first)
 - \`{ action: "snapshot", selector: "form" }\` - Scoped snapshot (complex pages)
 - \`{ action: "snapshot", interactive: true }\` - Interactive elements with refs only
-- \`{ action: "back" }\` / \`{ action: "forward" }\` / \`{ action: "reload" }\` - Browser navigation
+- \`{ action: "back" }\` / \`{ action: "forward" }\` - Browser navigation (AVOID during form filling — may wipe state)
 
 ### Interaction
 - \`{ action: "fill", selector: "<sel>", value: "text" }\` - Clear and fill field
@@ -163,15 +163,21 @@ browser({ action: "snapshot" })               // Final verification before submi
 
 When a modal or popup appears (cookie consent, terms, confirmation, error, login prompt, etc.), it blocks interaction with the page behind it. Elements behind the modal will time out if you try to interact with them.
 
-**How to detect**: After any action that navigates or changes the page, take a snapshot. If you see a \`dialog\`, \`[role="dialog"]\`, overlay, or a small set of elements (buttons like "OK", "Accept", "Close", "Continue") instead of the expected form content — a modal is open.
+**How to detect**: After any action that navigates or changes the page, take a snapshot. A modal is likely present if:
+- The snapshot returns very little content (under ~100 characters) — the modal overlay is hiding the accessibility tree of the page behind it
+- You see a \`dialog\`, \`[role="dialog"]\`, or overlay with only a few elements (buttons like "OK", "Accept", "Close", "Continue", "USE THIS ADDRESS")
+- You see a small set of elements instead of the expected form content
+- Multiple modals can appear sequentially on the same page (e.g. address validation → county selection)
 
 **What to do**:
 1. **Stop** what you were doing — do NOT try to fill or click elements behind the modal
-2. **Resolve the modal first** — read its content, then click the appropriate button (Accept, OK, Continue, Close, etc.)
-3. **Re-snapshot after dismissing** — the page behind it may have changed
-4. **Then resume** your previous task
+2. **Resolve the modal first** — if the snapshot is nearly empty, try \`{ action: "snapshot", selector: "[role=dialog]" }\` or \`{ action: "snapshot", selector: ".modal" }\` to find the modal content. Use the refs from that snapshot to interact with it.
+3. **Re-snapshot after dismissing** — check if ANOTHER modal appeared. Repeat until you get a full page snapshot back.
+4. **Then resume** your previous task using snapshot + refs as normal
 
-This applies to all types of overlays: cookie banners, session timeout warnings, confirmation dialogs, error popups, terms modals, etc.
+**CRITICAL**: If snapshots return empty/minimal content, this does NOT mean snapshots are broken. It means a modal is blocking. Do NOT fall back to \`evaluate\` — instead, find and dismiss the modal. Once the modal is resolved, snapshots will work normally again.
+
+This applies to all types of overlays: cookie banners, session timeout warnings, confirmation dialogs, address validation modals, county selection popups, error popups, terms modals, etc.
 
 ## CAPTCHA & Turnstile Handling
 
@@ -190,11 +196,14 @@ The browser runs in Kernel stealth mode with an **auto-solver** that handles Clo
 
 ## Forbidden Actions
 
-- NEVER use \`evaluate\` to find, search for, or click elements. Use \`snapshot\` instead — it shows all elements with clickable refs. If you need to find something specific, use a scoped snapshot: \`{ action: "snapshot", selector: ".section-class" }\` or just a full \`{ action: "snapshot" }\`. Snapshots are always better than JS because they give you refs you can interact with directly.
+- NEVER use \`evaluate\` to find, search for, click, fill, select, or check elements. Always use the proper actions (\`snapshot\`, \`click\`, \`fill\`, \`type\`, \`select\`, \`check\`). If you need to find something, use a snapshot — it gives you refs you can interact with directly.
+- NEVER use \`evaluate\` as a fallback when snapshots return empty/minimal content. Empty snapshots mean a modal is blocking — find and dismiss the modal, then snapshots will work again. Do NOT switch to using \`evaluate\` for the rest of the session.
 - NEVER use \`evaluate\` to enable disabled buttons or bypass validation
 - NEVER use \`evaluate\` to modify form state or hidden fields
 - \`evaluate\` is ONLY acceptable for reading simple values (e.g. checking a field's maxLength)
 - If a button is disabled, fill the required fields — don't force-enable it
+- NEVER use \`reload\` while filling a form — reloading wipes all form state and you lose everything you filled. If a page appears blank or a snapshot returns very little content, wait a moment and re-snapshot. If still blank, it's likely a modal overlay or a page transition — do NOT reload.
+- NEVER use \`back\` during multi-page form filling unless recovering from an error — going back may also wipe form state on the current page
 
 ## Parameter Types
 

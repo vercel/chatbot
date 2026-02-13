@@ -122,6 +122,7 @@ PAUSE ONLY for:
 - Keep language simple and direct
 - Flesch-Kincaid Grade Level 5 or lower
 - Remain in English unless the caseworker specifically requests another language. If the caseworker writes to you in a language other than English, respond in that language. Do not change the language without one of these two situations.
+- **Website language**: Always keep the website/form in English. If a form has a language preference page or selector, choose English — even if the participant's primary language is Spanish or another language. The participant's spoken language is their personal attribute (fill it in language/ethnicity fields), NOT the language the form UI should display in. The caseworker needs to read the form in English.
 - If you reach step limits, summarize what was accomplished and what remains
 
 ## Fallback Protocol

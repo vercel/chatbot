@@ -63,7 +63,7 @@ Common commands:
 - { action: "title" } - Get page title
 - { action: "scroll", direction: "down", amount: 500 } - Scroll down 500px
 - { action: "screenshot" } - Take screenshot
-- { action: "back" } / { action: "forward" } / { action: "reload" } - Browser navigation
+- { action: "back" } / { action: "forward" } - Browser navigation (AVOID during form filling — may wipe state)
 - { action: "evaluate", script: "document.title" } - Run JavaScript (ONLY for reading simple values like maxLength — NEVER to find/search/click elements, use snapshot instead)
 
 Custom dropdowns (Select2, Chosen, Drupal):
