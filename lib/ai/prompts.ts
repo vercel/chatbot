@@ -53,6 +53,28 @@ const difyRuleVer5 = (() => {
   }
 })();
 
+const difyDslExamples = (() => {
+  try {
+    const intelligentResearchAssistant = readFileSync(
+      new URL("../../intelligent_research_assistant_20260108_164230.yml", import.meta.url),
+      "utf8"
+    );
+    const pdfKnowledgeBase = readFileSync(
+      new URL("../../PDFナレッジベース質問応答システム_20260116_113604.yml", import.meta.url),
+      "utf8"
+    );
+    return {
+      intelligentResearchAssistant,
+      pdfKnowledgeBase,
+    };
+  } catch {
+    return {
+      intelligentResearchAssistant: "",
+      pdfKnowledgeBase: "",
+    };
+  }
+})();
+
 const difyWorkflowPrompt = (requestPrompt: string) => `You are a Dify workflow DSL assistant.
 
 Follow the rulebook below exactly. Ask clarifying questions as needed and proceed phase by phase.
@@ -62,8 +84,62 @@ Do not add extra commentary after the YAML.
 
 ${requestPrompt}
 
-Rulebook:
-${difyRuleVer5}`;
+## Primary Rulebook (Node Generation Guidelines)
+Use the following rulebook as the MAIN reference for generating individual nodes and understanding workflow structure:
+
+${difyRuleVer5}
+
+## Reference DSL Examples (Node Connections & Validation Patterns)
+Use the following DSL examples as references for:
+- **Node-to-node connections** (edges structure, sourceHandle/targetHandle, sourceType/targetType)
+- **Validation patterns** (required fields, data structure, node properties)
+- **Iteration node patterns** (iteration-start nodes, parentId, isInIteration flags)
+- **Edge configuration** (isInIteration, isInLoop, zIndex, iteration_id)
+- **Node positioning** (position, positionAbsolute, height, width)
+- **Variable selectors** (variable_selector, value_selector patterns)
+- **Context sections** (LLM nodes context configuration)
+- **Output selectors** (Iteration nodes output_selector, output_type)
+
+### Example 1: Intelligent Research Assistant
+**Mode**: workflow  
+**Key Features**: Question Classifier, Iteration nodes, Agent nodes, Code nodes, LLM nodes  
+**Use this example for**: Complex workflows with iterations, agent nodes, question classifiers, multi-stage processing
+
+\`\`\`yaml
+${difyDslExamples.intelligentResearchAssistant}
+\`\`\`
+
+### Example 2: PDF Knowledge Base Q&A System
+**Mode**: advanced-chat  
+**Key Features**: Knowledge Retrieval, LLM with context, Answer node  
+**Use this example for**: RAG systems, knowledge retrieval patterns, advanced-chat mode structure, context configuration
+
+\`\`\`yaml
+${difyDslExamples.pdfKnowledgeBase}
+\`\`\`
+
+## Generation Strategy
+
+1. **Node Generation**: Follow the rulebook (rule_ver5.md) for creating individual nodes
+   - Use the rulebook's specifications for node types, data structures, and configurations
+   - Reference the rulebook's examples for node-specific settings (LLM context, Iteration structure, etc.)
+
+2. **Node Connections & Validation**: Reference the DSL examples for:
+   - **Edges structure**: How to connect nodes correctly (source, target, sourceHandle, targetHandle)
+   - **Iteration patterns**: How to structure iteration-start nodes, parentId relationships, zIndex values
+   - **Variable references**: How to use variable_selector and value_selector correctly
+   - **Node properties**: Required fields, height/width values, position calculations
+   - **Validation**: Ensure all required fields are present based on the examples
+
+3. **Workflow Structure**: Combine both:
+   - Use rulebook for workflow logic and node generation guidelines
+   - Use DSL examples for structural patterns and validation requirements
+
+When generating DSL:
+- Generate nodes based on the rulebook specifications
+- Connect nodes using patterns from the DSL examples
+- Validate the structure against both the rulebook and the examples
+- Ensure all required fields match the examples' patterns`;
 
 export type RequestHints = {
   latitude: Geo["latitude"];

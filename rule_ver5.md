@@ -184,6 +184,76 @@
    - 検索モード (single, multiple)
    - リランキングの有無
    - top_k設定
+   
+   **重要: ナレッジ検索ノードの設定例**
+   
+   **クエリ変数の設定（必須）:**
+   
+   **チャットフローモード (`advanced-chat`) の場合:**
+   - `query_variable_selector`で`sys.query`を使用する（推奨）
+   - 形式: `[start_node_id, sys.query]`
+   - **Startノードに明示的な入力フィールドを設定する必要はない**（`sys.query`が自動的に利用可能）
+   - 例: StartノードのIDが`'1736300000000'`の場合: `['1736300000000', 'sys.query']`
+   
+   **ワークフローモード (`workflow`) の場合:**
+   - Startノードに明示的な入力フィールドを設定する必要がある
+   - `query_variable_selector`でStartノードの変数名を参照する
+   - 形式: `[start_node_id, variable_name]`
+   - 例: StartノードのIDが`'1736300000000'`で、変数名が`query`の場合: `['1736300000000', 'query']`
+   
+   **ナレッジ検索ノードの設定例（advanced-chatモード、multipleモード、ウエイト設定）:**
+   ```yaml
+   # Startノード（advanced-chatモードでは入力フィールド不要）
+   - data:
+       desc: ユーザーからの質問を受け取ります
+       selected: false
+       title: 開始
+       type: start
+       variables: []  # 空配列（sys.queryが自動的に利用可能）
+     height: 88
+     id: 'start_node_id'
+     # ... position等の設定 ...
+   
+   # Knowledge Retrievalノード
+   - data:
+       dataset_ids:
+       - 'YOUR_DATASET_ID_HERE'  # 後でDifyの管理画面で設定してください
+       desc: ナレッジベースから質問に関連する情報を検索・取得します
+       multiple_retrieval_config:
+         reranking_enable: true
+         reranking_mode: weighted  # ウエイト設定を使用
+         top_k: 3
+       query_variable_selector:
+       - 'start_node_id'  # StartノードのID
+       - sys.query  # sys.queryを使用（ユーザー入力のクエリ）
+       retrieval_mode: multiple
+       selected: false
+       title: ナレッジベース検索
+       type: knowledge-retrieval
+     height: 246
+     id: 'knowledge_retrieval_node_id'
+     # ... position等の設定 ...
+   ```
+   
+   **重要なポイント:**
+   - **チャットフローモード (`advanced-chat`) の場合:**
+     - `query_variable_selector: [start_node_id, sys.query]`を使用する（推奨）
+     - Startノードに`variables`を設定する必要はない（空配列`[]`で可）
+     - `sys.query`が自動的にユーザー入力のクエリとして利用可能
+   - **ワークフローモード (`workflow`) の場合:**
+     - Startノードに明示的な入力フィールドを設定する必要がある
+     - `query_variable_selector: [start_node_id, variable_name]`の形式で変数名を指定
+   - `reranking_mode: weighted`を使用する場合、`reranking_model`セクションは不要
+   - `reranking_mode: reranking_model`を使用する場合、`reranking_model`セクションが必要（モデルとプロバイダーを指定）
+   
+   **LLMノードでのユーザー入力の参照:**
+   - **チャットフローモード (`advanced-chat`) の場合:**
+     - LLMノードのプロンプトテンプレートで`{{#sys.query#}}`を使用してユーザー入力を参照する（推奨）
+     - `sys.query`は自動的にユーザー入力のクエリとして利用可能
+     - 例: `{{#sys.query#}}`
+   - **ワークフローモード (`workflow`) の場合:**
+     - Startノードに設定した変数名を使用する
+     - 例: Startノードに`query`という変数がある場合: `{{#start_node_id.query#}}`
 
 3. **ファイル処理が必要か？**
    - Document Extractorの使用
@@ -410,12 +480,13 @@
 ```
 [フロー例]
 1. 開始 (Start)
+   - 入力フィールド不要（sys.queryが自動的に利用可能）
    ↓
 2. ユーザー入力: プロンプト（テキスト）
    ↓
 3. LLM処理 (GPT-4o)
    - システムプロンプト: "あなたは..."
-   - ユーザープロンプト: "{{input}}"
+   - ユーザープロンプト: "{{#sys.query#}}"
    ↓
 4. 回答 (Answer)
    - 出力: {{LLMの結果}}
@@ -1693,7 +1764,97 @@
      target: 'next_node_id'
    ```
 
-9. **モードに応じたノード構成**:
+9. **ナレッジ検索ノード（Knowledge Retrieval）の生成**:
+   
+   **重要: クエリ変数の設定**
+   
+   **チャットフローモード (`advanced-chat`) の場合:**
+   - `query_variable_selector`で`sys.query`を使用する（推奨）
+   - 形式: `[start_node_id, sys.query]`
+   - **Startノードに明示的な入力フィールドを設定する必要はない**（`sys.query`が自動的に利用可能）
+   - Startノードの`variables`は空配列`[]`で可
+   - 例: StartノードのIDが`'1736300000000'`の場合: `['1736300000000', 'sys.query']`
+   
+   **ワークフローモード (`workflow`) の場合:**
+   - Startノードに明示的な入力フィールドを設定する必要がある
+   - `query_variable_selector`でStartノードの変数名を参照する
+   - 形式: `[start_node_id, variable_name]`
+   - 例: StartノードのIDが`'1736300000000'`で、変数名が`query`の場合: `['1736300000000', 'query']`
+   
+   **ナレッジ検索ノードの生成例（advanced-chatモード、multipleモード、ウエイト設定）:**
+   ```yaml
+   # Startノード（advanced-chatモードでは入力フィールド不要）
+   - data:
+       desc: ユーザーからの質問を受け取ります
+       selected: false
+       title: 開始
+       type: start
+       variables: []  # 空配列（sys.queryが自動的に利用可能）
+     height: 88
+     id: 'start_node_id'
+     position:
+       x: 50
+       y: 300
+     positionAbsolute:
+       x: 50
+       y: 300
+     selected: false
+       sourcePosition: right
+       targetPosition: left
+     type: custom
+     width: 244
+   
+   # Knowledge Retrievalノード
+   - data:
+       dataset_ids:
+       - 'YOUR_DATASET_ID_HERE'  # 後でDifyの管理画面で設定してください
+       desc: ナレッジベースから質問に関連する情報を検索・取得します
+       multiple_retrieval_config:
+         reranking_enable: true
+         reranking_mode: weighted  # ウエイト設定を使用（推奨）
+         top_k: 3
+       query_variable_selector:
+       - 'start_node_id'  # StartノードのID（必須）
+       - sys.query  # sys.queryを使用（ユーザー入力のクエリ、必須）
+       retrieval_mode: multiple
+       selected: false
+       title: ナレッジベース検索
+       type: knowledge-retrieval
+     height: 246
+     id: 'knowledge_retrieval_node_id'
+     position:
+       x: 350
+       y: 300
+     positionAbsolute:
+       x: 350
+       y: 300
+     selected: false
+     sourcePosition: right
+     targetPosition: left
+     type: custom
+     width: 244
+   ```
+   
+   **重要なポイント:**
+   - **チャットフローモード (`advanced-chat`) の場合:**
+     - `query_variable_selector: [start_node_id, sys.query]`を使用する（推奨）
+     - Startノードに`variables`を設定する必要はない（空配列`[]`で可）
+     - `sys.query`が自動的にユーザー入力のクエリとして利用可能
+   - **ワークフローモード (`workflow`) の場合:**
+     - Startノードに明示的な入力フィールドを設定する必要がある
+     - `query_variable_selector: [start_node_id, variable_name]`の形式で変数名を指定
+   - `reranking_mode: weighted`を使用する場合（推奨）、`reranking_model`セクションは不要
+   - `reranking_mode: reranking_model`を使用する場合、`reranking_model`セクションが必要:
+     ```yaml
+     reranking_mode: reranking_model
+     reranking_model:
+       model: netease-youdao/bce-reranker-base_v1
+       provider: siliconflow
+     ```
+   - `retrieval_mode: single`の場合、`multiple_retrieval_config`セクションは不要
+   - `retrieval_mode: multiple`の場合、`multiple_retrieval_config`セクションが必要
+
+10. **モードに応じたノード構成**:
    - **チャットフローモード (`advanced-chat`)**: Answerノードを必ず含める（最後のノード）
    - **ワークフローモード (`workflow`)**: Answerノードは不要、最後のノードで処理を完了（Endノードは自動的に追加される）
    - **エージェントモード (`agent-chat`)**: `model_config`を使用、Answerノードは不要
@@ -1726,6 +1887,68 @@
    - `context`セクションが存在しないと、DSLのインポート時に「Application error: a client-side exception has occurred」エラーが発生する可能性がある
    - すべてのLLMノードに、必ず`context`セクションを設定すること
    - `context`を使用しない場合でも、`enabled: false`と`variable_selector: []`を設定すること
+
+10.6. **LLMノードのプロンプトテンプレート（チャットフローモード）**:
+   
+   **重要: チャットフローモード (`advanced-chat`) でのユーザー入力の参照**
+   
+   - **ユーザープロンプトで`{{#sys.query#}}`を使用する（推奨）**
+   - `sys.query`は自動的にユーザー入力のクエリとして利用可能
+   - Startノードに明示的な入力フィールドを設定する必要はない
+   
+   **LLMノードの生成例（チャットフローモード、ナレッジ検索あり）:**
+   ```yaml
+   - data:
+       context:
+         enabled: true
+         variable_selector:
+         - 'knowledge_retrieval_node_id'
+         - result
+       desc: ナレッジベースから取得した情報を基に、質問に対する回答を生成します
+       model:
+         completion_params:
+           temperature: 0.7
+         mode: chat
+         name: gpt-4o
+         provider: openai
+       prompt_template:
+       - id: system_prompt
+         role: system
+         text: |
+           あなたは、PDFドキュメントの内容を参照しながら質問に回答する専門アシスタントです。
+           以下のルールに従って回答してください：
+           
+           1. ナレッジベースから取得した情報を基に、正確で分かりやすい回答を提供してください
+           2. 参照したドキュメントの内容に基づいた情報のみを提供し、推測や憶測は避けてください
+       - id: user_prompt
+         role: user
+         text: |
+           以下の質問に対して、ナレッジベースから取得した情報を基に回答してください。
+           
+           【質問】
+           {{#sys.query#}}
+           
+           【参考情報】
+           {{#context#}}
+       selected: false
+       title: 回答生成
+       type: llm
+       variables: []
+       vision:
+         enabled: false
+     height: 98
+     id: 'llm_node_id'
+     # ... position等の設定 ...
+   ```
+   
+   **重要なポイント:**
+   - **チャットフローモード (`advanced-chat`) の場合:**
+     - ユーザープロンプトで`{{#sys.query#}}`を使用する（推奨）
+     - `sys.query`は自動的にユーザー入力のクエリとして利用可能
+     - Startノードに`variables`を設定する必要はない
+   - **ワークフローモード (`workflow`) の場合:**
+     - Startノードに設定した変数名を使用する（例: `{{#start_node_id.query#}}`）
+   - `context`セクションは必須（ナレッジ検索を使用する場合: `enabled: true`、使用しない場合: `enabled: false`）
 
 11. **HTTPリクエストノードのbody形式（JSON送信時）:**
 
@@ -2384,6 +2607,31 @@ DSL生成前に以下を確認：
     - [ ] `context`を使用する場合: `enabled: true`, `variable_selector: [ノードID, 変数名]`が設定されている
     - [ ] `context`を使用しない場合: `enabled: false`, `variable_selector: []`が設定されている
     - [ ] `context`セクションが存在しないと、DSLのインポート時に「Application error: a client-side exception has occurred」エラーが発生する可能性がある
+  - [ ] **プロンプトテンプレートでのユーザー入力の参照:**
+    - [ ] **チャットフローモード (`advanced-chat`) の場合:**
+      - [ ] ユーザープロンプトで`{{#sys.query#}}`を使用している（推奨）
+      - [ ] Startノードに`variables`を設定していない、または空配列`[]`にしている
+    - [ ] **ワークフローモード (`workflow`) の場合:**
+      - [ ] Startノードに設定した変数名を使用している（例: `{{#start_node_id.query#}}`）
+- [ ] ナレッジ検索ノード（Knowledge Retrieval）を使用する場合:
+  - [ ] **`query_variable_selector`が正しく設定されている（必須）**
+    - [ ] **チャットフローモード (`advanced-chat`) の場合:**
+      - [ ] `query_variable_selector: [start_node_id, sys.query]`を使用している（推奨）
+      - [ ] Startノードに`variables`を設定していない、または空配列`[]`にしている（`sys.query`が自動的に利用可能）
+    - [ ] **ワークフローモード (`workflow`) の場合:**
+      - [ ] Startノードに明示的な入力フィールドを設定している
+      - [ ] `query_variable_selector: [start_node_id, variable_name]`の形式で変数名を指定している（例: `['start_node_id', 'query']`）
+      - [ ] Startノードの変数名が、ユーザー入力の変数名と一致している（例: `query`, `question`, `input`など）
+  - [ ] `dataset_ids`が設定されている（後でDifyの管理画面で設定する場合はプレースホルダーでも可）
+  - [ ] `retrieval_mode`が設定されている（`single`または`multiple`）
+  - [ ] `retrieval_mode: multiple`の場合:
+    - [ ] `multiple_retrieval_config`セクションが存在する
+    - [ ] `reranking_enable`が設定されている（`true`または`false`）
+    - [ ] `reranking_enable: true`の場合:
+      - [ ] `reranking_mode`が設定されている（`weighted`または`reranking_model`）
+      - [ ] `reranking_mode: weighted`の場合、`reranking_model`セクションは不要
+      - [ ] `reranking_mode: reranking_model`の場合、`reranking_model`セクションが必要（`model`と`provider`を指定）
+    - [ ] `top_k`が設定されている（数値）
 
 ### 条件分岐（If-Else）チェック
 - [ ] If-Elseノードを使用する場合:

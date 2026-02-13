@@ -88,11 +88,11 @@ export async function POST(request: Request) {
   try {
     requestJson = await request.json();
     requestBody = postRequestBodySchema.parse(requestJson);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      const errorDetails = error.issues
-        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-        .join("; ");
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const errorDetails = error.issues
+          .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+          .join("; ");
       console.error(
         "Validation error:",
         errorDetails,
@@ -449,7 +449,6 @@ export async function POST(request: Request) {
                     mode: inferMode(yaml),
                   });
 
-                  // Save DSL file to temporary directory
                   // 自動インポートは streamText の onFinish で実行されるため、ここでは保存のみ
                   await saveDslToTempFile({
                     chatId: id,

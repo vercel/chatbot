@@ -107,19 +107,35 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
+    // 外部キー制約の順序に従って削除する必要がある
+    // 1. まず、DifyWorkflowDslを削除（Message_v2を参照しているため、Message_v2より先に削除）
+    try {
+      await db.delete(difyWorkflowDsl).where(eq(difyWorkflowDsl.chatId, id));
+    } catch (dslError) {
+      // テーブルが存在しない場合やその他のエラーは無視（マイグレーション未適用の場合など）
+      console.warn("Failed to delete DifyWorkflowDsl records:", dslError);
+    }
+    
+    // 2. Voteを削除（Message_v2を参照しているため、Message_v2より先に削除）
     await db.delete(vote).where(eq(vote.chatId, id));
+    
+    // 3. Message_v2を削除（DifyWorkflowDslとVoteの参照が削除された後）
     await db.delete(message).where(eq(message.chatId, id));
+    
+    // 4. Streamを削除
     await db.delete(stream).where(eq(stream.chatId, id));
 
+    // 5. 最後にChatを削除
     const [chatsDeleted] = await db
       .delete(chat)
       .where(eq(chat.id, id))
       .returning();
     return chatsDeleted;
-  } catch (_error) {
+  } catch (error) {
+    console.error("Failed to delete chat by id:", error);
     throw new ChatSDKError(
       "bad_request:database",
-      "Failed to delete chat by id"
+      `Failed to delete chat by id: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
@@ -135,10 +151,24 @@ export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
       return { deletedCount: 0 };
     }
 
-    const chatIds = userChats.map((c) => c.id);
+    const chatIds = userChats.map((c: { id: string }) => c.id);
 
+    // 外部キー制約の順序に従って削除する必要がある
+    // 1. まず、DifyWorkflowDslを削除（Message_v2を参照しているため、Message_v2より先に削除）
+    try {
+      await db.delete(difyWorkflowDsl).where(inArray(difyWorkflowDsl.chatId, chatIds));
+    } catch (dslError) {
+      // テーブルが存在しない場合やその他のエラーは無視（マイグレーション未適用の場合など）
+      console.warn("Failed to delete DifyWorkflowDsl records:", dslError);
+    }
+    
+    // 2. Voteを削除（Message_v2を参照しているため、Message_v2より先に削除）
     await db.delete(vote).where(inArray(vote.chatId, chatIds));
+    
+    // 3. Message_v2を削除（DifyWorkflowDslとVoteの参照が削除された後）
     await db.delete(message).where(inArray(message.chatId, chatIds));
+    
+    // 4. Streamを削除
     await db.delete(stream).where(inArray(stream.chatId, chatIds));
 
     const deletedChats = await db
@@ -147,10 +177,11 @@ export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
       .returning();
 
     return { deletedCount: deletedChats.length };
-  } catch (_error) {
+  } catch (error) {
+    console.error("Failed to delete all chats by user id:", error);
     throw new ChatSDKError(
       "bad_request:database",
-      "Failed to delete all chats by user id"
+      `Failed to delete all chats by user id: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
