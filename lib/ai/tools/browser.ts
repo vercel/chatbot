@@ -45,8 +45,8 @@ Common commands:
 - { action: "snapshot", selector: "form" } - Scoped snapshot (reduces noise)
 - { action: "snapshot", interactive: true } - Interactive elements only with refs
 - { action: "click", selector: "@e1" } - Click element by ref
-- { action: "fill", selector: "@e1", value: "text" } - Clear field and fill
-- { action: "type", selector: "@e1", text: "text" } - Type into element (appends)
+- { action: "fill", selector: "@e1", value: "text" } - Clear field and fill (programmatic — use for plain text fields)
+- { action: "type", selector: "@e1", text: "text", clear: true } - Simulate real keystrokes (use for masked fields: SSN, date, phone, state, zip)
 - { action: "select", selector: "@e1", values: ["option"] } - Select native dropdown option
 - { action: "getbylabel", label: "Field Name", subaction: "fill", value: "val" } - Fill by accessible label
 - { action: "press", key: "Enter" } - Press key (Tab, Escape, ArrowDown, etc.)
@@ -64,7 +64,7 @@ Common commands:
 - { action: "scroll", direction: "down", amount: 500 } - Scroll down 500px
 - { action: "screenshot" } - Take screenshot
 - { action: "back" } / { action: "forward" } / { action: "reload" } - Browser navigation
-- { action: "evaluate", script: "document.title" } - Run JavaScript (read-only!)
+- { action: "evaluate", script: "document.title" } - Run JavaScript (ONLY for reading simple values like maxLength — NEVER to find/search/click elements, use snapshot instead)
 
 Custom dropdowns (Select2, Chosen, Drupal):
 If "select" fails, the dropdown is likely a custom widget. Use this pattern:
@@ -73,8 +73,8 @@ If "select" fails, the dropdown is likely a custom widget. Use this pattern:
 3. { action: "snapshot", interactive: true } — find the options
 4. { action: "click", selector: "@e5" } — click the desired option
 
-NEVER use "evaluate" to enable disabled buttons, bypass validation, or modify page state.
-evaluate is only acceptable for reading values (e.g. checking if an element exists).`,
+NEVER use "evaluate" to find, search for, or click elements — use snapshot instead (it gives refs you can click).
+NEVER use "evaluate" to enable disabled buttons, bypass validation, or modify page state.`,
     inputSchema: z
       .object({
         action: z.string().describe('The command action (e.g. "navigate", "click", "snapshot", "fill")'),

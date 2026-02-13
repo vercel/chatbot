@@ -2,54 +2,37 @@
 
 Patterns for filling out web forms reliably.
 
-## Primary Strategy: Label Locators
-
-Most forms have labeled fields. Use `find label` as your first approach:
-
-```
-browser({ command: "open https://example.com/application" })
-browser({ command: "wait --load networkidle" })
-
-# Fill fields by their visible labels
-browser({ command: "find label \"First Name\" fill \"John\"" })
-browser({ command: "find label \"Last Name\" fill \"Doe\"" })
-browser({ command: "find label \"Email\" fill \"john@example.com\"" })
-browser({ command: "find label \"Phone\" fill \"5551234567\"" })
-
-# Checkboxes and radio buttons
-browser({ command: "find label \"Yes\" click" })
-browser({ command: "find label \"Male\" click" })
-
-# Dropdowns
-browser({ command: "find label \"State\" select \"California\"" })
-```
-
-This is the most efficient approach because:
-- Uses accessibility tree (token efficient, no DOM inspection needed)
-- Works without discovering IDs or waiting for refs
-- Self-documenting - you can see what field you're targeting
-
 ## Snapshot Strategy
 
 Always take a full snapshot first, then scope on complex pages:
 
 ```
-browser({ command: "snapshot" })            # Full page — understand structure
-browser({ command: "snapshot -s \"form\"" })  # Scope to form on complex pages (Drupal, WordPress)
-browser({ command: "snapshot -s \"main\"" })  # Alternative scope for main content area
+browser({ action: "snapshot" })                       # Full page — understand structure
+browser({ action: "snapshot", selector: "form" })     # Scope to form on complex pages
+browser({ action: "snapshot", selector: "main" })     # Alternative scope for main content area
 ```
 
 **ALWAYS re-snapshot after DOM-changing actions** (click, select, navigation). Refs go stale.
 
-## Fallback: Refs from Snapshot
+## Primary Strategy: Refs from Snapshot
 
-If labels don't work, use snapshot refs:
+Once you have a snapshot, use the refs it provides. They are unambiguous and reliable:
 
 ```
-browser({ command: "snapshot -i" })
-# Output: textbox [ref=@e1], textbox [ref=@e2], button [ref=@e3]
-browser({ command: "fill @e1 \"John\"" })
-browser({ command: "fill @e2 \"Doe\"" })
+browser({ action: "snapshot", selector: "form" })
+# Output: textbox "First Name" [ref=@e3], textbox "Last Name" [ref=@e4], checkbox "Yes" [ref=@e7]
+browser({ action: "fill", selector: "@e3", value: "John" })
+browser({ action: "fill", selector: "@e4", value: "Doe" })
+browser({ action: "click", selector: "@e7" })
+```
+
+## Label Locators (only when labels are unique)
+
+Use `getbylabel` only when the label text is **unique** on the page. Do NOT use for generic labels like "Yes", "No", "Male", "Female" — these appear on many fields and cause strict-mode violations. Do NOT include asterisks or required-field indicators (use "First Name" not "First Name: *").
+
+```
+browser({ action: "getbylabel", label: "First Name", subaction: "fill", value: "John" })
+browser({ action: "getbylabel", label: "Email", subaction: "fill", value: "john@example.com" })
 ```
 
 ## Fallback: CSS Selectors
@@ -57,37 +40,61 @@ browser({ command: "fill @e2 \"Doe\"" })
 If refs aren't available but IDs are visible:
 
 ```
-browser({ command: "fill \"#firstName\" \"John\"" })
-browser({ command: "fill \"#lastName\" \"Doe\"" })
-browser({ command: "check \"#agreeToTerms\"" })
+browser({ action: "fill", selector: "#firstName", value: "John" })
+browser({ action: "fill", selector: "#lastName", value: "Doe" })
+browser({ action: "check", selector: "#agreeToTerms" })
 ```
 
 ## Field Type Patterns
 
-### Text Fields
+**CRITICAL — `fill` vs `type`**: Many fields (SSN, date, phone, state, zip) have JavaScript input masks. `fill` sets the value programmatically and **bypasses** JS handlers — the value silently fails or gets wiped. Use `type` with `clear: true` for masked fields. Use `fill` for plain text fields (name, address, city, email).
+
+**CRITICAL — Always check `maxlength`**: Strip dashes, slashes, spaces so the value fits. The browser silently truncates values exceeding `maxlength`.
+
+**Always verify masked fields**: After typing, use `inputvalue` to confirm the value stuck. If empty/wrong, click the field, wait, re-type.
+
+### Text Fields (use `fill`)
 ```
-browser({ command: "fill @e1 \"John Doe\"" })
+browser({ action: "fill", selector: "@e1", value: "John Doe" })
 ```
 
-### Date Fields
-Click first to activate any date picker, then type:
+### Date Fields (use `type`)
+Check `maxlength`. If `maxlength="8"`, digits only (MMDDYYYY). Click first, then type:
 ```
-browser({ command: "click @e1" })
-browser({ command: "type @e1 \"01/15/1990\"" })
+browser({ action: "click", selector: "@e1" })
+browser({ action: "type", selector: "@e1", text: "01152000", clear: true })
+browser({ action: "inputvalue", selector: "@e1" })  # Verify
 ```
 
 Or if using a date picker:
 ```
-browser({ command: "click @e1" })  # Opens picker
-browser({ command: "snapshot -i" })  # Get picker refs
-browser({ command: "click @e5" })  # Click desired date
+browser({ action: "click", selector: "@e1" })  # Opens picker
+browser({ action: "snapshot", interactive: true })  # Get picker refs
+browser({ action: "click", selector: "@e5" })  # Click desired date
 ```
 
-### Phone Number Fields
-Some fields have masks. Type digits only:
+### SSN Fields (use `type`)
+Check `maxlength`. If `maxlength="9"`, digits only:
 ```
-browser({ command: "click @e1" })
-browser({ command: "type @e1 \"5551234567\"" })
+browser({ action: "click", selector: "@e1" })
+browser({ action: "type", selector: "@e1", text: "123456789", clear: true })
+browser({ action: "inputvalue", selector: "@e1" })  # Verify
+```
+
+### Phone Number Fields (use `type`)
+Check `maxlength`. If `maxlength="10"`, digits only:
+```
+browser({ action: "click", selector: "@e1" })
+browser({ action: "type", selector: "@e1", text: "5551234567", clear: true })
+browser({ action: "inputvalue", selector: "@e1" })  # Verify
+```
+
+### State Fields (use `type`)
+Check `maxlength`. If `maxlength="2"`, use abbreviation:
+```
+browser({ action: "click", selector: "@e1" })
+browser({ action: "type", selector: "@e1", text: "CA", clear: true })
+browser({ action: "inputvalue", selector: "@e1" })  # Verify
 ```
 
 ### Native Dropdowns (select)

@@ -79,14 +79,24 @@ This prevents back-and-forth where the agent fills some fields, discovers gaps, 
 
 ### Field Interaction
 - Skip disabled/grayed-out fields with a note
-- For fields that might have format masks such as date fields, SSN, or phone fields:
-  - Click the field first to activate it and reveal any format masks
-  - Then type the data in the appropriate format
+- **CRITICAL — Respect \`maxlength\` attributes**: Before filling any field, check its \`maxlength\` from the snapshot or DOM. Strip formatting characters (dashes, slashes, parentheses, spaces) so the value fits. Common patterns:
+  - SSN with \`maxlength="9"\` → digits only: \`"123456789"\`
+  - Birthdate with \`maxlength="8"\` → digits only: \`"01022000"\`
+  - Phone with \`maxlength="10"\` → digits only: \`"7775551234"\`
+  - State with \`maxlength="2"\` → abbreviation: \`"CA"\`
+- **CRITICAL — Use \`type\` (not \`fill\`) for masked/formatted fields**: Fields like SSN, birthdate, phone, and state abbreviations often have JavaScript input masks. The \`fill\` action sets the value programmatically and **bypasses** JS event handlers, so the value silently fails or gets wiped. For these fields:
+  1. Click the field first to focus it
+  2. Use the \`type\` action with \`clear: true\` — this simulates real keystrokes and triggers the JS formatters
+  3. After typing, verify with \`inputvalue\` to confirm the value stuck
+  4. If empty or wrong, the field has a mask — click, wait briefly, re-type
+  **Rule of thumb**: Use \`fill\` for plain text fields (name, address, city, email). Use \`type\` for any field that might have input formatting (SSN, date, phone, state, zip).
+- **Verify masked fields**: After typing into SSN, birthdate, phone, or state fields, use \`inputvalue\` to confirm the value actually took. If it's empty or wrong, retry with \`type\`.
 - If a field doesn't accept input on first try, click it to activate before typing
 - ALWAYS re-snapshot after interactions that change the page (clicking radio buttons, selecting dropdowns, navigating). Refs go stale after DOM changes.
 - On complex pages with lots of navigation/sidebar elements, use \`{ action: "snapshot", selector: "form" }\` to scope the snapshot to just the form area — this dramatically reduces noise
 - If \`select\` fails on a dropdown, it's likely a custom widget (Select2/Chosen). Click the dropdown trigger, wait, snapshot, then click the option.
 - Do not submit at the end, summarize what you filled out and ask the caseworker to review
+- **Disabled submit buttons**: If a submit button is disabled after you've filled all fields, do NOT waste steps debugging it with \`evaluate\`. The most likely cause is a CAPTCHA/Turnstile still solving in the background (the auto-solver handles this). Since you should not be submitting anyway, just note it in your summary and move on.
 - Do not close the browser unless the user asks you to
 
 ## Autonomous Progression
