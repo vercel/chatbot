@@ -98,15 +98,6 @@ Note: `<sel>` can be a ref (`@e1`), CSS selector (`"#firstName"`), or other loca
 | `screenshot page.png` | Capture viewport |
 | `screenshot --full page.png` | Capture full page |
 
-## Tab Management
-
-| Command | Description |
-|---------|-------------|
-| `tab` | List open tabs |
-| `tab new https://...` | Open new tab |
-| `tab 2` | Switch to tab 2 |
-| `tab close` | Close current tab |
-
 ## Frame Handling
 
 | Command | Description |
