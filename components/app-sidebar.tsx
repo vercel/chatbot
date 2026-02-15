@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
+import { useTranslations, useLocale } from "next-intl";
 import { PlusIcon, TrashIcon } from "@/components/icons";
 import {
   getChatHistoryPaginationKey,
@@ -39,6 +40,10 @@ export function AppSidebar({ user }: { user: User | undefined }) {
   const { setOpenMobile } = useSidebar();
   const { mutate } = useSWRConfig();
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
+  const t = useTranslations('chat.sidebar');
+  const deleteT = useTranslations('sidebarHistory.deleteAll');
+  const locale = useLocale();
+  const isRTL = locale === 'fa';
 
   const handleDeleteAll = () => {
     const deletePromise = fetch("/api/history", {
@@ -46,21 +51,21 @@ export function AppSidebar({ user }: { user: User | undefined }) {
     });
 
     toast.promise(deletePromise, {
-      loading: "Deleting all chats...",
+      loading: deleteT('loading'),
       success: () => {
         mutate(unstable_serialize(getChatHistoryPaginationKey));
         setShowDeleteAllDialog(false);
         router.replace("/");
         router.refresh();
-        return "All chats deleted successfully";
+        return deleteT('success');
       },
-      error: "Failed to delete all chats",
+      error: deleteT('error'),
     });
   };
 
   return (
     <>
-      <Sidebar className="group-data-[side=left]:border-r-0">
+      <Sidebar side={isRTL ? "right" : "left"} className={isRTL ? "group-data-[side=right]:border-l-0" : "group-data-[side=left]:border-r-0"}>
         <SidebarHeader>
           <SidebarMenu>
             <div className="flex flex-row items-center justify-between">
@@ -72,7 +77,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 }}
               >
                 <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  Chatbot
+                  {t('title')}
                 </span>
               </Link>
               <div className="flex flex-row gap-1">
@@ -89,7 +94,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent align="end" className="hidden md:block">
-                      Delete All Chats
+                      {t('deleteAll')}
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -109,7 +114,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent align="end" className="hidden md:block">
-                    New Chat
+                    {t('newChat')}
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -128,16 +133,15 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete all chats?</AlertDialogTitle>
+            <AlertDialogTitle>{deleteT('title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete all
-              your chats and remove them from our servers.
+              {deleteT('description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{deleteT('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteAll}>
-              Delete All
+              {deleteT('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

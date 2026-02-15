@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { setRequestLocale } from "next-intl/server";
 
 import { auth } from "@/app/(auth)/auth";
 import { Chat } from "@/components/chat";
@@ -9,7 +10,10 @@ import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { getChatById, getMessagesByChatId } from "@/lib/db/queries";
 import { convertToUIMessages } from "@/lib/utils";
 
-export default function Page(props: { params: Promise<{ id: string }> }) {
+export default async function Page(props: { params: Promise<{ id: string; locale: string }> }) {
+  const { locale } = await props.params;
+  setRequestLocale(locale);
+  
   return (
     <Suspense fallback={<div className="flex h-dvh" />}>
       <ChatPage params={props.params} />
