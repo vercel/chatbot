@@ -42,3 +42,5 @@ yarn-error.log*
 /playwright-report/
 /blob-report/
 /playwright/*
+db-data
+redis-data

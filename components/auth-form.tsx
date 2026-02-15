@@ -7,12 +7,18 @@ export function AuthForm({
   action,
   children,
   defaultEmail = "",
+  labels,
 }: {
   action: NonNullable<
     string | ((formData: FormData) => void | Promise<void>) | undefined
   >;
   children: React.ReactNode;
   defaultEmail?: string;
+  labels: {
+    email: string;
+    emailPlaceholder: string;
+    password: string;
+  };
 }) {
   return (
     <Form action={action} className="flex flex-col gap-4 px-4 sm:px-16">
@@ -21,7 +27,7 @@ export function AuthForm({
           className="font-normal text-zinc-600 dark:text-zinc-400"
           htmlFor="email"
         >
-          Email Address
+          {labels.email}
         </Label>
 
         <Input
@@ -31,7 +37,7 @@ export function AuthForm({
           defaultValue={defaultEmail}
           id="email"
           name="email"
-          placeholder="user@acme.com"
+          placeholder={labels.emailPlaceholder}
           required
           type="email"
         />
@@ -42,7 +48,7 @@ export function AuthForm({
           className="font-normal text-zinc-600 dark:text-zinc-400"
           htmlFor="password"
         >
-          Password
+          {labels.password}
         </Label>
 
         <Input

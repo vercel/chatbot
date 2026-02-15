@@ -4,6 +4,28 @@
 /* include utility classes in streamdown */
 @source "../node_modules/streamdown/dist/index.js";
 
+/* Vazirmatn font for Persian */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Apply Vazirmatn for RTL elements */
+* {
+  font-family: "Vazirmatn", var(--font-geist), sans-serif;
+}
+
 /* custom variant for setting dark mode programmatically */
 @custom-variant dark (&:is(.dark, .dark *));
 

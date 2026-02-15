@@ -1,11 +1,15 @@
 import { cookies } from "next/headers";
 import { Suspense } from "react";
+import { setRequestLocale } from "next-intl/server";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { generateUUID } from "@/lib/utils";
 
-export default function Page() {
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  
   return (
     <Suspense fallback={<div className="flex h-dvh" />}>
       <NewChatPage />

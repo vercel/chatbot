@@ -1,0 +1,19 @@
+services:
+  db:
+    image: docker.arvancloud.ir/postgres:latest
+    container_name: chatbot-db
+    restart: unless-stopped
+    env_file: .env.local
+    ports:
+      - 5434:5432
+    volumes:
+      - ./db-data/:/var/lib/postgresql
+  redis:
+    image: docker.arvancloud.ir/redis
+    container_name: chatbot-redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf

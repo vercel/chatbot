@@ -1,0 +1,268 @@
+{
+  "metadata": {
+    "title": "AI Chatbot",
+    "description": "Next.js chatbot template using the AI SDK."
+  },
+  "auth": {
+    "signIn": {
+      "title": "Sign In",
+      "description": "Use your email and password to sign in",
+      "button": "Sign in",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up",
+      "forFree": "for free.",
+      "errors": {
+        "invalidCredentials": "Invalid credentials!",
+        "validationFailed": "Failed validating your submission!"
+      }
+    },
+    "signUp": {
+      "title": "Sign Up",
+      "description": "Create an account with your email and password",
+      "button": "Sign Up",
+      "hasAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "instead": "instead.",
+      "errors": {
+        "accountExists": "Account already exists!",
+        "createFailed": "Failed to create account!",
+        "validationFailed": "Failed validating your submission!"
+      },
+      "success": "Account created successfully!"
+    },
+    "form": {
+      "email": "Email Address",
+      "emailPlaceholder": "user@acme.com",
+      "password": "Password"
+    }
+  },
+  "chat": {
+    "newChat": "New Chat",
+    "inputPlaceholder": "Send a message...",
+    "searchModels": "Search models...",
+    "deployWithVercel": "Deploy with Vercel",
+    "sidebar": {
+      "title": "Chatbot",
+      "deleteAll": "Delete All Chats",
+      "newChat": "New Chat"
+    },
+    "greeting": {
+      "hello": "Hello there!",
+      "help": "How can I help you today?"
+    },
+    "suggestions": {
+      "nextjs": "What are the advantages of using Next.js?",
+      "dijkstra": "Write code to demonstrate Dijkstra's algorithm",
+      "essay": "Help me write an essay about Silicon Valley",
+      "weather": "What is the weather in San Francisco?"
+    }
+  },
+  "visibility": {
+    "private": {
+      "label": "Private",
+      "description": "Only you can access this chat"
+    },
+    "public": {
+      "label": "Public",
+      "description": "Anyone with the link can access this chat"
+    }
+  },
+  "sidebarHistory": {
+    "loginPrompt": "Login to save and revisit previous chats!",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "older": "Older than last month",
+    "noChats": "Your conversations will appear here once you start chatting!",
+    "endOfHistory": "You have reached the end of your chat history.",
+    "loading": "Loading Chats...",
+    "delete": {
+      "title": "Are you absolutely sure?",
+      "description": "This action cannot be undone. This will permanently delete your chat and remove it from our servers.",
+      "cancel": "Cancel",
+      "continue": "Continue",
+      "loading": "Deleting chat...",
+      "success": "Chat deleted successfully",
+      "error": "Failed to delete chat"
+    },
+    "deleteAll": {
+      "title": "Delete all chats?",
+      "description": "This action cannot be undone. This will permanently delete all your chats and remove them from our servers.",
+      "cancel": "Cancel",
+      "delete": "Delete All",
+      "loading": "Deleting all chats...",
+      "success": "All chats deleted successfully",
+      "error": "Failed to delete all chats"
+    },
+    "item": {
+      "more": "More",
+      "share": "Share",
+      "private": "Private",
+      "public": "Public",
+      "delete": "Delete"
+    }
+  },
+  "messages": {
+    "actions": {
+      "edit": "Edit",
+      "copy": "Copy",
+      "upvote": {
+        "tooltip": "Upvote Response",
+        "loading": "Upvoting Response...",
+        "success": "Upvoted Response!",
+        "error": "Failed to upvote response."
+      },
+      "downvote": {
+        "tooltip": "Downvote Response",
+        "loading": "Downvoting Response...",
+        "success": "Downvoted Response!",
+        "error": "Failed to downvote response."
+      },
+      "noText": "There's no text to copy!",
+      "copied": "Copied to clipboard!"
+    },
+    "weatherDenied": "Weather lookup was denied.",
+    "deny": "Deny",
+    "allow": "Allow",
+    "error": {
+      "createDocument": "Error creating document:",
+      "updateDocument": "Error updating document:",
+      "generic": "Error:"
+    },
+    "thinking": "Thinking",
+    "scrollToBottom": "Scroll to bottom"
+  },
+  "input": {
+    "uploadFailed": "Failed to upload file, please try again!",
+    "pasteFailed": "Failed to upload pasted image(s)",
+    "waitForResponse": "Please wait for the model to finish its response!",
+    "uploadFiles": "Upload files",
+    "submit": "Submit",
+    "removeAttachment": "Remove attachment"
+  },
+  "aiGateway": {
+    "title": "Activate AI Gateway",
+    "description": "This application requires the owner to activate Vercel AI Gateway.",
+    "cancel": "Cancel",
+    "activate": "Activate"
+  },
+  "suggestion": {
+    "assistant": "Assistant",
+    "apply": "Apply"
+  },
+  "version": {
+    "viewingPrevious": "You are viewing a previous version",
+    "restoreToEdit": "Restore this version to make edits",
+    "restore": "Restore this version",
+    "backToLatest": "Back to latest version"
+  },
+  "console": {
+    "title": "Console",
+    "resize": "Resize console",
+    "initializing": "Initializing...",
+    "noOutput": "No console output"
+  },
+  "artifact": {
+    "actions": {
+      "failed": "Failed to execute action",
+      "close": "Close"
+    }
+  },
+  "artifacts": {
+    "text": {
+      "description": "Useful for text content, like drafting essays and emails.",
+      "viewChanges": "View changes",
+      "previous": "View Previous version",
+      "next": "View Next version",
+      "copy": "Copy to clipboard",
+      "copied": "Copied to clipboard!",
+      "polish": "Add final polish",
+      "polishText": "Please add final polish and check for grammar, add section titles for better structure, and ensure everything reads smoothly.",
+      "suggestions": "Request suggestions",
+      "suggestionsText": "Please add suggestions you have that could improve the writing."
+    },
+    "code": {
+      "description": "Useful for code generation; Code execution is only available for python code.",
+      "run": "Run",
+      "execute": "Execute code",
+      "previous": "View Previous version",
+      "next": "View Next version",
+      "copy": "Copy code to clipboard",
+      "copied": "Copied to clipboard!",
+      "comments": "Add comments",
+      "commentsText": "Add comments to the code snippet for understanding",
+      "logs": "Add logs",
+      "logsText": "Add logs to the code snippet for debugging"
+    },
+    "sheet": {
+      "description": "Useful for working with spreadsheets",
+      "previous": "View Previous version",
+      "next": "View Next version",
+      "copy": "Copy as .csv",
+      "copied": "Copied csv to clipboard!",
+      "format": "Format and clean data",
+      "formatText": "Can you please format and clean the data?",
+      "analyze": "Analyze and visualize data",
+      "analyzeText": "Can you please analyze and visualize the data by creating a new code artifact in python?"
+    },
+    "image": {
+      "description": "Useful for image generation",
+      "previous": "View Previous version",
+      "next": "View Next version",
+      "copy": "Copy image to clipboard",
+      "copied": "Copied image to clipboard!"
+    }
+  },
+  "ui": {
+    "sidebar": {
+      "title": "Sidebar",
+      "description": "Displays the mobile sidebar.",
+      "toggle": "Toggle Sidebar"
+    },
+    "close": "Close",
+    "carousel": {
+      "previous": "Previous slide",
+      "next": "Next slide"
+    },
+    "cancel": "Cancel"
+  },
+  "elements": {
+    "source": {
+      "used": "Used {{count}} sources"
+    },
+    "webPreview": {
+      "placeholder": "Enter URL...",
+      "title": "Preview"
+    },
+    "reasoning": {
+      "thinking": "Thinking",
+      "thought": "Thought",
+      "seconds": "{{duration}}s"
+    },
+    "citation": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "branch": {
+      "previous": "Previous branch",
+      "next": "Next branch"
+    }
+  },
+  "ai": {
+    "removeAttachment": "Remove attachment",
+    "uploadFiles": "Upload files",
+    "submit": "Submit",
+    "togglePlan": "Toggle plan",
+    "openIn": {
+      "github": "GitHub",
+      "scira": "Scira AI",
+      "openai": "OpenAI",
+      "claude": "Claude",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "t3": "T3",
+      "v0": "v0"
+    }
+  }
+}
