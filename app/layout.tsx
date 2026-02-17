@@ -2,7 +2,7 @@ import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, IBM_Plex_Mono, Source_Serif_4, Inter, Roboto } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
-import { PostHogProvider } from './providers';
+import { PostHogProvider, PostHogIdentify } from './providers';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
@@ -110,7 +110,10 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Toaster position="top-center" />
-            <SessionProvider>{children}</SessionProvider>
+            <SessionProvider>
+              <PostHogIdentify />
+              {children}
+            </SessionProvider>
           </ThemeProvider>
         </PostHogProvider>
       </body>

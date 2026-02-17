@@ -4,6 +4,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { useEffect, Suspense } from "react"
 import PostHogLib from 'posthog-js'
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react'
+import { useSession } from 'next-auth/react'
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -23,6 +24,24 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       {children}
     </PHProvider>
   )
+}
+
+export function PostHogIdentify() {
+  const posthog = usePostHog()
+  const { data: session, status } = useSession()
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user && posthog) {
+      posthog.identify(session.user.id, {
+        email: session.user.email,
+        name: session.user.name,
+      })
+    } else if (status === 'unauthenticated' && posthog) {
+      posthog.reset()
+    }
+  }, [status, session, posthog])
+
+  return null
 }
 
 function PostHogPageView() {
