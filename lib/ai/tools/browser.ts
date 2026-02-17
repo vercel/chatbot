@@ -8,6 +8,21 @@ import { getOrCreateBrowser } from '@/lib/kernel/browser';
 const COMMAND_TIMEOUT_MS = 120_000; // 2 minutes
 
 /**
+ * Per-session mutex to serialize browser commands.
+ * Playwright's page object is not safe for concurrent access — parallel tool
+ * calls from the AI SDK will race and time out. We queue them per session so
+ * parallel model responses still complete correctly, just sequentially.
+ */
+const sessionQueues = new Map<string, Promise<unknown>>();
+
+function withSessionQueue<T>(sessionId: string, fn: () => Promise<T>): Promise<T> {
+  const prev = sessionQueues.get(sessionId) ?? Promise.resolve();
+  const next = prev.then(fn, fn); // always advance the queue even on error
+  sessionQueues.set(sessionId, next.then(() => {}, () => {})); // swallow to prevent unhandled rejection on queue chain
+  return next;
+}
+
+/**
  * Creates a browser automation tool for a specific session.
  * Uses agent-browser's BrowserManager API with Kernel for remote browser control.
  *
@@ -33,11 +48,13 @@ SNAPSHOT DISCIPLINE (critical for reliable automation):
 - NEVER reuse refs from a previous snapshot after a DOM-changing action — they may be stale
 
 Core workflow:
-1. { action: "navigate", url: "<url>" } — navigate to the page
+1. { action: "navigate", url: "<url>" } — navigate to the page (already waits for load — do NOT add waitforloadstate after this)
 2. { action: "snapshot" } — full page snapshot to understand structure
 3. { action: "snapshot", selector: "form" } — scope to form on complex pages
 4. Interact using refs (@e1, @e2) or label locators
 5. Re-snapshot after every DOM-changing interaction
+
+IMPORTANT: Do NOT use "waitforloadstate" after clicks, fills, types, or other in-page interactions — it wastes a tool call. Navigate already waits for page load internally.
 
 Common commands:
 - { action: "navigate", url: "<url>" } - Navigate to URL
@@ -100,62 +117,64 @@ NEVER use "evaluate" to enable disabled buttons, bypass validation, or modify pa
       params: Record<string, unknown>,
       { abortSignal }: ToolExecutionOptions,
     ) => {
-      try {
-        // Ensure we have a Kernel browser instance (creates one if needed)
-        const session = await getOrCreateBrowser(sessionId, userId);
+      return withSessionQueue(sessionId, async () => {
+        try {
+          // Ensure we have a Kernel browser instance (creates one if needed)
+          const session = await getOrCreateBrowser(sessionId, userId);
 
-        const command = {
-          id: nanoid(),
-          ...params,
-        } as Command;
+          const command = {
+            id: nanoid(),
+            ...params,
+          } as Command;
 
-        console.log('[browser-tool] Session:', sessionId);
-        console.log('[browser-tool] Executing:', command.action, JSON.stringify(params));
+          console.log('[browser-tool] Session:', sessionId);
+          console.log('[browser-tool] Executing:', command.action, JSON.stringify(params));
 
-        const response = await Promise.race([
-          executeCommand(command, session.browserManager),
-          new Promise<never>((_, reject) => {
-            const timer = setTimeout(
-              () => reject(new Error('Command timed out after 2 minutes')),
-              COMMAND_TIMEOUT_MS,
-            );
-            abortSignal?.addEventListener('abort', () => {
-              clearTimeout(timer);
-              reject(new Error('Browser command stopped by user'));
-            });
-          }),
-        ]);
+          const response = await Promise.race([
+            executeCommand(command, session.browserManager),
+            new Promise<never>((_, reject) => {
+              const timer = setTimeout(
+                () => reject(new Error('Command timed out after 2 minutes')),
+                COMMAND_TIMEOUT_MS,
+              );
+              abortSignal?.addEventListener('abort', () => {
+                clearTimeout(timer);
+                reject(new Error('Browser command stopped by user'));
+              });
+            }),
+          ]);
 
-        if (response.success) {
-          const output =
-            typeof response.data === 'string'
-              ? response.data
-              : JSON.stringify(response.data);
-          console.log('[browser-tool] Success. Output length:', output?.length);
-          return { success: true, output, error: null };
-        }
+          if (response.success) {
+            const output =
+              typeof response.data === 'string'
+                ? response.data
+                : JSON.stringify(response.data);
+            console.log('[browser-tool] Success. Output length:', output?.length);
+            return { success: true, output, error: null };
+          }
 
-        console.error('[browser-tool] Command error:', response.error);
-        return { success: false, output: null, error: response.error };
-      } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.message : String(error);
+          console.error('[browser-tool] Command error:', response.error);
+          return { success: false, output: null, error: response.error };
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.message : String(error);
 
-        if (abortSignal?.aborted || message.includes('stopped by user')) {
-          console.log('[browser-tool] Command aborted by user');
+          if (abortSignal?.aborted || message.includes('stopped by user')) {
+            console.log('[browser-tool] Command aborted by user');
+            return {
+              success: false,
+              output: null,
+              error: 'Browser command stopped by user',
+            };
+          }
+
+          console.error('[browser-tool] Error:', message);
           return {
             success: false,
             output: null,
-            error: 'Browser command stopped by user',
+            error: message,
           };
         }
-
-        console.error('[browser-tool] Error:', message);
-        return {
-          success: false,
-          output: null,
-          error: message,
-        };
-      }
+      });
     },
   });
