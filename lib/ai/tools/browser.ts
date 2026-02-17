@@ -101,20 +101,8 @@ NEVER use "evaluate" to enable disabled buttons, bypass validation, or modify pa
       { abortSignal }: ToolExecutionOptions,
     ) => {
       try {
-        // Bail out immediately if already aborted (e.g. between queued tool calls)
-        if (abortSignal?.aborted) {
-          console.log('[browser-tool] Skipping — already aborted');
-          return { success: false, output: null, error: 'Browser command stopped by user' };
-        }
-
         // Ensure we have a Kernel browser instance (creates one if needed)
         const session = await getOrCreateBrowser(sessionId, userId);
-
-        // Check session-level stopped flag (set by stopBrowserOperations)
-        if (session.stopped) {
-          console.log('[browser-tool] Skipping — session stopped by user');
-          return { success: false, output: null, error: 'Browser command stopped by user' };
-        }
 
         const command = {
           id: nanoid(),

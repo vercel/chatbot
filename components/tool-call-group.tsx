@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Layers, X } from 'lucide-react';
+import { ChevronDown, Layers } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Collapsible,
@@ -228,40 +228,18 @@ export function generateGroupSummary(parts: MessagePart[]): { noun: string; coun
   return Object.entries(counts).map(([noun, count]) => ({ noun, count }));
 }
 
-// --- Stopped detection ---
-
-/** A tool call is "stopped" if the user clicked stop while it was running
- *  (state stuck at input-available with isLoading=false), or if its output
- *  explicitly contains a "stopped by user" error. */
-export function isToolStopped(part: MessagePart, isLoading: boolean): boolean {
-  // Tool was mid-execution when the stream was aborted
-  if (part.state === 'input-available' && !isLoading) return true;
-  // Tool completed but with a "stopped" error from the server
-  if (
-    part.state === 'output-available' &&
-    part.output?.error &&
-    typeof part.output.error === 'string' &&
-    part.output.error.toLowerCase().includes('stopped by user')
-  ) {
-    return true;
-  }
-  return false;
-}
-
 // --- Component ---
 
 interface ToolCallGroupProps {
   parts: MessagePart[];
   messageId: string;
   startIndex: number;
-  isLoading: boolean;
 }
 
 export function ToolCallGroup({
   parts,
   messageId,
   startIndex,
-  isLoading,
 }: ToolCallGroupProps) {
   const [open, setOpen] = useState(false);
 
@@ -276,8 +254,7 @@ export function ToolCallGroup({
   // If the latest tool is still running, show it separately below the summary.
   // Otherwise all tools are done — include everything in the summary counts.
   const lastTool = deduped[deduped.length - 1];
-  const isLastRunning = lastTool.state === 'input-available' && isLoading;
-  const isLastStopped = isToolStopped(lastTool, isLoading);
+  const isLastRunning = lastTool.state === 'input-available';
   const summaryParts = isLastRunning ? deduped.slice(0, -1) : deduped;
 
   const summary = generateGroupSummary(summaryParts);
@@ -321,21 +298,19 @@ export function ToolCallGroup({
                   key={part.toolCallId}
                   part={part}
                   compact
-                  isStopped={isToolStopped(part, isLoading)}
                 />
               ))}
             </div>
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Current tool — only shown while still running or stopped */}
-        {(isLastRunning || isLastStopped) && (
+        {/* Current tool — only shown while still running */}
+        {isLastRunning && (
           <div className="mt-1">
             <SingleToolLine
               part={lastTool}
               compact
-              isRunning={isLastRunning}
-              isStopped={isLastStopped}
+              isRunning
             />
           </div>
         )}
@@ -363,12 +338,10 @@ function SingleToolLine({
   part,
   compact = false,
   isRunning = false,
-  isStopped = false,
 }: {
   part: MessagePart;
   compact?: boolean;
   isRunning?: boolean;
-  isStopped?: boolean;
 }) {
   const { text: displayName, icon: Icon } = getToolDisplayInfo(
     part.type,
@@ -384,13 +357,10 @@ function SingleToolLine({
       <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground flex items-center gap-2">
         {isRunning ? (
           <Spinner className="size-3 shrink-0 text-primary" />
-        ) : isStopped ? (
-          <X size={12} className="text-gray-500 shrink-0" />
         ) : (
           Icon && <Icon size={12} className="text-gray-500 shrink-0" />
         )}
         {displayName}
-        {isStopped && ' (Stopped)'}
       </div>
     </div>
   );
