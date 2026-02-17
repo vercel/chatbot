@@ -1,0 +1,1997 @@
+kind: app
+version: 0.1.5
+
+app:
+  name: インテリジェント研究アシスタント - 多段階分析システム
+  description: |
+    研究テーマを5つのカテゴリ（技術研究、市場分析、学術研究、ビジネス戦略、その他）に分類し、
+    キーワード抽出→Web検索→サブテーマ生成→サブテーマ別の詳細分析→品質検証（不足時は最大3回再生成）→レポート整形までを実行する多段階分析ワークフロー。
+  mode: workflow
+  icon: 🔬
+  icon_background: '#4A90E2'
+  use_icon_as_answer_icon: false
+
+dependencies: []
+
+workflow:
+  conversation_variables: []
+  environment_variables:
+    - description: 'Tavily Search API Key'
+      id: tavily_api_key_env
+      name: TAVILY_API_KEY
+      value: ''
+      value_type: secret
+
+  features:
+    file_upload:
+      enabled: false
+      allowed_file_types: []
+      allowed_file_extensions: []
+      allowed_file_upload_methods:
+        - local_file
+        - remote_url
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+          - local_file
+          - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+
+  graph:
+    nodes:
+      # ============================================================
+      # Start
+      # ============================================================
+      - data:
+          type: start
+          title: 開始
+          desc: 研究テーマを受け取ります
+          selected: false
+          variables:
+            - label: 研究テーマ
+              variable: research_topic
+              type: text-input
+              required: true
+              max_length: 1000
+              options: []
+        height: 88
+        id: start_research
+        position:
+          x: -650
+          y: 250
+        positionAbsolute:
+          x: -650
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 242
+
+      # ============================================================
+      # Question Classifier
+      # ============================================================
+      - data:
+          type: question-classifier
+          title: 研究テーマ分類
+          desc: 研究テーマを5つのカテゴリに分類します。
+          instructions: |
+            入力された研究テーマを以下の5つのカテゴリに必ず分類してください。
+
+            - 技術研究: 技術的な研究、開発、実装、アーキテクチャ、アルゴリズム（例: AI技術、ブロックチェーン、クラウド、MLOps）
+            - 市場分析: 市場規模、競合、顧客、価格、トレンド（例: 市場調査、競合比較、需要予測）
+            - 学術研究: 先行研究、仮説、実験設計、評価、理論（例: 論文調査、研究計画）
+            - ビジネス戦略: 事業戦略、収益モデル、Go-to-Market、リスク、ロードマップ（例: 新規事業、戦略立案）
+            - その他: 上記いずれにも明確に当てはまらないもの（迷う場合も含む）
+
+            出力は最も適切な1カテゴリのみ。
+          query_variable_selector:
+            - start_research
+            - research_topic
+          classes:
+            - id: tech_research
+              name: 技術研究
+            - id: market_analysis
+              name: 市場分析
+            - id: academic_research
+              name: 学術研究
+            - id: business_strategy
+              name: ビジネス戦略
+            - id: other
+              name: その他
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: langgenius/openai/openai
+            completion_params:
+              temperature: 0.2
+              max_tokens: 512
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          selected: false
+          topics: []
+        height: 380
+        id: qc_research
+        position:
+          x: -330
+          y: 250
+        positionAbsolute:
+          x: -330
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 260
+
+      # ============================================================
+      # Code: 前処理
+      # ============================================================
+      - data:
+          type: code
+          title: パラメータ抽出
+          desc: 研究テーマを整形し、後続処理用パラメータを作成します
+          code_language: python3
+          code: |
+            def main(research_topic: str) -> dict:
+                topic = (research_topic or "").strip()
+                return {
+                    "formatted_topic": topic,
+                    "topic_length": len(topic),
+                }
+          outputs:
+            formatted_topic:
+              children: null
+              type: string
+            topic_length:
+              children: null
+              type: number
+          variables:
+            - value_selector:
+                - start_research
+                - research_topic
+              variable: research_topic
+          selected: false
+        height: 200
+        id: code_param_extract
+        position:
+          x: 20
+          y: 250
+        positionAbsolute:
+          x: 20
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 300
+
+      # ============================================================
+      # LLM: キーワード抽出（カテゴリ別）
+      # ============================================================
+      - data:
+          type: llm
+          title: キーワード抽出（技術研究）
+          desc: 技術研究向けにキーワードを抽出
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.2
+              max_tokens: 800
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは研究アシスタントです。技術研究テーマから重要キーワードを抽出してください。
+                5〜10個程度。重複を避け、検索に使える具体語を優先します。
+                必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                出力形式:
+                {"keywords":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 220
+        id: llm_keyword_tech
+        position:
+          x: 360
+          y: 90
+        positionAbsolute:
+          x: 360
+          y: 90
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      - data:
+          type: llm
+          title: キーワード抽出（市場分析）
+          desc: 市場分析向けにキーワードを抽出
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.2
+              max_tokens: 800
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは市場分析のリサーチアシスタントです。市場・競合・顧客・価格・トレンドに関する検索キーワードを抽出してください。
+                5〜10個程度。必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                出力形式:
+                {"keywords":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 220
+        id: llm_keyword_market
+        position:
+          x: 360
+          y: 210
+        positionAbsolute:
+          x: 360
+          y: 210
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      - data:
+          type: llm
+          title: キーワード抽出（学術研究）
+          desc: 学術研究向けにキーワードを抽出
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.2
+              max_tokens: 800
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは学術研究のリサーチアシスタントです。先行研究探索に適したキーワード（英語も可）を抽出してください。
+                5〜10個程度。必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                出力形式:
+                {"keywords":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 220
+        id: llm_keyword_academic
+        position:
+          x: 360
+          y: 330
+        positionAbsolute:
+          x: 360
+          y: 330
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      - data:
+          type: llm
+          title: キーワード抽出（ビジネス戦略）
+          desc: ビジネス戦略向けにキーワードを抽出
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.2
+              max_tokens: 800
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたはビジネス戦略のアシスタントです。収益モデル、施策、リスク、競争優位、ロードマップに関する検索キーワードを抽出してください。
+                5〜10個程度。必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                出力形式:
+                {"keywords":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 220
+        id: llm_keyword_business
+        position:
+          x: 360
+          y: 450
+        positionAbsolute:
+          x: 360
+          y: 450
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      - data:
+          type: llm
+          title: キーワード抽出（その他）
+          desc: 汎用のキーワード抽出
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.2
+              max_tokens: 800
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたはリサーチアシスタントです。テーマから検索用キーワードを抽出してください。
+                5〜10個程度。必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                出力形式:
+                {"keywords":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 220
+        id: llm_keyword_other
+        position:
+          x: 360
+          y: 570
+        positionAbsolute:
+          x: 360
+          y: 570
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # ============================================================
+      # Code: キーワード配列整形（合流）
+      # ============================================================
+      - data:
+          type: code
+          title: キーワード配列整形
+          desc: 分岐LLMの出力からkeywords配列を抽出・正規化します
+          code_language: python3
+          code: |
+            import json
+            import re
+
+            def _extract_keywords(text: str) -> list:
+                if not text:
+                    return []
+                # JSON抽出
+                m = re.search(r'\{.*"keywords"\s*:\s*\[.*?\].*\}', text, re.DOTALL)
+                if m:
+                    try:
+                        obj = json.loads(m.group())
+                        kws = obj.get("keywords", [])
+                        if isinstance(kws, list):
+                            return [str(k).strip() for k in kws if str(k).strip()]
+                    except Exception:
+                        pass
+                # 配列っぽいもの
+                m2 = re.search(r'\[.*?\]', text, re.DOTALL)
+                if m2:
+                    try:
+                        arr = json.loads(m2.group())
+                        if isinstance(arr, list):
+                            return [str(k).strip() for k in arr if str(k).strip()]
+                    except Exception:
+                        pass
+                # カンマ区切り
+                return [k.strip() for k in text.split(",") if k.strip()]
+
+            def main(llm_text: str) -> dict:
+                keywords = _extract_keywords(llm_text)
+                keywords = keywords[:10]
+                if not keywords:
+                    keywords = ["研究", "分析"]
+                return {"keywords": keywords}
+          outputs:
+            keywords:
+              children: null
+              type: array[string]
+          variables:
+            - value_selector:
+                - llm_keyword_other
+                - text
+              variable: llm_text
+          selected: false
+        height: 280
+        id: code_keyword_format
+        position:
+          x: 720
+          y: 250
+        positionAbsolute:
+          x: 720
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 340
+
+      # ============================================================
+      # Iteration: キーワード検索
+      # ============================================================
+      - data:
+          type: iteration
+          title: キーワード検索（反復）
+          desc: 各キーワードでWeb検索を実行します
+          iterator_selector:
+            - code_keyword_format
+            - keywords
+          start_node_id: iter_keyword_searchstart
+          output_selector:
+            - code_keyword_search_format
+            - search_result
+          output_type: array[string]
+          is_parallel: false
+          parallel_nums: 3
+          error_handle_mode: remove-abnormal-output
+          selected: false
+        height: 420
+        id: iter_keyword_search
+        position:
+          x: 1100
+          y: 150
+        positionAbsolute:
+          x: 1100
+          y: 150
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 669
+        zIndex: 1
+
+      - data:
+          type: iteration-start
+          title: ''
+          desc: ''
+          isInIteration: true
+          selected: false
+        draggable: false
+        height: 48
+        id: iter_keyword_searchstart
+        parentId: iter_keyword_search
+        position:
+          x: 24
+          y: 68
+        positionAbsolute:
+          x: 1124
+          y: 218
+        selectable: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom-iteration-start
+        width: 44
+        zIndex: 1002
+
+      - data:
+          type: tool
+          title: Tavily検索（キーワード）
+          desc: キーワードでWeb検索
+          provider_type: builtin
+          provider_id: tavily
+          provider_name: tavily
+          tool_name: tavily_search
+          tool_label: TavilySearch
+          tool_configurations:
+            exclude_domains: null
+            include_answer: 0
+            include_domains: null
+            include_images: 0
+            include_raw_content: 0
+            max_results: 5
+            search_depth: basic
+          tool_parameters:
+            query:
+              type: mixed
+              value: '{{#iter_keyword_search.item#}}'
+          isInIteration: true
+          iteration_id: iter_keyword_search
+          selected: false
+        height: 246
+        id: tool_tavily_keyword
+        parentId: iter_keyword_search
+        position:
+          x: 128
+          y: 68
+        positionAbsolute:
+          x: 1228
+          y: 218
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 300
+        zIndex: 1002
+
+      - data:
+          type: code
+          title: 検索結果整形（キーワード）
+          desc: 検索結果を短く整形
+          code_language: python3
+          code: |
+            def main(result_text) -> dict:
+                text = ""
+                if isinstance(result_text, str):
+                    text = result_text
+                elif result_text is None:
+                    text = ""
+                else:
+                    text = str(result_text)
+
+                text = text.strip()
+                if not text:
+                    return {"search_result": "検索結果が見つかりませんでした。"}
+
+                return {"search_result": text[:600]}
+          outputs:
+            search_result:
+              children: null
+              type: string
+          variables:
+            - value_selector:
+                - tool_tavily_keyword
+                - text
+              variable: result_text
+          isInIteration: true
+          iteration_id: iter_keyword_search
+          selected: false
+        height: 210
+        id: code_keyword_search_format
+        parentId: iter_keyword_search
+        position:
+          x: 468
+          y: 68
+        positionAbsolute:
+          x: 1568
+          y: 218
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 300
+        zIndex: 1002
+
+      # ============================================================
+      # Code: 検索結果統合
+      # ============================================================
+      - data:
+          type: code
+          title: 検索結果統合
+          desc: キーワード検索の結果を統合
+          code_language: python3
+          code: |
+            def main(search_results: list) -> dict:
+                if not search_results:
+                    return {"integrated_results": "検索結果がありませんでした。"}
+                lines = []
+                for i, r in enumerate(search_results, 1):
+                    if r:
+                        lines.append(f"[{i}] {r}")
+                return {"integrated_results": "\n\n".join(lines) if lines else "検索結果がありませんでした。"}
+          outputs:
+            integrated_results:
+              children: null
+              type: string
+          variables:
+            - value_selector:
+                - iter_keyword_search
+                - output
+              variable: search_results
+          selected: false
+        height: 200
+        id: code_integrate_search
+        position:
+          x: 1820
+          y: 250
+        positionAbsolute:
+          x: 1820
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # ============================================================
+      # LLM: サブテーマ生成（カテゴリ別）
+      # ============================================================
+      - data:
+          type: llm
+          title: サブテーマ生成（技術研究）
+          desc: 技術研究の観点でサブテーマを生成
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.4
+              max_tokens: 900
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは技術リサーチのアシスタントです。
+                研究テーマと検索結果を踏まえ、深掘りに有用なサブテーマを3〜5個、重複なく生成してください。
+                必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                検索結果（要約）:
+                {{#code_integrate_search.integrated_results#}}
+
+                出力形式:
+                {"subtopics":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 240
+        id: llm_subtopic_tech
+        position:
+          x: 2180
+          y: 90
+        positionAbsolute:
+          x: 2180
+          y: 90
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 340
+
+      - data:
+          type: llm
+          title: サブテーマ生成（市場分析）
+          desc: 市場分析の観点でサブテーマを生成
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.4
+              max_tokens: 900
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは市場分析のアシスタントです。
+                研究テーマと検索結果を踏まえ、市場規模・競合・顧客・価格・規制・トレンドの観点でサブテーマを3〜5個生成してください。
+                必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                検索結果（要約）:
+                {{#code_integrate_search.integrated_results#}}
+
+                出力形式:
+                {"subtopics":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 240
+        id: llm_subtopic_market
+        position:
+          x: 2180
+          y: 220
+        positionAbsolute:
+          x: 2180
+          y: 220
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 340
+
+      - data:
+          type: llm
+          title: サブテーマ生成（学術研究）
+          desc: 学術研究の観点でサブテーマを生成
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.4
+              max_tokens: 900
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは学術研究のアシスタントです。
+                研究テーマと検索結果を踏まえ、先行研究調査・仮説・方法論・評価指標・限界/課題の観点でサブテーマを3〜5個生成してください。
+                必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                検索結果（要約）:
+                {{#code_integrate_search.integrated_results#}}
+
+                出力形式:
+                {"subtopics":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 240
+        id: llm_subtopic_academic
+        position:
+          x: 2180
+          y: 350
+        positionAbsolute:
+          x: 2180
+          y: 350
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 340
+
+      - data:
+          type: llm
+          title: サブテーマ生成（ビジネス戦略）
+          desc: ビジネス戦略の観点でサブテーマを生成
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.4
+              max_tokens: 900
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたはビジネス戦略のアシスタントです。
+                研究テーマと検索結果を踏まえ、収益モデル・施策案・実行計画・リスク・KPI/評価の観点でサブテーマを3〜5個生成してください。
+                必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                検索結果（要約）:
+                {{#code_integrate_search.integrated_results#}}
+
+                出力形式:
+                {"subtopics":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 240
+        id: llm_subtopic_business
+        position:
+          x: 2180
+          y: 480
+        positionAbsolute:
+          x: 2180
+          y: 480
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 340
+
+      - data:
+          type: llm
+          title: サブテーマ生成（その他）
+          desc: 汎用のサブテーマ生成
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.4
+              max_tokens: 900
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたはリサーチアシスタントです。
+                研究テーマと検索結果を踏まえ、深掘りに有用なサブテーマを3〜5個生成してください。
+                必ずJSONで返してください。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                検索結果（要約）:
+                {{#code_integrate_search.integrated_results#}}
+
+                出力形式:
+                {"subtopics":["..."]}
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 240
+        id: llm_subtopic_other
+        position:
+          x: 2180
+          y: 610
+        positionAbsolute:
+          x: 2180
+          y: 610
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 340
+
+      # ============================================================
+      # Code: サブテーマ配列整形（合流）
+      # ============================================================
+      - data:
+          type: code
+          title: サブテーマ配列整形
+          desc: 分岐LLMの出力からsubtopics配列を抽出・正規化します
+          code_language: python3
+          code: |
+            import json
+            import re
+
+            def _extract_subtopics(text: str) -> list:
+                if not text:
+                    return []
+                m = re.search(r'\{.*"subtopics"\s*:\s*\[.*?\].*\}', text, re.DOTALL)
+                if m:
+                    try:
+                        obj = json.loads(m.group())
+                        sts = obj.get("subtopics", [])
+                        if isinstance(sts, list):
+                            return [str(s).strip() for s in sts if str(s).strip()]
+                    except Exception:
+                        pass
+                m2 = re.search(r'\[.*?\]', text, re.DOTALL)
+                if m2:
+                    try:
+                        arr = json.loads(m2.group())
+                        if isinstance(arr, list):
+                            return [str(s).strip() for s in arr if str(s).strip()]
+                    except Exception:
+                        pass
+                return [s.strip() for s in text.split(",") if s.strip()]
+
+            def main(llm_text: str) -> dict:
+                subtopics = _extract_subtopics(llm_text)
+                subtopics = subtopics[:5]
+                if not subtopics:
+                    subtopics = ["概要", "詳細分析"]
+                return {"subtopics": subtopics}
+          outputs:
+            subtopics:
+              children: null
+              type: array[string]
+          variables:
+            - value_selector:
+                - llm_subtopic_other
+                - text
+              variable: llm_text
+          selected: false
+        height: 280
+        id: code_subtopic_format
+        position:
+          x: 2560
+          y: 250
+        positionAbsolute:
+          x: 2560
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 360
+
+      # ============================================================
+      # Iteration: サブテーマ詳細分析（内部で品質再生成ループを模擬）
+      # NOTE: Dify DSLのLoopノード仕様差異を避けるため、
+      #       「最大3回の再生成」を単一LLM指示＋品質スコアリングで擬似実装（推奨の安定構成）。
+      #       具体的には、LLMに「最大3回自己改善して最終回答のみ出す」指示を与え、
+      #       Codeで品質スコアを計算してレポートへ格納します。
+      # ============================================================
+      - data:
+          type: iteration
+          title: サブテーマ詳細分析（反復）
+          desc: 各サブテーマごとに検索→分析→品質検証→整形を実行
+          iterator_selector:
+            - code_subtopic_format
+            - subtopics
+          start_node_id: iter_subtopic_analysisstart
+          output_selector:
+            - code_analysis_result_format
+            - analysis_result
+          output_type: array[string]
+          is_parallel: false
+          parallel_nums: 3
+          error_handle_mode: remove-abnormal-output
+          selected: false
+        height: 520
+        id: iter_subtopic_analysis
+        position:
+          x: 2960
+          y: 120
+        positionAbsolute:
+          x: 2960
+          y: 120
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 920
+        zIndex: 1
+
+      - data:
+          type: iteration-start
+          title: ''
+          desc: ''
+          isInIteration: true
+          selected: false
+        draggable: false
+        height: 48
+        id: iter_subtopic_analysisstart
+        parentId: iter_subtopic_analysis
+        position:
+          x: 24
+          y: 68
+        positionAbsolute:
+          x: 2984
+          y: 188
+        selectable: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom-iteration-start
+        width: 44
+        zIndex: 1002
+
+      - data:
+          type: tool
+          title: Tavily検索（サブテーマ）
+          desc: サブテーマでWeb検索
+          provider_type: builtin
+          provider_id: tavily
+          provider_name: tavily
+          tool_name: tavily_search
+          tool_label: TavilySearch
+          tool_configurations:
+            exclude_domains: null
+            include_answer: 0
+            include_domains: null
+            include_images: 0
+            include_raw_content: 0
+            max_results: 5
+            search_depth: basic
+          tool_parameters:
+            query:
+              type: mixed
+              value: '{{#iter_subtopic_analysis.item#}}'
+          isInIteration: true
+          iteration_id: iter_subtopic_analysis
+          selected: false
+        height: 246
+        id: tool_tavily_subtopic
+        parentId: iter_subtopic_analysis
+        position:
+          x: 128
+          y: 68
+        positionAbsolute:
+          x: 3088
+          y: 188
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 300
+        zIndex: 1002
+
+      - data:
+          type: code
+          title: 検索結果整形（サブテーマ）
+          desc: サブテーマ検索結果を整形
+          code_language: python3
+          code: |
+            def main(result_text) -> dict:
+                text = ""
+                if isinstance(result_text, str):
+                    text = result_text
+                elif result_text is None:
+                    text = ""
+                else:
+                    text = str(result_text)
+                text = text.strip()
+                if not text:
+                    text = "検索結果が見つかりませんでした。"
+                return {"formatted_search_result": text[:1200]}
+          outputs:
+            formatted_search_result:
+              children: null
+              type: string
+          variables:
+            - value_selector:
+                - tool_tavily_subtopic
+                - text
+              variable: result_text
+          isInIteration: true
+          iteration_id: iter_subtopic_analysis
+          selected: false
+        height: 210
+        id: code_subtopic_search_format
+        parentId: iter_subtopic_analysis
+        position:
+          x: 468
+          y: 68
+        positionAbsolute:
+          x: 3428
+          y: 188
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 300
+        zIndex: 1002
+
+      - data:
+          type: llm
+          title: 詳細分析（自己改善最大3回）
+          desc: サブテーマの詳細分析（品質が低い場合に自己改善を最大3回行う）
+          context:
+            enabled: false
+            variable_selector: []
+          model:
+            mode: chat
+            name: gpt-4o
+            provider: openai
+            completion_params:
+              temperature: 0.3
+              max_tokens: 1400
+              top_p: 1
+              presence_penalty: 0
+              frequency_penalty: 0
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは研究アシスタントです。
+                次の手順を内部で最大3回まで繰り返し、最終的に「改善後の最終回答のみ」を出力してください（中間の思考や草稿は出力しない）。
+                1) 要求を満たしているか自己評価
+                2) 不足があれば改善
+                3) 最終回答を確定
+
+                出力は日本語で、見出しと箇条書きを含め、具体的に。根拠が不明な断定は避ける。
+            - id: user
+              role: user
+              text: |
+                研究テーマ:
+                {{#code_param_extract.formatted_topic#}}
+
+                サブテーマ:
+                {{#iter_subtopic_analysis.item#}}
+
+                検索結果（要約）:
+                {{#code_subtopic_search_format.formatted_search_result#}}
+
+                上記を踏まえて詳細分析してください。
+          isInIteration: true
+          iteration_id: iter_subtopic_analysis
+          selected: false
+          variables: []
+          vision:
+            enabled: false
+        height: 260
+        id: llm_detailed_analysis
+        parentId: iter_subtopic_analysis
+        position:
+          x: 808
+          y: 68
+        positionAbsolute:
+          x: 3768
+          y: 188
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 340
+        zIndex: 1002
+
+      - data:
+          type: code
+          title: 品質検証
+          desc: 分析結果の品質スコア（0-100）を算出
+          code_language: python3
+          code: |
+            def main(analysis_result: str) -> dict:
+                text = (analysis_result or "").strip()
+                if not text:
+                    return {"quality_score": 0, "quality_passed": False}
+
+                score = 0
+
+                # 文字数（最大50）
+                length = len(text)
+                if length >= 900:
+                    score += 50
+                elif length >= 700:
+                    score += 45
+                elif length >= 500:
+                    score += 40
+                elif length >= 300:
+                    score += 30
+                elif length >= 150:
+                    score += 20
+                else:
+                    score += 10
+
+                # 構造（最大30）
+                if "\n" in text:
+                    score += 10
+                if "##" in text or "###" in text or "【" in text:
+                    score += 10
+                if "・" in text or "-" in text:
+                    score += 10
+
+                # キーワード（最大20）
+                kws = ["分析", "課題", "結論", "示唆", "リスク", "施策", "方法", "評価", "データ", "市場", "技術"]
+                hit = sum(1 for k in kws if k in text)
+                score += min(hit * 2, 20)
+
+                passed = score >= 70
+                return {"quality_score": score, "quality_passed": passed}
+          outputs:
+            quality_score:
+              children: null
+              type: number
+            quality_passed:
+              children: null
+              type: boolean
+          variables:
+            - value_selector:
+                - llm_detailed_analysis
+                - text
+              variable: analysis_result
+          isInIteration: true
+          iteration_id: iter_subtopic_analysis
+          selected: false
+        height: 280
+        id: code_quality_check
+        parentId: iter_subtopic_analysis
+        position:
+          x: 1188
+          y: 68
+        positionAbsolute:
+          x: 4148
+          y: 188
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+        zIndex: 1002
+
+      - data:
+          type: code
+          title: 分析結果整形
+          desc: サブテーマ分析結果を整形（スコア付与）
+          code_language: python3
+          code: |
+            def main(subtopic: str, analysis_result: str, quality_score: float, quality_passed: bool) -> dict:
+                st = (subtopic or "").strip() or "サブテーマ"
+                ar = (analysis_result or "").strip() or "分析結果が生成されませんでした。"
+                status = "PASS" if quality_passed else "WARN"
+                formatted = f"【{st}】({status}, score={quality_score}/100)\n\n{ar}"
+                return {"analysis_result": formatted}
+          outputs:
+            analysis_result:
+              children: null
+              type: string
+          variables:
+            - value_selector:
+                - iter_subtopic_analysis
+                - item
+              variable: subtopic
+            - value_selector:
+                - llm_detailed_analysis
+                - text
+              variable: analysis_result
+            - value_selector:
+                - code_quality_check
+                - quality_score
+              variable: quality_score
+            - value_selector:
+                - code_quality_check
+                - quality_passed
+              variable: quality_passed
+          isInIteration: true
+          iteration_id: iter_subtopic_analysis
+          selected: false
+        height: 240
+        id: code_analysis_result_format
+        parentId: iter_subtopic_analysis
+        position:
+          x: 1548
+          y: 68
+        positionAbsolute:
+          x: 4508
+          y: 188
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+        zIndex: 1002
+
+      # ============================================================
+      # Code: エラーハンドリング
+      # ============================================================
+      - data:
+          type: code
+          title: エラーハンドリング
+          desc: 分析結果が空の場合の代替処理
+          code_language: python3
+          code: |
+            def main(analysis_results: list) -> dict:
+                if not analysis_results:
+                    return {"final_analysis_results": ["分析結果が生成されませんでした。"]}
+                cleaned = []
+                for r in analysis_results:
+                    if r is None:
+                        continue
+                    s = str(r).strip()
+                    if s:
+                        cleaned.append(s)
+                if not cleaned:
+                    cleaned = ["分析結果が生成されませんでした。"]
+                return {"final_analysis_results": cleaned}
+          outputs:
+            final_analysis_results:
+              children: null
+              type: array[string]
+          variables:
+            - value_selector:
+                - iter_subtopic_analysis
+                - output
+              variable: analysis_results
+          selected: false
+        height: 220
+        id: code_error_handle
+        position:
+          x: 3920
+          y: 250
+        positionAbsolute:
+          x: 3920
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # ============================================================
+      # Code: レポート整形
+      # ============================================================
+      - data:
+          type: code
+          title: レポート整形
+          desc: 最終レポートをJSON文字列として生成
+          code_language: python3
+          code: |
+            import json
+            from datetime import datetime, timezone
+
+            def main(research_topic: str, keywords: list, subtopics: list, analysis_results: list) -> dict:
+                report = {
+                    "research_topic": (research_topic or "").strip(),
+                    "keywords": keywords or [],
+                    "subtopics": subtopics or [],
+                    "analysis_results": analysis_results or [],
+                    "generated_at": datetime.now(timezone.utc).isoformat()
+                }
+                return {"report": json.dumps(report, ensure_ascii=False, indent=2)}
+          outputs:
+            report:
+              children: null
+              type: string
+          variables:
+            - value_selector:
+                - code_param_extract
+                - formatted_topic
+              variable: research_topic
+            - value_selector:
+                - code_keyword_format
+                - keywords
+              variable: keywords
+            - value_selector:
+                - code_subtopic_format
+                - subtopics
+              variable: subtopics
+            - value_selector:
+                - code_error_handle
+                - final_analysis_results
+              variable: analysis_results
+          selected: false
+        height: 260
+        id: code_report_format
+        position:
+          x: 4280
+          y: 250
+        positionAbsolute:
+          x: 4280
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 340
+
+      # ============================================================
+      # End
+      # ============================================================
+      - data:
+          type: end
+          title: 終了
+          desc: ワークフロー終了
+          outputs:
+            - value_selector:
+                - code_report_format
+                - report
+              variable: report
+          selected: false
+        height: 120
+        id: end_research
+        position:
+          x: 4660
+          y: 250
+        positionAbsolute:
+          x: 4660
+          y: 250
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 242
+
+    edges:
+      # Start → Question Classifier
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: start
+          targetType: question-classifier
+        id: edge-start-qc
+        source: start_research
+        sourceHandle: source
+        target: qc_research
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # Question Classifier → Code（前処理）※全クラス合流
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: code
+        id: edge-qc-to-code-tech
+        source: qc_research
+        sourceHandle: tech_research
+        target: code_param_extract
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: code
+        id: edge-qc-to-code-market
+        source: qc_research
+        sourceHandle: market_analysis
+        target: code_param_extract
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: code
+        id: edge-qc-to-code-academic
+        source: qc_research
+        sourceHandle: academic_research
+        target: code_param_extract
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: code
+        id: edge-qc-to-code-business
+        source: qc_research
+        sourceHandle: business_strategy
+        target: code_param_extract
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: code
+        id: edge-qc-to-code-other
+        source: qc_research
+        sourceHandle: other
+        target: code_param_extract
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # Code（前処理）→ 各キーワード抽出LLM（分岐）
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-code-to-llm-keyword-tech
+        source: code_param_extract
+        sourceHandle: source
+        target: llm_keyword_tech
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-code-to-llm-keyword-market
+        source: code_param_extract
+        sourceHandle: source
+        target: llm_keyword_market
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-code-to-llm-keyword-academic
+        source: code_param_extract
+        sourceHandle: source
+        target: llm_keyword_academic
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-code-to-llm-keyword-business
+        source: code_param_extract
+        sourceHandle: source
+        target: llm_keyword_business
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-code-to-llm-keyword-other
+        source: code_param_extract
+        sourceHandle: source
+        target: llm_keyword_other
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # 各キーワード抽出LLM → キーワード整形（合流）
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-llm-keyword-tech-to-code-format
+        source: llm_keyword_tech
+        sourceHandle: source
+        target: code_keyword_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-llm-keyword-market-to-code-format
+        source: llm_keyword_market
+        sourceHandle: source
+        target: code_keyword_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-llm-keyword-academic-to-code-format
+        source: llm_keyword_academic
+        sourceHandle: source
+        target: code_keyword_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-llm-keyword-business-to-code-format
+        source: llm_keyword_business
+        sourceHandle: source
+        target: code_keyword_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-llm-keyword-other-to-code-format
+        source: llm_keyword_other
+        sourceHandle: source
+        target: code_keyword_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # キーワード整形 → Iteration（キーワード検索）
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: iteration
+        id: edge-code-keyword-to-iter
+        source: code_keyword_format
+        sourceHandle: source
+        target: iter_keyword_search
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # Iteration内: start → tool → code
+      - data:
+          isInIteration: true
+          isInLoop: false
+          iteration_id: iter_keyword_search
+          sourceType: iteration-start
+          targetType: tool
+        id: edge-iter-keyword-start-tool
+        source: iter_keyword_searchstart
+        sourceHandle: source
+        target: tool_tavily_keyword
+        targetHandle: target
+        type: custom
+        zIndex: 1002
+      - data:
+          isInIteration: true
+          isInLoop: false
+          iteration_id: iter_keyword_search
+          sourceType: tool
+          targetType: code
+        id: edge-tool-keyword-to-code-format
+        source: tool_tavily_keyword
+        sourceHandle: source
+        target: code_keyword_search_format
+        targetHandle: target
+        type: custom
+        zIndex: 1002
+
+      # Iteration（キーワード検索）→ 検索結果統合
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: iteration
+          targetType: code
+        id: edge-iter-keyword-to-code-integrate
+        source: iter_keyword_search
+        sourceHandle: source
+        target: code_integrate_search
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # 検索結果統合 → 各サブテーマ生成LLM（分岐）
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-integrate-to-subtopic-tech
+        source: code_integrate_search
+        sourceHandle: source
+        target: llm_subtopic_tech
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-integrate-to-subtopic-market
+        source: code_integrate_search
+        sourceHandle: source
+        target: llm_subtopic_market
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-integrate-to-subtopic-academic
+        source: code_integrate_search
+        sourceHandle: source
+        target: llm_subtopic_academic
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-integrate-to-subtopic-business
+        source: code_integrate_search
+        sourceHandle: source
+        target: llm_subtopic_business
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: llm
+        id: edge-integrate-to-subtopic-other
+        source: code_integrate_search
+        sourceHandle: source
+        target: llm_subtopic_other
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # 各サブテーマ生成LLM → サブテーマ整形（合流）
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-subtopic-tech-to-format
+        source: llm_subtopic_tech
+        sourceHandle: source
+        target: code_subtopic_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-subtopic-market-to-format
+        source: llm_subtopic_market
+        sourceHandle: source
+        target: code_subtopic_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-subtopic-academic-to-format
+        source: llm_subtopic_academic
+        sourceHandle: source
+        target: code_subtopic_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-subtopic-business-to-format
+        source: llm_subtopic_business
+        sourceHandle: source
+        target: code_subtopic_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: edge-subtopic-other-to-format
+        source: llm_subtopic_other
+        sourceHandle: source
+        target: code_subtopic_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # サブテーマ整形 → Iteration（サブテーマ詳細分析）
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: iteration
+        id: edge-subtopic-format-to-iter-analysis
+        source: code_subtopic_format
+        sourceHandle: source
+        target: iter_subtopic_analysis
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # Iteration内（サブテーマ）: start → tool → code → llm → code → code
+      - data:
+          isInIteration: true
+          isInLoop: false
+          iteration_id: iter_subtopic_analysis
+          sourceType: iteration-start
+          targetType: tool
+        id: edge-iter-subtopic-start-tool
+        source: iter_subtopic_analysisstart
+        sourceHandle: source
+        target: tool_tavily_subtopic
+        targetHandle: target
+        type: custom
+        zIndex: 1002
+      - data:
+          isInIteration: true
+          isInLoop: false
+          iteration_id: iter_subtopic_analysis
+          sourceType: tool
+          targetType: code
+        id: edge-tool-subtopic-to-code-format
+        source: tool_tavily_subtopic
+        sourceHandle: source
+        target: code_subtopic_search_format
+        targetHandle: target
+        type: custom
+        zIndex: 1002
+      - data:
+          isInIteration: true
+          isInLoop: false
+          iteration_id: iter_subtopic_analysis
+          sourceType: code
+          targetType: llm
+        id: edge-code-subtopic-to-llm-analysis
+        source: code_subtopic_search_format
+        sourceHandle: source
+        target: llm_detailed_analysis
+        targetHandle: target
+        type: custom
+        zIndex: 1002
+      - data:
+          isInIteration: true
+          isInLoop: false
+          iteration_id: iter_subtopic_analysis
+          sourceType: llm
+          targetType: code
+        id: edge-llm-analysis-to-quality
+        source: llm_detailed_analysis
+        sourceHandle: source
+        target: code_quality_check
+        targetHandle: target
+        type: custom
+        zIndex: 1002
+      - data:
+          isInIteration: true
+          isInLoop: false
+          iteration_id: iter_subtopic_analysis
+          sourceType: code
+          targetType: code
+        id: edge-quality-to-format
+        source: code_quality_check
+        sourceHandle: source
+        target: code_analysis_result_format
+        targetHandle: target
+        type: custom
+        zIndex: 1002
+
+      # Iteration（サブテーマ）→ エラーハンドリング → レポート整形 → End
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: iteration
+          targetType: code
+        id: edge-iter-analysis-to-error
+        source: iter_subtopic_analysis
+        sourceHandle: source
+        target: code_error_handle
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: code
+        id: edge-error-to-report
+        source: code_error_handle
+        sourceHandle: source
+        target: code_report_format
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: end
+        id: edge-report-to-end
+        source: code_report_format
+        sourceHandle: source
+        target: end_research
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.7
+
+  rag_pipeline_variables: []

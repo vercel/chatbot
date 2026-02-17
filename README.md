@@ -36,9 +36,14 @@
 
 ## Model Providers
 
-This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. The default configuration includes [xAI](https://x.ai) models (`grok-2-vision-1212`, `grok-3-mini`) routed through the gateway.
+This template supports two ways to call LLMs:
 
-### AI Gateway Authentication
+- **Gateway mode (default)**: uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) (billed via your Vercel account).
+- **Direct mode**: uses your **own provider API key(s)** (e.g. OpenAI/Anthropic/Google).
+
+You can switch modes with the `AI_PROVIDER_MODE` environment variable (see `.env.example`).
+
+### Gateway mode (AI Gateway)
 
 **For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
 

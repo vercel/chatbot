@@ -36,18 +36,33 @@ export function Chat({
   id,
   initialMessages,
   initialChatModel,
+  fixedChatModelId,
   initialVisibilityType,
   isReadonly,
   autoResume,
+  systemPromptId,
+  chatPathPrefix,
+  newChatPath,
+  inputPlaceholder,
 }: {
   id: string;
   initialMessages: ChatMessage[];
   initialChatModel: string;
+  fixedChatModelId?: string;
   initialVisibilityType: VisibilityType;
   isReadonly: boolean;
   autoResume: boolean;
+  systemPromptId?: string;
+  chatPathPrefix?: string;
+  newChatPath?: string;
+  inputPlaceholder?: string;
 }) {
   const router = useRouter();
+  const resolvedChatPathPrefix = chatPathPrefix ?? "/chat";
+  const normalizedChatPathPrefix = resolvedChatPathPrefix.endsWith("/")
+    ? resolvedChatPathPrefix.slice(0, -1)
+    : resolvedChatPathPrefix;
+  const chatPath = `${normalizedChatPathPrefix}/${id}`;
 
   const { visibilityType } = useChatVisibility({
     chatId: id,
@@ -70,12 +85,14 @@ export function Chat({
 
   const [input, setInput] = useState<string>("");
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
-  const [currentModelId, setCurrentModelId] = useState(initialChatModel);
-  const currentModelIdRef = useRef(currentModelId);
+  const [currentModelId, setCurrentModelId] = useState(
+    fixedChatModelId ?? initialChatModel
+  );
+  const currentModelIdRef = useRef(fixedChatModelId ?? initialChatModel);
 
   useEffect(() => {
-    currentModelIdRef.current = currentModelId;
-  }, [currentModelId]);
+    currentModelIdRef.current = fixedChatModelId ?? currentModelId;
+  }, [fixedChatModelId, currentModelId]);
 
   const {
     messages,
@@ -126,6 +143,7 @@ export function Chat({
               : { message: lastMessage }),
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibilityType,
+            systemPromptId,
             ...request.body,
           },
         };
@@ -166,9 +184,9 @@ export function Chat({
       });
 
       setHasAppendedQuery(true);
-      window.history.replaceState({}, "", `/chat/${id}`);
+      window.history.replaceState({}, "", chatPath);
     }
-  }, [query, sendMessage, hasAppendedQuery, id]);
+  }, [query, sendMessage, hasAppendedQuery, chatPath]);
 
   const { data: votes } = useSWR<Vote[]>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
@@ -191,6 +209,7 @@ export function Chat({
         <ChatHeader
           chatId={id}
           isReadonly={isReadonly}
+          newChatPath={newChatPath}
           selectedVisibilityType={initialVisibilityType}
         />
 
@@ -212,9 +231,11 @@ export function Chat({
             <MultimodalInput
               attachments={attachments}
               chatId={id}
+              chatPath={chatPath}
               input={input}
+              inputPlaceholder={inputPlaceholder}
               messages={messages}
-              onModelChange={setCurrentModelId}
+              onModelChange={fixedChatModelId ? undefined : setCurrentModelId}
               selectedModelId={currentModelId}
               selectedVisibilityType={visibilityType}
               sendMessage={sendMessage}

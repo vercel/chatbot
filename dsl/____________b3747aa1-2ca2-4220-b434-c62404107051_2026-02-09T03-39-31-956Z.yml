@@ -1,0 +1,558 @@
+app:
+  description: 入力文章を意図分類・感情分析・キーワード抽出し、必要に応じて要約してレポート化、前回入力と比較する
+  icon: 🧠
+  icon_background: '#4F46E5'
+  mode: advanced-chat
+  name: テキスト分析レポーター
+kind: app
+version: 0.1.5
+workflow:
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: start
+          targetType: llm
+        id: start-llm_analyze
+        source: start
+        sourceHandle: source
+        target: llm_analyze
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: llm_analyze-code_parse
+        source: llm_analyze
+        sourceHandle: source
+        target: code_parse
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: if-else
+        id: code_parse-if_summary
+        source: code_parse
+        sourceHandle: source
+        target: if_summary
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: if-else
+          targetType: llm
+        id: if_summary-true-llm_summary
+        source: if_summary
+        sourceHandle: 'true'
+        target: llm_summary
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: if-else
+          targetType: code
+        id: if_summary-false-code_no_summary
+        source: if_summary
+        sourceHandle: 'false'
+        target: code_no_summary
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: code
+        id: llm_summary-code_build_report
+        source: llm_summary
+        sourceHandle: source
+        target: code_build_report
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: code
+        id: code_no_summary-code_build_report
+        source: code_no_summary
+        sourceHandle: source
+        target: code_build_report
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: code
+          targetType: answer
+        id: code_build_report-answer
+        source: code_build_report
+        sourceHandle: source
+        target: answer
+        targetHandle: target
+        type: custom
+        zIndex: 0
+    nodes:
+      - data:
+          desc: ユーザー入力（sys.query）を受け取る
+          selected: false
+          title: Start
+          type: start
+          variables: []
+        height: 98
+        id: start
+        position:
+          x: -520
+          y: 240
+        positionAbsolute:
+          x: -520
+          y: 240
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: false
+            variable_selector: []
+          desc: 意図分類・感情分析・キーワード抽出を一括でJSON出力
+          model:
+            completion_params:
+              frequency_penalty: 0
+              max_tokens: 900
+              presence_penalty: 0
+              temperature: 0.2
+              top_p: 1
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは日本語テキスト分析器です。ユーザーの入力文章を以下の形式の「厳密なJSONのみ」で返してください（前後に説明文を付けない）。
+
+                # 分類ラベル（intent）
+                question / request / complaint / feedback / idea / chitchat / other
+
+                # sentiment
+                - label: positive / neutral / negative
+                - score: -1.0〜1.0 の小数（ネガほど-、ポジほど+）
+
+                # keywords
+                - 上位8個
+                - 1〜3語のフレーズ可
+                - 重複や表記ゆれはできるだけ統一
+                - 具体名詞を優先
+
+                # 出力JSONスキーマ
+                {
+                  "intent": "question",
+                  "sentiment": { "label": "neutral", "score": 0.0 },
+                  "keywords": ["...", "..."],
+                  "needs_summary": true,
+                  "reason_needs_summary": "..."
+                }
+
+                needs_summary の判定ルール:
+                - 入力が400文字以上なら true
+                - それ以外は false
+          selected: false
+          title: 分析（分類/感情/キーワード/要約要否）
+          type: llm
+        height: 168
+        id: llm_analyze
+        position:
+          x: -220
+          y: 240
+        positionAbsolute:
+          x: -220
+          y: 240
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 360
+      - data:
+          code: |
+            import json
+
+            def main(text: str) -> dict:
+                """
+                LLMのJSONテキストをパースし、以降のノードで扱いやすい形に整形する。
+                """
+                raw = (text or "").strip()
+
+                # 念のため、前後に余計な文字が混ざったケースも極力救済
+                start = raw.find("{")
+                end = raw.rfind("}")
+                if start != -1 and end != -1 and end > start:
+                    raw_json = raw[start:end+1]
+                else:
+                    raw_json = raw
+
+                data = json.loads(raw_json)
+
+                intent = data.get("intent", "other")
+                sentiment = data.get("sentiment", {}) or {}
+                s_label = sentiment.get("label", "neutral")
+                s_score = sentiment.get("score", 0.0)
+
+                keywords = data.get("keywords", []) or []
+                keywords = [str(k).strip() for k in keywords if str(k).strip()]
+
+                needs_summary = bool(data.get("needs_summary", False))
+                reason = data.get("reason_needs_summary", "")
+
+                return {
+                    "intent": intent,
+                    "sentiment_label": s_label,
+                    "sentiment_score": float(s_score) if s_score is not None else 0.0,
+                    "keywords": keywords,
+                    "needs_summary": needs_summary,
+                    "reason_needs_summary": reason,
+                    "analysis_raw": data
+                }
+          code_language: python3
+          desc: LLM出力JSONをパース
+          outputs:
+            analysis_raw:
+              children: null
+              type: object
+            intent:
+              children: null
+              type: string
+            keywords:
+              children: null
+              type: array[string]
+            needs_summary:
+              children: null
+              type: boolean
+            reason_needs_summary:
+              children: null
+              type: string
+            sentiment_label:
+              children: null
+              type: string
+            sentiment_score:
+              children: null
+              type: number
+          selected: false
+          title: 解析結果パース
+          type: code
+          variables:
+            - value_selector:
+                - llm_analyze
+                - text
+              variable: text
+        height: 186
+        id: code_parse
+        position:
+          x: 200
+          y: 240
+        positionAbsolute:
+          x: 200
+          y: 240
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 360
+      - data:
+          cases:
+            - case_id: 'true'
+              conditions:
+                - comparison_operator: is
+                  value: 'true'
+                  varType: string
+                  variable_selector:
+                    - code_parse
+                    - needs_summary
+          desc: needs_summary=true の場合のみ要約を生成
+          selected: false
+          title: 要約が必要？
+          type: if-else
+        height: 154
+        id: if_summary
+        position:
+          x: 630
+          y: 240
+        positionAbsolute:
+          x: 630
+          y: 240
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 280
+      - data:
+          context:
+            enabled: false
+            variable_selector: []
+          desc: 入力文章の要約を作成
+          model:
+            completion_params:
+              frequency_penalty: 0
+              max_tokens: 450
+              presence_penalty: 0
+              temperature: 0.3
+              top_p: 1
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは日本語要約の専門家です。与えられた文章を簡潔に要約してください。
+                - 5〜7行程度
+                - 箇条書き
+                - 主張/事実/依頼事項があれば優先して抽出
+            - id: user
+              role: user
+              text: |
+                次の文章を要約してください。
+
+                ---本文---
+                {{#sys.query#}}
+          selected: false
+          title: 要約生成
+          type: llm
+        height: 168
+        id: llm_summary
+        position:
+          x: 970
+          y: 160
+        positionAbsolute:
+          x: 970
+          y: 160
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 360
+      - data:
+          code: |
+            def main() -> dict:
+                return {
+                    "summary": "（短文のため要約を省略しました）"
+                }
+          code_language: python3
+          desc: 要約なし分岐のダミー要約文
+          outputs:
+            summary:
+              children: null
+              type: string
+          selected: false
+          title: 要約省略
+          type: code
+          variables: []
+        height: 140
+        id: code_no_summary
+        position:
+          x: 970
+          y: 340
+        positionAbsolute:
+          x: 970
+          y: 340
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 360
+      - data:
+          code: |
+            def _fmt_keywords(words: list) -> str:
+                if not words:
+                    return "（なし）"
+                return ", ".join(words)
+
+            def _diff_keywords(prev: list, cur: list) -> dict:
+                prev_set = set([str(x) for x in (prev or []) if str(x).strip()])
+                cur_set = set([str(x) for x in (cur or []) if str(x).strip()])
+                added = sorted(list(cur_set - prev_set))
+                removed = sorted(list(prev_set - cur_set))
+                common = sorted(list(prev_set & cur_set))
+                return {"added": added, "removed": removed, "common": common}
+
+            def main(intent: str,
+                     sentiment_label: str,
+                     sentiment_score: float,
+                     keywords: list,
+                     needs_summary: bool,
+                     reason_needs_summary: str,
+                     summary_from_llm: str,
+                     summary_from_dummy: str,
+                     current_text: str,
+                     prev_text: str) -> dict:
+                # summaryは分岐のどちらかが来る
+                summary = summary_from_llm or summary_from_dummy or ""
+
+                # 前回比較（同一チャット内の直前想定）
+                has_prev = bool((prev_text or "").strip())
+                diff_note = "（前回入力がないため比較を省略）"
+                prev_keywords = []
+                prev_intent = None
+                prev_sentiment_score = None
+                prev_sentiment_label = None
+
+                # ここでは「前回分析結果」を永続保持できないため、
+                # 前回テキストとの差分は簡易（文字数差）+ キーワード差分は"前回キーワードが無い"として扱う。
+                # ※高度な比較が必要なら、前回結果JSONを会話内で保持する設計に拡張可能。
+                if has_prev:
+                    diff_note = f"- 文字数: 前回 {len(prev_text)} → 今回 {len(current_text)}（差 {len(current_text) - len(prev_text)}）"
+
+                kw_diff = _diff_keywords(prev_keywords, keywords)
+
+                report = []
+                report.append("# テキスト分析レポート")
+                report.append("")
+                report.append("## 入力概要")
+                report.append(f"- 文字数: {len(current_text)}")
+                report.append(f"- 要約生成: {'あり' if needs_summary else 'なし'}")
+                if reason_needs_summary:
+                    report.append(f"- 判定理由: {reason_needs_summary}")
+                report.append("")
+                report.append("## ① 意図分類")
+                report.append(f"- intent: **{intent}**")
+                report.append("")
+                report.append("## ② 感情分析")
+                report.append(f"- label: **{sentiment_label}**")
+                report.append(f"- score: **{sentiment_score:.2f}**（-1.0:強いネガ / +1.0:強いポジ）")
+                report.append("")
+                report.append("## ③ キーワード（上位）")
+                report.append(f"- {_fmt_keywords(keywords)}")
+                report.append("")
+                report.append("## ④ 要約")
+                report.append(summary)
+                report.append("")
+                report.append("## ⑥ 前回入力との比較（同一チャット内）")
+                report.append(diff_note)
+                report.append("")
+                report.append("### キーワード差分（参考）")
+                report.append(f"- 追加: {_fmt_keywords(kw_diff['added'])}")
+                report.append(f"- 消失: {_fmt_keywords(kw_diff['removed'])}")
+                report.append(f"- 共通: {_fmt_keywords(kw_diff['common'])}")
+                report.append("")
+                report.append("---")
+                report.append("### ログ（会話内）")
+                report.append("- このフローは外部保存なしのため、比較は同一チャット内の前回入力を前提にしています。")
+                report_text = "\n".join(report)
+
+                # 「次回比較用ログ」として、今回の入力を返す（会話メモリ/変数として保持される想定）
+                return {
+                    "report": report_text,
+                    "log_text": current_text
+                }
+          code_language: python3
+          desc: レポートをMarkdownで生成し、次回比較用に今回テキストをログとして返す
+          outputs:
+            log_text:
+              children: null
+              type: string
+            report:
+              children: null
+              type: string
+          selected: false
+          title: レポート生成・ログ更新
+          type: code
+          variables:
+            - value_selector:
+                - code_parse
+                - intent
+              variable: intent
+            - value_selector:
+                - code_parse
+                - sentiment_label
+              variable: sentiment_label
+            - value_selector:
+                - code_parse
+                - sentiment_score
+              variable: sentiment_score
+            - value_selector:
+                - code_parse
+                - keywords
+              variable: keywords
+            - value_selector:
+                - code_parse
+                - needs_summary
+              variable: needs_summary
+            - value_selector:
+                - code_parse
+                - reason_needs_summary
+              variable: reason_needs_summary
+            - value_selector:
+                - llm_summary
+                - text
+              variable: summary_from_llm
+            - value_selector:
+                - code_no_summary
+                - summary
+              variable: summary_from_dummy
+            - value_selector:
+                - start
+                - sys.query
+              variable: current_text
+            - value_selector:
+                - sys
+                - conversation.last_user_message
+              variable: prev_text
+        height: 210
+        id: code_build_report
+        position:
+          x: 1370
+          y: 240
+        positionAbsolute:
+          x: 1370
+          y: 240
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 420
+      - data:
+          answer: '{{#code_build_report.report#}}'
+          desc: レポートを表示
+          selected: false
+          title: Answer
+          type: answer
+        height: 122
+        id: answer
+        position:
+          x: 1860
+          y: 240
+        positionAbsolute:
+          x: 1860
+          y: 240
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244

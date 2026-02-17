@@ -1,0 +1,45 @@
+{
+  "name": "@img/colour",
+  "version": "1.0.0",
+  "description": "The ESM-only 'color' package made compatible for use with CommonJS runtimes",
+  "license": "MIT",
+  "main": "index.cjs",
+  "authors": [
+    "Heather Arthur <fayearthur@gmail.com>",
+    "Josh Junon <josh@junon.me>",
+    "Maxime Thirouin",
+    "Dyma Ywanov <dfcreative@gmail.com>",
+    "LitoMore (https://github.com/LitoMore)"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "color.cjs"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lovell/colour.git"
+  },
+  "type": "commonjs",
+  "keywords": [
+    "color",
+    "colour",
+    "cjs",
+    "commonjs"
+  ],
+  "scripts": {
+    "build": "esbuild node_modules/color/index.js --bundle --platform=node --outfile=color.cjs",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "color": "5.0.0",
+    "color-convert": "3.1.0",
+    "color-name": "2.0.0",
+    "color-string": "2.1.0",
+    "esbuild": "^0.25.9"
+  }
+}

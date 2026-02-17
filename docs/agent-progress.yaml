@@ -1,0 +1,26 @@
+version: 1
+project:
+  name: ai-chatbot
+  path: /Users/momoseren/workspace/dify-WorkFlow/ai-chatbot
+goal:
+  - Build a web application based on this project.
+context:
+  - Next.js App Router + AI SDK chatbot template.
+progress:
+  completed:
+    - Added setup and implementation guide in docs/implementation-guide.md.
+  in_progress:
+    - Fill .env.local values (AUTH_SECRET, AI_PROVIDER_MODE, AI_GATEWAY_API_KEY or provider API key(s), optional AI_DIFY_MODEL, BLOB_READ_WRITE_TOKEN, POSTGRES_URL, REDIS_URL).
+  next:
+    - Run pnpm db:migrate after env setup.
+    - Run pnpm dev and verify http://localhost:3000.
+files_of_interest:
+  - docs/implementation-guide.md
+  - .env.local
+commands_reference:
+  - pnpm install
+  - pnpm db:migrate
+  - pnpm dev
+notes:
+  - Do not commit .env.local or secrets.
+  - No tests have been run.

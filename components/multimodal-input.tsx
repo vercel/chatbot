@@ -55,7 +55,9 @@ function setCookie(name: string, value: string) {
 
 function PureMultimodalInput({
   chatId,
+  chatPath,
   input,
+  inputPlaceholder,
   setInput,
   status,
   stop,
@@ -70,7 +72,9 @@ function PureMultimodalInput({
   onModelChange,
 }: {
   chatId: string;
+  chatPath?: string;
   input: string;
+  inputPlaceholder?: string;
   setInput: Dispatch<SetStateAction<string>>;
   status: UseChatHelpers<ChatMessage>["status"];
   stop: () => void;
@@ -145,22 +149,31 @@ function PureMultimodalInput({
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 
   const submitForm = useCallback(() => {
-    window.history.pushState({}, "", `/chat/${chatId}`);
+    const nextPath = chatPath ?? `/chat/${chatId}`;
+    window.history.pushState({}, "", nextPath);
+
+    const parts = [
+      ...attachments.map((attachment) => ({
+        type: "file" as const,
+        url: attachment.url,
+        name: attachment.name,
+        mediaType: attachment.contentType,
+      })),
+      ...(input.trim() ? [
+        {
+          type: "text" as const,
+          text: input.trim(),
+        },
+      ] : []),
+    ];
+
+    if (parts.length === 0) {
+      return;
+    }
 
     sendMessage({
       role: "user",
-      parts: [
-        ...attachments.map((attachment) => ({
-          type: "file" as const,
-          url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
-        })),
-        {
-          type: "text",
-          text: input,
-        },
-      ],
+      parts,
     });
 
     setAttachments([]);
@@ -181,6 +194,7 @@ function PureMultimodalInput({
     width,
     chatId,
     resetHeight,
+    chatPath,
   ]);
 
   const uploadFile = useCallback(async (file: File) => {
@@ -371,7 +385,7 @@ function PureMultimodalInput({
             maxHeight={200}
             minHeight={44}
             onChange={handleInput}
-            placeholder="Send a message..."
+            placeholder={inputPlaceholder ?? "Send a message..."}
             ref={textareaRef}
             rows={1}
             value={input}
