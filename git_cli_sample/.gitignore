@@ -1,0 +1,21 @@
+dsl/
+.deps.edges.tmp.json
+.dify_token
+.tool_index.tmp.json
+
+# Dify CLI auth / session
+.dify_auth
+.dify_cookie
+.dify_cookies
+.dify_csrf
+.dify_login_headers
+
+# env / backup
+.env
+.env.*
+*.bak
+
+# debug artifacts
+body.txt
+headers.txt
+cookie

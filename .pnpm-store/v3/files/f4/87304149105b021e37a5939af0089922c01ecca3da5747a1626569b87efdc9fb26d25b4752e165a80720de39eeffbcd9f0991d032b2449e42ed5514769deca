@@ -1,0 +1,54 @@
+---
+// Since this file will not be bundled by Tsup, it is referencing bundled files relative to dist/astro/
+import type { AnalyticsProps } from '../index.d.ts';
+type Props = Omit<AnalyticsProps, 'framework' | 'beforeSend'>;
+
+const propsStr = JSON.stringify(Astro.props);
+const paramsStr = JSON.stringify(Astro.params);
+---
+
+<vercel-analytics
+  data-props={propsStr}
+  data-params={paramsStr}
+  data-pathname={Astro.url.pathname}></vercel-analytics>
+
+<script>
+  import { inject, pageview, computeRoute } from '../index.mjs';
+
+  function getBasePath(): string | undefined {
+    // !! important !!
+    // do not access env variables using import.meta.env[varname]
+    // some bundles won't replace the value at build time.
+    try {
+      return import.meta.env.PUBLIC_VERCEL_OBSERVABILITY_BASEPATH as
+        | string
+        | undefined;
+    } catch {
+      // do nothing
+    }
+  }
+
+  customElements.define(
+    'vercel-analytics',
+    class VercelAnalytics extends HTMLElement {
+      constructor() {
+        super();
+        try {
+          const props = JSON.parse(this.dataset.props ?? '{}');
+          const params = JSON.parse(this.dataset.params ?? '{}');
+          inject({
+            ...props,
+            disableAutoTrack: true,
+            framework: 'astro',
+            basePath: getBasePath(),
+            beforeSend: window.webAnalyticsBeforeSend,
+          });
+          const path = this.dataset.pathname;
+          pageview({ route: computeRoute(path ?? '', params), path });
+        } catch (err) {
+          throw new Error(`Failed to parse WebAnalytics properties: ${err}`);
+        }
+      }
+    },
+  );
+</script>

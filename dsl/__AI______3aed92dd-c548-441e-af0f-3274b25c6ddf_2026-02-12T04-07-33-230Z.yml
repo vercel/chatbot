@@ -1,0 +1,951 @@
+kind: app
+version: 0.1.5
+
+app:
+  name: 受付AI質問ボット
+  description: |
+    新入社員・初回問い合わせ者向けに、社内ナレッジを参照して会社基本情報を案内し、
+    質問内容に応じて適切な担当部署（人事/総務/IT/経理など）と問い合わせ先を提示する受付ボット
+  mode: advanced-chat
+  icon: 🏢
+  icon_background: '#2D9CDB'
+  use_icon_as_answer_icon: false
+
+dependencies: []
+
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+      allowed_file_types: []
+      allowed_file_extensions: []
+      allowed_file_upload_methods:
+        - local_file
+        - remote_url
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+          - local_file
+          - remote_url
+      number_limits: 3
+    opening_statement: 総合受付AIです。会社情報や担当部署の確認など、知りたいことを質問してください。
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+      - 会社の営業時間と連絡先を教えてください
+      - 経費精算はどの部署に問い合わせればいいですか？
+      - PCが起動しません。どこに連絡すればいいですか？
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+
+  graph:
+    nodes:
+      # Start
+      - data:
+          desc: ユーザーからの質問を受け取ります（advanced-chatではsys.queryが利用可能）
+          selected: false
+          title: 開始
+          type: start
+          variables: []
+        height: 88
+        id: '1760600000000'
+        position:
+          x: 50
+          y: 300
+        positionAbsolute:
+          x: 50
+          y: 300
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+
+      # Question Classifier
+      - data:
+          classes:
+            - id: class_company_info
+              name: 会社基本情報（会社概要/所在地/営業時間/代表連絡先）
+            - id: class_hr
+              name: 人事（採用/入社手続き/勤怠/福利厚生/研修）
+            - id: class_ga
+              name: 総務（備品/施設/社内ルール/押印/来客・郵便）
+            - id: class_it
+              name: ITサポート（PC/アカウント/ネットワーク/SaaS/セキュリティ）
+            - id: class_accounting
+              name: 経理（経費精算/請求書/支払い/旅費/購買）
+            - id: class_other
+              name: その他（どれにも当てはまらない/情報不足）
+          desc: 質問をカテゴリ（担当部署）に分類します。
+          instructions: |
+            あなたは会社の総合受付です。ユーザーの質問を以下のいずれか1つに必ず分類してください。
+
+            - 会社基本情報: 会社概要、所在地、営業時間、代表/総合窓口の連絡先、アクセス等
+            - 人事: 採用、入社手続き、勤怠、有給/休暇、福利厚生、研修、評価等
+            - 総務: 備品、施設/座席、社内ルール、押印/稟議、来客対応、郵便/宅配等
+            - ITサポート: PC/スマホ、アカウント、ネットワーク、各種SaaS、権限、セキュリティ等
+            - 経理: 経費精算、請求書、支払い、旅費、購買/発注、税務関連等
+            - その他: 上記に当てはまらない、または情報が不足して判断できない場合
+
+            迷う場合は「その他」に分類してください。
+          model:
+            completion_params:
+              frequency_penalty: 0
+              max_tokens: 256
+              presence_penalty: 0
+              temperature: 0.2
+              top_p: 1
+            mode: chat
+            name: gpt-4o
+            provider: langgenius/openai/openai
+          query_variable_selector:
+            - '1760600000000'
+            - sys.query
+          selected: false
+          title: 質問分類（受付）
+          topics: []
+          type: question-classifier
+        height: 360
+        id: '1760600000100'
+        position:
+          x: 340
+          y: 300
+        positionAbsolute:
+          x: 340
+          y: 300
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 280
+
+      # Knowledge Retrieval - Company Info
+      - data:
+          dataset_ids:
+            - 4c7eb0da-7e17-4644-9377-125ff00af793
+          desc: ナレッジベースから関連情報を検索します（会社基本情報）。
+          multiple_retrieval_config:
+            reranking_enable: true
+            reranking_mode: weighted
+            top_k: 5
+          query_variable_selector:
+            - '1760600000000'
+            - sys.query
+          retrieval_mode: multiple
+          selected: false
+          title: ナレッジ検索（会社基本情報）
+          type: knowledge-retrieval
+        height: 246
+        id: '1760600000200'
+        position:
+          x: 700
+          y: 110
+        positionAbsolute:
+          x: 700
+          y: 110
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 260
+
+      # Knowledge Retrieval - HR
+      - data:
+          dataset_ids:
+            - 4c7eb0da-7e17-4644-9377-125ff00af793
+          desc: ナレッジベースから関連情報を検索します（人事）。
+          multiple_retrieval_config:
+            reranking_enable: true
+            reranking_mode: weighted
+            top_k: 5
+          query_variable_selector:
+            - '1760600000000'
+            - sys.query
+          retrieval_mode: multiple
+          selected: false
+          title: ナレッジ検索（人事）
+          type: knowledge-retrieval
+        height: 246
+        id: '1760600000210'
+        position:
+          x: 700
+          y: 290
+        positionAbsolute:
+          x: 700
+          y: 290
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 260
+
+      # Knowledge Retrieval - GA
+      - data:
+          dataset_ids:
+            - 4c7eb0da-7e17-4644-9377-125ff00af793
+          desc: ナレッジベースから関連情報を検索します（総務）。
+          multiple_retrieval_config:
+            reranking_enable: true
+            reranking_mode: weighted
+            top_k: 5
+          query_variable_selector:
+            - '1760600000000'
+            - sys.query
+          retrieval_mode: multiple
+          selected: false
+          title: ナレッジ検索（総務）
+          type: knowledge-retrieval
+        height: 246
+        id: '1760600000220'
+        position:
+          x: 700
+          y: 470
+        positionAbsolute:
+          x: 700
+          y: 470
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 260
+
+      # Knowledge Retrieval - IT
+      - data:
+          dataset_ids:
+            - 4c7eb0da-7e17-4644-9377-125ff00af793
+          desc: ナレッジベースから関連情報を検索します（ITサポート）。
+          multiple_retrieval_config:
+            reranking_enable: true
+            reranking_mode: weighted
+            top_k: 5
+          query_variable_selector:
+            - '1760600000000'
+            - sys.query
+          retrieval_mode: multiple
+          selected: false
+          title: ナレッジ検索（ITサポート）
+          type: knowledge-retrieval
+        height: 246
+        id: '1760600000230'
+        position:
+          x: 700
+          y: 650
+        positionAbsolute:
+          x: 700
+          y: 650
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 260
+
+      # Knowledge Retrieval - Accounting
+      - data:
+          dataset_ids:
+            - 4c7eb0da-7e17-4644-9377-125ff00af793
+          desc: ナレッジベースから関連情報を検索します（経理）。
+          multiple_retrieval_config:
+            reranking_enable: true
+            reranking_mode: weighted
+            top_k: 5
+          query_variable_selector:
+            - '1760600000000'
+            - sys.query
+          retrieval_mode: multiple
+          selected: false
+          title: ナレッジ検索（経理）
+          type: knowledge-retrieval
+        height: 246
+        id: '1760600000240'
+        position:
+          x: 700
+          y: 830
+        positionAbsolute:
+          x: 700
+          y: 830
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 260
+
+      # Knowledge Retrieval - Other
+      - data:
+          dataset_ids:
+            - 4c7eb0da-7e17-4644-9377-125ff00af793
+          desc: ナレッジベースから関連情報を検索します（その他）。
+          multiple_retrieval_config:
+            reranking_enable: true
+            reranking_mode: weighted
+            top_k: 5
+          query_variable_selector:
+            - '1760600000000'
+            - sys.query
+          retrieval_mode: multiple
+          selected: false
+          title: ナレッジ検索（その他）
+          type: knowledge-retrieval
+        height: 246
+        id: '1760600000250'
+        position:
+          x: 700
+          y: 1010
+        positionAbsolute:
+          x: 700
+          y: 1010
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 260
+
+      # LLM - Company Info
+      - data:
+          context:
+            enabled: true
+            variable_selector:
+              - '1760600000200'
+              - result
+          desc: 会社基本情報の案内を生成します。
+          memory:
+            role_prefix:
+              assistant: ''
+              user: ''
+            window:
+              enabled: false
+              size: 10
+          model:
+            completion_params:
+              temperature: 0.7
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは会社の「総合受付AI」です。新入社員や初めて問い合わせをする人に、丁寧で分かりやすい案内をしてください。
+
+                重要ルール:
+                - 回答は必ずナレッジ（context）に基づいてください。不明な点は推測せず「ナレッジに記載がない」旨を明記してください。
+                - 会社基本情報（会社概要・営業時間・連絡先）を、質問に応じて簡潔に案内してください。
+                - 最後に、必要なら追加で確認すべき点を箇条書きで提示してください（無ければ省略）。
+          prompt_template_fallback: ''
+          selected: false
+          title: 回答生成（会社基本情報）
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+        height: 220
+        id: '1760600000300'
+        position:
+          x: 1040
+          y: 110
+        positionAbsolute:
+          x: 1040
+          y: 110
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # LLM - HR
+      - data:
+          context:
+            enabled: true
+            variable_selector:
+              - '1760600000210'
+              - result
+          desc: 人事向けの案内を生成します。
+          memory:
+            role_prefix:
+              assistant: ''
+              user: ''
+            window:
+              enabled: false
+              size: 10
+          model:
+            completion_params:
+              temperature: 0.7
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは会社の「総合受付AI」です。新入社員や初めて問い合わせをする人に、丁寧で分かりやすい案内をしてください。
+
+                重要ルール:
+                - 回答は必ずナレッジ（context）に基づいてください。不明な点は推測せず「ナレッジに記載がない」旨を明記してください。
+                - この質問の担当部署は「人事」です。人事の役割を1〜2文で説明し、ナレッジにある手順/注意点があれば案内してください。
+                - 問い合わせ先（メール/内線/フォーム/窓口等）がナレッジにあれば必ず提示してください。無ければ「総合窓口へ」と案内してください。
+                - 最後に、必要なら追加で確認すべき点を箇条書きで提示してください（無ければ省略）。
+            - id: user
+              role: user
+              text: |
+                【ユーザーの質問】
+                {{#sys.query#}}
+
+                【参考情報（ナレッジ）】
+                {{#context#}}
+          selected: false
+          title: 回答生成（人事）
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+        height: 240
+        id: '1760600000310'
+        position:
+          x: 1040
+          y: 290
+        positionAbsolute:
+          x: 1040
+          y: 290
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # LLM - GA
+      - data:
+          context:
+            enabled: true
+            variable_selector:
+              - '1760600000220'
+              - result
+          desc: 総務向けの案内を生成します。
+          memory:
+            role_prefix:
+              assistant: ''
+              user: ''
+            window:
+              enabled: false
+              size: 10
+          model:
+            completion_params:
+              temperature: 0.7
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは会社の「総合受付AI」です。新入社員や初めて問い合わせをする人に、丁寧で分かりやすい案内をしてください。
+
+                重要ルール:
+                - 回答は必ずナレッジ（context）に基づいてください。不明な点は推測せず「ナレッジに記載がない」旨を明記してください。
+                - この質問の担当部署は「総務」です。総務の役割を1〜2文で説明し、ナレッジにある手順/注意点があれば案内してください。
+                - 問い合わせ先（メール/内線/フォーム/窓口等）がナレッジにあれば必ず提示してください。無ければ「総合窓口へ」と案内してください。
+                - 最後に、必要なら追加で確認すべき点を箇条書きで提示してください（無ければ省略）。
+            - id: user
+              role: user
+              text: |
+                【ユーザーの質問】
+                {{#sys.query#}}
+
+                【参考情報（ナレッジ）】
+                {{#context#}}
+          selected: false
+          title: 回答生成（総務）
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+        height: 240
+        id: '1760600000320'
+        position:
+          x: 1040
+          y: 470
+        positionAbsolute:
+          x: 1040
+          y: 470
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # LLM - IT
+      - data:
+          context:
+            enabled: true
+            variable_selector:
+              - '1760600000230'
+              - result
+          desc: ITサポート向けの案内を生成します。
+          memory:
+            role_prefix:
+              assistant: ''
+              user: ''
+            window:
+              enabled: false
+              size: 10
+          model:
+            completion_params:
+              temperature: 0.7
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは会社の「総合受付AI」です。新入社員や初めて問い合わせをする人に、丁寧で分かりやすい案内をしてください。
+
+                重要ルール:
+                - 回答は必ずナレッジ（context）に基づいてください。不明な点は推測せず「ナレッジに記載がない」旨を明記してください。
+                - この質問の担当部署は「ITサポート」です。ITサポートの役割を1〜2文で説明し、ナレッジにある手順/注意点があれば案内してください。
+                - 問い合わせ先（メール/内線/チケット/フォーム等）がナレッジにあれば必ず提示してください。無ければ「総合窓口へ」と案内してください。
+                - セキュリティ上、パスワード等の秘匿情報はユーザーに入力させないでください。
+                - 最後に、必要なら追加で確認すべき点を箇条書きで提示してください（無ければ省略）。
+            - id: user
+              role: user
+              text: |
+                【ユーザーの質問】
+                {{#sys.query#}}
+
+                【参考情報（ナレッジ）】
+                {{#context#}}
+          selected: false
+          title: 回答生成（ITサポート）
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+        height: 260
+        id: '1760600000330'
+        position:
+          x: 1040
+          y: 650
+        positionAbsolute:
+          x: 1040
+          y: 650
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # LLM - Accounting
+      - data:
+          context:
+            enabled: true
+            variable_selector:
+              - '1760600000240'
+              - result
+          desc: 経理向けの案内を生成します。
+          memory:
+            role_prefix:
+              assistant: ''
+              user: ''
+            window:
+              enabled: false
+              size: 10
+          model:
+            completion_params:
+              temperature: 0.7
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは会社の「総合受付AI」です。新入社員や初めて問い合わせをする人に、丁寧で分かりやすい案内をしてください。
+
+                重要ルール:
+                - 回答は必ずナレッジ（context）に基づいてください。不明な点は推測せず「ナレッジに記載がない」旨を明記してください。
+                - この質問の担当部署は「経理」です。経理の役割を1〜2文で説明し、ナレッジにある手順/注意点があれば案内してください。
+                - 問い合わせ先（メール/内線/申請窓口等）がナレッジにあれば必ず提示してください。無ければ「総合窓口へ」と案内してください。
+                - 最後に、必要なら追加で確認すべき点を箇条書きで提示してください（無ければ省略）。
+            - id: user
+              role: user
+              text: |
+                【ユーザーの質問】
+                {{#sys.query#}}
+
+                【参考情報（ナレッジ）】
+                {{#context#}}
+          selected: false
+          title: 回答生成（経理）
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+        height: 240
+        id: '1760600000340'
+        position:
+          x: 1040
+          y: 830
+        positionAbsolute:
+          x: 1040
+          y: 830
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # LLM - Other
+      - data:
+          context:
+            enabled: true
+            variable_selector:
+              - '1760600000250'
+              - result
+          desc: その他カテゴリの案内を生成します。
+          memory:
+            role_prefix:
+              assistant: ''
+              user: ''
+            window:
+              enabled: false
+              size: 10
+          model:
+            completion_params:
+              temperature: 0.7
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                あなたは会社の「総合受付AI」です。新入社員や初めて問い合わせをする人に、丁寧で分かりやすい案内をしてください。
+
+                重要ルール:
+                - 回答は必ずナレッジ（context）に基づいてください。不明な点は推測せず「ナレッジに記載がない」旨を明記してください。
+                - 担当部署が特定できない場合は、追加で確認すべき質問を2〜4個、箇条書きで提示してください。
+                - 可能なら候補部署（人事/総務/IT/経理/会社基本情報）を示し、最終的に「総合窓口」へ誘導してください（連絡先がナレッジにある場合は提示）。
+            - id: user
+              role: user
+              text: |
+                【ユーザーの質問】
+                {{#sys.query#}}
+
+                【参考情報（ナレッジ）】
+                {{#context#}}
+          selected: false
+          title: 回答生成（その他）
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+        height: 260
+        id: '1760600000350'
+        position:
+          x: 1040
+          y: 1010
+        positionAbsolute:
+          x: 1040
+          y: 1010
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 320
+
+      # Answer
+      - data:
+          answer: |
+            {{#1760600000300.text#}}{{#1760600000310.text#}}{{#1760600000320.text#}}{{#1760600000330.text#}}{{#1760600000340.text#}}{{#1760600000350.text#}}
+          desc: 分岐で生成された回答を表示します。
+          selected: false
+          title: 回答
+          type: answer
+        height: 120
+        id: '1760600000400'
+        position:
+          x: 1400
+          y: 300
+        positionAbsolute:
+          x: 1400
+          y: 300
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 260
+
+    edges:
+      # Start → Classifier
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: start
+          targetType: question-classifier
+        id: '1760600000000-1760600000100'
+        source: '1760600000000'
+        sourceHandle: source
+        target: '1760600000100'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # Classifier → Retrieval（by class handle）
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: knowledge-retrieval
+        id: '1760600000100-1760600000200'
+        source: '1760600000100'
+        sourceHandle: class_company_info
+        target: '1760600000200'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: knowledge-retrieval
+        id: '1760600000100-1760600000210'
+        source: '1760600000100'
+        sourceHandle: class_hr
+        target: '1760600000210'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: knowledge-retrieval
+        id: '1760600000100-1760600000220'
+        source: '1760600000100'
+        sourceHandle: class_ga
+        target: '1760600000220'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: knowledge-retrieval
+        id: '1760600000100-1760600000230'
+        source: '1760600000100'
+        sourceHandle: class_it
+        target: '1760600000230'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: knowledge-retrieval
+        id: '1760600000100-1760600000240'
+        source: '1760600000100'
+        sourceHandle: class_accounting
+        target: '1760600000240'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: question-classifier
+          targetType: knowledge-retrieval
+        id: '1760600000100-1760600000250'
+        source: '1760600000100'
+        sourceHandle: class_other
+        target: '1760600000250'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # Retrieval → LLM
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: '1760600000200-1760600000300'
+        source: '1760600000200'
+        sourceHandle: source
+        target: '1760600000300'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: '1760600000210-1760600000310'
+        source: '1760600000210'
+        sourceHandle: source
+        target: '1760600000310'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: '1760600000220-1760600000320'
+        source: '1760600000220'
+        sourceHandle: source
+        target: '1760600000320'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: '1760600000230-1760600000330'
+        source: '1760600000230'
+        sourceHandle: source
+        target: '1760600000330'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: '1760600000240-1760600000340'
+        source: '1760600000240'
+        sourceHandle: source
+        target: '1760600000340'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: '1760600000250-1760600000350'
+        source: '1760600000250'
+        sourceHandle: source
+        target: '1760600000350'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      # LLM → Answer（分岐先はどれか1つだけ実行される想定）
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: answer
+        id: '1760600000300-1760600000400'
+        source: '1760600000300'
+        sourceHandle: source
+        target: '1760600000400'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: answer
+        id: '1760600000310-1760600000400'
+        source: '1760600000310'
+        sourceHandle: source
+        target: '1760600000400'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: answer
+        id: '1760600000320-1760600000400'
+        source: '1760600000320'
+        sourceHandle: source
+        target: '1760600000400'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: answer
+        id: '1760600000330-1760600000400'
+        source: '1760600000330'
+        sourceHandle: source
+        target: '1760600000400'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: answer
+        id: '1760600000340-1760600000400'
+        source: '1760600000340'
+        sourceHandle: source
+        target: '1760600000400'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+      - data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: answer
+        id: '1760600000350-1760600000400'
+        source: '1760600000350'
+        sourceHandle: source
+        target: '1760600000400'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.7
+
+  rag_pipeline_variables: []

@@ -1,0 +1,142 @@
+app:
+  description: 敬語文を自然なしゃべり言葉に言い換えます
+  icon: "\U0001F5E3\uFE0F"
+  icon_background: '#4F46E5'
+  mode: advanced-chat
+  name: 敬語→話し言葉変換
+kind: app
+version: 0.1.5
+workflow:
+  features:
+    file_upload:
+      enabled: false
+    opening_statement:
+      enabled: false
+      opening_statement: ''
+    suggested_questions:
+      enabled: false
+      suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    text_to_speech:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: llm
+      id: start-llm_convert
+      source: start
+      sourceHandle: source
+      target: llm_convert
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: llm_convert-answer
+      source: llm_convert
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: Start
+        type: start
+        variables: []
+      height: 90
+      id: start
+      position:
+        x: 80
+        y: 120
+      positionAbsolute:
+        x: 80
+        y: 120
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 敬語を社内チャット向けの自然なしゃべり言葉に変換
+        model:
+          completion_params:
+            frequency_penalty: 0
+            max_tokens: 512
+            presence_penalty: 0
+            temperature: 0.7
+            top_p: 1
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |-
+            あなたは日本語の言い換えアシスタントです。
+            ユーザーの文章（敬語・丁寧語）を、社内チャットで使える「丁寧すぎない自然なしゃべり言葉」に変換してください。
+
+            ルール:
+            - 意味は変えない（情報の追加・削除をしない）
+            - 砕けすぎない（乱暴な表現、過度なタメ口、過度なスラングは避ける）
+            - 方言は使わない
+            - 絵文字は使わない
+            - 出力は「変換後の文章のみ」（解説・箇条書き・前置き不要）
+        - id: user
+          role: user
+          text: |-
+            次の文章を変換してください。
+
+            入力:
+            {{#sys.query#}}
+        selected: false
+        title: 変換（敬語→話し言葉）
+        type: llm
+      height: 186
+      id: llm_convert
+      position:
+        x: 380
+        y: 120
+      positionAbsolute:
+        x: 380
+        y: 120
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        answer: '{{#llm_convert.text#}}'
+        desc: ''
+        selected: false
+        title: Answer
+        type: answer
+      height: 107
+      id: answer
+      position:
+        x: 760
+        y: 120
+      positionAbsolute:
+        x: 760
+        y: 120
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244

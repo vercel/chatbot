@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { Geo } from "@vercel/functions";
 import type { ArtifactKind } from "@/components/artifact";
 
@@ -41,6 +42,69 @@ export const regularPrompt = `You are a friendly assistant! Keep your responses 
 
 When asked to write, create, or help with something, just do it directly. Don't ask clarifying questions unless absolutely necessary - make reasonable assumptions and proceed with the task.`;
 
+export const systemPromptIds = ["dify-rule-ver5"] as const;
+export type SystemPromptId = (typeof systemPromptIds)[number];
+
+const difyRuleVer5 = (() => {
+  try {
+    return readFileSync(new URL("../../rule_ver5.md", import.meta.url), "utf8");
+  } catch {
+    return "";
+  }
+})();
+
+const difyDslExamples = (() => {
+  try {
+    const intelligentResearchAssistant = readFileSync(
+      new URL("../../intelligent_research_assistant_20260108_164230.yml", import.meta.url),
+      "utf8"
+    );
+    const pdfKnowledgeBase = readFileSync(
+      new URL("../../PDFナレッジベース質問応答システム_20260116_113604.yml", import.meta.url),
+      "utf8"
+    );
+    return {
+      intelligentResearchAssistant,
+      pdfKnowledgeBase,
+    };
+  } catch {
+    return {
+      intelligentResearchAssistant: "",
+      pdfKnowledgeBase: "",
+    };
+  }
+})();
+
+const difyWorkflowPrompt = `You are a Dify workflow DSL assistant.
+
+Follow the rulebook below exactly. Ask clarifying questions as needed and proceed phase by phase.
+When the user confirms the flow, generate the DSL as YAML.
+Output the final DSL as a single fenced code block with language "yaml".
+Do not add extra commentary after the YAML.
+
+## 1. Node Definitions (rule_ver5.md)
+ノードの各定義が記載されています。ワークフロー生成時はこれを参照してノードを作成してください。
+
+${difyRuleVer5}
+
+## 2. Existing Workflows (Validation & Node Usage Reference)
+以下の既存ワークフローを参照して、バリデーションチェックやノードの使い方を確認してください。
+- エッジの接続方法（source, target, sourceHandle, targetHandle）
+- 変数参照（variable_selector, value_selector）
+- 必須フィールドや構造パターン
+
+### intelligent_research_assistant_20260108_164230.yml (workflow mode)
+
+\`\`\`yaml
+${difyDslExamples.intelligentResearchAssistant}
+\`\`\`
+
+### PDFナレッジベース質問応答システム_20260116_113604.yml (advanced-chat mode)
+
+\`\`\`yaml
+${difyDslExamples.pdfKnowledgeBase}
+\`\`\``;
+
 export type RequestHints = {
   latitude: Geo["latitude"];
   longitude: Geo["longitude"];
@@ -59,11 +123,17 @@ About the origin of user's request:
 export const systemPrompt = ({
   selectedChatModel,
   requestHints,
+  systemPromptId,
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
+  systemPromptId?: SystemPromptId;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
+
+  if (systemPromptId === "dify-rule-ver5") {
+    return difyWorkflowPrompt;
+  }
 
   // reasoning models don't need artifacts prompt (they can't use tools)
   if (

@@ -42,6 +42,8 @@ export type CustomUIDataTypes = {
   clear: null;
   finish: null;
   "chat-title": string;
+  "dify-publish-url": { url: string; appId: string };
+  "dify-error": { message: string };
 };
 
 export type ChatMessage = UIMessage<

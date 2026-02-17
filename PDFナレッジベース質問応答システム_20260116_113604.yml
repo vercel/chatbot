@@ -1,0 +1,239 @@
+app:
+  description: PDFドキュメントをナレッジベースとして登録し、その内容を参照しながら質問に回答するRAGシステム
+  icon: 📚
+  icon_background: '#FF6B6B'
+  mode: advanced-chat
+  name: PDFナレッジベース質問応答システム
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: PDFナレッジベースに関する質問をどうぞ
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - このシステムの使い方を教えてください
+    - ナレッジベースにはどのような情報が含まれていますか？
+    - よくある質問を教えてください
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    # Start → Knowledge Retrieval
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: knowledge-retrieval
+      id: '1736300000000-1736300001000'
+      source: '1736300000000'
+      sourceHandle: source
+      target: '1736300001000'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    # Knowledge Retrieval → LLM
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: '1736300001000-1736300002000'
+      source: '1736300001000'
+      sourceHandle: source
+      target: '1736300002000'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    # LLM → Answer
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: '1736300002000-1736300003000'
+      source: '1736300002000'
+      sourceHandle: source
+      target: '1736300003000'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    # 1. Startノード
+    - data:
+        desc: ユーザーからの質問を受け取ります
+        selected: false
+        title: 開始
+        type: start
+        variables:
+        - label: 質問
+          max_length: 1000
+          required: true
+          type: text-input
+          variable: query
+      height: 88
+      id: '1736300000000'
+      position:
+        x: 50
+        y: 300
+      positionAbsolute:
+        x: 50
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    # 2. Knowledge Retrievalノード
+    - data:
+        dataset_ids:
+        - 'YOUR_DATASET_ID_HERE'  # 後でDifyの管理画面で設定してください
+        desc: ナレッジベースから質問に関連する情報を検索・取得します
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: reranking_model
+          reranking_model:
+            model: netease-youdao/bce-reranker-base_v1
+            provider: siliconflow
+          top_k: 3
+        query_variable_selector:
+        - '1736300000000'
+        - query
+        retrieval_mode: multiple
+        selected: false
+        title: ナレッジベース検索
+        type: knowledge-retrieval
+      height: 246
+      id: '1736300001000'
+      position:
+        x: 350
+        y: 300
+      positionAbsolute:
+        x: 350
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    # 3. LLMノード
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1736300001000'
+          - result
+        desc: ナレッジベースから取得した情報を基に、質問に対する回答を生成します
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 10
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system_prompt
+          role: system
+          text: |
+            あなたは、PDFドキュメントの内容を参照しながら質問に回答する専門アシスタントです。
+            以下のルールに従って回答してください：
+            
+            1. ナレッジベースから取得した情報を基に、正確で分かりやすい回答を提供してください
+            2. 参照したドキュメントの内容に基づいた情報のみを提供し、推測や憶測は避けてください
+            3. 必要に応じて、該当箇所や出典を明示してください
+            4. 専門用語が含まれる場合は、初心者にも理解しやすいよう、平易な説明を添えてください
+            5. 回答は自然で読みやすい日本語で記述してください
+        - id: user_prompt
+          role: user
+          text: |
+            以下の質問に対して、ナレッジベースから取得した情報を基に回答してください。
+            
+            【質問】
+            {{#1736300000000.query#}}
+            
+            【参考情報】
+            {{#context#}}
+        selected: false
+        title: 回答生成
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '1736300002000'
+      position:
+        x: 650
+        y: 300
+      positionAbsolute:
+        x: 650
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    # 4. Answerノード
+    - data:
+        answer: '{{#1736300002000.text#}}'
+        desc: 生成された回答をユーザーに表示します
+        selected: false
+        title: 回答
+        type: answer
+      height: 107
+      id: '1736300003000'
+      position:
+        x: 950
+        y: 300
+      positionAbsolute:
+        x: 950
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.8
+  rag_pipeline_variables: []
+

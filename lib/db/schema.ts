@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  integer,
   json,
   pgTable,
   primaryKey,
@@ -168,3 +169,23 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const difyWorkflowDsl = pgTable("DifyWorkflowDsl", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  chatId: uuid("chatId")
+    .notNull()
+    .references(() => chat.id),
+  messageId: uuid("messageId").references(() => message.id),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  createdAt: timestamp("createdAt").notNull(),
+  version: integer("version").notNull(),
+  workflowName: text("workflowName"),
+  mode: varchar("mode", {
+    enum: ["advanced-chat", "workflow", "agent-chat"],
+  }),
+  dslYaml: text("dslYaml").notNull(),
+});
+
+export type DifyWorkflowDsl = InferSelectModel<typeof difyWorkflowDsl>;

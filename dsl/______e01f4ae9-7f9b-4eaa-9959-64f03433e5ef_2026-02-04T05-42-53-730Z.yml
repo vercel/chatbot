@@ -1,0 +1,136 @@
+app:
+  description: 入力された日本語文章を自然な関西弁に変換します
+  icon: "\U0001F5E3\uFE0F"
+  icon_background: '#FFCC00'
+  mode: advanced-chat
+  name: 関西弁変換
+kind: app
+version: 0.1.5
+workflow:
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: llm
+      id: start-llm_kansai
+      source: start
+      sourceHandle: source
+      target: llm_kansai
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: llm_kansai-answer
+      source: llm_kansai
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: Start
+        type: start
+        variables: []
+      height: 90
+      id: start
+      position:
+        x: 80
+        y: 220
+      positionAbsolute:
+        x: 80
+        y: 220
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 日本語文章を自然な関西弁に変換
+        model:
+          completion_params:
+            frequency_penalty: 0
+            max_tokens: 1024
+            presence_penalty: 0
+            temperature: 0.7
+            top_p: 1
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            あなたは「関西弁変換アシスタント」です。
+            ユーザーが入力した日本語文章を、意味を変えずに自然な関西弁へ変換してください。
+
+            ルール:
+            - 内容・事実関係・固有名詞・数字は変えない
+            - 変換後の文章だけを出力（前置き/説明/注釈は不要）
+            - 過度にコテコテにしすぎず、読みやすい自然な口語を優先
+            - 丁寧語が必要な文脈では、丁寧さは維持しつつ関西寄りにする
+            - 箇条書きや見出しなど、元のフォーマットは可能な限り維持
+        - id: user
+          role: user
+          text: "{{#sys.query#}}"
+        selected: false
+        title: 関西弁に変換
+        type: llm
+      height: 210
+      id: llm_kansai
+      position:
+        x: 390
+        y: 220
+      positionAbsolute:
+        x: 390
+        y: 220
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        answer: "{{#llm_kansai.text#}}"
+        desc: ''
+        selected: false
+        title: Answer
+        type: answer
+      height: 105
+      id: answer
+      position:
+        x: 780
+        y: 220
+      positionAbsolute:
+        x: 780
+        y: 220
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 260
