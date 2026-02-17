@@ -519,6 +519,7 @@ function PureArtifact({
                 setMetadata={setMetadata}
                 chatId={chatId}
                 stop={stop}
+                sendMessage={sendMessage}
               />
 
               <AnimatePresence>
@@ -572,6 +573,7 @@ function PureArtifact({
                 setMetadata={setMetadata}
                 chatId={chatId}
                 stop={stop}
+                sendMessage={sendMessage}
               />
             </div>
           )}

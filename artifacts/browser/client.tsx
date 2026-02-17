@@ -89,7 +89,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     }
   },
 
-  content: ({ metadata, setMetadata, isCurrentVersion, status, chatStatus, stop }) => {
+  content: ({ metadata, setMetadata, isCurrentVersion, status, chatStatus, stop, sendMessage }) => {
     // =====================================================
     // ALL HOOKS MUST BE AT THE TOP - before any conditional returns
     // This is a React requirement - hooks must be called in the same order every render
@@ -653,6 +653,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
               isFullscreen: fullscreen,
             }));
           }}
+          sendMessage={sendMessage}
         />
       );
     }

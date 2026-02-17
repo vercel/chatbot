@@ -35,6 +35,18 @@ import { groupMessageParts, ToolCallGroup } from './tool-call-group';
 // This ensures the last message has enough space to scroll properly with the header
 const RESPONSIVE_MIN_HEIGHT = 'min-h-[calc(100vh-22rem)] md:min-h-[calc(100vh-24rem)] lg:min-h-[calc(100vh-26rem)]';
 
+// Keywords that indicate the agent is asking the caseworker to intervene
+const USER_ACTION_KEYWORDS = [
+  'captcha',
+  'action required',
+  'take control',
+  'user intervention',
+  'missing information',
+  'complete the application',
+  'form is complete',
+  'ready for submission',
+];
+
 // Parse partner data from XML-wrapped content in user messages
 function parsePartnerData(text: string): { participantData: any; taskText: string } | null {
   const match = text.match(/<partner_context>[\s\S]*?<participant_data>([\s\S]*?)<\/participant_data>[\s\S]*?<\/partner_context>\s*([\s\S]*)/);
@@ -206,13 +218,9 @@ const PurePreviewMessage = ({
                   }
 
                   const textContent = part.text.toLowerCase();
-                  const requiresUserAction = 
-                    textContent.includes('captcha') ||
-                    textContent.includes('action required') ||
-                    textContent.includes('take control') ||
-                    textContent.includes('user intervention') ||
-                    textContent.includes('missing information') ||
-                    textContent.includes('complete the application');
+                  const requiresUserAction = USER_ACTION_KEYWORDS.some(
+                    (keyword) => textContent.includes(keyword),
+                  );
 
                   return (
                     <div key={key} className="flex flex-col gap-3">
@@ -252,11 +260,7 @@ const PurePreviewMessage = ({
                         <UserActionConfirmation
                           approval={{ id: `action-${message.id}`, approved: undefined }}
                           state="approval-requested"
-                          requestMessage={
-                            textContent.includes('captcha')
-                              ? 'Complete the CAPTCHA and submit the application.'
-                              : 'Manual action required to proceed.'
-                          }
+                          requestMessage='Manual action required to proceed.'
                           onApprove={(approvalId) => {
                             // Trigger browser control switch to user mode
                             const event = new CustomEvent('switch-browser-control', { 
