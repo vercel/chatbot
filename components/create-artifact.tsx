@@ -52,6 +52,7 @@ interface ArtifactContent<M = any> {
   setMetadata: Dispatch<SetStateAction<M>>;
   chatId?: string;
   stop?: () => void;
+  sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
 }
 
 export interface ChatContext {

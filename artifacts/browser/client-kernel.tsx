@@ -14,6 +14,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import type { ChatStatus } from '@/components/create-artifact';
+import type { UseChatHelpers } from '@ai-sdk/react';
+import type { ChatMessage } from '@/lib/types';
 
 interface KernelBrowserClientProps {
   sessionId: string;
@@ -24,6 +26,7 @@ interface KernelBrowserClientProps {
   stop?: () => void;
   isFullscreen?: boolean;
   onFullscreenChange?: (fullscreen: boolean) => void;
+  sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
 }
 
 export function KernelBrowserClient({
@@ -35,6 +38,7 @@ export function KernelBrowserClient({
   stop,
   isFullscreen = false,
   onFullscreenChange,
+  sendMessage,
 }: KernelBrowserClientProps) {
   const [liveViewUrl, setLiveViewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -201,6 +205,17 @@ export function KernelBrowserClient({
     } else {
       // Exit fullscreen when giving back control to agent
       onFullscreenChange?.(false);
+
+      // Send a message to the agent so it knows to snapshot and continue
+      if (sendMessage) {
+        sendMessage({
+          role: 'user' as const,
+          parts: [{
+            type: 'text' as const,
+            text: "I've finished making my changes to the page. Please take a snapshot to review what I updated and continue from where you left off.",
+          }],
+        });
+      }
     }
 
     onControlModeChange(mode);
