@@ -7,6 +7,15 @@
 export const agentBrowserSkill = `
 # Browser Automation
 
+## MANDATORY RULES — Read Before Anything Else
+
+1. **ALWAYS use snapshot refs (@e1, @e2, etc.) to interact with form fields.** Take a snapshot, read the refs, use them. This is the PRIMARY method. Do NOT skip snapshots and jump to \`getbylabel\` or CSS selectors.
+2. **NEVER use \`getbylabel\` on forms with repeated sections** (e.g. home address + mailing address + facility address). Labels like "First Name", "Street Address", "Zip Code", "Birthdate" will match multiple fields and cause strict-mode violations. Use refs instead.
+3. **NEVER include asterisks or colons in \`getbylabel\` labels.** Use \`"First Name"\` — NOT \`"First Name: *"\` or \`"First Name:"\`.
+4. **Use \`type\` (NOT \`fill\`) for masked/formatted fields** — SSN, birthdate, phone, state, zip. \`fill\` bypasses JS input masks and the value silently fails. Click first, then \`type\` with \`clear: true\`, then verify with \`inputvalue\`.
+5. **Use \`fill\` ONLY for plain text fields** — name, address, city, email. Nothing with formatting.
+6. **NEVER mention technical terms in your text messages.** No refs, selectors, snapshot, DOM, field IDs, evaluate, CSS, getbylabel, strict mode, interactive elements, or any code-related terms. Your audience is a caseworker. Describe actions in human terms only: "Filling in the personal information" — NOT "I have all the refs" or "Using CSS selectors".
+
 ## Snapshot Strategy (CRITICAL)
 
 Snapshots are your eyes. Without fresh snapshots, you are flying blind.
@@ -20,26 +29,53 @@ Snapshots are your eyes. Without fresh snapshots, you are flying blind.
 
 1. **Navigate**: \`{ action: "navigate", url: "<url>" }\`, then \`{ action: "waitforloadstate", state: "networkidle" }\`
 2. **Snapshot**: \`{ action: "snapshot" }\` → then \`{ action: "snapshot", selector: "form" }\` on complex pages
-3. **Interact**: Use label locators or refs (see Selector Strategy)
-4. **Re-snapshot**: After EVERY DOM-changing action
+3. **Read the refs**: The snapshot gives you refs like @e3, @e4, @e7. USE THEM for all interactions.
+4. **Interact using refs**: \`{ action: "fill", selector: "@e3", value: "John" }\`
+5. **Re-snapshot**: After EVERY DOM-changing action — refs go stale
 
 ## Selector Strategy (in order of preference)
 
-### 1. Refs from Snapshot (BEST — use these when you have them)
-If you already took a snapshot, you have refs. Use them — they are unambiguous and reliable.
+### 1. Refs from Snapshot (USE THIS — mandatory for form filling)
+After every snapshot you get refs. These are unambiguous and never cause strict-mode violations. **This is your default method for all form interactions.**
 \`\`\`
 browser({ action: "snapshot", selector: "form" })
-// Snapshot shows: textbox "First Name" [ref=@e3], textbox "Last Name" [ref=@e4], checkbox "Yes" [ref=@e7]
+// Snapshot shows: textbox "First Name" [ref=@e3], textbox "Last Name" [ref=@e4]
+//                 textbox "SSN" [ref=@e8], textbox "Birthdate" [ref=@e9]
+//                 checkbox "Yes" [ref=@e7]
+
+// Plain text fields: use fill with refs
 browser({ action: "fill", selector: "@e3", value: "John" })
 browser({ action: "fill", selector: "@e4", value: "Doe" })
+
+// Masked fields: click + type with refs, then verify
+browser({ action: "click", selector: "@e8" })
+browser({ action: "type", selector: "@e8", text: "123456789", clear: true })
+browser({ action: "inputvalue", selector: "@e8" })  // Verify it stuck
+
+browser({ action: "click", selector: "@e9" })
+browser({ action: "type", selector: "@e9", text: "01022000", clear: true })
+browser({ action: "inputvalue", selector: "@e9" })  // Verify it stuck
+
+// Checkboxes/radios: click with refs
 browser({ action: "click", selector: "@e7" })
 \`\`\`
 
-### 2. Label Locators (when labels are unique on the page)
-Only use \`getbylabel\` when the label text is **unique** on the page. Do NOT use it for generic labels like "Yes", "No", "Male", "Female" — these appear on many fields and cause strict-mode violations. Also do NOT include asterisks or required-field indicators in the label (use "First Name" not "First Name: *").
+### 2. Label Locators (ONLY when you have no snapshot refs AND the label is unique)
+\`getbylabel\` is a fallback, not the default. Only use it when:
+- You do NOT have snapshot refs available
+- The label text is **globally unique** on the entire page (not just the visible section)
+- The form does NOT have repeated sections (address/mailing/facility, applicant/household)
+
+**NEVER use \`getbylabel\` for**: "Yes", "No", "Male", "Female", "First Name", "Last Name", "Street Address", "City", "State", "Zip Code", "Birthdate", "Phone" — these commonly appear multiple times on benefit application forms.
+
+**NEVER include** asterisks (\`*\`), colons (\`:\`), or required-field indicators in the label text.
 \`\`\`
-browser({ action: "getbylabel", label: "First Name", subaction: "fill", value: "John" })
-browser({ action: "getbylabel", label: "Email", subaction: "fill", value: "john@example.com" })
+// GOOD — unique label, no punctuation
+browser({ action: "getbylabel", label: "Social Security Number", subaction: "fill", value: "123456789" })
+// BAD — will match multiple fields
+browser({ action: "getbylabel", label: "First Name:", subaction: "fill", value: "John" })
+// BAD — includes asterisk
+browser({ action: "getbylabel", label: "First Name: *", subaction: "fill", value: "John" })
 \`\`\`
 
 ### 3. Tab Navigation (when labels/refs fail)
@@ -52,7 +88,6 @@ browser({ action: "type", selector: ":focus", text: "Doe" })
 ### 4. CSS Selectors / DOM Inspection (last resort)
 \`\`\`
 browser({ action: "fill", selector: "#firstNameTxt", value: "John" })
-browser({ action: "evaluate", script: "Array.from(document.querySelectorAll('input')).map(e => e.id).filter(Boolean).join(', ')" })
 \`\`\`
 
 ## Custom Dropdowns (Select2, Chosen, Drupal)
@@ -96,8 +131,8 @@ browser({ action: "click", selector: "@e12" })          // Click matching option
 - \`{ action: "back" }\` / \`{ action: "forward" }\` - Browser navigation (AVOID during form filling — may wipe state)
 
 ### Interaction
-- \`{ action: "fill", selector: "<sel>", value: "text" }\` - Clear and fill field
-- \`{ action: "type", selector: "<sel>", text: "text" }\` - Append text (use for search boxes)
+- \`{ action: "fill", selector: "<sel>", value: "text" }\` - Clear and fill field (plain text only: name, address, city, email)
+- \`{ action: "type", selector: "<sel>", text: "text", clear: true }\` - Simulate keystrokes (REQUIRED for masked/formatted fields: SSN, date, phone, state, zip)
 - \`{ action: "click", selector: "<sel>" }\` - Click element
 - \`{ action: "select", selector: "<sel>", values: ["option"] }\` - Native dropdown only
 - \`{ action: "check", selector: "<sel>" }\` / \`{ action: "uncheck", selector: "<sel>" }\` - Toggle checkbox
@@ -135,14 +170,30 @@ browser({ action: "snapshot" })              // 1. Full snapshot first
 
 // Complex page? Scope to the form area
 browser({ action: "snapshot", selector: "form" })   // 2. Reduces 200+ elements to just form fields
+// Snapshot shows refs: textbox "First Name" [ref=@e3], textbox "Last Name" [ref=@e4],
+//   textbox "Email" [ref=@e5], radio "Yes" [ref=@e7], textbox "SSN" [ref=@e10],
+//   textbox "Birthdate" [ref=@e11], textbox "Phone" [ref=@e12]
 
-// Fill text fields using labels
-browser({ action: "getbylabel", label: "First Name", subaction: "fill", value: "John" })
-browser({ action: "getbylabel", label: "Last Name", subaction: "fill", value: "Doe" })
-browser({ action: "getbylabel", label: "Email", subaction: "fill", value: "john@example.com" })
+// Plain text fields — use fill with refs
+browser({ action: "fill", selector: "@e3", value: "John" })
+browser({ action: "fill", selector: "@e4", value: "Doe" })
+browser({ action: "fill", selector: "@e5", value: "john@example.com" })
 
-// Radio button — click then re-snapshot (DOM may change with conditional fields)
-browser({ action: "getbylabel", label: "Yes", subaction: "click" })
+// Masked fields — click + type with refs, then verify
+browser({ action: "click", selector: "@e10" })
+browser({ action: "type", selector: "@e10", text: "123456789", clear: true })
+browser({ action: "inputvalue", selector: "@e10" })  // Verify SSN stuck
+
+browser({ action: "click", selector: "@e11" })
+browser({ action: "type", selector: "@e11", text: "01022000", clear: true })
+browser({ action: "inputvalue", selector: "@e11" })  // Verify birthdate stuck
+
+browser({ action: "click", selector: "@e12" })
+browser({ action: "type", selector: "@e12", text: "7775551234", clear: true })
+browser({ action: "inputvalue", selector: "@e12" })  // Verify phone stuck
+
+// Radio button — click ref, then re-snapshot (DOM may change with conditional fields)
+browser({ action: "click", selector: "@e7" })
 browser({ action: "snapshot", selector: "form" })   // 3. Re-snapshot: radio may reveal new fields
 
 // Custom dropdown (Select2) — NOT a native select
