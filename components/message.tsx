@@ -29,8 +29,7 @@ import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
 import { UserActionConfirmation, GapAnalysisCard } from './ai-elements';
-import { groupMessageParts, ToolCallGroup, isToolStopped } from './tool-call-group';
-import { X } from 'lucide-react';
+import { groupMessageParts, ToolCallGroup } from './tool-call-group';
 
 // Responsive min-height calculation that accounts for side-chat-header height
 // This ensures the last message has enough space to scroll properly with the header
@@ -164,7 +163,6 @@ const PurePreviewMessage = ({
                     parts={processed.parts as any}
                     messageId={message.id}
                     startIndex={processed.startIndex}
-                    isLoading={isLoading}
                   />
                 );
               }
@@ -455,7 +453,6 @@ const PurePreviewMessage = ({
               // Handle any other tool calls (including web automation tools)
               if (type.startsWith('tool-') && !['tool-getWeather', 'tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions', 'tool-gapAnalysis'].includes(type)) {
                 const { toolCallId, state } = part as any;
-                const stopped = isToolStopped(part as any, isLoading);
 
                 if (state === 'input-available') {
                   const { input } = part as any;
@@ -475,13 +472,10 @@ const PurePreviewMessage = ({
                   return (
                     <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
                       <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground flex items-center gap-2">
-                        {stopped ? (
-                          <X size={12} className="text-gray-500 shrink-0" />
-                        ) : Icon ? (
+                        {Icon && (
                           <Icon size={12} className="text-gray-500 shrink-0" />
-                        ) : null}
+                        )}
                         {displayName}
-                        {stopped && ' (Stopped)'}
                       </div>
                     </div>
                   );
@@ -516,14 +510,12 @@ const PurePreviewMessage = ({
                   const hasError = output && 'error' in output && output.error;
                   return (
                     <div key={toolCallId} className="flex items-center gap-2 p-3 border-0 rounded-md">
-                      <div className={cn('text-[10px] leading-[150%] font-ibm-plex-mono flex items-center gap-2', !stopped && hasError ? 'text-red-600' : 'text-muted-foreground')}>
-                        {stopped ? (
-                          <X size={12} className="text-gray-500 shrink-0" />
-                        ) : Icon ? (
+                      <div className={`text-[10px] leading-[150%] font-ibm-plex-mono flex items-center gap-2 ${hasError ? 'text-red-600' : 'text-muted-foreground'}`}>
+                        {Icon && (
                           <Icon size={12} className="text-gray-500 shrink-0" />
-                        ) : null}
+                        )}
                         {displayName}
-                        {stopped ? ' (Stopped)' : hasError ? ' (Error)' : ''}
+                        {hasError && ' (Error)'}
                       </div>
                     </div>
                   );

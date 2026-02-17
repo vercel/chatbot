@@ -13,8 +13,6 @@ export interface BrowserSession {
   cdpWsUrl: string;
   userId: string;
   browserManager: BrowserManager;
-  /** Set to true by stopBrowserOperations; checked by the browser tool before executing. */
-  stopped: boolean;
 }
 
 // =============================================================================
@@ -101,7 +99,6 @@ export async function getOrCreateBrowser(
         cdpWsUrl: browser.cdp_ws_url,
         userId,
         browserManager: manager,
-        stopped: false,
       };
 
       sessions.set(key, session);
@@ -148,62 +145,6 @@ export async function getBrowser(
   }
 
   return null;
-}
-
-/**
- * Stop in-progress browser operations for a session.
- *
- * 1. Sets a `stopped` flag so the browser tool bails out before any new command.
- * 2. Uses Kernel's built-in `browsers.playwright.execute()` to halt the page
- *    immediately on the Kernel server — this runs in a separate execution
- *    context so it fires even while the local BrowserManager is blocked.
- *
- * The browser session stays alive and page state is preserved.
- */
-export async function stopBrowserOperations(
-  sessionId: string,
-  userId: string,
-): Promise<void> {
-  if (!userId) return;
-
-  const key = cacheKey(userId, sessionId);
-  const session = sessions.get(key);
-  if (!session) return;
-
-  // 1. Set stopped flag IMMEDIATELY — the browser tool checks this before
-  //    every command, so any queued tool calls will bail out right away.
-  session.stopped = true;
-
-  // 2. Use Kernel's server-side Playwright execution to halt the page.
-  //    This runs in a separate context on the Kernel server, bypassing
-  //    our local BrowserManager's command queue entirely.
-  try {
-    await kernel.browsers.playwright.execute(session.kernelSessionId, {
-      code: 'await page.evaluate(() => window.stop())',
-      timeout_sec: 5,
-    });
-    console.log(`[Kernel] Stopped browser operations for session ${sessionId}`);
-  } catch (err) {
-    console.error('[Kernel] Failed to stop browser via Kernel Playwright:', err);
-  }
-}
-
-/**
- * Clear the stopped flag so tool calls can resume.
- * Called when the user gives back control to the agent.
- */
-export function resumeBrowserOperations(
-  sessionId: string,
-  userId: string,
-): void {
-  if (!userId) return;
-
-  const key = cacheKey(userId, sessionId);
-  const session = sessions.get(key);
-  if (!session) return;
-
-  session.stopped = false;
-  console.log(`[Kernel] Resumed browser operations for session ${sessionId}`);
 }
 
 /**
