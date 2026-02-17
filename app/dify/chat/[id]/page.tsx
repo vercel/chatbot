@@ -66,13 +66,12 @@ async function DifyChatPage({ params }: { params: Promise<{ id: string }> }) {
   };
 
   const initialChatModel =
-    fixedDifyModelId ?? chatModelFromCookie?.value ?? DEFAULT_CHAT_MODEL;
+    chatModelFromCookie?.value ?? fixedDifyModelId ?? DEFAULT_CHAT_MODEL;
 
   return (
     <>
       <Chat
         {...chatProps}
-        fixedChatModelId={fixedDifyModelId}
         initialChatModel={initialChatModel}
       />
       <DataStreamHandler />

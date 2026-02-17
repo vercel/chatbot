@@ -45,7 +45,7 @@ cp .env.example .env.local
 - `AI_DEFAULT_MODEL` / `AI_TITLE_MODEL` / `AI_ARTIFACT_MODEL`  
   任意。`AI_PROVIDER_MODE=direct` のとき、タイトル生成やArtifacts生成で使うモデルを `provider/model` 形式で上書きできます。
 - `AI_DIFY_MODEL`  
-  任意。`/dify` の DSL 自動生成で使うモデルを固定します（`provider/model` 形式）。
+  任意。`/dify` の DSL 自動生成で使う初期モデル（`provider/model` 形式）。未設定時は `DEFAULT_CHAT_MODEL` を使用。ユーザーはモデルセレクターで他のモデルに切り替え可能。
 - `POSTGRES_URL`  
   DB 接続文字列
 - `REDIS_URL`  
@@ -72,7 +72,7 @@ cp .env.example .env.local
 - `AI_PROVIDER_MODE=direct`: 自前のAPIキーで直接呼び出し（`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`）
   - 注意: `direct` は現状 `openai/*` / `anthropic/*` / `google/*` のみ対応です（それ以外は `gateway` を使ってください）
   - Vercelにデプロイする場合は、`.env.local` ではなく Vercel の Environment Variables に同じ変数を設定します
-- `AI_DIFY_MODEL`（任意）: `/dify` のDSL自動生成に使うモデルを固定します（例: `openai/gpt-4.1-mini`）
+- `AI_DIFY_MODEL`（任意）: `/dify` のDSL自動生成で使う初期モデル（例: `openai/gpt-4.1-mini`）。ユーザーはモデルセレクターで切り替え可能
 
 **主な変更箇所（コード）**
 - `lib/ai/providers.ts`  
@@ -81,11 +81,9 @@ cp .env.example .env.local
   - 必要なAPIキーが未設定の場合は `ChatSDKError("bad_request:provider_config")` を投げる
 - `app/(chat)/api/chat/route.ts`  
   - チャットのLLM呼び出しは `getLanguageModel(...)` 経由（＝切替は `lib/ai/providers.ts` 側で完結）
-  - `/dify`（`systemPromptId=dify-rule-ver5`）のときは、`AI_DIFY_MODEL` が設定されていれば `selectedChatModel` より優先して使用（サーバ側で強制）
+  - ユーザーが選択した `selectedChatModel` をそのまま使用
 - `app/dify/page.tsx`, `app/dify/chat/[id]/page.tsx`  
-  - `AI_DIFY_MODEL` が設定されていれば、`/dify` の初期モデルをそれに固定
-- `components/chat.tsx`, `components/multimodal-input.tsx`  
-  - 固定モデルのときはモデル切替UIを非表示にして、意図せずモデルが変わらないようにする
+  - `AI_DIFY_MODEL` が設定されていれば、`/dify` の初期モデルとして使用（Cookie 未設定時）。ユーザーはモデルセレクターで他のモデルに切り替え可能
 - `lib/errors.ts`  
   - 設定ミス時のエラーコード `bad_request:provider_config` を追加（ユーザーに分かりやすく返すため）
 
