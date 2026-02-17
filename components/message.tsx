@@ -37,7 +37,6 @@ const RESPONSIVE_MIN_HEIGHT = 'min-h-[calc(100vh-22rem)] md:min-h-[calc(100vh-24
 
 // Keywords that indicate the agent is asking the caseworker to intervene
 const USER_ACTION_KEYWORDS = [
-  'captcha',
   'action required',
   'take control',
   'user intervention',
