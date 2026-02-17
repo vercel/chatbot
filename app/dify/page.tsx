@@ -34,13 +34,12 @@ async function NewDifyChatPage() {
   };
 
   const initialChatModel =
-    fixedDifyModelId ?? modelIdFromCookie?.value ?? DEFAULT_CHAT_MODEL;
+    modelIdFromCookie?.value ?? fixedDifyModelId ?? DEFAULT_CHAT_MODEL;
 
   return (
     <>
       <Chat
         {...chatProps}
-        fixedChatModelId={fixedDifyModelId}
         initialChatModel={initialChatModel}
         key={id}
       />

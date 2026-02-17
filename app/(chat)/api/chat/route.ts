@@ -184,8 +184,7 @@ export async function POST(request: Request) {
     }
 
     const isDifyMode = systemPromptId === "dify-rule-ver5";
-    const resolvedChatModel =
-      (isDifyMode ? process.env.AI_DIFY_MODEL : undefined) ?? selectedChatModel;
+    const resolvedChatModel = selectedChatModel;
     const isReasoningModel =
       resolvedChatModel.includes("reasoning") ||
       resolvedChatModel.includes("thinking");
