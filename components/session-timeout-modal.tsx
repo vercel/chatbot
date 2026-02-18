@@ -96,23 +96,23 @@ export function SessionTimeoutModal({
         showCloseButton={false}
         className="max-w-[480px] bg-card rounded-[6px] border border-border p-0 gap-0"
       >
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle className="font-sans text-[16px] font-bold leading-[24px] text-card-foreground text-left">
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="font-source-serif text-[20px] font-semibold leading-[28px] text-card-foreground text-left break-words">
             Your session is ending soon
           </DialogTitle>
-
-          <p
-            className="font-sans text-[56px] font-light leading-[64px] text-card-foreground text-left mt-1"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            {formatTime(remaining)}
-          </p>
         </DialogHeader>
+
+        <p
+          className="font-source-serif text-[64px] font-light leading-[64px] text-card-foreground text-left px-6 pt-6 pb-6"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {formatTime(remaining)}
+        </p>
 
         <div className="h-px bg-border mx-6" />
 
-        <DialogDescription className="px-6 pt-4 pb-2 font-sans text-[14px] font-normal leading-[22px] text-foreground text-left">
+        <DialogDescription className="px-6 pt-4 pb-2 font-inter text-[14px] font-normal leading-[22px] text-foreground text-left">
           To keep the system running smoothly, sessions end after inactivity.
           Select <strong className="font-bold text-foreground">Continue session</strong> to keep
           working.
