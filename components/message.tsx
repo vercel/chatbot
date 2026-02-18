@@ -28,7 +28,7 @@ import { ChevronDown } from 'lucide-react';
 import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
-import { UserActionConfirmation, GapAnalysisCard } from './ai-elements';
+import { UserActionConfirmation, GapAnalysisCard, FormSummaryCard } from './ai-elements';
 import { groupMessageParts, ToolCallGroup } from './tool-call-group';
 
 // Responsive min-height calculation that accounts for side-chat-header height
@@ -453,8 +453,26 @@ const PurePreviewMessage = ({
                 }
               }
 
+              if ((type as string) === 'tool-formSummary') {
+                const { toolCallId, state, input } = part as any;
+
+                if (state === 'input-available' || state === 'output-available') {
+                  return (
+                    <FormSummaryCard
+                      key={toolCallId}
+                      formName={input?.formName}
+                      fromDatabase={input?.fromDatabase ?? []}
+                      fromCaseworker={input?.fromCaseworker ?? []}
+                      inferred={input?.inferred ?? []}
+                      missing={input?.missing}
+                      notes={input?.notes}
+                    />
+                  );
+                }
+              }
+
               // Handle any other tool calls (including web automation tools)
-              if (type.startsWith('tool-') && !['tool-getWeather', 'tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions', 'tool-gapAnalysis'].includes(type)) {
+              if (type.startsWith('tool-') && !['tool-getWeather', 'tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions', 'tool-gapAnalysis', 'tool-formSummary'].includes(type)) {
                 const { toolCallId, state } = part as any;
 
                 if (state === 'input-available') {

@@ -7,6 +7,16 @@
 export const agentBrowserSkill = `
 # Browser Automation
 
+## MANDATORY RULES — Read Before Anything Else
+
+1. **ALWAYS use snapshot refs (@e1, @e2) OR CSS IDs (#fieldId) to interact with form fields.** Take a snapshot — it shows both refs and IDs. Use whichever you have. NEVER skip the snapshot and jump straight to \`getbylabel\`.
+2. **NEVER use \`getbylabel\` when the element has an ID** (which is almost always). If the snapshot shows \`[id="firstNameTxt"]\`, use \`#firstNameTxt\` — not \`getbylabel\`. Only use \`getbylabel\` when a label is globally unique AND the element has no ID at all.
+3. **NEVER include asterisks or colons in \`getbylabel\` labels.** Use \`"First Name"\` — NOT \`"First Name: *"\` or \`"First Name:"\`.
+4. **Use \`type\` (NOT \`fill\`) for masked/formatted fields** — SSN, birthdate, phone, state, zip. \`fill\` bypasses JS input masks and the value silently fails. Click first, then \`type\` with \`clear: true\`, then verify with \`inputvalue\`.
+5. **Use \`fill\` ONLY for plain text fields** — name, address, city, email. Nothing with formatting.
+6. **NEVER mention technical terms in your text messages.** No refs, selectors, snapshot, DOM, field IDs, evaluate, CSS, getbylabel, strict mode, interactive elements, or any code-related terms. Your audience is a caseworker. Describe actions in human terms only: "Filling in the personal information" — NOT "I have all the refs" or "Using CSS selectors".
+7. **Call multiple tools in parallel when they are independent.** After a snapshot gives you refs, you can fill/type multiple fields simultaneously in one response. You can also fetch database records while navigating the browser. Do NOT parallelize actions that depend on each other (e.g., snapshot then use refs from that snapshot).
+
 ## Snapshot Strategy (CRITICAL)
 
 Snapshots are your eyes. Without fresh snapshots, you are flying blind.
@@ -18,41 +28,53 @@ Snapshots are your eyes. Without fresh snapshots, you are flying blind.
 
 ## Core Workflow
 
-1. **Navigate**: \`{ action: "navigate", url: "<url>" }\`, then \`{ action: "waitforloadstate", state: "networkidle" }\`
+1. **Navigate**: \`{ action: "navigate", url: "<url>" }\` (already waits for page load internally — do NOT add a separate waitforloadstate)
 2. **Snapshot**: \`{ action: "snapshot" }\` → then \`{ action: "snapshot", selector: "form" }\` on complex pages
-3. **Interact**: Use label locators or refs (see Selector Strategy)
-4. **Re-snapshot**: After EVERY DOM-changing action
+3. **Read the refs**: The snapshot gives you refs like @e3, @e4, @e7. USE THEM for all interactions.
+4. **Interact using refs**: \`{ action: "fill", selector: "@e3", value: "John" }\`
+5. **Re-snapshot**: After EVERY DOM-changing action — refs go stale
 
-## Selector Strategy (in order of preference)
+**NEVER use \`waitforloadstate\` after clicks, fills, types, or other in-page interactions.** It wastes a tool call. Only use it after navigating to a completely new URL via a link or form submission, and only if the page has heavy async content that loads after the initial page load.
 
-### 1. Refs from Snapshot (BEST — use these when you have them)
-If you already took a snapshot, you have refs. Use them — they are unambiguous and reliable.
+## Selector Strategy
+
+### 1. Refs (@e3) OR CSS IDs (#id) — both are first-class, use whichever is available
+After a snapshot you get refs. If the snapshot also shows \`[id="..."]\` on an element, you can use \`#id\` directly — CSS IDs are stable across DOM changes and don't go stale. **Use either — they are equally valid.**
+
 \`\`\`
 browser({ action: "snapshot", selector: "form" })
-// Snapshot shows: textbox "First Name" [ref=@e3], textbox "Last Name" [ref=@e4], checkbox "Yes" [ref=@e7]
+// Snapshot shows: textbox "First Name" [ref=@e3] [id="firstNameTxt"]
+//                 textbox "SSN"        [ref=@e8] [id="ssnTxt"]
+//                 checkbox "Yes"       [ref=@e7] [id="chkBxApplyYourselfYes"]
+
+// Using refs:
 browser({ action: "fill", selector: "@e3", value: "John" })
-browser({ action: "fill", selector: "@e4", value: "Doe" })
-browser({ action: "click", selector: "@e7" })
+// OR using CSS IDs (equally valid, more stable):
+browser({ action: "fill", selector: "#firstNameTxt", value: "John" })
+
+// Masked fields — click + type + verify:
+browser({ action: "click", selector: "#ssnTxt" })
+browser({ action: "type", selector: "#ssnTxt", text: "123456789", clear: true })
+browser({ action: "inputvalue", selector: "#ssnTxt" })  // Verify it stuck
+
+// Checkboxes — use the specific ID to avoid ambiguity:
+browser({ action: "check", selector: "#chkBxApplyYourselfYes" })
 \`\`\`
 
-### 2. Label Locators (when labels are unique on the page)
-Only use \`getbylabel\` when the label text is **unique** on the page. Do NOT use it for generic labels like "Yes", "No", "Male", "Female" — these appear on many fields and cause strict-mode violations. Also do NOT include asterisks or required-field indicators in the label (use "First Name" not "First Name: *").
+### 2. Label Locators (almost never — only for truly unique labels with no ID)
+\`getbylabel\` causes strict-mode violations whenever a label appears more than once. On benefit forms, "First Name", "State", "Yes", "No" etc. appear for applicant, representative, mailing address, and household — always causing failures.
+
+**NEVER use \`getbylabel\` for**: "Yes", "No", "Male", "Female", "First Name", "Last Name", "Street Address", "City", "State", "Zip Code", "Birthdate", "Phone". **NEVER include** asterisks (\`*\`) or colons (\`:\`) in the label text.
 \`\`\`
-browser({ action: "getbylabel", label: "First Name", subaction: "fill", value: "John" })
-browser({ action: "getbylabel", label: "Email", subaction: "fill", value: "john@example.com" })
+// Only acceptable when label is globally unique AND no ID available:
+browser({ action: "getbylabel", label: "Social Security Number", subaction: "fill", value: "123456789" })
 \`\`\`
 
-### 3. Tab Navigation (when labels/refs fail)
+### 3. Tab Navigation (when all else fails)
 \`\`\`
 browser({ action: "click", selector: "@e3" })  // Focus first field
 browser({ action: "press", key: "Tab" })
 browser({ action: "type", selector: ":focus", text: "Doe" })
-\`\`\`
-
-### 4. CSS Selectors / DOM Inspection (last resort)
-\`\`\`
-browser({ action: "fill", selector: "#firstNameTxt", value: "John" })
-browser({ action: "evaluate", script: "Array.from(document.querySelectorAll('input')).map(e => e.id).filter(Boolean).join(', ')" })
 \`\`\`
 
 ## Custom Dropdowns (Select2, Chosen, Drupal)
@@ -96,8 +118,8 @@ browser({ action: "click", selector: "@e12" })          // Click matching option
 - \`{ action: "back" }\` / \`{ action: "forward" }\` - Browser navigation (AVOID during form filling — may wipe state)
 
 ### Interaction
-- \`{ action: "fill", selector: "<sel>", value: "text" }\` - Clear and fill field
-- \`{ action: "type", selector: "<sel>", text: "text" }\` - Append text (use for search boxes)
+- \`{ action: "fill", selector: "<sel>", value: "text" }\` - Clear and fill field (plain text only: name, address, city, email)
+- \`{ action: "type", selector: "<sel>", text: "text", clear: true }\` - Simulate keystrokes (REQUIRED for masked/formatted fields: SSN, date, phone, state, zip)
 - \`{ action: "click", selector: "<sel>" }\` - Click element
 - \`{ action: "select", selector: "<sel>", values: ["option"] }\` - Native dropdown only
 - \`{ action: "check", selector: "<sel>" }\` / \`{ action: "uncheck", selector: "<sel>" }\` - Toggle checkbox
@@ -107,7 +129,8 @@ browser({ action: "click", selector: "@e12" })          // Click matching option
 
 ### Information & Waiting
 - \`{ action: "gettext", selector: "<sel>" }\` / \`{ action: "inputvalue", selector: "<sel>" }\` / \`{ action: "url" }\`
-- \`{ action: "wait", selector: "<sel>" }\` / \`{ action: "wait", timeout: 2000 }\` / \`{ action: "waitforloadstate", state: "networkidle" }\`
+- \`{ action: "wait", selector: "<sel>" }\` / \`{ action: "wait", timeout: 2000 }\` — use sparingly, only when waiting for async content
+- \`{ action: "waitforloadstate", state: "networkidle" }\` — RARELY needed. Navigate already waits for load. Only use after full-page navigations via link clicks, never after fills/types/clicks on form elements
 - \`{ action: "scroll", direction: "down", amount: 500 }\` / \`{ action: "scroll", direction: "up", amount: 300 }\`
 
 ## Masked/Formatted Fields (CRITICAL)
@@ -130,19 +153,37 @@ Many form fields (SSN, birthdate, phone, state, zip) have JavaScript input masks
 
 \`\`\`
 browser({ action: "navigate", url: "https://example.com/application" })
-browser({ action: "waitforloadstate", state: "networkidle" })
-browser({ action: "snapshot" })              // 1. Full snapshot first
+browser({ action: "snapshot" })              // 1. Full snapshot first (navigate already waits for load)
 
 // Complex page? Scope to the form area
 browser({ action: "snapshot", selector: "form" })   // 2. Reduces 200+ elements to just form fields
+// Snapshot shows refs: textbox "First Name" [ref=@e3], textbox "Last Name" [ref=@e4],
+//   textbox "Email" [ref=@e5], radio "Yes" [ref=@e7], textbox "SSN" [ref=@e10],
+//   textbox "Birthdate" [ref=@e11], textbox "Phone" [ref=@e12]
 
-// Fill text fields using labels
-browser({ action: "getbylabel", label: "First Name", subaction: "fill", value: "John" })
-browser({ action: "getbylabel", label: "Last Name", subaction: "fill", value: "Doe" })
-browser({ action: "getbylabel", label: "Email", subaction: "fill", value: "john@example.com" })
+// *** PARALLEL: Fill all plain text fields in ONE response (they are independent) ***
+browser({ action: "fill", selector: "@e3", value: "John" })
+browser({ action: "fill", selector: "@e4", value: "Doe" })
+browser({ action: "fill", selector: "@e5", value: "john@example.com" })
 
-// Radio button — click then re-snapshot (DOM may change with conditional fields)
-browser({ action: "getbylabel", label: "Yes", subaction: "click" })
+// *** PARALLEL: Handle masked fields — each field's click+type+verify is independent ***
+// Field 1: SSN
+browser({ action: "click", selector: "@e10" })
+browser({ action: "type", selector: "@e10", text: "123456789", clear: true })
+// Field 2: Birthdate
+browser({ action: "click", selector: "@e11" })
+browser({ action: "type", selector: "@e11", text: "01022000", clear: true })
+// Field 3: Phone
+browser({ action: "click", selector: "@e12" })
+browser({ action: "type", selector: "@e12", text: "7775551234", clear: true })
+
+// *** PARALLEL: Verify all masked fields at once ***
+browser({ action: "inputvalue", selector: "@e10" })  // Verify SSN
+browser({ action: "inputvalue", selector: "@e11" })  // Verify birthdate
+browser({ action: "inputvalue", selector: "@e12" })  // Verify phone
+
+// Radio button — click ref, then re-snapshot (DOM may change with conditional fields)
+browser({ action: "click", selector: "@e7" })
 browser({ action: "snapshot", selector: "form" })   // 3. Re-snapshot: radio may reveal new fields
 
 // Custom dropdown (Select2) — NOT a native select
@@ -161,23 +202,24 @@ browser({ action: "snapshot" })               // Final verification before submi
 
 ## Modals, Dialogs & Popups
 
-When a modal or popup appears (cookie consent, terms, confirmation, error, login prompt, etc.), it blocks interaction with the page behind it. Elements behind the modal will time out if you try to interact with them.
+Modals block interaction with the page behind them. Empty/minimal snapshots mean a modal is blocking — NOT that snapshots are broken. Modals often set \`aria-hidden="true"\` on the page root, which is why snapshots return empty. Do NOT use \`evaluate\` to remove \`aria-hidden\` or read \`innerText\` — find the modal instead.
 
-**How to detect**: After any action that navigates or changes the page, take a snapshot. A modal is likely present if:
-- The snapshot returns very little content (under ~100 characters) — the modal overlay is hiding the accessibility tree of the page behind it
-- You see a \`dialog\`, \`[role="dialog"]\`, or overlay with only a few elements (buttons like "OK", "Accept", "Close", "Continue", "USE THIS ADDRESS")
-- You see a small set of elements instead of the expected form content
-- Multiple modals can appear sequentially on the same page (e.g. address validation → county selection)
+Multiple modals can appear in sequence (e.g. address validation → county selection). Always loop until the page is clear.
 
-**What to do**:
-1. **Stop** what you were doing — do NOT try to fill or click elements behind the modal
-2. **Resolve the modal first** — if the snapshot is nearly empty, try \`{ action: "snapshot", selector: "[role=dialog]" }\` or \`{ action: "snapshot", selector: ".modal" }\` to find the modal content. Use the refs from that snapshot to interact with it.
-3. **Re-snapshot after dismissing** — check if ANOTHER modal appeared. Repeat until you get a full page snapshot back.
-4. **Then resume** your previous task using snapshot + refs as normal
+**Workflow:**
+1. Snapshot the page
+2. If minimal content → modal is present. Snapshot with: \`selector: "[role=dialog]"\`, or \`.ReactModal__Overlay\`, or \`.modal\`, or \`[aria-modal=true]\`
+3. Use refs from that snapshot to interact (fill dropdowns, click buttons)
+4. After dismissing, go back to step 1 — another modal may have appeared
+5. When the full page is visible again, resume normal workflow
 
-**CRITICAL**: If snapshots return empty/minimal content, this does NOT mean snapshots are broken. It means a modal is blocking. Do NOT fall back to \`evaluate\` — instead, find and dismiss the modal. Once the modal is resolved, snapshots will work normally again.
+### Google Translate Bar
 
-This applies to all types of overlays: cookie banners, session timeout warnings, confirmation dialogs, address validation modals, county selection popups, error popups, terms modals, etc.
+Government and health sites often have a Google Translate bar injected at the top of the page. This renders as a floating element that can block clicks on form fields below it. **Always keep the form in English** — dismiss or hide the translate bar if it's interfering.
+
+If elements report "blocked by another element" and you suspect the translate bar:
+1. Dismiss it via evaluate: \`{ action: "evaluate", script: "document.querySelector('.VIpgJd-yAWNEb-hvhgNd') && document.querySelector('.VIpgJd-yAWNEb-hvhgNd').remove()" }\`
+2. Re-snapshot and continue — the form fields should now be accessible
 
 ## CAPTCHA & Turnstile Handling
 
@@ -190,9 +232,25 @@ The browser runs in Kernel stealth mode with an **auto-solver** that handles Clo
 
 **What to do**:
 1. Do NOT click on CAPTCHA checkboxes or interact with challenge widgets — let the auto-solver handle it
-2. If a submit button is disabled and you've filled all required fields, wait for the CAPTCHA to resolve: \`{ action: "wait", timeout: 5000 }\` then re-check
-3. If still disabled after waiting, take a snapshot to check for missing required fields — the issue is likely unfilled fields, not the CAPTCHA
-4. Do NOT use \`evaluate\` to debug why the submit button is disabled — the most common causes are: (a) CAPTCHA still solving (wait), (b) required fields not filled (snapshot and check), (c) the form doesn't allow submission and the agent should stop anyway per instructions
+2. If elements report "blocked by another element" on a page with a CAPTCHA, the auto-solver is likely mid-solve and has scrolled the viewport or placed an overlay temporarily. **Wait briefly and retry** — do NOT treat this as a hard blocker:
+   - \`{ action: "wait", timeout: 3000 }\` then retry the blocked action
+   - You can continue doing other independent work (gap analysis, database lookups) while waiting — the auto-solver runs in the background
+3. If a submit button is disabled and you've filled all required fields, wait for the CAPTCHA to resolve: \`{ action: "wait", timeout: 5000 }\` then re-check
+4. If still disabled after waiting, take a snapshot to check for missing required fields — the issue is likely unfilled fields, not the CAPTCHA
+5. Do NOT use \`evaluate\` to debug why the submit button is disabled — the most common causes are: (a) CAPTCHA still solving (wait), (b) required fields not filled (snapshot and check), (c) the form doesn't allow submission and the agent should stop anyway per instructions
+
+## Form Completion Summary
+
+When you have finished filling a form, call the \`formSummary\` tool **instead of** writing a summary message. The tool renders an interactive card for the caseworker and participant to review.
+
+Categorize each field into ONE of three buckets:
+- **fromDatabase**: values you pulled directly from the participant database (Apricot records)
+- **fromCaseworker**: values the caseworker provided during this session (e.g., answers to a gap analysis, responses to your questions)
+- **inferred**: values you reasoned from available data (e.g., "Lives alone — no household members listed", "Nearest clinic determined from home address")
+
+After calling \`formSummary\`, write ONE short sentence like: "The form is filled out. Please review it and submit when you're ready."
+
+Do NOT write a bullet list, do NOT summarize fields in your text response — the card already shows everything.
 
 ## Forbidden Actions
 
@@ -200,7 +258,7 @@ The browser runs in Kernel stealth mode with an **auto-solver** that handles Clo
 - NEVER use \`evaluate\` as a fallback when snapshots return empty/minimal content. Empty snapshots mean a modal is blocking — find and dismiss the modal, then snapshots will work again. Do NOT switch to using \`evaluate\` for the rest of the session.
 - NEVER use \`evaluate\` to enable disabled buttons or bypass validation
 - NEVER use \`evaluate\` to modify form state or hidden fields
-- \`evaluate\` is ONLY acceptable for reading simple values (e.g. checking a field's maxLength)
+- \`evaluate\` is acceptable for: reading simple values (e.g. checking a field's maxLength), and removing known third-party overlays that block clicks (e.g. Google Translate bar — see above)
 - If a button is disabled, fill the required fields — don't force-enable it
 - NEVER use \`reload\` while filling a form — reloading wipes all form state and you lose everything you filled. If a page appears blank or a snapshot returns very little content, wait a moment and re-snapshot. If still blank, it's likely a modal overlay or a page transition — do NOT reload.
 - NEVER use \`back\` during multi-page form filling unless recovering from an error — going back may also wipe form state on the current page
