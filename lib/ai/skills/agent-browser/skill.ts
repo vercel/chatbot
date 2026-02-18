@@ -220,6 +220,14 @@ When a modal or popup appears (cookie consent, terms, confirmation, error, login
 
 This applies to all types of overlays: cookie banners, session timeout warnings, confirmation dialogs, address validation modals, county selection popups, error popups, terms modals, etc.
 
+### Google Translate Bar
+
+Government and health sites often have a Google Translate bar injected at the top of the page. This renders as a floating element that can block clicks on form fields below it. **Always keep the form in English** — dismiss or hide the translate bar if it's interfering.
+
+If elements report "blocked by another element" and you suspect the translate bar:
+1. Dismiss it via evaluate: \`{ action: "evaluate", script: "document.querySelector('.VIpgJd-yAWNEb-hvhgNd') && document.querySelector('.VIpgJd-yAWNEb-hvhgNd').remove()" }\`
+2. Re-snapshot and continue — the form fields should now be accessible
+
 ## CAPTCHA & Turnstile Handling
 
 The browser runs in Kernel stealth mode with an **auto-solver** that handles Cloudflare Turnstile, reCAPTCHA, and similar challenges automatically in the background.
@@ -231,9 +239,25 @@ The browser runs in Kernel stealth mode with an **auto-solver** that handles Clo
 
 **What to do**:
 1. Do NOT click on CAPTCHA checkboxes or interact with challenge widgets — let the auto-solver handle it
-2. If a submit button is disabled and you've filled all required fields, wait for the CAPTCHA to resolve: \`{ action: "wait", timeout: 5000 }\` then re-check
-3. If still disabled after waiting, take a snapshot to check for missing required fields — the issue is likely unfilled fields, not the CAPTCHA
-4. Do NOT use \`evaluate\` to debug why the submit button is disabled — the most common causes are: (a) CAPTCHA still solving (wait), (b) required fields not filled (snapshot and check), (c) the form doesn't allow submission and the agent should stop anyway per instructions
+2. If elements report "blocked by another element" on a page with a CAPTCHA, the auto-solver is likely mid-solve and has scrolled the viewport or placed an overlay temporarily. **Wait briefly and retry** — do NOT treat this as a hard blocker:
+   - \`{ action: "wait", timeout: 3000 }\` then retry the blocked action
+   - You can continue doing other independent work (gap analysis, database lookups) while waiting — the auto-solver runs in the background
+3. If a submit button is disabled and you've filled all required fields, wait for the CAPTCHA to resolve: \`{ action: "wait", timeout: 5000 }\` then re-check
+4. If still disabled after waiting, take a snapshot to check for missing required fields — the issue is likely unfilled fields, not the CAPTCHA
+5. Do NOT use \`evaluate\` to debug why the submit button is disabled — the most common causes are: (a) CAPTCHA still solving (wait), (b) required fields not filled (snapshot and check), (c) the form doesn't allow submission and the agent should stop anyway per instructions
+
+## Form Completion Summary
+
+When you have finished filling a form, call the \`formSummary\` tool **instead of** writing a summary message. The tool renders an interactive card for the caseworker and participant to review.
+
+Categorize each field into ONE of three buckets:
+- **fromDatabase**: values you pulled directly from the participant database (Apricot records)
+- **fromCaseworker**: values the caseworker provided during this session (e.g., answers to a gap analysis, responses to your questions)
+- **inferred**: values you reasoned from available data (e.g., "Lives alone — no household members listed", "Nearest clinic determined from home address")
+
+After calling \`formSummary\`, write ONE short sentence like: "The form is filled out. Please review it and submit when you're ready."
+
+Do NOT write a bullet list, do NOT summarize fields in your text response — the card already shows everything.
 
 ## Forbidden Actions
 
@@ -241,7 +265,7 @@ The browser runs in Kernel stealth mode with an **auto-solver** that handles Clo
 - NEVER use \`evaluate\` as a fallback when snapshots return empty/minimal content. Empty snapshots mean a modal is blocking — find and dismiss the modal, then snapshots will work again. Do NOT switch to using \`evaluate\` for the rest of the session.
 - NEVER use \`evaluate\` to enable disabled buttons or bypass validation
 - NEVER use \`evaluate\` to modify form state or hidden fields
-- \`evaluate\` is ONLY acceptable for reading simple values (e.g. checking a field's maxLength)
+- \`evaluate\` is acceptable for: reading simple values (e.g. checking a field's maxLength), and removing known third-party overlays that block clicks (e.g. Google Translate bar — see above)
 - If a button is disabled, fill the required fields — don't force-enable it
 - NEVER use \`reload\` while filling a form — reloading wipes all form state and you lose everything you filled. If a page appears blank or a snapshot returns very little content, wait a moment and re-snapshot. If still blank, it's likely a modal overlay or a page transition — do NOT reload.
 - NEVER use \`back\` during multi-page form filling unless recovering from an error — going back may also wipe form state on the current page

@@ -115,7 +115,7 @@ This prevents back-and-forth where the agent fills some fields, discovers gaps, 
 - ALWAYS re-snapshot after interactions that change the page (clicking radio buttons, selecting dropdowns, navigating). Refs go stale after DOM changes.
 - On complex pages with lots of navigation/sidebar elements, use \`{ action: "snapshot", selector: "form" }\` to scope the snapshot to just the form area — this dramatically reduces noise
 - If \`select\` fails on a dropdown, it's likely a custom widget (Select2/Chosen). Click the dropdown trigger, wait, snapshot, then click the option.
-- Do not submit at the end, summarize what you filled out and ask the caseworker to review
+- Do not submit at the end. Call the \`formSummary\` tool to show the caseworker a card of everything that was filled in (categorized as: from database / from caseworker / inferred by agent). Then write one short sentence asking them to review and submit.
 - **Disabled submit buttons**: If a submit button is disabled after you've filled all fields, do NOT waste steps debugging it with \`evaluate\`. The most likely cause is a CAPTCHA/Turnstile still solving in the background (the auto-solver handles this). Since you should not be submitting anyway, just note it in your summary and move on.
 - Do not close the browser unless the user asks you to
 

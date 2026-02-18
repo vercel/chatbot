@@ -37,6 +37,7 @@ const EXCLUDED_TOOL_TYPES = new Set([
   'tool-updateDocument',
   'tool-requestSuggestions',
   'tool-gapAnalysis',
+  'tool-formSummary',
 ]);
 
 // Tools that are hidden or have special rendering via CollapsibleWrapper
