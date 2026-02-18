@@ -202,23 +202,16 @@ browser({ action: "snapshot" })               // Final verification before submi
 
 ## Modals, Dialogs & Popups
 
-When a modal or popup appears (cookie consent, terms, confirmation, error, login prompt, etc.), it blocks interaction with the page behind it. Elements behind the modal will time out if you try to interact with them.
+Modals block interaction with the page behind them. Empty/minimal snapshots mean a modal is blocking — NOT that snapshots are broken. Modals often set \`aria-hidden="true"\` on the page root, which is why snapshots return empty. Do NOT use \`evaluate\` to remove \`aria-hidden\` or read \`innerText\` — find the modal instead.
 
-**How to detect**: After any action that navigates or changes the page, take a snapshot. A modal is likely present if:
-- The snapshot returns very little content (under ~100 characters) — the modal overlay is hiding the accessibility tree of the page behind it
-- You see a \`dialog\`, \`[role="dialog"]\`, or overlay with only a few elements (buttons like "OK", "Accept", "Close", "Continue", "USE THIS ADDRESS")
-- You see a small set of elements instead of the expected form content
-- Multiple modals can appear sequentially on the same page (e.g. address validation → county selection)
+Multiple modals can appear in sequence (e.g. address validation → county selection). Always loop until the page is clear.
 
-**What to do**:
-1. **Stop** what you were doing — do NOT try to fill or click elements behind the modal
-2. **Resolve the modal first** — if the snapshot is nearly empty, try \`{ action: "snapshot", selector: "[role=dialog]" }\` or \`{ action: "snapshot", selector: ".modal" }\` to find the modal content. Use the refs from that snapshot to interact with it.
-3. **Re-snapshot after dismissing** — check if ANOTHER modal appeared. Repeat until you get a full page snapshot back.
-4. **Then resume** your previous task using snapshot + refs as normal
-
-**CRITICAL**: If snapshots return empty/minimal content, this does NOT mean snapshots are broken. It means a modal is blocking. Do NOT fall back to \`evaluate\` — instead, find and dismiss the modal. Once the modal is resolved, snapshots will work normally again.
-
-This applies to all types of overlays: cookie banners, session timeout warnings, confirmation dialogs, address validation modals, county selection popups, error popups, terms modals, etc.
+**Workflow:**
+1. Snapshot the page
+2. If minimal content → modal is present. Snapshot with: \`selector: "[role=dialog]"\`, or \`.ReactModal__Overlay\`, or \`.modal\`, or \`[aria-modal=true]\`
+3. Use refs from that snapshot to interact (fill dropdowns, click buttons)
+4. After dismissing, go back to step 1 — another modal may have appeared
+5. When the full page is visible again, resume normal workflow
 
 ### Google Translate Bar
 
