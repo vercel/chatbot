@@ -337,9 +337,9 @@ function PureMultimodalInput({
 
               if (!isLoggedIn) {
                 router.push('/login');
-              } else if (status !== 'ready') {
-                toast.error('Please wait for the model to finish its response!');
-              } else {
+              } else if (status === 'error') {
+                toast.error('Something went wrong. Please try again.');
+              } else if (status === 'ready') {
                 submitForm();
               }
             }
@@ -445,17 +445,16 @@ function PureSendButton({
   status: UseChatHelpers<ChatMessage>['status'];
   isLoggedIn: boolean;
 }) {
-  const hasInput = input.length > 0 && uploadQueue.length === 0;
-  const isDisabled = !isLoggedIn || input.length === 0 || uploadQueue.length > 0;
-  const shouldShowWaitCursor = hasInput && isLoggedIn && (status === 'submitted' || status === 'streaming');
+  const isWorking = status === 'submitted' || status === 'streaming';
+  const isDisabled = !isLoggedIn || input.length === 0 || uploadQueue.length > 0 || isWorking;
 
   const button = (
     <Button
       data-testid="send-button"
-      className={`bg-primary hover:bg-primary/90 disabled:bg-muted disabled:hover:bg-muted rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-primary-foreground disabled:text-muted-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${shouldShowWaitCursor ? 'cursor-wait' : ''}`}
+      className="bg-primary hover:bg-primary/90 disabled:bg-muted disabled:hover:bg-muted rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-primary-foreground disabled:text-muted-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       onClick={(event) => {
         event.preventDefault();
-        if (isLoggedIn) {
+        if (isLoggedIn && status === 'ready') {
           submitForm();
         }
       }}
@@ -473,6 +472,17 @@ function PureSendButton({
           <span tabIndex={0}>{button}</span>
         </TooltipTrigger>
         <TooltipContent>Log in to submit</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  if (isWorking) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0}>{button}</span>
+        </TooltipTrigger>
+        <TooltipContent>AI is still working</TooltipContent>
       </Tooltip>
     );
   }
