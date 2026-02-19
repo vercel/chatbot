@@ -181,7 +181,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
                   controlMode: newMode,
                   isFocused: newMode === 'agent' ? false : prev.isFocused, // Reset focus when switching to agent mode
                 }));
-                toast.success(`Control switched to ${newMode} mode`);
                 break;
                 
               case 'error':

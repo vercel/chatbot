@@ -219,7 +219,6 @@ export function KernelBrowserClient({
     }
 
     onControlModeChange(mode);
-    toast.success(`Control switched to ${mode} mode`);
   };
 
   const disconnectBrowser = async () => {
