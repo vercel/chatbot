@@ -38,7 +38,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 const sourceSerifPro = Source_Serif_4({
   subsets: ['latin'],
-  weight: ['400', '700'],
+  weight: ['300', '400', '600', '700'],
   display: 'swap',
   variable: '--font-source-serif',
 });
