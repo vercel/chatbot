@@ -465,7 +465,6 @@ const PurePreviewMessage = ({
                       fromCaseworker={input?.fromCaseworker ?? []}
                       inferred={input?.inferred ?? []}
                       missing={input?.missing}
-                      notes={input?.notes}
                     />
                   );
                 }
