@@ -7,8 +7,6 @@
     OpenChat is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
 </p>
 
-> **Update:** AI-Chatbot has been renamed to **OpenChat**. It is the same open-source template you know, just under a new name. All links and references below have been updated to reflect this change.
-
 <p align="center">
   <a href="https://openchat.dev"><strong>Read Docs</strong></a> ·
   <a href="#features"><strong>Features</strong></a> ·
