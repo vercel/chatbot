@@ -29,14 +29,14 @@ function SectionBlock({
 
   return (
     <div>
-      <p className="text-sm font-ibm-plex-mono font-semibold uppercase tracking-widest text-foreground mb-3">
+      <p className="text-xs font-semibold font-ibm-plex-mono uppercase tracking-widest text-muted-foreground mb-1">
         {label}
       </p>
-      <div className="space-y-1">
+      <div className="space-y-2">
         {fields.map((item, i) => (
-          <div key={i} className="flex justify-between gap-4">
-            <span className="text-sm text-muted-foreground">{item.field}</span>
-            <span className="text-sm font-ibm-plex-mono text-foreground text-right">{item.value}</span>
+          <div key={i}>
+            <p className="text-sm font-bold text-foreground">{item.field}</p>
+            <p className="text-sm text-foreground">{item.value}</p>
           </div>
         ))}
       </div>
@@ -63,12 +63,12 @@ export function FormSummaryCard({
       <AlertDescription>
         <div className="font-source-serif leading-[1.5] text-foreground">
           {formName && (
-            <p className="text-lg font-bold mb-1">{formName}</p>
+            <p className="text-lg font-bold mb-3">{formName}</p>
           )}
 
           <div className="space-y-5">
             <SectionBlock
-              label="Filled from database"
+              label="Filled from A360"
               fields={fromDatabase}
             />
             <SectionBlock
@@ -76,13 +76,13 @@ export function FormSummaryCard({
               fields={fromCaseworker}
             />
             <SectionBlock
-              label="Inferred by agent"
+              label="Inferred by AI"
               fields={inferred}
             />
 
             {missing && missing.length > 0 && (
               <div>
-                <p className="text-sm font-ibm-plex-mono font-semibold uppercase tracking-widest text-foreground mb-3">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
                   Could not be filled
                 </p>
                 <div className="space-y-1">
