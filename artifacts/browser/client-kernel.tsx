@@ -382,7 +382,7 @@ export function KernelBrowserClient({
                 ) : !isConnected ? (
                   <BrowserLoadingState />
                 ) : (
-                  <div className="h-full overflow-hidden bg-black rounded-lg">
+                  <div className={`h-full overflow-hidden bg-black rounded-lg ${controlMode === 'agent' ? 'cursor-not-allowed' : 'cursor-auto'}`}>
                     <iframe
                       key={liveViewUrl}
                       src={iframeUrl || undefined}
@@ -435,7 +435,7 @@ export function KernelBrowserClient({
       )}
 
       {/* Browser iframe - fixed pixel dimensions to prevent layout recalculation flicker */}
-      <div className="flex-1 overflow-hidden m-4 min-h-0 flex items-center justify-center">
+      <div className={`flex-1 overflow-hidden m-4 min-h-0 flex items-center justify-center ${controlMode === 'agent' ? 'cursor-not-allowed' : 'cursor-auto'}`}>
         <iframe
           key={liveViewUrl}
           src={iframeUrl || undefined}

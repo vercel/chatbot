@@ -451,7 +451,7 @@ function PureSendButton({
   const button = (
     <Button
       data-testid="send-button"
-      className="bg-primary hover:bg-primary/90 disabled:bg-muted disabled:hover:bg-muted rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-primary-foreground disabled:text-muted-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="bg-primary hover:bg-primary/90 disabled:bg-muted disabled:hover:bg-muted rounded-[100px] px-3 py-1.5 flex items-center gap-1 text-primary-foreground disabled:text-muted-foreground text-sm font-medium disabled:opacity-50 disabled:pointer-events-auto disabled:cursor-not-allowed transition-colors"
       onClick={(event) => {
         event.preventDefault();
         if (isLoggedIn && status === 'ready') {
