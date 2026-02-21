@@ -342,6 +342,7 @@ function PureMultimodalInput({
           </div>
         )}
         <PromptInputTextarea
+          className="p-6 min-h-24"
           data-testid="multimodal-input"
           onChange={handleInput}
           placeholder="Send a message..."
