@@ -68,11 +68,7 @@ export function VisibilitySelector({
           className
         )}
       >
-        <Button
-          className="hidden h-8 md:flex md:h-fit md:px-2"
-          data-testid="visibility-selector"
-          variant="outline"
-        >
+        <Button data-testid="visibility-selector" size="sm" variant="outline">
           {selectedVisibility?.icon}
           <span className="md:sr-only">{selectedVisibility?.label}</span>
           <ChevronDownIcon />
