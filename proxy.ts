@@ -25,16 +25,19 @@ export async function proxy(request: NextRequest) {
 
   if (!token) {
     const redirectUrl = encodeURIComponent(request.url);
+    const url = request.nextUrl.clone();
+    url.pathname = "/api/auth/guest";
+    url.search = `?redirectUrl=${redirectUrl}`;
 
-    return NextResponse.redirect(
-      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url)
-    );
+    return NextResponse.redirect(url);
   }
 
   const isGuest = guestRegex.test(token?.email ?? "");
 
   if (token && !isGuest && ["/login", "/register"].includes(pathname)) {
-    return NextResponse.redirect(new URL("/", request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
