@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
 
+const basePath = "/demo";
+
 const nextConfig: NextConfig = {
-  basePath: "/demo",
+  basePath,
   assetPrefix: "/demo-assets",
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
+  },
   cacheComponents: true,
   images: {
     remotePatterns: [

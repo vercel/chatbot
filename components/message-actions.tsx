@@ -77,7 +77,7 @@ export function PureMessageActions({
         data-testid="message-upvote"
         disabled={vote?.isUpvoted}
         onClick={() => {
-          const upvote = fetch("/api/vote", {
+          const upvote = fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`, {
             method: "PATCH",
             body: JSON.stringify({
               chatId,
@@ -90,7 +90,7 @@ export function PureMessageActions({
             loading: "Upvoting Response...",
             success: () => {
               mutate<Vote[]>(
-                `/api/vote?chatId=${chatId}`,
+                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote?chatId=${chatId}`,
                 (currentVotes) => {
                   if (!currentVotes) {
                     return [];
@@ -126,7 +126,7 @@ export function PureMessageActions({
         data-testid="message-downvote"
         disabled={vote && !vote.isUpvoted}
         onClick={() => {
-          const downvote = fetch("/api/vote", {
+          const downvote = fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`, {
             method: "PATCH",
             body: JSON.stringify({
               chatId,
@@ -139,7 +139,7 @@ export function PureMessageActions({
             loading: "Downvoting Response...",
             success: () => {
               mutate<Vote[]>(
-                `/api/vote?chatId=${chatId}`,
+                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote?chatId=${chatId}`,
                 (currentVotes) => {
                   if (!currentVotes) {
                     return [];

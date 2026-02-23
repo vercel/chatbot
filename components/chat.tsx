@@ -103,7 +103,7 @@ export function Chat({
       return shouldContinue;
     },
     transport: new DefaultChatTransport({
-      api: "/api/chat",
+      api: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat`,
       fetch: fetchWithErrorHandlers,
       prepareSendMessagesRequest(request) {
         const lastMessage = request.messages.at(-1);
@@ -166,12 +166,12 @@ export function Chat({
       });
 
       setHasAppendedQuery(true);
-      window.history.replaceState({}, "", `/chat/${id}`);
+      window.history.replaceState({}, "", `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${id}`);
     }
   }, [query, sendMessage, hasAppendedQuery, id]);
 
   const { data: votes } = useSWR<Vote[]>(
-    messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
+    messages.length >= 2 ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote?chatId=${id}` : null,
     fetcher
   );
 
@@ -268,7 +268,7 @@ export function Chat({
                   "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card",
                   "_blank"
                 );
-                window.location.href = "/";
+                window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/`;
               }}
             >
               Activate
