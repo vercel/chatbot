@@ -83,7 +83,7 @@ export function GapAnalysisCard({
       parts: [
         {
           type: 'text',
-          text: `Skipped "${name}" for now. Please continue with the next step.`,
+          text: 'Skipped adding more data for now. Please continue with filling in with the data you already have.',
         },
       ],
     });
