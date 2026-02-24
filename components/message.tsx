@@ -4,18 +4,17 @@ import { useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
-import { useDataStream } from "./data-stream-provider";
-import { DocumentToolResult } from "./document";
-import { DocumentPreview } from "./document-preview";
-import { MessageContent } from "./elements/message";
-import { Response } from "./elements/response";
+import { MessageContent, MessageResponse } from "./ai-elements/message";
 import {
   Tool,
   ToolContent,
   ToolHeader,
   ToolInput,
   ToolOutput,
-} from "./elements/tool";
+} from "./ai-elements/tool";
+import { useDataStream } from "./data-stream-provider";
+import { DocumentToolResult } from "./document";
+import { DocumentPreview } from "./document-preview";
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
@@ -140,7 +139,9 @@ const PurePreviewMessage = ({
                           : undefined
                       }
                     >
-                      <Response>{sanitizeText(part.text)}</Response>
+                      <MessageResponse>
+                        {sanitizeText(part.text)}
+                      </MessageResponse>
                     </MessageContent>
                   </div>
                 );

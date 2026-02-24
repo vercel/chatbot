@@ -5,14 +5,16 @@ import { DOMParser, type Node } from "prosemirror-model";
 import { Decoration, DecorationSet, type EditorView } from "prosemirror-view";
 import { renderToString } from "react-dom/server";
 
-import { Response } from "@/components/elements/response";
+import { MessageResponse } from "@/components/ai-elements/message";
 
 import { documentSchema } from "./config";
 import { createSuggestionWidget, type UISuggestion } from "./suggestions";
 
 export const buildDocumentFromContent = (content: string) => {
   const parser = DOMParser.fromSchema(documentSchema);
-  const stringFromMarkdown = renderToString(<Response>{content}</Response>);
+  const stringFromMarkdown = renderToString(
+    <MessageResponse>{content}</MessageResponse>
+  );
   const tempContainer = document.createElement("div");
   tempContainer.innerHTML = stringFromMarkdown;
   return parser.parse(tempContainer);

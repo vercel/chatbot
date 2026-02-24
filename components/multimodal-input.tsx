@@ -3,7 +3,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import equal from "fast-deep-equal";
-import { CheckIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon } from "lucide-react";
 import {
   type ChangeEvent,
   type Dispatch,
@@ -36,12 +36,12 @@ import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   PromptInput,
+  PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputToolbar,
   PromptInputTools,
-} from "./elements/prompt-input";
-import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
+} from "./ai-elements/prompt-input";
+import { PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { SuggestedActions } from "./suggested-actions";
 import { Button } from "./ui/button";
@@ -87,18 +87,6 @@ function PureMultimodalInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
 
-  const adjustHeight = useCallback(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "44px";
-    }
-  }, []);
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      adjustHeight();
-    }
-  }, [adjustHeight]);
-
   const hasAutoFocused = useRef(false);
   useEffect(() => {
     if (!hasAutoFocused.current && width) {
@@ -109,12 +97,6 @@ function PureMultimodalInput({
       return () => clearTimeout(timer);
     }
   }, [width]);
-
-  const resetHeight = useCallback(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "44px";
-    }
-  }, []);
 
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     "input",
@@ -127,11 +109,10 @@ function PureMultimodalInput({
       // Prefer DOM value over localStorage to handle hydration
       const finalValue = domValue || localStorageInput || "";
       setInput(finalValue);
-      adjustHeight();
     }
     // Only run once after hydration
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adjustHeight, localStorageInput, setInput]);
+  }, [localStorageInput, setInput]);
 
   useEffect(() => {
     setLocalStorageInput(input);
@@ -165,7 +146,6 @@ function PureMultimodalInput({
 
     setAttachments([]);
     setLocalStorageInput("");
-    resetHeight();
     setInput("");
 
     if (width && width > 768) {
@@ -180,7 +160,6 @@ function PureMultimodalInput({
     setLocalStorageInput,
     width,
     chatId,
-    resetHeight,
   ]);
 
   const uploadFile = useCallback(async (file: File) => {
@@ -317,9 +296,8 @@ function PureMultimodalInput({
       />
 
       <PromptInput
-        className="rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50"
-        onSubmit={(event) => {
-          event.preventDefault();
+        className="[&>div]:rounded-xl"
+        onSubmit={() => {
           if (!input.trim() && attachments.length === 0) {
             return;
           }
@@ -363,22 +341,16 @@ function PureMultimodalInput({
             ))}
           </div>
         )}
-        <div className="flex flex-row items-start gap-1 sm:gap-2">
-          <PromptInputTextarea
-            className="grow resize-none border-0! border-none! bg-transparent p-2 text-base outline-none ring-0 [-ms-overflow-style:none] [scrollbar-width:none] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-scrollbar]:hidden"
-            data-testid="multimodal-input"
-            disableAutoResize={true}
-            maxHeight={200}
-            minHeight={44}
-            onChange={handleInput}
-            placeholder="Send a message..."
-            ref={textareaRef}
-            rows={1}
-            value={input}
-          />
-        </div>
-        <PromptInputToolbar className="border-top-0! border-t-0! p-0 shadow-none dark:border-0 dark:border-transparent!">
-          <PromptInputTools className="gap-0 sm:gap-0.5">
+        <PromptInputTextarea
+          className="p-6 min-h-24"
+          data-testid="multimodal-input"
+          onChange={handleInput}
+          placeholder="Send a message..."
+          ref={textareaRef}
+          value={input}
+        />
+        <PromptInputFooter>
+          <PromptInputTools>
             <AttachmentsButton
               fileInputRef={fileInputRef}
               selectedModelId={selectedModelId}
@@ -394,15 +366,16 @@ function PureMultimodalInput({
             <StopButton setMessages={setMessages} stop={stop} />
           ) : (
             <PromptInputSubmit
-              className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+              className="rounded-full"
               data-testid="send-button"
               disabled={!input.trim() || uploadQueue.length > 0}
               status={status}
+              variant="secondary"
             >
-              <ArrowUpIcon size={14} />
+              <ArrowUpIcon className="size-4" />
             </PromptInputSubmit>
           )}
-        </PromptInputToolbar>
+        </PromptInputFooter>
       </PromptInput>
     </div>
   );

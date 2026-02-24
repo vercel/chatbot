@@ -1,5 +1,5 @@
-import Image from "next/image";
 import type { ComponentProps, ReactNode } from "react";
+
 import {
   Command,
   CommandDialog,
@@ -41,7 +41,14 @@ export const ModelSelectorContent = ({
   title = "Model Selector",
   ...props
 }: ModelSelectorContentProps) => (
-  <DialogContent className={cn("p-0", className)} {...props}>
+  <DialogContent
+    aria-describedby={undefined}
+    className={cn(
+      "outline! border-none! p-0 outline-border! outline-solid!",
+      className
+    )}
+    {...props}
+  >
     <DialogTitle className="sr-only">{title}</DialogTitle>
     <Command className="**:data-[slot=command-input-wrapper]:h-auto">
       {children}
@@ -102,8 +109,10 @@ export const ModelSelectorSeparator = (props: ModelSelectorSeparatorProps) => (
   <CommandSeparator {...props} />
 );
 
-export type ModelSelectorLogoProps = {
-  className?: string;
+export type ModelSelectorLogoProps = Omit<
+  ComponentProps<"img">,
+  "src" | "alt"
+> & {
   provider:
     | "moonshotai-cn"
     | "lucidquery"
@@ -161,19 +170,21 @@ export type ModelSelectorLogoProps = {
     | "scaleway"
     | "amazon-bedrock"
     | "cerebras"
+    // oxlint-disable-next-line typescript-eslint(ban-types) -- intentional pattern for autocomplete-friendly string union
     | (string & {});
 };
 
 export const ModelSelectorLogo = ({
   provider,
   className,
+  ...props
 }: ModelSelectorLogoProps) => (
-  <Image
+  <img
+    {...props}
     alt={`${provider} logo`}
     className={cn("size-3 dark:invert", className)}
     height={12}
     src={`https://models.dev/logos/${provider}.svg`}
-    unoptimized
     width={12}
   />
 );

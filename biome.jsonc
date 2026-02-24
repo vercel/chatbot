@@ -11,13 +11,9 @@
   },
   "files": {
     "includes": [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.js",
-      "**/*.jsx",
-      "!node_modules",
-      "!.next",
-      "!ai-sdk",
+      "**/*",
+      "!components/ai-elements",
+      "!components/elements",
       "!components/ui",
       "!lib/utils.ts",
       "!hooks/use-mobile.ts"

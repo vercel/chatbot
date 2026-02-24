@@ -8,9 +8,9 @@ import {
 } from "react";
 import { useArtifactSelector } from "@/hooks/use-artifact";
 import { cn } from "@/lib/utils";
-import { Loader } from "./elements/loader";
 import { CrossSmallIcon, TerminalWindowIcon } from "./icons";
 import { Button } from "./ui/button";
+import { Spinner } from "./ui/spinner";
 
 export type ConsoleOutputContent = {
   type: "text" | "image";
@@ -148,7 +148,7 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
               ) ? (
                 <div className="flex flex-row gap-2">
                   <div className="mt-0.5 mb-auto size-fit self-center">
-                    <Loader size={16} />
+                    <Spinner className="size-4" />
                   </div>
                   <div className="text-muted-foreground">
                     {consoleOutput.status === "in_progress"

@@ -1,22 +1,36 @@
 "use client";
 
-import { motion } from "motion/react";
-import {
-  type CSSProperties,
-  type ElementType,
-  type JSX,
-  memo,
-  useMemo,
-} from "react";
-import { cn } from "@/lib/utils";
+import type { MotionProps } from "motion/react";
+import type { CSSProperties, ElementType, JSX } from "react";
 
-export type TextShimmerProps = {
+import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
+import { memo, useMemo } from "react";
+
+type MotionHTMLProps = MotionProps & Record<string, unknown>;
+
+// Cache motion components at module level to avoid creating during render
+const motionComponentCache = new Map<
+  keyof JSX.IntrinsicElements,
+  React.ComponentType<MotionHTMLProps>
+>();
+
+const getMotionComponent = (element: keyof JSX.IntrinsicElements) => {
+  let component = motionComponentCache.get(element);
+  if (!component) {
+    component = motion.create(element);
+    motionComponentCache.set(element, component);
+  }
+  return component;
+};
+
+export interface TextShimmerProps {
   children: string;
   as?: ElementType;
   className?: string;
   duration?: number;
   spread?: number;
-};
+}
 
 const ShimmerComponent = ({
   children,
@@ -25,7 +39,7 @@ const ShimmerComponent = ({
   duration = 2,
   spread = 2,
 }: TextShimmerProps) => {
-  const MotionComponent = motion.create(
+  const MotionComponent = getMotionComponent(
     Component as keyof JSX.IntrinsicElements
   );
 
@@ -51,9 +65,9 @@ const ShimmerComponent = ({
         } as CSSProperties
       }
       transition={{
-        repeat: Number.POSITIVE_INFINITY,
         duration,
         ease: "linear",
+        repeat: Number.POSITIVE_INFINITY,
       }}
     >
       {children}
