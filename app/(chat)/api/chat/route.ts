@@ -30,7 +30,7 @@ import {
   updateMessage,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
-import { OpenChatError } from "@/lib/errors";
+import { ChatbotError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     const json = await request.json();
     requestBody = postRequestBodySchema.parse(json);
   } catch (_) {
-    return new OpenChatError("bad_request:api").toResponse();
+    return new ChatbotError("bad_request:api").toResponse();
   }
 
   try {
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     const session = await auth();
 
     if (!session?.user) {
-      return new OpenChatError("unauthorized:chat").toResponse();
+      return new ChatbotError("unauthorized:chat").toResponse();
     }
 
     const userType: UserType = session.user.type;
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     });
 
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
-      return new OpenChatError("rate_limit:chat").toResponse();
+      return new ChatbotError("rate_limit:chat").toResponse();
     }
 
     const isToolApprovalFlow = Boolean(messages);
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
 
     if (chat) {
       if (chat.userId !== session.user.id) {
-        return new OpenChatError("forbidden:chat").toResponse();
+        return new ChatbotError("forbidden:chat").toResponse();
       }
       if (!isToolApprovalFlow) {
         messagesFromDb = await getMessagesByChatId({ id });
@@ -244,7 +244,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const vercelId = request.headers.get("x-vercel-id");
 
-    if (error instanceof OpenChatError) {
+    if (error instanceof ChatbotError) {
       return error.toResponse();
     }
 
@@ -254,11 +254,11 @@ export async function POST(request: Request) {
         "AI Gateway requires a valid credit card on file to service requests"
       )
     ) {
-      return new OpenChatError("bad_request:activate_gateway").toResponse();
+      return new ChatbotError("bad_request:activate_gateway").toResponse();
     }
 
     console.error("Unhandled error in chat API:", error, { vercelId });
-    return new OpenChatError("offline:chat").toResponse();
+    return new ChatbotError("offline:chat").toResponse();
   }
 }
 
@@ -267,19 +267,19 @@ export async function DELETE(request: Request) {
   const id = searchParams.get("id");
 
   if (!id) {
-    return new OpenChatError("bad_request:api").toResponse();
+    return new ChatbotError("bad_request:api").toResponse();
   }
 
   const session = await auth();
 
   if (!session?.user) {
-    return new OpenChatError("unauthorized:chat").toResponse();
+    return new ChatbotError("unauthorized:chat").toResponse();
   }
 
   const chat = await getChatById({ id });
 
   if (chat?.userId !== session.user.id) {
-    return new OpenChatError("forbidden:chat").toResponse();
+    return new ChatbotError("forbidden:chat").toResponse();
   }
 
   const deletedChat = await deleteChatById({ id });

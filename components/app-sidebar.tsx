@@ -41,9 +41,12 @@ export function AppSidebar({ user }: { user: User | undefined }) {
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
   const handleDeleteAll = () => {
-    const deletePromise = fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, {
-      method: "DELETE",
-    });
+    const deletePromise = fetch(
+      `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`,
+      {
+        method: "DELETE",
+      }
+    );
 
     toast.promise(deletePromise, {
       loading: "Deleting all chats...",
@@ -72,7 +75,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 }}
               >
                 <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  OpenChat
+                  Chatbot
                 </span>
               </Link>
               <div className="flex flex-row gap-1">

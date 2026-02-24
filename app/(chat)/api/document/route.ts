@@ -5,14 +5,14 @@ import {
   getDocumentsById,
   saveDocument,
 } from "@/lib/db/queries";
-import { OpenChatError } from "@/lib/errors";
+import { ChatbotError } from "@/lib/errors";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
   if (!id) {
-    return new OpenChatError(
+    return new ChatbotError(
       "bad_request:api",
       "Parameter id is missing"
     ).toResponse();
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const session = await auth();
 
   if (!session?.user) {
-    return new OpenChatError("unauthorized:document").toResponse();
+    return new ChatbotError("unauthorized:document").toResponse();
   }
 
   const documents = await getDocumentsById({ id });
@@ -29,11 +29,11 @@ export async function GET(request: Request) {
   const [document] = documents;
 
   if (!document) {
-    return new OpenChatError("not_found:document").toResponse();
+    return new ChatbotError("not_found:document").toResponse();
   }
 
   if (document.userId !== session.user.id) {
-    return new OpenChatError("forbidden:document").toResponse();
+    return new ChatbotError("forbidden:document").toResponse();
   }
 
   return Response.json(documents, { status: 200 });
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   const id = searchParams.get("id");
 
   if (!id) {
-    return new OpenChatError(
+    return new ChatbotError(
       "bad_request:api",
       "Parameter id is required."
     ).toResponse();
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user) {
-    return new OpenChatError("not_found:document").toResponse();
+    return new ChatbotError("not_found:document").toResponse();
   }
 
   const {
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     const [doc] = documents;
 
     if (doc.userId !== session.user.id) {
-      return new OpenChatError("forbidden:document").toResponse();
+      return new ChatbotError("forbidden:document").toResponse();
     }
   }
 
@@ -90,14 +90,14 @@ export async function DELETE(request: Request) {
   const timestamp = searchParams.get("timestamp");
 
   if (!id) {
-    return new OpenChatError(
+    return new ChatbotError(
       "bad_request:api",
       "Parameter id is required."
     ).toResponse();
   }
 
   if (!timestamp) {
-    return new OpenChatError(
+    return new ChatbotError(
       "bad_request:api",
       "Parameter timestamp is required."
     ).toResponse();
@@ -106,7 +106,7 @@ export async function DELETE(request: Request) {
   const session = await auth();
 
   if (!session?.user) {
-    return new OpenChatError("unauthorized:document").toResponse();
+    return new ChatbotError("unauthorized:document").toResponse();
   }
 
   const documents = await getDocumentsById({ id });
@@ -114,7 +114,7 @@ export async function DELETE(request: Request) {
   const [document] = documents;
 
   if (document.userId !== session.user.id) {
-    return new OpenChatError("forbidden:document").toResponse();
+    return new ChatbotError("forbidden:document").toResponse();
   }
 
   const documentsDeleted = await deleteDocumentsByIdAfterTimestamp({

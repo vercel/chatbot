@@ -130,9 +130,12 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
     setShowDeleteDialog(false);
 
-    const deletePromise = fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat?id=${chatToDelete}`, {
-      method: "DELETE",
-    });
+    const deletePromise = fetch(
+      `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat?id=${chatToDelete}`,
+      {
+        method: "DELETE",
+      }
+    );
 
     toast.promise(deletePromise, {
       loading: "Deleting chat...",
