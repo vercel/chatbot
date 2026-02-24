@@ -86,6 +86,7 @@ export function Chat({
     regenerate,
     resumeStream,
     addToolApprovalResponse,
+    error
   } = useChat<ChatMessage>({
     id,
     messages: initialMessages,
@@ -223,6 +224,7 @@ export function Chat({
               setMessages={setMessages}
               status={status}
               stop={stop}
+              error={error}
             />
           )}
         </div>
