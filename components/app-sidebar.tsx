@@ -72,7 +72,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 }}
               >
                 <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  OpenChat
+                  Chatbot
                 </span>
               </Link>
               <div className="flex flex-row gap-1">

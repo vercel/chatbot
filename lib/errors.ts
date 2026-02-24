@@ -35,7 +35,7 @@ export const visibilityBySurface: Record<Surface, ErrorVisibility> = {
   activate_gateway: "response",
 };
 
-export class OpenChatError extends Error {
+export class ChatbotError extends Error {
   type: ErrorType;
   surface: Surface;
   statusCode: number;

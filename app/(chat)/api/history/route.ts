@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { deleteAllChatsByUserId, getChatsByUserId } from "@/lib/db/queries";
-import { OpenChatError } from "@/lib/errors";
+import { ChatbotError } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const endingBefore = searchParams.get("ending_before");
 
   if (startingAfter && endingBefore) {
-    return new OpenChatError(
+    return new ChatbotError(
       "bad_request:api",
       "Only one of starting_after or ending_before can be provided."
     ).toResponse();
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const session = await auth();
 
   if (!session?.user) {
-    return new OpenChatError("unauthorized:chat").toResponse();
+    return new ChatbotError("unauthorized:chat").toResponse();
   }
 
   const chats = await getChatsByUserId({
@@ -37,7 +37,7 @@ export async function DELETE() {
   const session = await auth();
 
   if (!session?.user) {
-    return new OpenChatError("unauthorized:chat").toResponse();
+    return new ChatbotError("unauthorized:chat").toResponse();
   }
 
   const result = await deleteAllChatsByUserId({ userId: session.user.id });

@@ -1,13 +1,13 @@
 import { auth } from "@/app/(auth)/auth";
 import { getSuggestionsByDocumentId } from "@/lib/db/queries";
-import { OpenChatError } from "@/lib/errors";
+import { ChatbotError } from "@/lib/errors";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const documentId = searchParams.get("documentId");
 
   if (!documentId) {
-    return new OpenChatError(
+    return new ChatbotError(
       "bad_request:api",
       "Parameter documentId is required."
     ).toResponse();
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const session = await auth();
 
   if (!session?.user) {
-    return new OpenChatError("unauthorized:suggestions").toResponse();
+    return new ChatbotError("unauthorized:suggestions").toResponse();
   }
 
   const suggestions = await getSuggestionsByDocumentId({
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   }
 
   if (suggestion.userId !== session.user.id) {
-    return new OpenChatError("forbidden:api").toResponse();
+    return new ChatbotError("forbidden:api").toResponse();
   }
 
   return Response.json(suggestions, { status: 200 });
