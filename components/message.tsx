@@ -179,6 +179,19 @@ const PurePreviewMessage = ({
               const widthClass = "w-[min(100%,450px)]";
 
               if (state === "output-available") {
+                const output = part.output as any;
+
+                if (output && "error" in output) {
+                  return (
+                    <div
+                      className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+                      key={toolCallId}
+                    >
+                      Error getting weather: {String(output.error)}
+                    </div>
+                  );
+                }
+
                 return (
                   <div className={widthClass} key={toolCallId}>
                     <Weather weatherAtLocation={part.output} />
