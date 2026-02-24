@@ -77,14 +77,17 @@ export function PureMessageActions({
         data-testid="message-upvote"
         disabled={vote?.isUpvoted}
         onClick={() => {
-          const upvote = fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`, {
-            method: "PATCH",
-            body: JSON.stringify({
-              chatId,
-              messageId: message.id,
-              type: "up",
-            }),
-          });
+          const upvote = fetch(
+            `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({
+                chatId,
+                messageId: message.id,
+                type: "up",
+              }),
+            }
+          );
 
           toast.promise(upvote, {
             loading: "Upvoting Response...",
@@ -126,14 +129,17 @@ export function PureMessageActions({
         data-testid="message-downvote"
         disabled={vote && !vote.isUpvoted}
         onClick={() => {
-          const downvote = fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`, {
-            method: "PATCH",
-            body: JSON.stringify({
-              chatId,
-              messageId: message.id,
-              type: "down",
-            }),
-          });
+          const downvote = fetch(
+            `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({
+                chatId,
+                messageId: message.id,
+                type: "down",
+              }),
+            }
+          );
 
           toast.promise(downvote, {
             loading: "Downvoting Response...",

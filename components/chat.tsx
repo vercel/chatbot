@@ -166,12 +166,18 @@ export function Chat({
       });
 
       setHasAppendedQuery(true);
-      window.history.replaceState({}, "", `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${id}`);
+      window.history.replaceState(
+        {},
+        "",
+        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${id}`
+      );
     }
   }, [query, sendMessage, hasAppendedQuery, id]);
 
   const { data: votes } = useSWR<Vote[]>(
-    messages.length >= 2 ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote?chatId=${id}` : null,
+    messages.length >= 2
+      ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote?chatId=${id}`
+      : null,
     fetcher
   );
 
