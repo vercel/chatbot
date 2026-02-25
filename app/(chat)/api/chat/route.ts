@@ -45,6 +45,7 @@ import { createBrowserTool } from '@/lib/ai/tools/browser';
 import { gapAnalysis } from '@/lib/ai/tools/gap-analysis';
 import { formSummary } from '@/lib/ai/tools/form-summary';
 import { webAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
+import { compressMessageHistory } from '@/lib/ai/context-compression';
 
 // Feature flag for AI SDK agent vs Mastra
 const useAiSdkAgent = process.env.USE_AI_SDK_AGENT === 'true';
@@ -188,6 +189,22 @@ export async function POST(request: Request) {
             },
             stopWhen: stepCountIs(500),
             abortSignal: request.signal,
+            // Compress message history before every step in the agent loop,
+            // not just on the initial request. This prunes browser snapshots
+            // and large tool results continuously across all 500 possible steps.
+            prepareStep: async ({ messages: stepMessages }) => {
+              const compressed = await compressMessageHistory(stepMessages);
+              return { messages: compressed };
+            },
+            // Emit cumulative token usage after each step so the client can
+            // display it in real-time via the Context component.
+            onStepFinish: ({ usage }) => {
+              dataStream.write({
+                type: 'data-token-usage',
+                data: usage,
+                transient: true,
+              });
+            },
             experimental_telemetry: {
               isEnabled: isProductionEnvironment,
               functionId: 'web-automation-agent',

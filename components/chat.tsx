@@ -21,6 +21,7 @@ import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
 import { BenefitApplicationsLanding } from './benefit-applications-landing';
+import { TokenUsageProvider } from '@/hooks/use-token-usage';
 
 // Feature flag for AI SDK agent vs Mastra (client-side)
 const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
@@ -53,6 +54,15 @@ export function Chat({
   const { setDataStream } = useDataStream();
 
   const [input, setInput] = useState<string>('');
+
+  // Local state; passed to TokenUsageProvider so SideChatHeader can read it
+  // without prop threading through the Artifact memo boundary.
+  const [tokenUsage, setTokenUsage] = useState<{
+    inputTokens: number;
+    outputTokens: number;
+    cachedInputTokens: number;
+    currentInputTokens: number;
+  }>({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, currentInputTokens: 0 });
   
 
   const {
@@ -98,6 +108,25 @@ export function Chat({
     }),
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
+      // Capture per-step token usage emitted by onStepFinish in route.ts
+      const part = dataPart as any;
+      if (part?.type === 'data-token-usage' && part.data) {
+        const {
+          inputTokens = 0,
+          outputTokens = 0,
+          cachedInputTokens = 0,
+        } = part.data as {
+          inputTokens: number;
+          outputTokens: number;
+          cachedInputTokens?: number;
+        };
+        setTokenUsage((prev) => ({
+          inputTokens: prev.inputTokens + inputTokens,
+          outputTokens: prev.outputTokens + outputTokens,
+          cachedInputTokens: prev.cachedInputTokens + (cachedInputTokens ?? 0),
+          currentInputTokens: inputTokens,
+        }));
+      }
     },
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
@@ -290,7 +319,7 @@ export function Chat({
   // Special UI for web automation agent - show landing page
   if (initialChatModel === 'web-automation-model' && messages.length === 0) {
     return (
-      <>
+      <TokenUsageProvider value={tokenUsage}>
         <div className="flex h-dvh bg-chat-background flex-col">
           <BenefitApplicationsLanding
             input={input}
@@ -325,13 +354,13 @@ export function Chat({
           selectedVisibilityType={visibilityType}
           initialChatModel={initialChatModel}
         />
-      </>
+      </TokenUsageProvider>
     );
   }
 
   // Unified layout for all models
   return (
-    <>
+    <TokenUsageProvider value={tokenUsage}>
       {!isArtifactVisible && (
         <div className="flex h-dvh bg-background flex-col">
           <div className="flex flex-col min-w-0 size-full">
@@ -388,6 +417,6 @@ export function Chat({
         selectedVisibilityType={visibilityType}
         initialChatModel={initialChatModel}
       />
-    </>
+    </TokenUsageProvider>
   );
 }
