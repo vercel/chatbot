@@ -8,13 +8,12 @@
 
 ## 動作フロー
 
-システムは以下の5つのフェーズで動作します：
+システムは以下の4つのフェーズで動作します：
 
 1. **初期ヒアリング**: 基本情報（アプリ名、モード、アイコン等）を収集
 2. **詳細ヒアリング**: 入力、処理フロー、出力、機能設定を確認
 3. **フロー確認**: ワークフロー全体像を提示し、ユーザーに確認
-4. **DSL生成**: YAMLファイルを自動生成して保存
-5. **Difyへのアップロード**: ユーザーの許可を得て自動インポート（オプション）
+4. **DSL生成**: YAMLファイルを自動生成してdsl/ディレクトリに保存
 
 ---
 
@@ -51,7 +50,69 @@
 - **アイコン**: 絵文字またはアイコン名
 - **背景色**: 16進数カラーコード
 
+#### 1.3 入力データの種類（重要：必ず確認）
+
+**必ず以下を確認してください：**
+
+ユーザーからどのような入力を受け取りますか？
+
+- **テキスト入力のみ**: 質問や指示を自由に入力
+- **ファイル入力**: PDF、Excel、画像、音声などのファイルをアップロード
+- **テキスト + ファイル**: 両方受け取る
+- **選択肢**: ドロップダウンやラジオボタンで選択
+- **入力なし**: スケジュールトリガーやWebhookで自動実行（ワークフローモードのみ）
+
+**ファイル入力がある場合、以下を確認：**
+1. **対応ファイル形式**: PDF、Excel、画像、音声、動画など
+2. **ファイル拡張子**: .pdf、.xlsx、.jpg、.mp3など
+3. **ファイルサイズ制限**: デフォルト50MB
+4. **複数ファイル**: 同時アップロード可能にするか
+
+**重要原則: ユーザーが要求した入力のみを設定する**
+
+- ユーザーが「PDFファイルとクエリ」と要求した場合:
+  - Startノードにfile変数（PDF用）とquery変数（テキスト）の2つのみを設定
+  - allowed_file_types: [document]、allowed_file_extensions: [.pdf]
+  - 画像、音声、動画などの不要な形式は追加しない
+
+- ユーザーが「Excelファイルのみ」と要求した場合:
+  - Startノードにfile変数（Excel用）のみを設定
+  - allowed_file_types: [document]、allowed_file_extensions: [.xlsx, .xls]
+  - クエリ変数は追加しない
+
+- ユーザーが「テキスト入力のみ」と要求した場合:
+  - Startノードにquery変数（テキスト）のみを設定
+  - ファイル変数は追加しない
+
+**禁止事項:**
+- ユーザーが要求していない入力形式を勝手に追加しない
+- 例のYAMLをそのままコピーして使わない（ユーザーの要求に合わせて調整する）
+- 「念のため」「将来的に使うかも」という理由で余計な変数を追加しない
+
 ### フェーズ2: 詳細ヒアリング
+
+**重要**: フェーズ1で不足している情報がある場合、DSL生成を進める前に必ず確認してください。
+
+#### 2.0.1 入力データの詳細確認（フェーズ1で未確認の場合）
+
+フェーズ1で入力データの種類を確認していない場合、ここで必ず確認：
+
+```
+【入力データの確認】
+このワークフローはどのような入力を受け取りますか？
+
+1. テキスト入力（質問、指示など）
+2. ファイル入力（PDF、Excel、画像など）
+3. テキスト + ファイル
+4. 選択肢（ドロップダウン）
+5. 入力なし（自動実行）
+
+→ ユーザーが「2」または「3」を選択した場合：
+  - 対応するファイル形式は？（PDF / Excel / 画像 / 音声 / その他）
+  - ファイル拡張子は？（.pdf, .xlsx, .jpg など）
+  - ファイルサイズ制限は？（デフォルト: 50MB）
+  - 複数ファイルの同時アップロードは必要ですか？
+```
 
 #### 2.0 トリガーの確認（ワークフローモードでトリガーを選択した場合）
 
@@ -814,6 +875,15 @@
 - フローは正しいですか？
 - 追加/変更したい処理はありますか？
 - 分岐や繰り返しは適切ですか？
+- **入力変数がユーザーの要求と一致していますか？（最重要）**
+  - ユーザーが「PDFとクエリ」と要求 → Startノードにfile + query のみ
+  - ユーザーが「PDFのみ」と要求 → Startノードにfile のみ
+  - ユーザーが「テキストのみ」と要求 → Startノードにquery のみ
+  - 勝手に追加の入力変数を設定していませんか？
+- **ファイル拡張子がユーザーの要求と一致していますか？**
+  - ユーザーが「PDF」と要求 → allowed_file_extensions: [.pdf] のみ
+  - ユーザーが「Excel」と要求 → allowed_file_extensions: [.xlsx, .xls] のみ
+  - 不要な拡張子を追加していませんか？
 - チャットフローモードの場合: Answerノードが最後にありますか？
 - ワークフローモードの場合: Answerノードは不要です（Endノードで自動終了）
 - トリガーノードを使用する場合: トリガーの設定（スケジュール、Webhook URL等）は正しいですか？
@@ -837,6 +907,10 @@
 **FlowSpec（例。YAMLに変換する前の仕様）:**
 - **app**: name / description / mode / icon / icon_background
 - **trigger**（必要な場合）: schedule / webhook / start
+- **inputs**（ユーザーの要求に基づく）:
+  - ユーザーが要求した入力のみをリストアップ
+  - 例: file（PDF用）+ query、または file のみ、または query のみ
+  - 不要な入力は含めない
 - **nodes**（順序と役割）:
   - node_id / type / inputs（variable_selector）/ outputs / 目的（1行）
 - **edges**（接続）:
@@ -2153,7 +2227,1002 @@ url: '{{#env.SLACK_WEBHOOK_URL#}}'
 # Startノードには追加しない
 ```
 
-#### 4.2 保存先
+#### 4.2 最小構成例（validation参考用）
+
+以下は、最もシンプルなワークフローの例です。DSL生成時の参考にしてください。
+
+**シンプルなQ&A（advanced-chatモード）:**
+
+```yaml
+kind: app
+version: 0.1.5
+app:
+  description: 最もシンプルな質問応答ボット
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: シンプルQ&A
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: 1-2
+      source: '1'
+      target: '2'
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 2-3
+      source: '2'
+      target: '3'
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: Start
+        type: start
+        variables:
+        - label: query
+          max_length: null
+          options: []
+          required: true
+          type: text-input
+          variable: query
+      height: 90
+      id: '1'
+      position:
+        x: 30
+        y: 100
+      positionAbsolute:
+        x: 30
+        y: 100
+      selected: false
+      type: start
+      width: 244
+    - data:
+        context:
+          enabled: false
+        desc: ''
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 50
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: user-message
+          role: user
+          text: '{{#1.query#}}'
+        selected: false
+        title: LLM
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: '2'
+      position:
+        x: 324
+        y: 100
+      positionAbsolute:
+        x: 324
+        y: 100
+      selected: false
+      type: llm
+      width: 244
+    - data:
+        answer: '{{#2.text#}}'
+        desc: ''
+        selected: false
+        title: Answer
+        type: answer
+      height: 107
+      id: '3'
+      position:
+        x: 618
+        y: 100
+      positionAbsolute:
+        x: 618
+        y: 100
+      selected: false
+      type: answer
+      width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1
+```
+
+**workflowモード（最小構成）:**
+
+```yaml
+kind: app
+version: 0.1.5
+app:
+  description: バックグラウンド処理用の最小ワークフロー
+  icon: ⚙️
+  icon_background: '#E0F2FE'
+  mode: workflow
+  name: シンプルワークフロー
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: 1-2
+      source: '1'
+      target: '2'
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: Start
+        type: start
+        variables:
+        - label: input
+          max_length: null
+          options: []
+          required: true
+          type: text-input
+          variable: input
+      height: 90
+      id: '1'
+      position:
+        x: 30
+        y: 100
+      positionAbsolute:
+        x: 30
+        y: 100
+      selected: false
+      type: start
+      width: 244
+    - data:
+        context:
+          enabled: false
+        desc: ''
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 50
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system-message
+          role: system
+          text: 'あなたは親切なアシスタントです'
+        - id: user-message
+          role: user
+          text: '{{#1.input#}}'
+        selected: false
+        title: LLM
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: '2'
+      position:
+        x: 324
+        y: 100
+      positionAbsolute:
+        x: 324
+        y: 100
+      selected: false
+      type: llm
+      width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1
+```
+
+**重要なポイント:**
+- `kind: app` と `version: 0.1.5` は必須
+- `edges` の `id` は `{source}-{target}` の形式
+- `variable_selector` は常に配列形式: `['1', 'query']`
+- 変数参照は `{{#node_id.variable#}}` の形式
+- workflowモードでは `answer` ノードは不要（LLMノードで終了）
+- 各ノードに `position`, `positionAbsolute`, `height`, `width` が必要
+
+**ファイル処理ワークフロー（advanced-chatモード、PDF要約）:**
+
+```yaml
+kind: app
+version: 0.1.5
+app:
+  description: PDFファイルをアップロードして要約するシステム
+  icon: 📄
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: PDF要約システム
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: true
+      allowed_file_types:
+      - document
+      allowed_file_extensions:
+      - pdf
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      fileUploadConfig:
+        file_size_limit: 50
+      image:
+        enabled: false
+      number_limits: 1
+    opening_statement: 'PDFファイルをアップロードしてください。内容を要約します。'
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: 1-2
+      source: '1'
+      target: '2'
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 2-3
+      source: '2'
+      target: '3'
+    nodes:
+    - data:
+        desc: PDFファイルを受け取ります
+        selected: false
+        title: 開始
+        type: start
+        variables:
+        - label: PDFファイル
+          required: true
+          type: file
+          variable: file
+          allowed_file_types:
+          - document
+          allowed_file_extensions:
+          - pdf
+          max_length: null
+          options: []
+      height: 116
+      id: '1'
+      position:
+        x: 30
+        y: 100
+      positionAbsolute:
+        x: 30
+        y: 100
+      selected: false
+      type: start
+      width: 244
+    - data:
+        context:
+          enabled: false
+        desc: PDFの内容を要約
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 50
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system-message
+          role: system
+          text: 'あなたはPDF要約の専門家です。アップロードされたPDFの内容を簡潔に要約してください。'
+        - id: user-message
+          role: user
+          text: '以下のPDFファイルの内容を要約してください：{{#1.file#}}'
+        selected: false
+        title: PDF要約
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: '2'
+      position:
+        x: 324
+        y: 100
+      positionAbsolute:
+        x: 324
+        y: 100
+      selected: false
+      type: llm
+      width: 244
+    - data:
+        answer: '{{#2.text#}}'
+        desc: ''
+        selected: false
+        title: 要約結果
+        type: answer
+      height: 107
+      id: '3'
+      position:
+        x: 618
+        y: 100
+      positionAbsolute:
+        x: 618
+        y: 100
+      selected: false
+      type: answer
+      width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1
+```
+
+**ファイル処理ワークフローで必ず確認すること:**
+1. **Startノードのvariables**:
+   - `type: file` のエントリが存在
+   - `variable: file` が設定されている
+   - `allowed_file_types` と `allowed_file_extensions` が設定されている
+   - `required: true` が設定されている（必須の場合）
+
+2. **workflow.features.file_upload**:
+   - `enabled: true` が設定されている
+   - `allowed_file_types` と `allowed_file_extensions` がStartノードと一致
+   - `number_limits` でアップロード可能ファイル数を指定（通常は1）
+   - `fileUploadConfig.file_size_limit` でサイズ制限を指定（デフォルト50MB）
+
+3. **LLMノードでのファイル参照**:
+   - `{{#1.file#}}` の形式でファイルを参照
+   - GPT-4oなどのビジョン対応モデルでPDFや画像を処理可能
+
+**実践例1: ファイル+クエリのワークフロー（workflowモード）:**
+
+PDFファイルをアップロードし、そのPDFに対して質問できるワークフローです。
+
+```yaml
+kind: app
+version: 0.1.5
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: PDFクエリ
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .pdf
+      allowed_file_types:
+      - document
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: true
+      fileUploadConfig:
+        file_size_limit: 50
+      number_limits: 1
+    retriever_resource:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: 1-2
+      source: '1'
+      target: '2'
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: end
+      id: 2-3
+      source: '2'
+      target: '3'
+    nodes:
+    - data:
+        selected: false
+        title: ユーザー入力
+        type: start
+        variables:
+        - allowed_file_types:
+          - document
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+          label: ファイル
+          required: true
+          type: file
+          variable: file_template
+          allowed_file_extensions:
+          - .pdf
+          max_length: 5
+        - label: 質問
+          max_length: 200
+          required: true
+          type: text-input
+          variable: query
+      height: 134
+      id: '1'
+      position:
+        x: 80
+        y: 282
+      positionAbsolute:
+        x: 80
+        y: 282
+      selected: false
+      type: start
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1'
+          - query
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system-message
+          role: system
+          text: |
+            あなたはファイルを要約・分析するスペシャリストです。
+            {{#1.file_template#}}に含まれる情報をもとに、{{#1.query#}}の回答を答えてください。
+        selected: false
+        title: LLM
+        type: llm
+        vision:
+          enabled: false
+      height: 87
+      id: '2'
+      position:
+        x: 382
+        y: 282
+      positionAbsolute:
+        x: 382
+        y: 282
+      selected: false
+      type: llm
+      width: 241
+    - data:
+        outputs:
+        - value_selector:
+          - '2'
+          - text
+          value_type: string
+          variable: output
+        selected: false
+        title: 出力
+        type: end
+      height: 87
+      id: '3'
+      position:
+        x: 683
+        y: 282
+      positionAbsolute:
+        x: 683
+        y: 282
+      selected: false
+      type: end
+      width: 241
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1
+```
+
+**重要なポイント（ファイル+クエリ）:**
+- Startノードに2つの変数: `file_template`（ファイル）と `query`（テキスト）
+- `context.enabled: true` で `query` をコンテキストとして設定
+- プロンプトで `{{#1.file_template#}}` と `{{#1.query#}}` の両方を参照
+- workflowモードなので `end` ノードで終了（`answer` ノードは不要）
+- **ユーザーが「PDFファイル+クエリ」と要求した場合、allowed_file_typesは`document`のみ、allowed_file_extensionsは`.pdf`のみに設定**
+- **不要なファイル形式（image, audio, videoなど）を追加しない**
+
+**実践例2: ファイル種別判定ワークフロー（advanced-chatモード）:**
+
+アップロードされたファイルがPDFかExcelかを判定し、種別に応じた専用LLMで要約します。
+
+```yaml
+kind: app
+version: 0.1.5
+app:
+  name: ファイル種別判定サマライザー
+  description: アップロードされたファイルがPDFかExcelかを判定し、種別に応じた専用LLMで要約します。
+  icon: 📄
+  icon_background: '#E0F2FE'
+  mode: advanced-chat
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: true
+      allowed_file_types:
+      - document
+      allowed_file_extensions:
+      - pdf
+      - xlsx
+      - xls
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      fileUploadConfig:
+        file_size_limit: 50
+      number_limits: 1
+    opening_statement: 'PDF または Excel（.xlsx/.xls）をアップロードしてください。内容を要約します。'
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: code
+      id: '1-2'
+      source: '1'
+      target: '2'
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: '2-3'
+      source: '2'
+      target: '3'
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: '3-4'
+      source: '3'
+      sourceHandle: 'pdf'
+      target: '4'
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: '3-5'
+      source: '3'
+      sourceHandle: 'excel'
+      target: '5'
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: answer
+      id: '3-6'
+      source: '3'
+      sourceHandle: 'false'
+      target: '6'
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: '4-7'
+      source: '4'
+      target: '7'
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: '5-8'
+      source: '5'
+      target: '8'
+    nodes:
+    - data:
+        desc: PDF/Excelファイルを受け取ります
+        selected: false
+        title: 開始
+        type: start
+        variables:
+        - label: ファイル
+          required: true
+          type: file
+          variable: file
+          allowed_file_types:
+          - document
+          allowed_file_extensions:
+          - pdf
+          - xlsx
+          - xls
+      height: 116
+      id: '1'
+      position:
+        x: 40
+        y: 220
+      positionAbsolute:
+        x: 40
+        y: 220
+      selected: false
+      type: start
+      width: 260
+    - data:
+        code: |
+          def main(file):
+              """
+              Startノードのfile（アップロードファイル）から拡張子を推定して分岐用フラグを作る。
+              Difyのファイルオブジェクトは環境によりキーが異なる場合があるため、複数候補から取得する。
+              """
+              import json
+
+              filename = ""
+
+              # fileオブジェクトからファイル名を取得（複数のキー名をチェック）
+              if isinstance(file, dict):
+                  filename = file.get("name") or file.get("filename") or file.get("original_name") or file.get("transfer_method") or ""
+              elif isinstance(file, str):
+                  # 文字列の場合はそのまま使用
+                  filename = file
+              else:
+                  # その他の型の場合は文字列化
+                  filename = str(file) if file else ""
+
+              # 拡張子を抽出
+              lower = filename.lower()
+              ext = ""
+              if "." in lower:
+                  ext = lower.rsplit(".", 1)[-1]
+
+              # ファイル種別を判定
+              is_pdf = (ext == "pdf")
+              is_excel = (ext in ["xlsx", "xls"])
+
+              return {
+                  "filename": filename,
+                  "ext": ext,
+                  "is_pdf": is_pdf,
+                  "is_excel": is_excel
+              }
+        code_language: python3
+        desc: ファイル拡張子を推定して分岐用フラグを生成
+        outputs:
+          filename:
+            type: string
+          ext:
+            type: string
+          is_pdf:
+            type: boolean
+          is_excel:
+            type: boolean
+        selected: false
+        title: ファイル種別判定
+        type: code
+        variables:
+        - value_selector:
+          - '1'
+          - file
+          variable: file
+      height: 260
+      id: '2'
+      position:
+        x: 340
+        y: 220
+      positionAbsolute:
+        x: 340
+        y: 220
+      selected: false
+      type: code
+      width: 320
+    - data:
+        desc: PDF/Excelで分岐します
+        selected: false
+        title: 種別分岐
+        type: if-else
+        cases:
+        - case_id: pdf
+          logical_operator: and
+          conditions:
+          - comparison_operator: is
+            varType: boolean
+            variable_selector:
+            - '2'
+            - is_pdf
+            value: 'true'
+        - case_id: excel
+          logical_operator: and
+          conditions:
+          - comparison_operator: is
+            varType: boolean
+            variable_selector:
+            - '2'
+            - is_excel
+            value: 'true'
+      height: 210
+      id: '3'
+      position:
+        x: 700
+        y: 220
+      positionAbsolute:
+        x: 700
+        y: 220
+      selected: false
+      type: if-else
+      width: 260
+    - data:
+        context:
+          enabled: false
+        desc: PDF要約専用LLM
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 10
+        model:
+          completion_params:
+            temperature: 0.3
+            max_tokens: 1200
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            あなたはPDF文書の要約に特化したアシスタントです。
+            次の方針で要約してください：
+            - 見出し→要点→結論の順に整理
+            - 重要な数値・固有名詞・結論を落とさない
+            - 推測はせず、入力にある情報のみを使う
+        - id: user
+          role: user
+          text: |
+            以下はユーザーがアップロードしたPDFファイルです。
+            ファイル名: {{#2.filename#}}
+            拡張子: {{#2.ext#}}
+
+            1) 文書の概要（3-5行）
+            2) 重要ポイント（箇条書き5-10個）
+            3) アクションアイテム（あれば）
+            4) 用語/略語（あれば）
+        selected: false
+        title: PDF要約LLM
+        type: llm
+        vision:
+          enabled: false
+      height: 140
+      id: '4'
+      position:
+        x: 1020
+        y: 140
+      positionAbsolute:
+        x: 1020
+        y: 140
+      selected: false
+      type: llm
+      width: 320
+    - data:
+        context:
+          enabled: false
+        desc: Excel要約専用LLM
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 10
+        model:
+          completion_params:
+            temperature: 0.2
+            max_tokens: 1200
+          mode: chat
+          name: gpt-4o
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            あなたはExcel（表データ）要約に特化したアシスタントです。
+            次の方針で要約してください：
+            - まずシート/列の想定構造を整理（不明なら不明と明記）
+            - 主要な傾向、外れ値、比較、重要指標を抽出
+            - 数値や前提が無い推測はしない
+        - id: user
+          role: user
+          text: |
+            以下はユーザーがアップロードしたExcelファイルです。
+            ファイル名: {{#2.filename#}}
+            拡張子: {{#2.ext#}}
+
+            1) データ概要（何の表か・粒度・期間など推定できる範囲で）
+            2) 重要な傾向（箇条書き）
+            3) 注意点（欠損/偏り/外れ値がありそうなら）
+            4) 次に見るべき分析観点（3つ）
+        selected: false
+        title: Excel要約LLM
+        type: llm
+        vision:
+          enabled: false
+      height: 140
+      id: '5'
+      position:
+        x: 1020
+        y: 340
+      positionAbsolute:
+        x: 1020
+        y: 340
+      selected: false
+      type: llm
+      width: 320
+    - data:
+        answer: |
+          対応していないファイル形式です。
+
+          - 対応: PDF（.pdf）, Excel（.xlsx / .xls）
+          - 受領ファイル名: {{#2.filename#}}
+          - 推定拡張子: {{#2.ext#}}
+        desc: ''
+        selected: false
+        title: 非対応形式
+        type: answer
+      height: 140
+      id: '6'
+      position:
+        x: 1020
+        y: 520
+      positionAbsolute:
+        x: 1020
+        y: 520
+      selected: false
+      type: answer
+      width: 320
+    - data:
+        answer: '{{#4.text#}}'
+        desc: PDF要約結果を表示
+        selected: false
+        title: PDF要約結果
+        type: answer
+      height: 107
+      id: '7'
+      position:
+        x: 1380
+        y: 140
+      positionAbsolute:
+        x: 1380
+        y: 140
+      selected: false
+      type: answer
+      width: 260
+    - data:
+        answer: '{{#5.text#}}'
+        desc: Excel要約結果を表示
+        selected: false
+        title: Excel要約結果
+        type: answer
+      height: 107
+      id: '8'
+      position:
+        x: 1380
+        y: 340
+      positionAbsolute:
+        x: 1380
+        y: 340
+      selected: false
+      type: answer
+      width: 260
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.9
+dependencies: []
+```
+
+**重要なポイント（ファイル種別判定）:**
+- Startノードで1つのfile変数を受け取る
+- Codeノードでファイル拡張子を判定（is_pdf, is_excelのboolean値を出力）
+- If-Elseノードで3つの分岐:
+  - `sourceHandle: 'pdf'`: PDFの場合
+  - `sourceHandle: 'excel'`: Excelの場合
+  - `sourceHandle: 'false'`: その他の場合（else相当）
+- 各分岐で異なるLLMノードが異なるプロンプトで処理
+- 複数のAnswerノードを使用（各分岐で異なる応答）
+
+**ファイル処理ワークフローの設計パターン:**
+
+1. **シンプルなファイル処理**: Start → LLM → Answer（またはEnd）
+2. **ファイル+クエリ**: Start（file + query） → LLM → Answer/End
+3. **ファイル種別分岐**: Start → Code（判定） → If-Else → 複数のLLM → 複数のAnswer
+4. **ファイル抽出+処理**: Start → Document Extractor → LLM → Answer
+
+#### 4.3 保存先
 
 生成されたDSLファイルは以下のディレクトリに保存：
 
@@ -2161,7 +3230,7 @@ url: '{{#env.SLACK_WEBHOOK_URL#}}'
 /Users/kawashimariku/Downloads/DIfy/DSL自動作成/dify-automation/DSL生成/{ファイル名}.yml
 ```
 
-#### 4.3 生成後の対応
+#### 4.4 生成後の対応
 
 1. **成功メッセージ**:
    ```
@@ -2174,157 +3243,434 @@ url: '{{#env.SLACK_WEBHOOK_URL#}}'
    - 推奨設定
    - 関連するプラグイン
 
-### フェーズ5: Difyへのアップロード（オプション）
+---
 
-DSLファイルが正常に生成された後、ユーザーにデプロイするかを確認します。
+## よくあるvalidationエラーと修正例
 
-#### 5.1 デプロイ確認
+DSL生成時によく発生するエラーとその修正方法を以下に示します。
 
-DSL生成後、以下のように確認：
+### エラー1: variable_selectorの形式が不正
 
-```
-📤 このDSLファイルをDifyにデプロイしますか？
-
-1. ✅ はい - 自動的にDifyにインポートします
-2. ❌ いいえ - 手動でアップロードします
-
-選択してください（1/2）:
+❌ **間違い:**
+```yaml
+variable_selector: start.query  # 文字列形式は不正
 ```
 
-**前提条件:**
-- ブラウザ（Chromium）がデバッグモードで起動済み（`--remote-debugging-port=9222`）
-- Difyにログイン済み（`http://localhost/apps` にアクセス可能な状態）
-
-#### 5.2 自動インポート実行
-
-ユーザーが「はい」を選択した場合、直接インポートを実行：
-
-```
-📤 DSLファイルを自動インポート中...
-
-実行コマンド:
-python tools/dify_connect_import.py DSL生成/{ファイル名}.yml
-
-📂 既存のChromiumブラウザに接続中...
-✅ ブラウザに接続しました
-✅ インポートダイアログを開きました
-📤 ファイルをアップロード中...
-✅ ファイルをアップロードしました
-🚀 「作成する」ボタンをクリック中...
-✅ DSLファイルのインポートが完了しました！
-📸 スクリーンショット保存: dify_import_{名前}_{タイムスタンプ}.png
+✅ **正しい:**
+```yaml
+variable_selector:
+  - 'start'
+  - 'query'
+# または
+variable_selector: ['start', 'query']
 ```
 
-#### 5.3 アップロード実行フロー
+### エラー2: 変数参照の形式が不正
 
-**シンプルフロー:**
-
-```
-[DSL生成完了]
-    ↓
-[デプロイ確認] → ユーザーが「はい」を選択
-    ↓
-[DSL自動インポート] → tools/dify_connect_import.py を実行
-    ↓
-[インポート完了] → スクリーンショット保存
+❌ **間違い:**
+```yaml
+prompt_template:
+  - role: user
+    text: '{{start.query}}'  # 古い形式
 ```
 
-**前提条件:**
-- ブラウザは手動で起動済み（デバッグモード: `--remote-debugging-port=9222`）
-- Difyにログイン済み
-
-#### 5.5 デプロイ完了
-
-アップロードが成功したら：
-
-```
-════════════════════════════════════════════════════════════
-   ✨ Difyへのインポートが正常に完了しました！   
-════════════════════════════════════════════════════════════
-
-📊 完了情報:
-  - アプリ名: {アプリケーション名}
-  - ファイル: DSL生成/{ファイル名}.yml
-  - スクリーンショット: dify_import_{名前}_{タイムスタンプ}.png
-
-🎯 次のステップ:
-  1. Difyの管理画面でワークフローを確認
-     URL: http://localhost/apps
-  
-  2. 環境変数の設定（必要な場合）
-     - APIキーなどの機密情報を設定
-  
-  3. テスト実行
-     - サンプル入力でワークフローをテスト
-     - 各ノードが正しく動作するか確認
-  
-  4. カスタマイズ
-     - 必要に応じてプロンプトやパラメータを調整
-
-📚 詳細情報:
-  - DSL作成マニュアル: Dify_DSL作成マニュアル.md
-  - ツール使用方法: tools/README.md
+✅ **正しい:**
+```yaml
+prompt_template:
+  - role: user
+    text: '{{#1.query#}}'  # 新しい形式: {{#ノードID.変数名#}}
 ```
 
-**ブラウザの終了:**
-アップロード完了後、Chromiumブラウザは自動的には閉じません。
-必要に応じて手動で閉じるか、次回のために開いたままにしておくことができます。
+### エラー3: sourceHandleの型が不正
 
-#### 5.6 エラーハンドリング
-
-アップロードに失敗した場合：
-
-```
-❌ アップロードに失敗しました
-
-【よくあるエラーと対処法】
-
-1. 「Chromiumが起動していません」
-   → ./tools/launch_browser.sh を実行してください
-
-2. 「DSL ファイルをインポートボタンが見つかりません」
-   → Difyのホームページ（/apps）にいることを確認
-   → ブラウザでページが完全に読み込まれるまで待つ
-
-3. 「接続エラー」
-   → Chromiumが起動しているか確認:
-     curl http://localhost:9222/json/version
-
-4. 「依存パッケージがありません」
-   → pip3 install -r tools/requirements_dsl_import.txt
-
-【手動インポート】
-自動アップロードができない場合、手動でインポートできます：
-1. Difyの管理画面を開く: http://localhost/apps
-2. 「DSL ファイルをインポート」ボタンをクリック
-3. DSL生成/{ファイル名}.yml を選択
-4. 「作成する」をクリック
-
-エラーログ: error_{タイムスタンプ}.png に保存されました
+❌ **間違い:**
+```yaml
+edges:
+  - source: if_else_node
+    target: llm_true
+    sourceHandle: true  # boolean型は不正
 ```
 
-#### 5.4 スキップした場合
-
-ユーザーが「いいえ」を選択した場合：
-
+✅ **正しい:**
+```yaml
+edges:
+  - source: if_else_node
+    target: llm_true
+    sourceHandle: 'true'  # 文字列型で指定
 ```
-⏭️  自動デプロイをスキップしました
 
-手動でインポートする場合:
-1. Difyの管理画面を開く
-   http://localhost/apps
+### エラー4: エッジIDの形式が不正
 
-2. 「DSL ファイルをインポート」ボタンをクリック
+❌ **間違い:**
+```yaml
+edges:
+  - id: edge1  # 任意の名前は非推奨
+    source: '1'
+    target: '2'
+```
 
-3. 以下のファイルを選択:
-   DSL生成/{ファイル名}.yml
+✅ **正しい:**
+```yaml
+edges:
+  - id: 1-2  # {source}-{target}の形式
+    source: '1'
+    target: '2'
+```
 
-4. 「作成する」をクリック
+### エラー5: 必須フィールドの欠落
 
-または、後で自動デプロイする場合:
-1. ブラウザをデバッグモードで起動（既に起動済みの場合は不要）
-2. Difyにログイン（既にログイン済みの場合は不要）
-3. python tools/dify_connect_import.py DSL生成/{ファイル名}.yml
+❌ **間違い:**
+```yaml
+nodes:
+  - id: '1'
+    type: start
+    # position, data, height, width が欠落
+```
+
+✅ **正しい:**
+```yaml
+nodes:
+  - id: '1'
+    data:
+      title: Start
+      type: start
+      variables: []
+    type: start
+    position:
+      x: 30
+      y: 100
+    positionAbsolute:
+      x: 30
+      y: 100
+    height: 90
+    width: 244
+```
+
+### エラー6: workflowモードでAnswerノードを使用
+
+❌ **間違い:**
+```yaml
+app:
+  mode: workflow
+workflow:
+  graph:
+    nodes:
+      - type: answer  # workflowモードではAnswerノードは不要
+```
+
+✅ **正しい:**
+```yaml
+app:
+  mode: workflow
+workflow:
+  graph:
+    nodes:
+      - type: llm  # LLMノードで終了
+      # Answerノードは不要
+```
+
+### エラー7: 参照先のノードが存在しない
+
+❌ **間違い:**
+```yaml
+- id: '2'
+  data:
+    prompt_template:
+      - text: '{{#3.output#}}'  # ノード'3'が存在しない
+```
+
+✅ **正しい:**
+```yaml
+# まず参照先ノードを定義
+- id: '1'
+  data:
+    variables:
+      - variable: query
+# その後で参照
+- id: '2'
+  data:
+    prompt_template:
+      - text: '{{#1.query#}}'  # ノード'1'が存在する
+```
+
+### エラー8: Iterationノード内のノード設定が不正
+
+❌ **間違い:**
+```yaml
+- id: llm_in_iteration
+  type: llm
+  # isInIteration と parentId が欠落
+```
+
+✅ **正しい:**
+```yaml
+- id: llm_in_iteration
+  type: llm
+  data:
+    isInIteration: true  # 必須
+  parentId: '1733226413055'  # Iterationノードのidを指定
+  iteration_id: '1733226413055'  # 同じく
+```
+
+### エラー9: kind と version の欠落
+
+❌ **間違い:**
+```yaml
+app:
+  name: My App
+  mode: advanced-chat
+# kind と version が欠落
+```
+
+✅ **正しい:**
+```yaml
+kind: app
+version: 0.1.5
+app:
+  name: My App
+  mode: advanced-chat
+```
+
+### エラー10: edgesのdata.isInIterationが不正
+
+❌ **間違い:**
+```yaml
+edges:
+  - source: '1'
+    target: '2'
+    # data セクションが欠落
+```
+
+✅ **正しい:**
+```yaml
+edges:
+  - id: 1-2
+    source: '1'
+    target: '2'
+    data:
+      isInIteration: false
+      sourceType: start
+      targetType: llm
+```
+
+### エラー11: ファイル処理ワークフローでStartノードのfile変数が欠落（最重要）
+
+❌ **間違い:**
+```yaml
+- data:
+    title: 開始
+    type: start
+    variables: []  # ファイル変数が欠落
+  type: start
+```
+
+✅ **正しい:**
+```yaml
+- data:
+    title: 開始
+    type: start
+    variables:
+    - label: PDFファイル
+      required: true
+      type: file
+      variable: file
+      allowed_file_types:
+      - document
+      allowed_file_extensions:
+      - pdf
+  type: start
+```
+
+### エラー12: features.file_uploadが無効またはallowed_file_extensionsが欠落
+
+❌ **間違い:**
+```yaml
+features:
+  file_upload:
+    enabled: false  # ファイルアップロードが無効
+    # または allowed_file_extensions が欠落
+```
+
+✅ **正しい:**
+```yaml
+features:
+  file_upload:
+    enabled: true
+    allowed_file_types:
+    - document
+    allowed_file_extensions:
+    - pdf
+    - docx
+    allowed_file_upload_methods:
+    - local_file
+    - remote_url
+    number_limits: 1
+    fileUploadConfig:
+      file_size_limit: 50
+```
+
+### エラー13: ファイル+クエリのワークフローでStartノードの変数設定が不完全
+
+❌ **間違い:**
+```yaml
+- data:
+    variables:
+    - type: file
+      variable: file
+      # クエリ変数が欠落
+```
+
+✅ **正しい:**
+```yaml
+- data:
+    variables:
+    - label: ファイル
+      type: file
+      variable: file
+      allowed_file_types:
+      - document
+      allowed_file_extensions:
+      - pdf
+      required: true
+    - label: 質問
+      type: text-input
+      variable: query
+      max_length: 200
+      required: true
+```
+
+### エラー14: Startノードとfeaturesのファイル設定が不一致
+
+❌ **間違い:**
+```yaml
+# Startノード
+variables:
+  - allowed_file_extensions:
+    - pdf
+    - xlsx
+
+# features
+features:
+  file_upload:
+    allowed_file_extensions:
+    - pdf
+    # xlsx が欠落
+```
+
+✅ **正しい:**
+```yaml
+# Startノード
+variables:
+  - allowed_file_extensions:
+    - pdf
+    - xlsx
+
+# features（Startノードと一致させる）
+features:
+  file_upload:
+    allowed_file_extensions:
+    - pdf
+    - xlsx
+```
+
+### エラー15: If-Elseノードのlogical_operatorが欠落（頻出）
+
+❌ **間違い:**
+```yaml
+- data:
+    type: if-else
+    cases:
+    - case_id: pdf
+      conditions:  # logical_operator が欠落
+      - comparison_operator: is
+        varType: boolean
+        variable_selector:
+        - '2'
+        - is_pdf
+        value: 'true'
+```
+
+✅ **正しい:**
+```yaml
+- data:
+    type: if-else
+    cases:
+    - case_id: pdf
+      logical_operator: and  # 必須フィールド
+      conditions:
+      - comparison_operator: is
+        varType: boolean
+        variable_selector:
+        - '2'
+        - is_pdf
+        value: 'true'
+```
+
+**重要なポイント:**
+- `logical_operator` は各caseで**必須**
+- 単一条件の場合でも `'and'` を指定する必要がある
+- 複数条件をANDで結合する場合: `'and'`
+- 複数条件をORで結合する場合: `'or'`
+
+### エラー16: HTTPリクエストノード（http-request）の必須フィールド欠落（頻出）
+
+❌ **間違い:**
+```yaml
+- data:
+    method: POST  # 大文字は不正
+    headers: []  # 配列は不正
+    params: []   # 配列は不正
+    # authorization フィールドが欠落
+    body:
+      data:
+      - key: text
+        type: text
+        value: 'メッセージ'
+      type: json  # 順序が不正（dataの後に配置）
+    type: http-request
+    url: '{{#1.webhook_url#}}'
+```
+
+✅ **正しい:**
+```yaml
+- data:
+    authorization:
+      type: no-auth  # 必須フィールド（認証不要の場合）
+    method: post  # 小文字で指定
+    headers: ''  # 空文字列（配列ではない）
+    params: ''   # 空文字列（配列ではない）
+    body:
+      type: json  # bodyの直下に配置
+      data:
+      - id: body_data_1
+        key: ''
+        type: text
+        value: |
+          {
+            "text": "メッセージ内容\n変数参照: {{#1.variable_name#}}"
+          }
+    timeout:
+      connect: 10
+      read: 30
+      write: 30
+    type: http-request
+    url: '{{#1.webhook_url#}}'
+```
+
+**重要なポイント:**
+- `authorization` は必須フィールド（認証不要の場合は `type: no-auth`）
+- `headers` と `params` は空文字列 `''`（配列 `[]` ではない）
+- `method` は小文字（`post`、`get` など）
+- `body.type` は `body` の直下に配置（`data` の後ではない）
+- `body.data` の各要素に `id`、`key: ''`、`type: text`、`value` を含む
+- `timeout` に `connect`、`read`、`write` の3つを含む
+
+**Pydantic validation エラーメッセージ例:**
+```
+3 validation errors for HttpRequestNodeData
+authorization  Field required
+headers  Input should be a valid string
+params  Input should be a valid string
 ```
 
 ---
@@ -2374,14 +3720,68 @@ python tools/dify_connect_import.py DSL生成/{ファイル名}.yml
 
 ### 不足情報の確認
 
-必須情報が不足している場合は再度確認：
+**DSL生成前に必ず以下をすべて確認してください。情報が不足している場合は、必ずユーザーに質問してください：**
 
 ```
-以下の情報が必要です：
-- [ ] アプリケーション名
-- [ ] 入力形式
-- [ ] 主要な処理内容
-- [ ] 出力形式
+【必須情報チェックリスト】
+- [ ] アプリケーション名が決まっているか？
+- [ ] アプリケーションモードが決まっているか？（advanced-chat / workflow / agent-chat）
+- [ ] 入力データの種類が明確か？
+  - [ ] テキストのみ？
+  - [ ] ファイル（PDF、Excel、画像など）？
+  - [ ] テキスト + ファイル？
+  - [ ] 選択肢？
+  - [ ] 入力なし（自動実行）？
+- [ ] ファイル入力がある場合：
+  - [ ] 対応ファイル形式は決まっているか？（PDF、Excel、画像、音声など）
+  - [ ] ファイル拡張子は決まっているか？（.pdf、.xlsx、.jpg など）
+  - [ ] ファイルサイズ制限は決まっているか？（デフォルト: 50MB）
+  - [ ] 複数ファイルの同時アップロードは必要か？
+- [ ] 主要な処理内容が明確か？（要約、分析、検索、変換など）
+- [ ] 使用するAIモデルが決まっているか？（デフォルト: gpt-4o）
+- [ ] 出力形式が明確か？（テキスト、構造化データ、グラフなど）
+- [ ] 外部API連携が必要な場合、環境変数の設定方法が決まっているか？
+```
+
+**不足情報がある場合の質問例：**
+
+```
+【入力データが不明な場合】
+このワークフローはどのような入力を受け取りますか？
+
+1. テキスト入力（質問、指示など）
+2. ファイル入力（PDF、Excel、画像など）
+3. テキスト + ファイル
+4. 選択肢（ドロップダウン）
+5. 入力なし（自動実行）
+
+→ 2を選択した場合、さらに詳細を確認：
+  - 対応するファイル形式は？（PDF / Excel / 画像 / 音声 / その他）
+  - ファイル拡張子は？（.pdf, .xlsx, .jpg など）
+```
+
+```
+【処理内容が不明な場合】
+どのような処理を行いますか？
+
+- 文書要約
+- データ分析
+- ナレッジベース検索
+- 翻訳
+- データ変換
+- その他（具体的に教えてください）
+```
+
+```
+【ファイル形式が不明な場合】
+対応するファイル形式を教えてください：
+
+- PDF
+- Excel（.xlsx / .xls）
+- 画像（.jpg / .png / .gif）
+- 音声（.mp3 / .wav）
+- 動画（.mp4）
+- その他（具体的に教えてください）
 ```
 
 ### 矛盾の指摘
@@ -2433,6 +3833,8 @@ advanced-chatモードに変更するか、エージェント設定を見直し�
 
 ### 例2: ファイル処理ワークフロー
 
+#### 例2-1: シンプルなファイル要約
+
 **ユーザー**: 「PDFをアップロードして要約してほしい」
 
 **システム**:
@@ -2441,20 +3843,108 @@ PDF要約ワークフローを作成します！
 
 【基本設定】
 1. アプリケーション名: 「PDF要約システム」でよろしいですか？
+2. アプリケーションモード: advanced-chat（会話型）でよろしいですか？
 
 【ファイル設定】
-2. 対応ファイル形式: PDFのみでよろしいですか？
-3. ファイルサイズ制限: 50MBでよろしいですか？
-4. 複数ファイルの同時アップロードは必要ですか？
+3. 対応ファイル形式: PDFのみでよろしいですか？
+4. ファイル拡張子: .pdfのみでよろしいですか？
+5. ファイルサイズ制限: 50MBでよろしいですか？
+6. 複数ファイルの同時アップロードは必要ですか？（デフォルト: 1ファイル）
 
 【処理設定】
-5. 要約の長さ: 短い/中程度/詳細
-6. 要約のスタイル: 箇条書き/段落形式
+7. 要約の長さ: 短い/中程度/詳細
+8. 要約のスタイル: 箇条書き/段落形式
 
 【追加機能】
-7. PDF内の画像も解析しますか？（ビジョン機能）
-8. 表やグラフの情報も抽出しますか？
+9. PDF内の画像も解析しますか？（ビジョン機能）
+10. 表やグラフの情報も抽出しますか？
 ```
+
+**重要**: 必ずファイル設定を確認してください。ファイル形式と拡張子の確認を怠ると、Startノードにfile変数が追加されません。
+
+#### 例2-2: ファイル+クエリのワークフロー
+
+**ユーザー**: 「PDFをアップロードして、それに対して質問できるようにしたい」
+
+**システム**:
+```
+PDF質問応答ワークフローを作成します！
+
+【基本設定】
+1. アプリケーション名: 「PDFクエリシステム」でよろしいですか？
+2. アプリケーションモード: workflow（タスク実行型）でよろしいですか？
+
+【入力データの確認】
+このワークフローは2つの入力を受け取ります：
+- ファイル（PDF）: アップロードされたPDFファイル
+- クエリ（テキスト）: PDFに対する質問
+
+【ファイル設定】
+3. 対応ファイル形式: PDFのみでよろしいですか？
+   → 他の形式（Excel、画像など）も対応しますか？
+4. ファイル拡張子: .pdfのみでよろしいですか？
+5. ファイルサイズ制限: 50MBでよろしいですか？
+
+【クエリ設定】
+6. 質問の最大文字数: 200文字でよろしいですか？
+7. 質問は必須ですか？（デフォルト: 必須）
+
+【処理設定】
+8. 使用するAIモデル: gpt-4o（推奨）でよろしいですか？
+9. 応答の形式: 自然な文章/箇条書き/構造化データ
+```
+
+**重要なポイント**:
+- Startノードに2つの変数が必要: `file`（ファイル）と `query`（テキスト入力）
+- features.file_upload.enabled: true が必要
+- LLMノードで両方を参照: `{{#1.file#}}` と `{{#1.query#}}`
+
+#### 例2-3: ファイル種別判定ワークフロー
+
+**ユーザー**: 「PDFとExcelをアップロードできて、種別に応じて異なる要約をしてほしい」
+
+**システム**:
+```
+ファイル種別判定要約ワークフローを作成します！
+
+【基本設定】
+1. アプリケーション名: 「ファイル種別判定サマライザー」でよろしいですか？
+2. アプリケーションモード: advanced-chat（会話型）でよろしいですか？
+
+【ファイル設定】
+3. 対応ファイル形式:
+   - PDF（.pdf）
+   - Excel（.xlsx, .xls）
+   上記でよろしいですか？
+4. ファイルサイズ制限: 50MBでよろしいですか？
+5. 複数ファイルの同時アップロードは必要ですか？（デフォルト: 1ファイル）
+
+【処理フロー】
+以下のフローで進めます：
+1. ファイルをアップロード
+2. ファイル拡張子を判定（Codeノード）
+3. ファイル種別で分岐（If-Elseノード）
+   - PDFの場合: PDF専用LLMで要約
+   - Excelの場合: Excel専用LLMで要約
+   - その他: エラーメッセージ表示
+4. 結果を表示（Answerノード）
+
+【要約スタイル】
+6. PDF要約のスタイル: 見出し→要点→結論の順でよろしいですか？
+7. Excel要約のスタイル: データ概要→傾向→分析観点でよろしいですか？
+
+【AIモデル】
+8. PDFには temperature: 0.3（精度重視）
+9. Excelには temperature: 0.2（数値正確性重視）
+上記でよろしいですか？
+```
+
+**重要なポイント**:
+- 複数のファイル形式を受け入れる場合、`allowed_file_extensions`に複数指定
+- Codeノードでファイル拡張子を判定
+- If-Elseノードで分岐（case_id: 'pdf', 'excel'）
+- 各分岐に異なるLLMノードを配置
+- 複数のAnswerノードを使用（各分岐で異なる応答）
 
 ### 例3: データベース連携ワークフロー
 
@@ -2599,6 +4089,28 @@ DSL生成前に以下を確認：
   - [ ] Startノードが存在（通常の開始の場合）
   - [ ] スケジュールトリガーが存在（スケジュール実行の場合）
   - [ ] Webhookトリガーが存在（Webhook実行の場合）
+- [ ] **Startノードの入力設定が正しい（重要）:**
+  - [ ] **ユーザーが要求した入力のみが設定されている（最重要）**
+    - [ ] ユーザーが「PDFとクエリ」と要求 → file（PDF用）+ query のみ
+    - [ ] ユーザーが「PDFのみ」と要求 → file のみ
+    - [ ] ユーザーが「テキストのみ」と要求 → query のみ
+    - [ ] 不要な入力変数を追加していない
+  - [ ] **allowed_file_extensionsがユーザーの要求に一致している**
+    - [ ] ユーザーが「PDF」と要求 → `[.pdf]` のみ
+    - [ ] ユーザーが「Excel」と要求 → `[.xlsx, .xls]` のみ
+    - [ ] 不要な拡張子を追加していない
+  - [ ] **ファイル処理ワークフローの場合、必ずfile変数が設定されている**
+    - [ ] `variables`に`type: file`のエントリが存在
+    - [ ] `variable: file`が設定されている
+    - [ ] `allowed_file_types`が設定されている（例: `['document']`、`['image']`）
+    - [ ] `allowed_file_extensions`がユーザーの要求に一致している
+    - [ ] `required: true`または`false`が設定されている
+  - [ ] **テキスト入力の場合:**
+    - [ ] チャットフローモード: `variables: []`（空配列）でよい（`sys.query`が自動利用可能）
+    - [ ] ワークフローモード: `variables`に`type: text-input`のエントリが必要
+  - [ ] **workflow featuresのfile_upload設定:**
+    - [ ] ファイル入力がある場合、`features.file_upload.enabled: true`が設定されている
+    - [ ] `allowed_file_types`、`allowed_file_extensions`がfeaturesとStartノードの両方で一致している
 - [ ] チャットフローモード (`advanced-chat`) の場合: Answerノードが存在
 - [ ] ワークフローモード (`workflow`) の場合: Answerノードは不要、Endノードで終了
 - [ ] ノードタイプが正しい
@@ -2636,6 +4148,10 @@ DSL生成前に以下を確認：
 ### 条件分岐（If-Else）チェック
 - [ ] If-Elseノードを使用する場合:
   - [ ] `cases[].case_id` が一意である（例: `'true'`, `'false'`, `'summary'` など）
+  - [ ] **`cases[].logical_operator` が設定されている（必須）**
+    - [ ] 単一条件の場合: `'and'` を使用（複数条件がなくても必須）
+    - [ ] 複数条件をANDで結合する場合: `'and'`
+    - [ ] 複数条件をORで結合する場合: `'or'`
   - [ ] 各 `case_id` に対して遷移先が明確になっている（FlowSpecで確定済み）
   - [ ] 条件の `comparison_operator` / `varType` / `variable_selector` が妥当
     - [ ] **文字列（`varType: string`）の完全一致は `comparison_operator: is` を推奨**（`=` は数値比較で使われることがあるため、環境によって型エラー原因になりうる）
@@ -3225,14 +4741,13 @@ model:
 
 ## まとめ
 
-このルールに従って、ユーザーとの対話を通じて適切なDifyワークフローDSLを生成し、自動的にDifyへアップロードします。
+このルールに従って、ユーザーとの対話を通じて適切なDifyワークフローDSLを生成し、dsl/ディレクトリに保存します。
 
-**5つのフェーズ:**
+**4つのフェーズ:**
 1. **初期ヒアリング**: 基本情報の収集
 2. **詳細ヒアリング**: 処理フロー、入出力、機能設定の確認
 3. **フロー確認**: ワークフロー全体像の提示と最終確認
 4. **DSL生成**: YAMLファイルの自動生成
-5. **Difyへのアップロード**: 自動インポート（オプション）
 
 **サポートするモード:**
 1. **チャットフローモード (`advanced-chat`)**: 会話型インターフェース、Answerノードで回答を表示
@@ -3250,15 +4765,7 @@ model:
 3. **確認重視**: フロー確定前に必ず確認
 4. **品質保証**: 生成前にチェックリスト確認
 5. **柔軟な対応**: ユーザーの要望に応じてカスタマイズ
-6. **ユーザー確認**: アップロード前に必ずユーザーの許可を得る
-7. **モードの適切な選択**: 用途に応じてチャットフローまたはワークフローモードを選択
-
-**自動デプロイ機能:**
-- ユーザーの許可を得てから実行
-- ブラウザは手動で起動済み（デバッグモード）を前提
-- Difyへのログイン確認は不要（既にログイン済みを前提）
-- エラー時は詳細な対処法を提示
-- 手動インポートの方法も案内
+6. **モードの適切な選択**: 用途に応じてチャットフローまたはワークフローモードを選択
 
 ---
 
