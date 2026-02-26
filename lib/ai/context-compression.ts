@@ -46,18 +46,45 @@ export async function compressMessageHistory(
   const oldMessages = messages.slice(0, splitAt);
   const recentMessages = messages.slice(splitAt);
 
-  // Full summarization: replace old messages with a generated summary
+  // Full summarization: replace old messages with a generated summary.
+  // IMPORTANT: only strip browser snapshots/screenshots before summarization —
+  // keep Apricot records, gap analysis results, and caseworker responses intact
+  // so generateText has the actual participant data to work from.
   if (messages.length > SUMMARIZE_THRESHOLD) {
+    const messagesForSummarizer = oldMessages.map((msg) => {
+      if (msg.role !== 'tool') return msg;
+      return {
+        ...msg,
+        content: (msg.content as any[]).map((part) => {
+          if (part.type !== 'tool-result') return part;
+          if (part.toolName !== 'browser') return part; // keep participant data
+          const r = part.result as Record<string, unknown>;
+          if (r?.snapshot || r?.accessibility_tree) {
+            return { ...part, content: '[browser snapshot: pruned]' };
+          }
+          if (r?.screenshot) {
+            return { ...part, content: '[browser screenshot: pruned]' };
+          }
+          return { ...part, content: `[browser ${(r as any)?.action ?? 'action'} completed]` };
+        }),
+      };
+    });
+
     const { text: summary } = await generateText({
       model: prepareStepModel,
       system:
-        'You are summarizing a form-filling session for continuity. ' +
-        'Preserve: client name, DOB, Apricot ID; the active form name and URL; ' +
-        'and answers to questions that have already been asked, including gap analysis. ' +
-        'every field completed and its value; every field still pending; ' +
-        'caseworker corrections and overrides; key facts about the client record. ' +
-        'Do not include browser snapshot content or raw field lists. Be concise.',
-      messages: oldMessages,
+        'You are creating a session handoff document for a benefits form-filling agent. ' +
+        'Extract and preserve ALL of the following — be explicit and complete:\n' +
+        '- PARTICIPANT DATA: Every field-value pair from the database (Apricot record) and caseworker. Format as "Field: Value" lines.\n' +
+        '- SESSION STATE: The current form name, URL, and which page/step we are on.\n' +
+        '- COMPLETED FIELDS: Every field that has already been filled and its value.\n' +
+        '- PENDING FIELDS: Every field still needing input.\n' +
+        '- CASEWORKER INPUTS: Every answer or correction the caseworker provided.\n' +
+        '- GAP ANALYSIS: Every field that has been identified as a gap and the reason why.\n' +
+        '- GAP ANSWERS: Every answer or correction the caseworker provided to a gap analysis.\n' +
+        'Do NOT summarize participant data — list every field and value explicitly. ' +
+        'Do NOT include browser snapshot content or raw HTML.',
+      messages: messagesForSummarizer,
     });
 
     const summaryMessage: ModelMessage = {
