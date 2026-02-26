@@ -1,5 +1,37 @@
 import { generateText, type ModelMessage } from 'ai';
-import { webAutomationModel } from '@/lib/ai/providers';
+import { prepareStepModel } from '@/lib/ai/providers';
+
+/**
+ * Returns a stateful compression function whose cache persists across all
+ * prepareStep invocations for a single request.
+ */
+export function createMessageCompressor() {
+  let compressedCache: ModelMessage[] | null = null;
+  let lastFullLength = 0;
+
+  return async function compress(stepMessages: ModelMessage[]): Promise<ModelMessage[]> {
+    // No new messages since last compression — reuse the cached result.
+    if (compressedCache !== null && stepMessages.length === lastFullLength) {
+      return compressedCache;
+    }
+
+    let toCompress: ModelMessage[];
+
+    if (compressedCache !== null && stepMessages.length > lastFullLength) {
+      // Append only the messages added since the last compression point.
+      const newMessages = stepMessages.slice(lastFullLength);
+      toCompress = [...compressedCache, ...newMessages];
+    } else {
+      // First call, or unexpected length decrease — start from the full history.
+      toCompress = stepMessages;
+    }
+
+    const result = await compressMessageHistory(toCompress);
+    compressedCache = result;
+    lastFullLength = stepMessages.length;
+    return result;
+  };
+}
 
 const SUMMARIZE_THRESHOLD = 20; // trigger full summarization above this many messages
 const KEEP_RECENT = 8;          // always keep last N messages verbatim
@@ -17,7 +49,7 @@ export async function compressMessageHistory(
   // Full summarization: replace old messages with a generated summary
   if (messages.length > SUMMARIZE_THRESHOLD) {
     const { text: summary } = await generateText({
-      model: webAutomationModel,
+      model: prepareStepModel,
       system:
         'You are summarizing a form-filling session for continuity. ' +
         'Preserve: client name, DOB, Apricot ID; the active form name and URL; ' +

@@ -18,6 +18,7 @@ import {
   ContextOutputUsage,
   ContextCacheUsage,
 } from '@/components/ai-elements/context';
+import { isProductionEnvironment } from '@/lib/constants';
 
 interface SideChatHeaderProps {
   title: string;
@@ -78,7 +79,7 @@ function PureSideChatHeader({
             { addSuffix: true }
           )}` : 'Session started'}
         </p>
-        {showContext && (
+        {showContext && !isProductionEnvironment && (
           <Context
             maxTokens={200000}
             usedTokens={tokenUsage.currentInputTokens}
