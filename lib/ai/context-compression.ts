@@ -113,7 +113,7 @@ function summarizeToolResult(toolName: string, result: unknown): string {
     }
 
     default: {
-      const serialized = JSON.stringify(result);
+      const serialized = JSON.stringify(result) ?? '';
       if (serialized.length > PRUNE_THRESHOLD) {
         return serialized.slice(0, PRUNE_THRESHOLD) + '…[truncated]';
       }
