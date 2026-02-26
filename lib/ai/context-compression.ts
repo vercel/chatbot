@@ -53,6 +53,7 @@ export async function compressMessageHistory(
       system:
         'You are summarizing a form-filling session for continuity. ' +
         'Preserve: client name, DOB, Apricot ID; the active form name and URL; ' +
+        'and answers to questions that have already been asked, including gap analysis. ' +
         'every field completed and its value; every field still pending; ' +
         'caseworker corrections and overrides; key facts about the client record. ' +
         'Do not include browser snapshot content or raw field lists. Be concise.',
