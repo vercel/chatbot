@@ -35,7 +35,7 @@ export function createMessageCompressor() {
 
 const SUMMARIZE_THRESHOLD = 20; // trigger full summarization above this many messages
 const KEEP_RECENT = 8;          // always keep last N messages verbatim
-const PRUNE_THRESHOLD = 1200;   // truncate default tool results beyond this many chars
+const PRUNE_THRESHOLD = 600;    // truncate default tool results beyond this many chars
 
 export async function compressMessageHistory(
   messages: ModelMessage[]
@@ -74,21 +74,15 @@ export async function compressMessageHistory(
       model: prepareStepModel,
       system:
         'You are creating a session handoff document for a benefits form-filling agent. ' +
-        'Extract and preserve ALL of the following — be explicit and complete:\n\n' +
-        '- PARTICIPANT RECORD BLOCK: If you see a block that starts with "---PARTICIPANT RECORD---" ' +
-        'and ends with "---END PARTICIPANT RECORD---", copy it VERBATIM into the summary. ' +
-        'Do not paraphrase it. This is the authoritative source of truth.\n' +
-        '- PARTICIPANT DATA: Every field-value pair from the database (Apricot record) and caseworker. ' +
-        'Format as "Field: Value" lines. Do NOT drop any field.\n' +
-        '- GAP ANSWERS: Every answer the caseworker provided in response to a gap analysis. ' +
-        'Gap analysis tool calls show "Missing (needs caseworker input)" fields — the user message ' +
-        'that follows immediately after is the caseworker\'s answer. Extract each field name and the ' +
-        'value the caseworker gave for it as "Field: Value" lines.\n' +
+        'Extract and preserve ALL of the following — be explicit and complete:\n' +
+        '- PARTICIPANT DATA: Every field-value pair from the database (Apricot record) and caseworker. Format as "Field: Value" lines.\n' +
         '- SESSION STATE: The current form name, URL, and which page/step we are on.\n' +
         '- COMPLETED FIELDS: Every field that has already been filled and its value.\n' +
         '- PENDING FIELDS: Every field still needing input.\n' +
-        '- CASEWORKER INPUTS: Every answer or correction the caseworker provided.\n\n' +
-        'Do NOT summarize or paraphrase participant data — list every field and value explicitly. ' +
+        '- CASEWORKER INPUTS: Every answer or correction the caseworker provided.\n' +
+        '- GAP ANALYSIS: Every field that has been identified as a gap and the reason why.\n' +
+        '- GAP ANSWERS: Every answer or correction the caseworker provided to a gap analysis.\n' +
+        'Do NOT summarize participant data — list every field and value explicitly. ' +
         'Do NOT include browser snapshot content or raw HTML.',
       messages: messagesForSummarizer,
     });
@@ -136,13 +130,7 @@ function summarizeToolResult(toolName: string, result: unknown): string {
     case 'getApricotRecord': {
       if (r?.found && r?.record) {
         const rec = r.record as Record<string, unknown>;
-        // Preserve the full record as field: value lines so the data survives
-        // both the prune path (no LLM summarizer) and the summarize path.
-        const lines = Object.entries(rec)
-          .filter(([, v]) => v !== null && v !== undefined && v !== '')
-          .map(([k, v]) => `${k}: ${v}`)
-          .join('\n');
-        return `[Apricot record ID ${rec.id ?? 'unknown'}]\n${lines}`;
+        return `[Apricot record loaded: ID ${rec.id ?? 'unknown'} — use session memory for key values]`;
       }
       return '[Apricot record: not found]';
     }
@@ -150,23 +138,6 @@ function summarizeToolResult(toolName: string, result: unknown): string {
     case 'getApricotFormFields': {
       const fields = r?.fields as unknown[];
       return `[Apricot form fields: ${fields?.length ?? 0} fields loaded — already processed]`;
-    }
-
-    case 'gapAnalysis': {
-      // Preserve gap analysis data verbatim so caseworker answers can be
-      // matched against the correct fields after compression.
-      const formName = r?.formName ? `Form: ${r.formName}\n` : '';
-      const available = (r?.availableFields as Array<{ field: string; value: string }> ?? [])
-        .map((f) => `  ${f.field}: ${f.value}`)
-        .join('\n');
-      const missing = (r?.missingFields as Array<{ field: string }> ?? [])
-        .map((f) => `  ${f.field}`)
-        .join('\n');
-      return (
-        `[Gap Analysis]\n${formName}` +
-        (available ? `Available:\n${available}\n` : '') +
-        (missing ? `Missing (needs caseworker input):\n${missing}` : '')
-      );
     }
 
     default: {
