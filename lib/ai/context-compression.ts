@@ -33,16 +33,22 @@ export function createMessageCompressor() {
   };
 }
 
-const SUMMARIZE_THRESHOLD = 20; // trigger full summarization above this many messages
-const KEEP_RECENT = 8;          // always keep last N messages verbatim
-const PRUNE_THRESHOLD = 1200;   // truncate default tool results beyond this many chars
+const TOOL_CALL_COMPRESS_THRESHOLD = 15; // start pruning old tool results at this many tool calls
+const TOOL_CALL_SUMMARIZE_THRESHOLD = 30; // switch to full LLM summarization at this many tool calls
+const KEEP_RECENT = 10;                   // always keep last N messages verbatim
+const PRUNE_THRESHOLD = 1200;             // truncate default tool results beyond this many chars
 
 export async function compressMessageHistory(
   messages: ModelMessage[]
 ): Promise<ModelMessage[]> {
-  if (messages.length <= KEEP_RECENT) return messages;
+  // Only compress when the agent has accumulated a lot of tool calls.
+  // Regular user ↔ assistant turns don't warrant compression.
+  const toolCallCount = messages.filter((m) => m.role === 'tool').length;
+  if (toolCallCount < TOOL_CALL_COMPRESS_THRESHOLD) return messages;
 
   const splitAt = messages.length - KEEP_RECENT;
+  if (splitAt <= 0) return messages;
+
   const oldMessages = messages.slice(0, splitAt);
   const recentMessages = messages.slice(splitAt);
 
@@ -50,7 +56,7 @@ export async function compressMessageHistory(
   // IMPORTANT: only strip browser snapshots/screenshots before summarization —
   // keep Apricot records, gap analysis results, and caseworker responses intact
   // so generateText has the actual participant data to work from.
-  if (messages.length > SUMMARIZE_THRESHOLD) {
+  if (toolCallCount >= TOOL_CALL_SUMMARIZE_THRESHOLD) {
     const messagesForSummarizer = oldMessages.map((msg) => {
       if (msg.role !== 'tool') return msg;
       return {
