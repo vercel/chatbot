@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
-// new
 export function useUserVerification(verifyOnlyForLoggedIn?: boolean) {
   const { data: session } = useSession();
   const [isUserVerified, setIsUserVerified] = useState(true); // Default to true to avoid flash
@@ -10,10 +9,8 @@ export function useUserVerification(verifyOnlyForLoggedIn?: boolean) {
   useEffect(() => {
     const checkVerification = async () => {
       console.log('session?.user.email', session?.user.email)
-      // if (verifyOnlyForLoggedIn && )
       if ((!session?.user || (session?.user.email?.includes('guest-') && session.user.type !== "regular"))) {
         setIsUserVerified(verifyOnlyForLoggedIn === true ? true : false);
-        // setIsUserVerified(false);
         return;
       }
 
@@ -23,7 +20,7 @@ export function useUserVerification(verifyOnlyForLoggedIn?: boolean) {
         setIsUserVerified(data.isVerified);
       } catch (error) {
         console.error("Error checking verification status:", error);
-        setIsUserVerified(false); // Default to true on error
+        setIsUserVerified(false); 
       }
     };
 
