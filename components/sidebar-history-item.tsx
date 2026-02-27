@@ -25,22 +25,33 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "./ui/sidebar";
+import { Edit } from "lucide-react";
 
 const PureChatItem = ({
   chat,
   isActive,
   onDelete,
   setOpenMobile,
+  onRenameChat,
 }: {
   chat: Chat;
   isActive: boolean;
   onDelete: (chatId: string) => void;
   setOpenMobile: (open: boolean) => void;
+  onRenameChat?: (chatId: string, newTitle: string) => void;
 }) => {
   const { visibilityType, setVisibilityType } = useChatVisibility({
     chatId: chat.id,
     initialVisibilityType: chat.visibility,
   });
+
+  const handleRename = () => {
+    if (!onRenameChat) return;
+    const newTitle = prompt("Enter new chat title:", chat.title);
+    if (newTitle && newTitle !== chat.title) {
+      onRenameChat(chat.id, newTitle);
+    }
+  };
 
   return (
     <SidebarMenuItem>
@@ -98,6 +109,15 @@ const PureChatItem = ({
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
+
+{/* new */}
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => handleRename()}
+          >
+            <Edit />
+            <span>Update</span>
+          </DropdownMenuItem>
 
           <DropdownMenuItem
             className="cursor-pointer text-destructive focus:bg-destructive/15 focus:text-destructive dark:text-red-500"

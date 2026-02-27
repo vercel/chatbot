@@ -99,7 +99,21 @@ export async function POST(request: Request) {
         title: "New chat",
         visibility: selectedVisibilityType,
       });
-      titlePromise = generateTitleFromUserMessage({ message });
+      // titlePromise = generateTitleFromUserMessage({ message });
+ // Convert message to proper ChatMessage format by filtering out undefined text parts
+      const cleanedMessage: ChatMessage = {
+        ...message,
+        parts: message.parts
+          .filter(part => part.type === 'file' || (part.type === 'text' && part.text !== undefined))
+          .map(part => {
+            if (part.type === 'text') {
+              return { type: 'text', text: part.text! };
+            }
+            return part;
+          })
+      };
+      titlePromise = generateTitleFromUserMessage({ message: cleanedMessage });
+
     }
 
     const uiMessages = isToolApprovalFlow

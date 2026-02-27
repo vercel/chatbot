@@ -10,6 +10,7 @@ import {
   gte,
   inArray,
   lt,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -30,6 +31,8 @@ import {
   type User,
   user,
   vote,
+  userMessageQuota,
+  guestMessageQuota,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
 
@@ -40,6 +43,9 @@ import { generateHashedPassword } from "./utils";
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
+
+const MAX_MESSAGES = 5
+
 
 export async function getUser(email: string): Promise<User[]> {
   try {
@@ -598,5 +604,106 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
       "bad_request:database",
       "Failed to get stream ids by chat id"
     );
+  }
+}
+
+
+// TODO implement messages and file uploads limit for both guests and users
+
+
+// Message quota functions
+export async function getGuestMessageQuota(userId: string): Promise<{ messagesUsed: number; maxMessages: number }> {
+  try {
+    const [quota] = await db
+      .select()
+      .from(guestMessageQuota)
+      .where(eq(guestMessageQuota.userId, userId));
+
+    if (!quota) {
+      // Create quota record for new guest
+      await db.insert(guestMessageQuota).values({
+        userId,
+        messagesUsed: 0,
+        // ipAddress is optional, don't include it here
+      });
+      return { messagesUsed: 0, maxMessages: 3 };
+    }
+
+    return { messagesUsed: quota.messagesUsed || 0, maxMessages: 3 };
+    // return { messagesUsed: quota.messagesUsed, maxMessages: 3 - quota.messagesUsed };
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to get guest message quota");
+  }
+}
+
+export async function incrementGuestMessageCount(userId: string): Promise<void> {
+  try {
+    await db
+      .insert(guestMessageQuota)
+      .values({
+        userId,
+        messagesUsed: 1,
+      })
+      .onConflictDoUpdate({
+        target: guestMessageQuota.userId,
+        set: {
+          messagesUsed: sql`${guestMessageQuota.messagesUsed} + 1`,
+          updatedAt: new Date(),
+        },
+      });
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to increment guest message count");
+  }
+}
+
+export async function getUserMessageQuota(userId: string): Promise<{ messagesUsed: number; maxMessages: number; remaining: number }> {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    const [quota] = await db
+      .select()
+      .from(userMessageQuota)
+      .where(and(
+        eq(userMessageQuota.userId, userId),
+        eq(userMessageQuota.date, today)
+      ));
+
+    if (!quota) {
+      // Create daily quota record for user
+      await db.insert(userMessageQuota).values({
+        userId,
+        messagesUsed: 0,
+        date: today,
+      });
+      return { messagesUsed: 0, maxMessages: MAX_MESSAGES, remaining: MAX_MESSAGES };
+    }
+
+    const remaining = Math.max(0, MAX_MESSAGES - quota.messagesUsed);
+    return { messagesUsed: quota.messagesUsed, maxMessages: MAX_MESSAGES, remaining };
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to get user message quota");
+  }
+}
+
+export async function incrementUserMessageCount(userId: string): Promise<void> {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    await db
+      .insert(userMessageQuota)
+      .values({
+        userId,
+        messagesUsed: 1,
+        date: today,
+      })
+      .onConflictDoUpdate({
+        target: [userMessageQuota.userId, userMessageQuota.date],
+        set: {
+          messagesUsed: sql`${userMessageQuota.messagesUsed} + 1`,
+          updatedAt: new Date(),
+        },
+      });
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to increment user message count");
   }
 }
