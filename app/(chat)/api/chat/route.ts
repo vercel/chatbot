@@ -45,6 +45,7 @@ import { createBrowserTool } from '@/lib/ai/tools/browser';
 import { gapAnalysis } from '@/lib/ai/tools/gap-analysis';
 import { formSummary } from '@/lib/ai/tools/form-summary';
 import { webAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
+import { createMessageCompressor } from '@/lib/ai/context-compression';
 
 // Feature flag for AI SDK agent vs Mastra
 const useAiSdkAgent = process.env.USE_AI_SDK_AGENT === 'true';
@@ -176,6 +177,10 @@ export async function POST(request: Request) {
 
       const stream = createUIMessageStream({
         execute: async ({ writer: dataStream }) => {
+          // One compressor instance per request; its cache persists across all
+          // prepareStep calls so generateText is not re-fired on every step.
+          const compressStep = createMessageCompressor();
+
           const result = streamText({
             model: webAutomationModel,
             system: webAutomationSystemPrompt,
@@ -188,6 +193,23 @@ export async function POST(request: Request) {
             },
             stopWhen: stepCountIs(500),
             abortSignal: request.signal,
+            // Compress message history before every step using a stateful
+            // compressor that caches the last result. generateText only re-runs
+            // when new messages push the combined length over SUMMARIZE_THRESHOLD
+            // (~every 10 steps), not on every single step past it.
+            prepareStep: async ({ messages: stepMessages }) => {
+              const compressed = await compressStep(stepMessages);
+              return { messages: compressed };
+            },
+            // Emit cumulative token usage after each step so the client can
+            // display it in real-time via the Context component.
+            onStepFinish: ({ usage }) => {
+              dataStream.write({
+                type: 'data-token-usage',
+                data: usage,
+                transient: true,
+              });
+            },
             experimental_telemetry: {
               isEnabled: isProductionEnvironment,
               functionId: 'web-automation-agent',

@@ -19,6 +19,7 @@ import { isTestEnvironment } from '../constants';
 
 // Anthropic model for web automation via Vertex AI
 export const webAutomationModel = vertexAnthropic('claude-sonnet-4-6');
+export const prepareStepModel = google('gemini-2.5-flash');
 
 export const myProvider = isTestEnvironment
   ? customProvider({

@@ -6,6 +6,19 @@ import { Globe } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import { memo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTokenUsage } from '@/hooks/use-token-usage';
+import {
+  Context,
+  ContextTrigger,
+  ContextContent,
+  ContextContentHeader,
+  ContextContentBody,
+  ContextContentFooter,
+  ContextInputUsage,
+  ContextOutputUsage,
+  ContextCacheUsage,
+} from '@/components/ai-elements/context';
+import { isProductionEnvironment } from '@/lib/constants';
 
 interface SideChatHeaderProps {
   title: string;
@@ -30,11 +43,13 @@ function PureSideChatHeader({
 }: SideChatHeaderProps) {
   const { setArtifact } = useArtifact();
   const router = useRouter();
+  const tokenUsage = useTokenUsage();
+  const showContext = tokenUsage.currentInputTokens > 0;
 
   const handleNewChat = () => {
     // Start new chat
     onNewChat();
-    
+
     // Close the artifact
     setArtifact((currentArtifact) =>
       currentArtifact.status === 'streaming'
@@ -43,9 +58,9 @@ function PureSideChatHeader({
             isVisible: false,
           }
         : { ...initialArtifactData, status: 'idle' },
-        
+
     );
-    
+
     // Navigate to home and refresh
     router.push('/');
     router.refresh();
@@ -56,13 +71,48 @@ function PureSideChatHeader({
       <h3 className="text-sm font-inter font-bold text-black dark:text-gray-100 mb-2 truncate">
         {artifactTitle || 'Browser:'}
       </h3>
-      <p className="font-mono text-[10px] font-normal text-black dark:text-gray-300 pb-2">
-        {sessionStartTime ? `Session started ${formatDistance(
-          sessionStartTime,
-          new Date(),
-          { addSuffix: true }
-        )}` : 'Session started'}
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="font-mono text-[10px] font-normal text-black dark:text-gray-300">
+          {sessionStartTime ? `Session started ${formatDistance(
+            sessionStartTime,
+            new Date(),
+            { addSuffix: true }
+          )}` : 'Session started'}
+        </p>
+        {showContext && !isProductionEnvironment && (
+          <Context
+            maxTokens={200000}
+            usedTokens={tokenUsage.currentInputTokens}
+            usage={{
+              inputTokens: tokenUsage.inputTokens,
+              outputTokens: tokenUsage.outputTokens,
+              totalTokens: tokenUsage.inputTokens + tokenUsage.outputTokens,
+              cachedInputTokens: tokenUsage.cachedInputTokens,
+              inputTokenDetails: {
+                noCacheTokens: undefined,
+                cacheReadTokens: tokenUsage.cachedInputTokens || undefined,
+                cacheWriteTokens: undefined,
+              },
+              outputTokenDetails: {
+                textTokens: undefined,
+                reasoningTokens: undefined,
+              },
+            }}
+            modelId="anthropic:claude-sonnet-4-6"
+          >
+            <ContextTrigger />
+            <ContextContent align="end">
+              <ContextContentHeader />
+              <ContextContentBody>
+                <ContextInputUsage />
+                <ContextOutputUsage />
+                <ContextCacheUsage />
+              </ContextContentBody>
+              <ContextContentFooter />
+            </ContextContent>
+          </Context>
+        )}
+      </div>
     </div>
   );
 }
