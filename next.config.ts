@@ -1,5 +1,5 @@
-import type { NextConfig } from "next";
 import { withBotId } from "botid/next/config";
+import type { NextConfig } from "next";
 
 const basePath = "/demo";
 
@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   assetPrefix: "/demo-assets",
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
+    NEXTAUTH_URL: `http://localhost${basePath}/api/auth`,
   },
   cacheComponents: true,
   images: {
