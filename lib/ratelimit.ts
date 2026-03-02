@@ -11,7 +11,7 @@ let client: ReturnType<typeof createClient> | null = null;
 function getClient() {
   if (!client && process.env.REDIS_URL) {
     client = createClient({ url: process.env.REDIS_URL });
-    client.on("error", () => {});
+    client.on("error", () => undefined);
     client.connect().catch(() => {
       client = null;
     });
@@ -20,10 +20,14 @@ function getClient() {
 }
 
 export async function checkIpRateLimit(ip: string | undefined) {
-  if (!isProductionEnvironment || !ip) return;
+  if (!isProductionEnvironment || !ip) {
+    return;
+  }
 
   const redis = getClient();
-  if (!redis?.isReady) return;
+  if (!redis?.isReady) {
+    return;
+  }
 
   try {
     const key = `ip-rate-limit:${ip}`;
@@ -37,6 +41,8 @@ export async function checkIpRateLimit(ip: string | undefined) {
       throw new ChatbotError("rate_limit:chat");
     }
   } catch (error) {
-    if (error instanceof ChatbotError) throw error;
+    if (error instanceof ChatbotError) {
+      throw error;
+    }
   }
 }
