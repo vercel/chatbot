@@ -1,4 +1,5 @@
-import { geolocation } from "@vercel/functions";
+import { checkBotId } from "botid/server";
+import { geolocation, ipAddress } from "@vercel/functions";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -31,6 +32,7 @@ import {
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
+import { checkIpRateLimit } from "@/lib/ratelimit";
 import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
@@ -62,11 +64,17 @@ export async function POST(request: Request) {
     const { id, message, messages, selectedChatModel, selectedVisibilityType } =
       requestBody;
 
-    const session = await auth();
+    const [botResult, session] = await Promise.all([checkBotId(), auth()]);
+
+    if (botResult.isBot) {
+      return new ChatbotError("unauthorized:chat").toResponse();
+    }
 
     if (!session?.user) {
       return new ChatbotError("unauthorized:chat").toResponse();
     }
+
+    await checkIpRateLimit(ipAddress(request));
 
     const userType: UserType = session.user.type;
 
