@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   assetPrefix: "/demo-assets",
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
+    NEXTAUTH_URL: `${basePath}/api/auth`,
   },
   cacheComponents: true,
   images: {
