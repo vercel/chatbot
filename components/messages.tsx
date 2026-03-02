@@ -1,6 +1,6 @@
 import { PreviewMessage, ThinkingMessage } from './message';
 import { Greeting } from './greeting';
-import { Checkpoint } from './ai-elements';
+import { Checkpoint, CheckpointIcon } from './ai-elements';
 import { memo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
@@ -58,7 +58,12 @@ function PureMessages({
 
       {messages.map((message, index) => (
         <div key={message.id}>
-          {checkpoints.includes(index) && <Checkpoint />}
+          {checkpoints.includes(index) && (
+            <Checkpoint className="my-2">
+              <CheckpointIcon />
+              <span className="shrink-0 px-2 text-xs">Earlier messages summarized</span>
+            </Checkpoint>
+          )}
           <PreviewMessage
             chatId={chatId}
             message={message}
