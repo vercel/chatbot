@@ -2,8 +2,9 @@ import { generateText, type ModelMessage } from 'ai';
 import { prepareStepModel } from '@/lib/ai/providers';
 
 const MODEL_CONTEXT_WINDOW = 200_000; // claude-sonnet-4-6
-const COMPACT_THRESHOLD_PCT = 0.10;   // 10% for testing (production: 0.75)
+const COMPACT_THRESHOLD_PCT = 0.50;   // 50% for testing (production: 0.75)
 const KEEP_RECENT = 8;                // keep last N messages after compaction
+const COOLDOWN_STEPS = 4;             // skip N steps after compaction before checking again
 
 const log = (...args: unknown[]) => console.log('[compressor]', ...args);
 
@@ -14,6 +15,7 @@ const log = (...args: unknown[]) => console.log('[compressor]', ...args);
 export function createMessageCompressor() {
   let compressedCache: ModelMessage[] | null = null;
   let lastFullLength = 0;
+  let cooldownRemaining = 0; // steps to skip after a compaction
 
   return async function compress(
     stepMessages: ModelMessage[],
@@ -25,6 +27,18 @@ export function createMessageCompressor() {
     if (compressedCache && stepMessages.length === lastFullLength) {
       log(`cache hit — ${stepMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% context`);
       return { messages: compressedCache, compacted: false };
+    }
+
+    // Cooldown: after compaction, skip checks so the reduced context
+    // has time to be measured (prevents compaction death spiral).
+    if (cooldownRemaining > 0) {
+      cooldownRemaining--;
+      log(
+        `cooldown — ${cooldownRemaining + 1} steps remaining, ` +
+        `${stepMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% context`
+      );
+      lastFullLength = stepMessages.length;
+      return { messages: stepMessages, compacted: false };
     }
 
     log(
@@ -99,6 +113,15 @@ export function createMessageCompressor() {
       `summary length: ${summary.length} chars`
     );
 
+    // Guard: if Gemini returned nothing, don't compact — keep original messages
+    if (!summary.trim()) {
+      log('ABORT — Gemini returned empty summary, keeping original messages');
+      lastFullLength = stepMessages.length;
+      // Still set cooldown to avoid hammering Gemini with empty results
+      cooldownRemaining = COOLDOWN_STEPS;
+      return { messages: stepMessages, compacted: false };
+    }
+
     const summaryMessage: ModelMessage = {
       role: 'assistant',
       content: `[Session summary — earlier context compacted]\n\n${summary}`,
@@ -107,6 +130,7 @@ export function createMessageCompressor() {
     const result = [summaryMessage, ...recentMessages];
     compressedCache = result;
     lastFullLength = stepMessages.length;
+    cooldownRemaining = COOLDOWN_STEPS;
     return { messages: result, compacted: true };
   };
 }
