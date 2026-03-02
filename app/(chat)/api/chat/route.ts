@@ -205,6 +205,9 @@ export async function POST(request: Request) {
                 lastInputTokens,
               );
               if (compacted) {
+                console.log(
+                  `[compressor] emitting data-checkpoint — step=${steps.length}, inputTokens=${lastInputTokens}`
+                );
                 dataStream.write({
                   type: 'data-checkpoint',
                   data: {

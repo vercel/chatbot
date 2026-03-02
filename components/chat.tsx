@@ -2,7 +2,7 @@
 
 import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
@@ -64,10 +64,11 @@ export function Chat({
     currentInputTokens: number;
   }>({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, currentInputTokens: 0 });
 
-  // Track message indices after which a compaction checkpoint occurred.
-  // Each number is the message count at the time of compaction — the
-  // checkpoint separator renders after that many messages in the list.
-  const [checkpoints, setCheckpoints] = useState<number[]>([]);
+  // Track message IDs after which a compaction checkpoint occurred.
+  // The checkpoint separator renders after the message with this ID.
+  const [checkpointMessageIds, setCheckpointMessageIds] = useState<Set<string>>(new Set());
+  // Ref to always have the latest messages in the onData closure
+  const messagesRef = useRef<ChatMessage[]>([]);
 
 
   const {
@@ -116,8 +117,12 @@ export function Chat({
       // Capture per-step token usage emitted by onStepFinish in route.ts
       const part = dataPart as any;
       if (part?.type === 'data-checkpoint') {
-        // Record the current message count so we can render a separator
-        setCheckpoints((prev) => [...prev, messages.length]);
+        // Grab the last message ID from the ref (always current)
+        const currentMessages = messagesRef.current;
+        const lastMsg = currentMessages[currentMessages.length - 1];
+        if (lastMsg) {
+          setCheckpointMessageIds((prev) => new Set([...prev, lastMsg.id]));
+        }
       }
       if (part?.type === 'data-token-usage' && part.data) {
         const {
@@ -156,6 +161,9 @@ export function Chat({
       }
     },
   });
+
+  // Keep ref in sync so onData closure always has latest messages
+  messagesRef.current = messages;
 
   // Custom stop function that sends stopChat action for web automation
   const stop = async () => {
@@ -383,7 +391,7 @@ export function Chat({
               sendMessage={sendMessage}
               isReadonly={isReadonly}
               isArtifactVisible={isArtifactVisible}
-              checkpoints={checkpoints}
+              checkpointMessageIds={checkpointMessageIds}
             />
   
             <div className="shrink-0 mx-auto px-4 pt-6 bg-chat-background pb-4 md:pb-6 w-full">

@@ -5,6 +5,8 @@ const MODEL_CONTEXT_WINDOW = 200_000; // claude-sonnet-4-6
 const COMPACT_THRESHOLD_PCT = 0.10;   // 10% for testing (production: 0.75)
 const KEEP_RECENT = 8;                // keep last N messages after compaction
 
+const log = (...args: unknown[]) => console.log('[compressor]', ...args);
+
 /**
  * Returns a stateful compression function whose cache persists across all
  * prepareStep invocations for a single request.
@@ -17,21 +19,29 @@ export function createMessageCompressor() {
     stepMessages: ModelMessage[],
     lastInputTokens: number | undefined,
   ): Promise<{ messages: ModelMessage[]; compacted: boolean }> {
+    const usedPct = (lastInputTokens ?? 0) / MODEL_CONTEXT_WINDOW;
+
     // Cache hit — same message count, no new data
     if (compressedCache && stepMessages.length === lastFullLength) {
+      log(`cache hit — ${stepMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% context`);
       return { messages: compressedCache, compacted: false };
     }
 
-    const usedPct = (lastInputTokens ?? 0) / MODEL_CONTEXT_WINDOW;
+    log(
+      `step check — ${stepMessages.length} msgs, ` +
+      `inputTokens=${lastInputTokens ?? 'n/a'}, ` +
+      `${(usedPct * 100).toFixed(1)}% of ${MODEL_CONTEXT_WINDOW} context window, ` +
+      `threshold=${(COMPACT_THRESHOLD_PCT * 100).toFixed(0)}%`
+    );
 
     if (usedPct < COMPACT_THRESHOLD_PCT) {
-      // Under 75% — pass through, no compression
       lastFullLength = stepMessages.length;
       return { messages: stepMessages, compacted: false };
     }
 
-    // 75%+ — full summarization via Gemini
+    // Over threshold — full summarization via Gemini
     if (stepMessages.length <= KEEP_RECENT) {
+      log(`over threshold but only ${stepMessages.length} msgs (≤ KEEP_RECENT=${KEEP_RECENT}), skipping`);
       lastFullLength = stepMessages.length;
       return { messages: stepMessages, compacted: false };
     }
@@ -39,6 +49,10 @@ export function createMessageCompressor() {
     const splitAt = stepMessages.length - KEEP_RECENT;
     const oldMessages = stepMessages.slice(0, splitAt);
     const recentMessages = stepMessages.slice(splitAt);
+
+    log(
+      `COMPACTING — summarizing ${oldMessages.length} old msgs, keeping ${recentMessages.length} recent`
+    );
 
     // Strip browser snapshots/screenshots before summarizing —
     // keep Apricot records, gap analysis results, and caseworker responses intact
@@ -61,6 +75,7 @@ export function createMessageCompressor() {
       };
     });
 
+    const t0 = Date.now();
     const { text: summary } = await generateText({
       model: prepareStepModel,
       system:
@@ -77,6 +92,12 @@ export function createMessageCompressor() {
         'Do NOT include browser snapshot content or raw HTML.',
       messages: messagesForSummarizer,
     });
+    const elapsed = Date.now() - t0;
+
+    log(
+      `Gemini summary done in ${elapsed}ms — ` +
+      `summary length: ${summary.length} chars`
+    );
 
     const summaryMessage: ModelMessage = {
       role: 'assistant',

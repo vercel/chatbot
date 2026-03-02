@@ -20,7 +20,7 @@ interface MessagesProps {
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
-  checkpoints?: number[];
+  checkpointMessageIds?: Set<string>;
 }
 
 function PureMessages({
@@ -33,7 +33,7 @@ function PureMessages({
   sendMessage,
   isReadonly,
   isArtifactVisible,
-  checkpoints = [],
+  checkpointMessageIds,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -58,7 +58,7 @@ function PureMessages({
 
       {messages.map((message, index) => (
         <div key={message.id}>
-          {checkpoints.includes(index) && (
+          {checkpointMessageIds?.has(message.id) && (
             <Checkpoint className="my-2">
               <CheckpointIcon />
               <span className="shrink-0 px-2 text-xs">Earlier messages summarized</span>
@@ -106,7 +106,7 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
-  if (!equal(prevProps.checkpoints, nextProps.checkpoints)) return false;
+  if (prevProps.checkpointMessageIds?.size !== nextProps.checkpointMessageIds?.size) return false;
 
   return false;
 });
