@@ -138,17 +138,18 @@ export function Chat({
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     onError: (error) => {
-      if (error instanceof ChatbotError) {
-        if (
-          error.message?.includes("AI Gateway requires a valid credit card")
-        ) {
-          setShowCreditCardAlert(true);
-        } else {
-          toast({
-            type: "error",
-            description: error.message,
-          });
-        }
+      if (error.message?.includes("AI Gateway requires a valid credit card")) {
+        setShowCreditCardAlert(true);
+      } else if (error instanceof ChatbotError) {
+        toast({
+          type: "error",
+          description: error.message,
+        });
+      } else {
+        toast({
+          type: "error",
+          description: error.message || "Oops, an error occurred!",
+        });
       }
     },
   });
