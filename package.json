@@ -49,6 +49,7 @@
     "@xyflow/react": "^12.10.0",
     "ai": "6.0.37",
     "bcrypt-ts": "^5.0.2",
+    "botid": "1.5.6",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
