@@ -193,12 +193,28 @@ export async function POST(request: Request) {
             },
             stopWhen: stepCountIs(500),
             abortSignal: request.signal,
-            // Compress message history before every step using a stateful
-            // compressor that caches the last result. generateText only re-runs
-            // when new messages push the combined length over SUMMARIZE_THRESHOLD
-            // (~every 10 steps), not on every single step past it.
-            prepareStep: async ({ messages: stepMessages }) => {
-              const compressed = await compressStep(stepMessages);
+            // Compress message history when token usage approaches the context
+            // window limit (75% of 200K). First step has no prior usage data so
+            // compression is skipped (correct — first step is always small).
+            prepareStep: async ({ messages: stepMessages, steps }) => {
+              const lastInputTokens = steps.length > 0
+                ? steps[steps.length - 1].usage.inputTokens
+                : undefined;
+              const { messages: compressed, compacted } = await compressStep(
+                stepMessages,
+                lastInputTokens,
+              );
+              if (compacted) {
+                dataStream.write({
+                  type: 'data-checkpoint',
+                  data: {
+                    stepNumber: steps.length,
+                    inputTokens: lastInputTokens,
+                    timestamp: Date.now(),
+                  },
+                  transient: true,
+                });
+              }
               return { messages: compressed };
             },
             // Emit cumulative token usage after each step so the client can

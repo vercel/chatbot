@@ -1,5 +1,6 @@
 import { PreviewMessage, ThinkingMessage } from './message';
 import { Greeting } from './greeting';
+import { Checkpoint } from './ai-elements';
 import { memo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
@@ -19,6 +20,7 @@ interface MessagesProps {
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
+  checkpoints?: number[];
 }
 
 function PureMessages({
@@ -31,6 +33,7 @@ function PureMessages({
   sendMessage,
   isReadonly,
   isArtifactVisible,
+  checkpoints = [],
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -54,25 +57,27 @@ function PureMessages({
       {messages.length === 0 && <Greeting />}
 
       {messages.map((message, index) => (
-        <PreviewMessage
-          key={message.id}
-          chatId={chatId}
-          message={message}
-          isLoading={status === 'streaming' && messages.length - 1 === index}
-          vote={
-            votes
-              ? votes.find((vote) => vote.messageId === message.id)
-              : undefined
-          }
-          setMessages={setMessages}
-          regenerate={regenerate}
-          sendMessage={sendMessage}
-          isReadonly={isReadonly}
-          isArtifactVisible={isArtifactVisible}
-          requiresScrollPadding={
-            hasSentMessage && index === messages.length - 1
-          }
-        />
+        <div key={message.id}>
+          {checkpoints.includes(index) && <Checkpoint />}
+          <PreviewMessage
+            chatId={chatId}
+            message={message}
+            isLoading={status === 'streaming' && messages.length - 1 === index}
+            vote={
+              votes
+                ? votes.find((vote) => vote.messageId === message.id)
+                : undefined
+            }
+            setMessages={setMessages}
+            regenerate={regenerate}
+            sendMessage={sendMessage}
+            isReadonly={isReadonly}
+            isArtifactVisible={isArtifactVisible}
+            requiresScrollPadding={
+              hasSentMessage && index === messages.length - 1
+            }
+          />
+        </div>
       ))}
 
       {status === 'submitted' &&
@@ -96,6 +101,7 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
+  if (!equal(prevProps.checkpoints, nextProps.checkpoints)) return false;
 
   return false;
 });

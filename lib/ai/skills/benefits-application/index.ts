@@ -1,1 +1,0 @@
-export { benefitsApplicationSkill } from './skill';

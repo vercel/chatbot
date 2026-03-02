@@ -63,7 +63,12 @@ export function Chat({
     cachedInputTokens: number;
     currentInputTokens: number;
   }>({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, currentInputTokens: 0 });
-  
+
+  // Track message indices after which a compaction checkpoint occurred.
+  // Each number is the message count at the time of compaction — the
+  // checkpoint separator renders after that many messages in the list.
+  const [checkpoints, setCheckpoints] = useState<number[]>([]);
+
 
   const {
     messages,
@@ -110,6 +115,10 @@ export function Chat({
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
       // Capture per-step token usage emitted by onStepFinish in route.ts
       const part = dataPart as any;
+      if (part?.type === 'data-checkpoint') {
+        // Record the current message count so we can render a separator
+        setCheckpoints((prev) => [...prev, messages.length]);
+      }
       if (part?.type === 'data-token-usage' && part.data) {
         const {
           inputTokens = 0,
@@ -374,6 +383,7 @@ export function Chat({
               sendMessage={sendMessage}
               isReadonly={isReadonly}
               isArtifactVisible={isArtifactVisible}
+              checkpoints={checkpoints}
             />
   
             <div className="shrink-0 mx-auto px-4 pt-6 bg-chat-background pb-4 md:pb-6 w-full">

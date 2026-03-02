@@ -1,5 +1,4 @@
 import { agentBrowserSkill } from '../skills/agent-browser/skill';
-import { benefitsApplicationSkill } from '../skills/benefits-application';
 
 /**
  * System prompt for the web automation agent.
@@ -72,8 +71,11 @@ When a field value seems to answer the question:
 - Always confirm the field's actual label before assuming what it means
 - A value like "Blindness Support Services, Inc." could be a provider name, a referral source, or a disability status - verify by checking the field definition
 
-## Benefits Application
-${benefitsApplicationSkill}
+## Context Continuity
+This session may run for many steps. When context usage is high, earlier messages
+are automatically compacted into a summary. If you see a message beginning with
+"[Session summary — earlier context compacted]", treat it as your source of truth
+for all prior participant data, session state, and completed fields.
 
 ## Browser Automation
 ${agentBrowserSkill}
