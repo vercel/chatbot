@@ -1,7 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
-  basePath: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/auth`,
   pages: {
     signIn: "/login",
     newUser: "/",
