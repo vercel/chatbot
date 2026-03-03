@@ -117,9 +117,14 @@ export function Chat({
       // Capture per-step token usage emitted by onStepFinish in route.ts
       const part = dataPart as any;
       if (part?.type === 'data-checkpoint') {
-        // Grab the last message ID from the ref (always current)
         const currentMessages = messagesRef.current;
         const lastMsg = currentMessages[currentMessages.length - 1];
+        console.log(
+          '[checkpoint] received data-checkpoint event',
+          'messagesCount:', currentMessages.length,
+          'lastMsgId:', lastMsg?.id,
+          'lastMsgRole:', lastMsg?.role,
+        );
         if (lastMsg) {
           setCheckpointMessageIds((prev) => new Set([...prev, lastMsg.id]));
         }
@@ -370,6 +375,7 @@ export function Chat({
           isReadonly={isReadonly}
           selectedVisibilityType={visibilityType}
           initialChatModel={initialChatModel}
+          checkpointMessageIds={checkpointMessageIds}
         />
       </TokenUsageProvider>
     );

@@ -70,7 +70,8 @@ function PureArtifact({
   regenerate,
   votes,
   isReadonly,
-  selectedVisibilityType
+  selectedVisibilityType,
+  checkpointMessageIds,
 }: {
   chatId: string;
   input: string;
@@ -87,6 +88,7 @@ function PureArtifact({
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
   initialChatModel: string;
+  checkpointMessageIds?: Set<string>;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
   const { data: session } = useSession();
@@ -383,6 +385,7 @@ function PureArtifact({
                     sendMessage={sendMessage}
                     isReadonly={isReadonly}
                     artifactStatus={artifact.status}
+                    checkpointMessageIds={checkpointMessageIds}
                   />
                 </div>
                 <div className="border-t border-gray-200 bg-[#EFD9E9] dark:bg-[#1a0b1a] p-3 sm:p-[18px]">
@@ -590,6 +593,8 @@ export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
   if (prevProps.input !== nextProps.input) return false;
   if (!equal(prevProps.messages, nextProps.messages.length)) return false;
   if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
+    return false;
+  if (prevProps.checkpointMessageIds?.size !== nextProps.checkpointMessageIds?.size)
     return false;
 
   return true;
