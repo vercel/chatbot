@@ -110,13 +110,14 @@ const PurePreviewMessage = ({
 
             if (type === "reasoning") {
               const hasContent = part.text?.trim().length > 0;
-              const isStreaming = "state" in part && part.state === "streaming";
-              if (hasContent || isStreaming) {
+              if (hasContent) {
+                const isStreaming =
+                  "state" in part && part.state === "streaming";
                 return (
                   <MessageReasoning
                     isLoading={isLoading || isStreaming}
                     key={key}
-                    reasoning={part.text || ""}
+                    reasoning={part.text}
                   />
                 );
               }

@@ -13,6 +13,7 @@ import { createResumableStreamContext } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
+import { allowedModelIds } from "@/lib/ai/models";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
@@ -72,6 +73,10 @@ export async function POST(request: Request) {
 
     if (!session?.user) {
       return new ChatbotError("unauthorized:chat").toResponse();
+    }
+
+    if (!allowedModelIds.has(selectedChatModel)) {
+      return new ChatbotError("bad_request:api").toResponse();
     }
 
     await checkIpRateLimit(ipAddress(request));
@@ -139,8 +144,9 @@ export async function POST(request: Request) {
     }
 
     const isReasoningModel =
-      selectedChatModel.includes("reasoning") ||
-      selectedChatModel.includes("thinking");
+      selectedChatModel.endsWith("-thinking") ||
+      (selectedChatModel.includes("reasoning") &&
+        !selectedChatModel.includes("non-reasoning"));
 
     const modelMessages = await convertToModelMessages(uiMessages);
 
@@ -179,7 +185,9 @@ export async function POST(request: Request) {
           },
         });
 
-        dataStream.merge(result.toUIMessageStream({ sendReasoning: true }));
+        dataStream.merge(
+          result.toUIMessageStream({ sendReasoning: isReasoningModel }),
+        );
 
         if (titlePromise) {
           const title = await titlePromise;

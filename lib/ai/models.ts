@@ -24,8 +24,8 @@ export const chatModels: ChatModel[] = [
     description: "Fast and cost-effective for simple tasks",
   },
   {
-    id: "openai/gpt-5.2",
-    name: "GPT-5.2",
+    id: "openai/gpt-5-mini",
+    name: "GPT-5 Mini",
     provider: "openai",
     description: "Most capable OpenAI model",
   },
@@ -65,6 +65,8 @@ export const chatModels: ChatModel[] = [
 ];
 
 // Group models by provider for UI
+export const allowedModelIds = new Set(chatModels.map((m) => m.id));
+
 export const modelsByProvider = chatModels.reduce(
   (acc, model) => {
     if (!acc[model.provider]) {

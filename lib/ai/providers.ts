@@ -33,7 +33,8 @@ export function getLanguageModel(modelId: string) {
   }
 
   const isReasoningModel =
-    modelId.includes("reasoning") || modelId.endsWith("-thinking");
+    modelId.endsWith("-thinking") ||
+    (modelId.includes("reasoning") && !modelId.includes("non-reasoning"));
 
   if (isReasoningModel) {
     const gatewayModelId = modelId.replace(THINKING_SUFFIX_REGEX, "");
