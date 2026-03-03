@@ -2,20 +2,47 @@ import { generateText, type ModelMessage } from 'ai';
 import { prepareStepModel } from '@/lib/ai/providers';
 
 const MODEL_CONTEXT_WINDOW = 200_000; // claude-sonnet-4-6
-const COMPACT_THRESHOLD_PCT = 0.50;   // 50% for testing (production: 0.75)
+const COMPACT_THRESHOLD_PCT = 0.75;   // 30% for testing (production: 0.75)
 const KEEP_RECENT = 8;                // keep last N messages after compaction
-const COOLDOWN_STEPS = 4;             // skip N steps after compaction before checking again
 
 const log = (...args: unknown[]) => console.log('[compressor]', ...args);
 
 /**
- * Returns a stateful compression function whose cache persists across all
- * prepareStep invocations for a single request.
+ * Flatten a ModelMessage into a plain-text line for the transcript.
+ * Strips browser snapshots/screenshots to keep the transcript manageable.
+ */
+function flattenMessage(msg: ModelMessage): string {
+  const role = msg.role.toUpperCase();
+  if (typeof msg.content === 'string') return `[${role}]: ${msg.content}`;
+  if (!Array.isArray(msg.content)) return `[${role}]: ${JSON.stringify(msg.content)}`;
+
+  const parts = (msg.content as any[]).map((part) => {
+    if (part.type === 'text') return part.text;
+    if (part.type === 'tool-call')
+      return `[Tool call: ${part.toolName}(${JSON.stringify(part.args ?? {}).slice(0, 200)})]`;
+    if (part.type === 'tool-result') {
+      if (part.toolName === 'browser') {
+        const r = part.result as Record<string, unknown>;
+        if (r?.snapshot || r?.accessibility_tree) return '[browser snapshot: pruned]';
+        if (r?.screenshot) return '[browser screenshot: pruned]';
+        return `[browser ${(r as any)?.action ?? 'action'} completed]`;
+      }
+      const text = typeof part.result === 'string' ? part.result : JSON.stringify(part.result);
+      return `[Tool result (${part.toolName}): ${text.slice(0, 500)}]`;
+    }
+    return JSON.stringify(part).slice(0, 200);
+  });
+  return `[${role}]: ${parts.join('\n')}`;
+}
+
+/**
+ * Returns a stateful compression function for a single streamText request.
+ *
+ * State: just one flag (`justCompacted`) to skip the stale-inputTokens step
+ * immediately after compaction. Everything else is derived from the args.
  */
 export function createMessageCompressor() {
-  let compressedCache: ModelMessage[] | null = null;
-  let lastFullLength = 0;
-  let cooldownRemaining = 0; // steps to skip after a compaction
+  let justCompacted = false;
 
   return async function compress(
     stepMessages: ModelMessage[],
@@ -23,21 +50,15 @@ export function createMessageCompressor() {
   ): Promise<{ messages: ModelMessage[]; compacted: boolean }> {
     const usedPct = (lastInputTokens ?? 0) / MODEL_CONTEXT_WINDOW;
 
-    // Cache hit — same message count, no new data
-    if (compressedCache && stepMessages.length === lastFullLength) {
-      log(`cache hit — ${stepMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% context`);
-      return { messages: compressedCache, compacted: false };
-    }
-
-    // Cooldown: after compaction, skip checks so the reduced context
-    // has time to be measured (prevents compaction death spiral).
-    if (cooldownRemaining > 0) {
-      cooldownRemaining--;
+    // After compaction the next step's inputTokens is stale (measured before
+    // we replaced messages). Skip one check so the model sees compacted
+    // context and reports accurate usage.
+    if (justCompacted) {
+      justCompacted = false;
       log(
-        `cooldown — ${cooldownRemaining + 1} steps remaining, ` +
-        `${stepMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% context`
+        `skip — stale inputTokens after compaction, ` +
+        `${stepMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% (stale)`
       );
-      lastFullLength = stepMessages.length;
       return { messages: stepMessages, compacted: false };
     }
 
@@ -49,14 +70,12 @@ export function createMessageCompressor() {
     );
 
     if (usedPct < COMPACT_THRESHOLD_PCT) {
-      lastFullLength = stepMessages.length;
       return { messages: stepMessages, compacted: false };
     }
 
-    // Over threshold — full summarization via Gemini
+    // Not enough messages to split meaningfully
     if (stepMessages.length <= KEEP_RECENT) {
-      log(`over threshold but only ${stepMessages.length} msgs (≤ KEEP_RECENT=${KEEP_RECENT}), skipping`);
-      lastFullLength = stepMessages.length;
+      log(`over threshold but only ${stepMessages.length} msgs (≤ ${KEEP_RECENT}), skipping`);
       return { messages: stepMessages, compacted: false };
     }
 
@@ -68,57 +87,43 @@ export function createMessageCompressor() {
       `COMPACTING — summarizing ${oldMessages.length} old msgs, keeping ${recentMessages.length} recent`
     );
 
-    // Strip browser snapshots/screenshots before summarizing —
-    // keep Apricot records, gap analysis results, and caseworker responses intact
-    const messagesForSummarizer = oldMessages.map((msg) => {
-      if (msg.role !== 'tool') return msg;
-      return {
-        ...msg,
-        content: (msg.content as any[]).map((part) => {
-          if (part.type !== 'tool-result') return part;
-          if (part.toolName !== 'browser') return part;
-          const r = part.result as Record<string, unknown>;
-          if (r?.snapshot || r?.accessibility_tree) {
-            return { ...part, content: '[browser snapshot: pruned]' };
-          }
-          if (r?.screenshot) {
-            return { ...part, content: '[browser screenshot: pruned]' };
-          }
-          return { ...part, content: `[browser ${(r as any)?.action ?? 'action'} completed]` };
-        }),
-      };
-    });
+    const transcript = oldMessages.map(flattenMessage).join('\n\n');
+    log(`transcript length: ${transcript.length} chars from ${oldMessages.length} msgs`);
 
     const t0 = Date.now();
-    const { text: summary } = await generateText({
-      model: prepareStepModel,
-      system:
-        'You are creating a session handoff document for a benefits form-filling agent. ' +
-        'Extract and preserve ALL of the following — be explicit and complete:\n' +
-        '- PARTICIPANT DATA: Every field-value pair from the database (Apricot record) and caseworker. Format as "Field: Value" lines.\n' +
-        '- SESSION STATE: The current form name, URL, and which page/step we are on.\n' +
-        '- COMPLETED FIELDS: Every field that has already been filled and its value.\n' +
-        '- PENDING FIELDS: Every field still needing input.\n' +
-        '- CASEWORKER INPUTS: Every answer or correction the caseworker provided.\n' +
-        '- GAP ANALYSIS: Every field that has been identified as a gap and the reason why.\n' +
-        '- GAP ANSWERS: Every answer or correction the caseworker provided to a gap analysis.\n' +
-        'Do NOT summarize participant data — list every field and value explicitly. ' +
-        'Do NOT include browser snapshot content or raw HTML.',
-      messages: messagesForSummarizer,
-    });
+    let summary: string;
+    try {
+      const result = await generateText({
+        model: prepareStepModel,
+        maxOutputTokens: 4096,
+        system:
+          'You are creating a session handoff document for a benefits form-filling agent. ' +
+          'Extract and preserve ALL of the following — be explicit and complete:\n' +
+          '- PARTICIPANT DATA: Every field-value pair from the database (Apricot record) and caseworker. Format as "Field: Value" lines.\n' +
+          '- SESSION STATE: The current form name, URL, and which page/step we are on.\n' +
+          '- COMPLETED FIELDS: Every field that has already been filled and its value.\n' +
+          '- PENDING FIELDS: Every field still needing input.\n' +
+          '- CASEWORKER INPUTS: Every answer or correction the caseworker provided.\n' +
+          '- GAP ANALYSIS: Every field that has been identified as a gap and the reason why.\n' +
+          '- GAP ANSWERS: Every answer or correction the caseworker provided to a gap analysis.\n' +
+          'Do NOT summarize participant data — list every field and value explicitly. ' +
+          'Do NOT include browser snapshot content or raw HTML.',
+        messages: [{ role: 'user', content: `Summarize this session transcript:\n\n${transcript}` }],
+      });
+      summary = result.text;
+      log(`Sonnet finishReason: ${result.finishReason}`);
+    } catch (err) {
+      log(`Sonnet ERROR:`, err);
+      justCompacted = true; // skip next stale check
+      return { messages: stepMessages, compacted: false };
+    }
     const elapsed = Date.now() - t0;
 
-    log(
-      `Gemini summary done in ${elapsed}ms — ` +
-      `summary length: ${summary.length} chars`
-    );
+    log(`Sonnet summary done in ${elapsed}ms — summary length: ${summary.length} chars`);
 
-    // Guard: if Gemini returned nothing, don't compact — keep original messages
     if (!summary.trim()) {
-      log('ABORT — Gemini returned empty summary, keeping original messages');
-      lastFullLength = stepMessages.length;
-      // Still set cooldown to avoid hammering Gemini with empty results
-      cooldownRemaining = COOLDOWN_STEPS;
+      log('ABORT — Sonnet returned empty summary, keeping original messages');
+      justCompacted = true; // don't re-trigger immediately
       return { messages: stepMessages, compacted: false };
     }
 
@@ -127,10 +132,7 @@ export function createMessageCompressor() {
       content: `[Session summary — earlier context compacted]\n\n${summary}`,
     };
 
-    const result = [summaryMessage, ...recentMessages];
-    compressedCache = result;
-    lastFullLength = stepMessages.length;
-    cooldownRemaining = COOLDOWN_STEPS;
-    return { messages: result, compacted: true };
+    justCompacted = true;
+    return { messages: [summaryMessage, ...recentMessages], compacted: true };
   };
 }
