@@ -117,7 +117,7 @@ export function BenefitApplicationsLanding({
   );
 
   return (
-    <div className="flex flex-1 flex-col bg-chat-background md:flex-row md:pl-28 md:pr-20 lg:pl-32 lg:pr-24 xl:pl-40 xl:pr-32">
+    <div className="flex flex-1 flex-col bg-chat-background md:flex-row md:pl-28 md:pr-20 lg:pl-40 lg:pr-32 xl:pl-52 xl:pr-44">
       {/* Left panel — desktop only */}
       <div className="hidden md:flex md:w-[38%] md:flex-col md:justify-start md:pr-8 md:pt-24 xl:w-[40%]">
         <h1 className="font-source-serif text-4xl leading-[1.15] text-foreground">
@@ -184,7 +184,7 @@ export function BenefitApplicationsLanding({
                   onFocus={() => { if (!isUrl(query)) setIsComboOpen(true); }}
                   placeholder="Select a program"
                   disabled={!isLoggedIn}
-                  className="flex-1 bg-transparent font-inter text-xl text-foreground placeholder:text-[#b5b5b5] focus:outline-none disabled:cursor-not-allowed"
+                  className="flex-1 bg-transparent font-inter text-xl text-foreground placeholder:text-[#b5b5b5] focus:outline-none disabled:cursor-not-allowed truncate"
                 />
                 {query ? (
                   <button
@@ -200,9 +200,20 @@ export function BenefitApplicationsLanding({
                     &#x2715;
                   </button>
                 ) : (
-                  <ChevronDown
-                    className={`h-5 w-5 shrink-0 text-[#8e8e8e] transition-transform ${isComboOpen ? 'rotate-180' : ''}`}
-                  />
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      if (!isLoggedIn) return;
+                      setIsComboOpen((prev) => !prev);
+                    }}
+                    aria-label="Toggle program list"
+                    className="shrink-0"
+                  >
+                    <ChevronDown
+                      className={`h-5 w-5 text-[#8e8e8e] transition-transform ${isComboOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
                 )}
               </div>
               {isComboOpen && (
