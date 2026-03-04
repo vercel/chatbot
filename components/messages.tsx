@@ -1,6 +1,5 @@
 import { PreviewMessage, ThinkingMessage } from './message';
 import { Greeting } from './greeting';
-import { Checkpoint, CheckpointIcon } from './ai-elements';
 import { memo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
@@ -9,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useMessages } from '@/hooks/use-messages';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import type { CheckpointData } from './chat';
 
 interface MessagesProps {
   chatId: string;
@@ -20,7 +20,8 @@ interface MessagesProps {
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
-  checkpointMessageIds?: Set<string>;
+  checkpoints?: CheckpointData[];
+  isCompacting?: boolean;
 }
 
 function PureMessages({
@@ -33,7 +34,8 @@ function PureMessages({
   sendMessage,
   isReadonly,
   isArtifactVisible,
-  checkpointMessageIds,
+  checkpoints,
+  isCompacting,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -58,16 +60,12 @@ function PureMessages({
 
       {messages.map((message, index) => (
         <div key={message.id}>
-          {checkpointMessageIds?.has(message.id) && (
-            <Checkpoint className="my-2">
-              <CheckpointIcon />
-              <span className="shrink-0 px-2 text-xs">Earlier messages summarized</span>
-            </Checkpoint>
-          )}
           <PreviewMessage
             chatId={chatId}
             message={message}
             isLoading={status === 'streaming' && messages.length - 1 === index}
+            isCompacting={isCompacting && status === 'streaming' && messages.length - 1 === index}
+            checkpoints={checkpoints?.filter((cp) => cp.messageId === message.id)}
             vote={
               votes
                 ? votes.find((vote) => vote.messageId === message.id)
@@ -106,7 +104,7 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
-  if (prevProps.checkpointMessageIds?.size !== nextProps.checkpointMessageIds?.size) return false;
+  if (prevProps.checkpoints?.length !== nextProps.checkpoints?.length) return false;
 
   return false;
 });

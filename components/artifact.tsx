@@ -18,6 +18,7 @@ import { VersionFooter } from './version-footer';
 import { ArtifactActions } from './artifact-actions';
 import { ArtifactCloseButton } from './artifact-close-button';
 import { ArtifactMessages } from './artifact-messages';
+import type { CheckpointData } from './chat';
 import { SideChatHeader } from './side-chat-header';
 import { useSidebar } from './ui/sidebar';
 import { useArtifact } from '@/hooks/use-artifact';
@@ -71,7 +72,8 @@ function PureArtifact({
   votes,
   isReadonly,
   selectedVisibilityType,
-  checkpointMessageIds,
+  checkpoints,
+  isCompacting,
 }: {
   chatId: string;
   input: string;
@@ -88,7 +90,8 @@ function PureArtifact({
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
   initialChatModel: string;
-  checkpointMessageIds?: Set<string>;
+  checkpoints?: CheckpointData[];
+  isCompacting?: boolean;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
   const { data: session } = useSession();
@@ -385,7 +388,8 @@ function PureArtifact({
                     sendMessage={sendMessage}
                     isReadonly={isReadonly}
                     artifactStatus={artifact.status}
-                    checkpointMessageIds={checkpointMessageIds}
+                    checkpoints={checkpoints}
+                    isCompacting={isCompacting}
                   />
                 </div>
                 <div className="border-t border-gray-200 bg-[#EFD9E9] dark:bg-[#1a0b1a] p-3 sm:p-[18px]">
@@ -594,7 +598,7 @@ export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
   if (!equal(prevProps.messages, nextProps.messages.length)) return false;
   if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
     return false;
-  if (prevProps.checkpointMessageIds?.size !== nextProps.checkpointMessageIds?.size)
+  if (prevProps.checkpoints?.length !== nextProps.checkpoints?.length)
     return false;
 
   return true;

@@ -200,9 +200,16 @@ export async function POST(request: Request) {
               const lastInputTokens = steps.length > 0
                 ? steps[steps.length - 1].usage.inputTokens
                 : undefined;
-              const { messages: compressed, compacted } = await compressStep(
+              const { messages: compressed, compacted, summary } = await compressStep(
                 stepMessages,
                 lastInputTokens,
+                () => {
+                  dataStream.write({
+                    type: 'data-compacting',
+                    data: { timestamp: Date.now() },
+                    transient: true,
+                  });
+                },
               );
               if (compacted) {
                 console.log(
@@ -214,6 +221,7 @@ export async function POST(request: Request) {
                     stepNumber: steps.length,
                     inputTokens: lastInputTokens,
                     timestamp: Date.now(),
+                    summary,
                   },
                   transient: true,
                 });

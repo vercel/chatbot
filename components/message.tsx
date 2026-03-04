@@ -28,7 +28,8 @@ import { ChevronDown } from 'lucide-react';
 import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
-import { UserActionConfirmation, GapAnalysisCard, FormSummaryCard } from './ai-elements';
+import { UserActionConfirmation, GapAnalysisCard, FormSummaryCard, CheckpointCard } from './ai-elements';
+import type { CheckpointData } from './chat';
 import { groupMessageParts, ToolCallGroup } from './tool-call-group';
 
 // Responsive min-height calculation that accounts for side-chat-header height
@@ -74,6 +75,8 @@ const PurePreviewMessage = ({
   message,
   vote,
   isLoading,
+  isCompacting,
+  checkpoints,
   setMessages,
   regenerate,
   sendMessage,
@@ -85,6 +88,8 @@ const PurePreviewMessage = ({
   message: ChatMessage;
   vote: Vote | undefined;
   isLoading: boolean;
+  isCompacting?: boolean;
+  checkpoints?: CheckpointData[];
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
   regenerate: UseChatHelpers<ChatMessage>['regenerate'];
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
@@ -123,6 +128,30 @@ const PurePreviewMessage = ({
     () => groupMessageParts(message.parts ?? []),
     [message.parts],
   );
+
+  // Map each checkpoint's partCount to the processed-part index it should
+  // render after. We find the last processed entry whose original range
+  // is <= the checkpoint's partCount.
+  const checkpointsByProcessedIndex = useMemo(() => {
+    if (!checkpoints?.length || !processedParts.length) return new Map<number, CheckpointData[]>();
+    const map = new Map<number, CheckpointData[]>();
+    for (const cp of checkpoints) {
+      let bestIdx = 0;
+      for (let i = 0; i < processedParts.length; i++) {
+        const p = processedParts[i];
+        const endIndex = p.kind === 'tool-group'
+          ? p.startIndex + p.parts.length
+          : p.index + 1;
+        if (endIndex <= cp.partCount) {
+          bestIdx = i;
+        }
+      }
+      const existing = map.get(bestIdx) ?? [];
+      existing.push(cp);
+      map.set(bestIdx, existing);
+    }
+    return map;
+  }, [checkpoints, processedParts]);
 
   return (
     <AnimatePresence>
@@ -166,15 +195,21 @@ const PurePreviewMessage = ({
               </div>
             )}
 
-            {processedParts.map((processed) => {
+            {processedParts.map((processed, processedIdx) => {
+              const cpCards = checkpointsByProcessedIndex.get(processedIdx);
+
               if (processed.kind === 'tool-group') {
                 return (
-                  <ToolCallGroup
-                    key={`message-${message.id}-group-${processed.startIndex}`}
-                    parts={processed.parts as any}
-                    messageId={message.id}
-                    startIndex={processed.startIndex}
-                  />
+                  <div key={`message-${message.id}-group-${processed.startIndex}`}>
+                    <ToolCallGroup
+                      parts={processed.parts as any}
+                      messageId={message.id}
+                      startIndex={processed.startIndex}
+                    />
+                    {cpCards?.map((cp, i) => (
+                      <CheckpointCard key={`checkpoint-${cp.partCount}-${i}`} summary={cp.summary} />
+                    ))}
+                  </div>
                 );
               }
 
@@ -543,11 +578,22 @@ const PurePreviewMessage = ({
               }
             })}
 
+            {/* Render any checkpoint cards that weren't placed within a tool-group */}
+            {checkpoints?.filter((cp) => {
+              // Check if this checkpoint was already rendered inside a tool-group
+              for (const [, cps] of checkpointsByProcessedIndex) {
+                if (cps.includes(cp)) return false;
+              }
+              return true;
+            }).map((cp, i) => (
+              <CheckpointCard key={`checkpoint-unplaced-${i}`} summary={cp.summary} />
+            ))}
+
             {isLoading && (
               <div className="flex items-center gap-2 p-3 border-0 rounded-md">
                 <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground flex items-center gap-2">
                   <Spinner className="size-3 shrink-0 text-primary" />
-                  Processing...
+                  {isCompacting ? 'Summarizing context...' : 'Processing...'}
                 </div>
               </div>
             )}

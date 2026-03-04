@@ -1,17 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import type { LucideProps } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { BookmarkIcon } from "lucide-react";
+import { BookmarkIcon, ChevronDown } from "lucide-react";
 
 export type CheckpointProps = HTMLAttributes<HTMLDivElement>;
 
@@ -70,3 +76,40 @@ export const CheckpointTrigger = ({
       {children}
     </Button>
   );
+
+export interface CheckpointCardProps {
+  summary: string;
+  className?: string;
+}
+
+export function CheckpointCard({ summary, className }: CheckpointCardProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className={cn("my-2", className)}>
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-0.5 w-full text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          <BookmarkIcon className="size-4 shrink-0" />
+          <span className="shrink-0 px-2 text-xs">Context checkpoint</span>
+          <ChevronDown
+            className={cn(
+              "size-3.5 shrink-0 transition-transform",
+              open && "rotate-180"
+            )}
+          />
+          <Separator />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="mt-2 rounded-xl border border-accent bg-background p-4">
+          <pre className="whitespace-pre-wrap font-ibm-plex-mono text-xs text-muted-foreground leading-relaxed">
+            {summary}
+          </pre>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}

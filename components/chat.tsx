@@ -26,6 +26,8 @@ import { TokenUsageProvider } from '@/hooks/use-token-usage';
 // Feature flag for AI SDK agent vs Mastra (client-side)
 const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
 
+export type CheckpointData = { messageId: string; partCount: number; summary: string };
+
 export function Chat({
   id,
   initialMessages,
@@ -64,9 +66,14 @@ export function Chat({
     currentInputTokens: number;
   }>({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, currentInputTokens: 0 });
 
-  // Track message IDs after which a compaction checkpoint occurred.
-  // The checkpoint separator renders after the message with this ID.
-  const [checkpointMessageIds, setCheckpointMessageIds] = useState<Set<string>>(new Set());
+  // Track compaction checkpoints. Each entry records the message ID,
+  // the number of parts that message had at checkpoint time, and the summary.
+  // This lets us render the card between parts at the right position.
+  const [checkpoints, setCheckpoints] = useState<Array<{ messageId: string; partCount: number; summary: string }>>(
+    []
+  );
+  // True while the compressor is running the Sonnet summary call
+  const [isCompacting, setIsCompacting] = useState(false);
   // Ref to always have the latest messages in the onData closure
   const messagesRef = useRef<ChatMessage[]>([]);
 
@@ -116,7 +123,11 @@ export function Chat({
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
       // Capture per-step token usage emitted by onStepFinish in route.ts
       const part = dataPart as any;
+      if (part?.type === 'data-compacting') {
+        setIsCompacting(true);
+      }
       if (part?.type === 'data-checkpoint') {
+        setIsCompacting(false);
         const currentMessages = messagesRef.current;
         const lastMsg = currentMessages[currentMessages.length - 1];
         console.log(
@@ -124,9 +135,14 @@ export function Chat({
           'messagesCount:', currentMessages.length,
           'lastMsgId:', lastMsg?.id,
           'lastMsgRole:', lastMsg?.role,
+          'lastMsgParts:', lastMsg?.parts?.length,
         );
         if (lastMsg) {
-          setCheckpointMessageIds((prev) => new Set([...prev, lastMsg.id]));
+          const summary = (part.data as any)?.summary ?? '';
+          setCheckpoints((prev) => [
+            ...prev,
+            { messageId: lastMsg.id, partCount: lastMsg.parts?.length ?? 0, summary },
+          ]);
         }
       }
       if (part?.type === 'data-token-usage' && part.data) {
@@ -375,7 +391,8 @@ export function Chat({
           isReadonly={isReadonly}
           selectedVisibilityType={visibilityType}
           initialChatModel={initialChatModel}
-          checkpointMessageIds={checkpointMessageIds}
+          checkpoints={checkpoints}
+          isCompacting={isCompacting}
         />
       </TokenUsageProvider>
     );
@@ -397,7 +414,8 @@ export function Chat({
               sendMessage={sendMessage}
               isReadonly={isReadonly}
               isArtifactVisible={isArtifactVisible}
-              checkpointMessageIds={checkpointMessageIds}
+              checkpoints={checkpoints}
+              isCompacting={isCompacting}
             />
   
             <div className="shrink-0 mx-auto px-4 pt-6 bg-chat-background pb-4 md:pb-6 w-full">
@@ -440,6 +458,8 @@ export function Chat({
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
         initialChatModel={initialChatModel}
+        checkpoints={checkpoints}
+        isCompacting={isCompacting}
       />
     </TokenUsageProvider>
   );
