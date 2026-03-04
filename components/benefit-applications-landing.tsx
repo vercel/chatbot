@@ -12,9 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const PROGRAMS = [
-  { id: 'benefits-cal', name: 'Benefits Cal', website: 'https://benefitscal.com/' },
-  { id: 'wic', name: 'WIC', website: 'https://www.ruhealth.org/appointments/apply-4-wic-form' },
-  { id: 'ihss', name: 'IHSS', website: 'https://www.riversideihss.org/Home/IHSSApply' },
+  // { id: 'benefits-cal', name: 'Benefits Cal', website: 'https://benefitscal.com/' },
+  { id: 'wic', name: 'Apply 4 WIC Form', website: 'https://www.ruhealth.org/appointments/apply-4-wic-form' },
+  { id: 'ihss', name: 'In-Home Supportive Services (IHSS): Intake Application', website: 'https://riversideihss.org/IntakeApp' },
+  { id: 'head-start', name: 'RCOE Early Head Start: 0-3; Head Start: 3-5', website: 'https://app.informedk12.com/link_campaigns/rcoe-head-start-ehs-application-english-electronic-form?token=RX3jMrVUfWLz3aQnjpiQpseu' },
+  { id: 'nurse-family-partnership', name: 'Nurse-Family Partnership', website: 'https://forms.office.com/Pages/ResponsePage.aspx?id=yqoVt4-WGUe7BO0xcOCKaQVow3g6-R9Mh0F8VizNQzhUQ1hCNENFTFBMOVg4SElRSldIWk5BRUkxUi4u' },
+  { id: 'pregnancy-planning', name: 'RCOE Pregnancy Planning', website: 'https://secureweb.rcoe.us/ONLINEREF/' },
+  { id: 'alternative-payment', name: 'RCOE Alternative Payment', website: 'https://secureweb.rcoe.us/rcoe_elist/Family/Create' },
 ];
 
 interface BenefitApplicationsLandingProps {
@@ -113,9 +117,9 @@ export function BenefitApplicationsLanding({
   );
 
   return (
-    <div className="flex flex-1 flex-col bg-chat-background md:flex-row">
+    <div className="flex flex-1 flex-col bg-chat-background md:flex-row md:pl-28 md:pr-20 lg:pl-32 lg:pr-24 xl:pl-40 xl:pr-32">
       {/* Left panel — desktop only */}
-      <div className="hidden md:flex md:w-[38%] md:flex-col md:justify-start md:px-12 md:pt-24 lg:px-16 xl:w-[40%] xl:px-20">
+      <div className="hidden md:flex md:w-[38%] md:flex-col md:justify-start md:pr-8 md:pt-24 xl:w-[40%]">
         <h1 className="font-source-serif text-4xl leading-[1.15] text-foreground">
           Let&apos;s start a<br />
           new application.
@@ -124,7 +128,7 @@ export function BenefitApplicationsLanding({
       </div>
 
       {/* Right panel */}
-      <div className="flex flex-1 flex-col items-center justify-start gap-6 overflow-y-auto px-4 py-8 sm:px-6 md:px-8 md:pb-10 md:pt-20">
+      <div className="flex flex-1 flex-col items-center justify-start gap-6 overflow-y-auto px-4 pt-14 pb-8 sm:px-6 md:items-end md:px-0 md:pb-10 md:pt-20">
         {/* Mobile: title + alert */}
         <div className="flex w-full max-w-[648px] flex-col gap-4 md:hidden">
           <h1 className="font-source-serif text-3xl leading-[1.15] text-foreground">
@@ -147,7 +151,7 @@ export function BenefitApplicationsLanding({
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               disabled={!isLoggedIn}
-              className="mt-5 h-[52px] w-[129px] rounded-[10px] border border-[#b5b5b5] px-4 font-inter text-2xl placeholder:text-[#e1e1e1] focus:border-primary focus:shadow-[0px_0px_8px_0px_rgba(177,64,146,0.25)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-5 h-[52px] w-[129px] rounded-[10px] border border-[#b5b5b5] px-4 font-inter text-xl placeholder:text-[#e1e1e1] focus:border-primary focus:shadow-[0px_0px_8px_0px_rgba(177,64,146,0.25)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
             />
           </div>
 
@@ -180,7 +184,7 @@ export function BenefitApplicationsLanding({
                   onFocus={() => { if (!isUrl(query)) setIsComboOpen(true); }}
                   placeholder="Select a program"
                   disabled={!isLoggedIn}
-                  className="flex-1 bg-transparent font-inter text-2xl text-foreground placeholder:text-[#b5b5b5] focus:outline-none disabled:cursor-not-allowed"
+                  className="flex-1 bg-transparent font-inter text-xl text-foreground placeholder:text-[#b5b5b5] focus:outline-none disabled:cursor-not-allowed"
                 />
                 {query ? (
                   <button
@@ -219,7 +223,7 @@ export function BenefitApplicationsLanding({
                           setQuery(p.name);
                           setIsComboOpen(false);
                         }}
-                        className={`w-full px-2 py-1 text-left font-inter text-xl hover:bg-primary/10 ${
+                        className={`w-full px-2 py-1 text-left font-inter text-xl hover:bg-primary/10 truncate ${
                           program?.id === p.id ? 'bg-primary/5 text-primary' : 'text-foreground'
                         }`}
                       >
@@ -247,7 +251,7 @@ export function BenefitApplicationsLanding({
           <p className="mb-2 font-inter text-[15px] text-foreground">
             Or, write your own prompt:
           </p>
-          <div className="flex h-14 items-center gap-2 rounded-2xl border-2 border-input bg-card px-4">
+          <div className="flex h-14 items-center gap-2 rounded-xl border-2 border-input bg-card px-4">
             <input
               type="text"
               placeholder="Retrieve ID #XXXXX and apply for WIC"
