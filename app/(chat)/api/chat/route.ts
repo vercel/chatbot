@@ -1,3 +1,4 @@
+import { checkBotId } from "botid/server";
 import { geolocation, ipAddress } from "@vercel/functions";
 import {
   convertToModelMessages,
@@ -64,7 +65,10 @@ export async function POST(request: Request) {
     const { id, message, messages, selectedChatModel, selectedVisibilityType } =
       requestBody;
 
-    const session = await auth();
+    const [, session] = await Promise.all([
+      checkBotId().catch(() => null),
+      auth(),
+    ]);
 
     if (!session?.user) {
       return new ChatbotError("unauthorized:chat").toResponse();
@@ -80,10 +84,10 @@ export async function POST(request: Request) {
 
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
-      differenceInHours: 24,
+      differenceInHours: 1,
     });
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
+    if (messageCount > entitlementsByUserType[userType].maxMessagesPerHour) {
       return new ChatbotError("rate_limit:chat").toResponse();
     }
 
