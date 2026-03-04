@@ -2,7 +2,7 @@ import { generateText, type ModelMessage } from 'ai';
 import { prepareStepModel } from '@/lib/ai/providers';
 
 const MODEL_CONTEXT_WINDOW = 200_000; // claude-sonnet-4-6
-const COMPACT_THRESHOLD_PCT = 0.75;   // 30% for testing (production: 0.75)
+const COMPACT_THRESHOLD_PCT = 0.25;   // 30% for testing (production: 0.75)
 const KEEP_RECENT = 8;                // keep last N messages after compaction
 
 const log = (...args: unknown[]) => console.log('[compressor]', ...args);

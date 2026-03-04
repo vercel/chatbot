@@ -129,29 +129,47 @@ const PurePreviewMessage = ({
     [message.parts],
   );
 
-  // Map each checkpoint's partCount to the processed-part index it should
-  // render after. We find the last processed entry whose original range
-  // is <= the checkpoint's partCount.
+  // Map each checkpoint to the processed-part index it should render after.
+  // We use the stepNumber from the checkpoint event to find the Nth step-start
+  // in the original parts, then map that part index to the processed-part index.
   const checkpointsByProcessedIndex = useMemo(() => {
     if (!checkpoints?.length || !processedParts.length) return new Map<number, CheckpointData[]>();
+    const parts = message.parts ?? [];
+
     const map = new Map<number, CheckpointData[]>();
     for (const cp of checkpoints) {
-      let bestIdx = 0;
-      for (let i = 0; i < processedParts.length; i++) {
-        const p = processedParts[i];
-        const endIndex = p.kind === 'tool-group'
-          ? p.startIndex + p.parts.length
-          : p.index + 1;
-        if (endIndex <= cp.partCount) {
-          bestIdx = i;
+      // Find the original part index of the step-start for this checkpoint's stepNumber.
+      // step-start parts are 0-indexed: the first step-start is step 0.
+      let stepCount = 0;
+      let checkpointPartIndex = parts.length; // default: end of parts
+      for (let i = 0; i < parts.length; i++) {
+        if ((parts[i] as any).type === 'step-start') {
+          if (stepCount === cp.stepNumber) {
+            checkpointPartIndex = i;
+            break;
+          }
+          stepCount++;
         }
       }
+
+      // Now find the processed-part index that contains or immediately precedes
+      // the checkpointPartIndex.
+      let bestIdx = processedParts.length - 1;
+      for (let i = 0; i < processedParts.length; i++) {
+        const p = processedParts[i];
+        const startIdx = p.kind === 'tool-group' ? p.startIndex : p.index;
+        if (startIdx >= checkpointPartIndex) {
+          bestIdx = Math.max(0, i - 1);
+          break;
+        }
+      }
+
       const existing = map.get(bestIdx) ?? [];
       existing.push(cp);
       map.set(bestIdx, existing);
     }
     return map;
-  }, [checkpoints, processedParts]);
+  }, [checkpoints, processedParts, message.parts]);
 
   return (
     <AnimatePresence>

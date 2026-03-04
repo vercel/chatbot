@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Markdown } from "@/components/markdown";
 import { BookmarkIcon, ChevronDown } from "lucide-react";
 
 export type CheckpointProps = HTMLAttributes<HTMLDivElement>;
@@ -86,7 +87,7 @@ export function CheckpointCard({ summary, className }: CheckpointCardProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className={cn("my-2", className)}>
+    <Collapsible open={open} onOpenChange={setOpen} className={cn("mt-6 mb-2", className)}>
       <CollapsibleTrigger asChild>
         <button
           type="button"
@@ -104,10 +105,8 @@ export function CheckpointCard({ summary, className }: CheckpointCardProps) {
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-2 rounded-xl border border-accent bg-background p-4">
-          <pre className="whitespace-pre-wrap font-ibm-plex-mono text-xs text-muted-foreground leading-relaxed">
-            {summary}
-          </pre>
+        <div className="mt-2 rounded-xl border border-accent bg-background p-4 text-xs text-muted-foreground leading-relaxed [&_h1]:text-sm [&_h1]:font-semibold [&_h2]:text-xs [&_h2]:font-semibold [&_h3]:text-xs [&_h3]:font-medium [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:my-1">
+          <Markdown>{summary}</Markdown>
         </div>
       </CollapsibleContent>
     </Collapsible>
