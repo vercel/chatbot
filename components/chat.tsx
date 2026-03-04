@@ -26,7 +26,7 @@ import { TokenUsageProvider } from '@/hooks/use-token-usage';
 // Feature flag for AI SDK agent vs Mastra (client-side)
 const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
 
-export type CheckpointData = { messageId: string; partCount: number; summary: string };
+export type CheckpointData = { messageId: string; stepNumber: number; partCount: number; summary: string };
 
 export function Chat({
   id,
@@ -69,7 +69,7 @@ export function Chat({
   // Track compaction checkpoints. Each entry records the message ID,
   // the number of parts that message had at checkpoint time, and the summary.
   // This lets us render the card between parts at the right position.
-  const [checkpoints, setCheckpoints] = useState<Array<{ messageId: string; partCount: number; summary: string }>>(
+  const [checkpoints, setCheckpoints] = useState<CheckpointData[]>(
     []
   );
   // True while the compressor is running the Sonnet summary call
@@ -138,10 +138,17 @@ export function Chat({
           'lastMsgParts:', lastMsg?.parts?.length,
         );
         if (lastMsg) {
-          const summary = (part.data as any)?.summary ?? '';
+          const data = part.data as any;
+          const summary = data?.summary ?? '';
+          const stepNumber = data?.stepNumber ?? 0;
           setCheckpoints((prev) => [
             ...prev,
-            { messageId: lastMsg.id, partCount: lastMsg.parts?.length ?? 0, summary },
+            {
+              messageId: lastMsg.id,
+              stepNumber,
+              partCount: lastMsg.parts?.length ?? 0,
+              summary,
+            },
           ]);
         }
       }
