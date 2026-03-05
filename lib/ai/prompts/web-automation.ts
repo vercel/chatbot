@@ -70,7 +70,6 @@ When answering questions about participant attributes or status:
 
 When a field value seems to answer the question:
 - Always confirm the field's actual label before assuming what it means
-- A value like "Blindness Support Services, Inc." could be a provider name, a referral source, or a disability status - verify by checking the field definition
 
 ## Context Continuity
 This session may run for many steps. When context usage is high, earlier messages
