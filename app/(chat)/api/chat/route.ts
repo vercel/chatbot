@@ -135,6 +135,24 @@ export async function POST(request: Request) {
 
     const messagesFromDb = await getMessagesByChatId({ id });
     const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+    const existingMessageIds = new Set(uiMessages.map((m) => m.id));
+
+    // Save only messages generated during this request (not already in DB).
+    const saveNewMessages = async (messages: Array<{ id: string; role: string; parts: unknown }>) => {
+      const newMessages = messages.filter((m) => !existingMessageIds.has(m.id));
+      if (newMessages.length > 0) {
+        await saveMessages({
+          messages: newMessages.map((m) => ({
+            id: m.id,
+            role: m.role,
+            parts: m.parts,
+            createdAt: new Date(),
+            attachments: [],
+            chatId: id,
+          })),
+        });
+      }
+    };
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -274,16 +292,7 @@ export async function POST(request: Request) {
         },
         generateId: generateUUID,
         onFinish: async ({ messages }) => {
-          await saveMessages({
-            messages: messages.map((message) => ({
-              id: message.id,
-              role: message.role,
-              parts: message.parts,
-              createdAt: new Date(),
-              attachments: [],
-              chatId: id,
-            })),
-          });
+          await saveNewMessages(messages);
         },
         onError: () => {
           return 'Oops, an error occurred!';
@@ -345,16 +354,7 @@ export async function POST(request: Request) {
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
-        await saveMessages({
-          messages: messages.map((message) => ({
-            id: message.id,
-            role: message.role,
-            parts: message.parts,
-            createdAt: new Date(),
-            attachments: [],
-            chatId: id,
-          })),
-        });
+        await saveNewMessages(messages);
       },
       onError: () => {
         return 'Oops, an error occurred!';

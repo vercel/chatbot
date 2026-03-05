@@ -2,7 +2,7 @@ import { generateText, type ModelMessage } from 'ai';
 import { prepareStepModel } from '@/lib/ai/providers';
 
 const MODEL_CONTEXT_WINDOW = 200_000; // claude-sonnet-4-6
-const COMPACT_THRESHOLD_PCT = 0.75;
+const COMPACT_THRESHOLD_PCT = 0.25;
 const KEEP_RECENT = 8;                // keep last N messages after compaction
 
 const SUMMARY_PREFIX = '[Session summary — earlier context compacted]';
