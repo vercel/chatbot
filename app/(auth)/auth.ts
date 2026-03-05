@@ -13,6 +13,8 @@ declare module "next-auth" {
     user: {
       id: string;
       type: UserType;
+      isLoggedIn: boolean;
+      username?: string|null;
     } & DefaultSession["user"];
   }
 
@@ -20,6 +22,8 @@ declare module "next-auth" {
     id?: string;
     email?: string | null;
     type: UserType;
+    username?: string|null;
+    isLoggedIn: boolean;
   }
 }
 
@@ -27,6 +31,9 @@ declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
     type: UserType;
+    email?: string;
+    username?: string;
+    isLoggedIn: boolean;
   }
 }
 
@@ -61,15 +68,29 @@ export const {
           return null;
         }
 
-        return { ...user, type: "regular" };
+        return { ...user, type: "regular", isLoggedIn: true };
       },
     }),
     Credentials({
       id: "guest",
       credentials: {},
       async authorize() {
-        const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: "guest" };
+        try {
+          // Create guest user
+          const [guestUser] = await createGuestUser();
+
+          return {
+            ...guestUser,
+            type: "guest",
+            isLoggedIn: false
+          };
+        } catch (error) {
+          console.error("Guest auth error: Unexpected error during guest authentication:", {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          });
+          return null;
+        }
       },
     }),
   ],
@@ -78,6 +99,13 @@ export const {
       if (user) {
         token.id = user.id as string;
         token.type = user.type;
+        token.isLoggedIn = user.isLoggedIn;
+        if (user.email) {
+          token.email = user.email;
+        }
+        if (user.username) {
+          token.username = user.username;
+        }
       }
 
       return token;
@@ -86,6 +114,13 @@ export const {
       if (session.user) {
         session.user.id = token.id;
         session.user.type = token.type;
+        session.user.isLoggedIn = token.isLoggedIn;
+        if (token.email) {
+          session.user.email = token.email;
+        }
+        if (token.username) {
+          session.user.username = token.username;
+        }
       }
 
       return session;

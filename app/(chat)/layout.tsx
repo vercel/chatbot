@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { DataStreamProvider } from "@/components/data-stream-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "../(auth)/auth";
+import { AuthVerificationWrapper } from "@/components/chat-resizable-layout";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,13 +24,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 }
 
 async function SidebarWrapper({ children }: { children: React.ReactNode }) {
-  const [session, cookieStore] = await Promise.all([auth(), cookies()]);
+  // const [session, cookieStore] = await Promise.all([auth(), cookies()]);
+  const cookieStore = await cookies();
   const isCollapsed = cookieStore.get("sidebar_state")?.value !== "true";
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
-      <AppSidebar user={session?.user} />
-      <SidebarInset>{children}</SidebarInset>
+      {/* <AppSidebar user={session?.user} />
+      <SidebarInset>{children}</SidebarInset> */}
+      <AuthVerificationWrapper isCollapsed={isCollapsed}>
+    {children}
+      </AuthVerificationWrapper>
     </SidebarProvider>
   );
 }

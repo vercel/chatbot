@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/app/(auth)/auth";
+import { ChatbotError } from "@/lib/errors";
+import { filterImage } from "@/lib/image-filter";
 
+// Storage on Vercel Blob
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
   file: z
@@ -49,9 +52,24 @@ export async function POST(request: Request) {
     // Get filename from formData since Blob doesn't have name property
     const filename = (formData.get("file") as File).name;
     const fileBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(fileBuffer);
+
+    // Check if user is guest
+    const isGuest = !!session.user.email?.startsWith('guest-') && session.user.type !== "regular";
+
+    if (process.env.OPENAI_API_KEY) {
+      // Filter image for inappropriate content
+      const filterResult = await filterImage(buffer, isGuest);
+      
+      if (!filterResult.isAllowed) {
+        return NextResponse.json({ 
+          error: filterResult.reason || "Image validation failed" 
+        }, { status: 400 });
+      }
+    }
 
     try {
-      const data = await put(`${filename}`, fileBuffer, {
+      const data = await put(`${filename}`, buffer, {
         access: "public",
       });
 
@@ -60,6 +78,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
   } catch (_error) {
+    if (_error instanceof ChatbotError) {
+      return _error.toResponse();
+    }
+
     return NextResponse.json(
       { error: "Failed to process request" },
       { status: 500 }

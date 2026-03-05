@@ -10,6 +10,7 @@ import {
   gte,
   inArray,
   lt,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -30,8 +31,11 @@ import {
   type User,
   user,
   vote,
+  userMessageQuota,
+  guestMessageQuota,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
+import { getClientIpString } from "../ip/utils";
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -40,6 +44,9 @@ import { generateHashedPassword } from "./utils";
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
+
+const MAX_MESSAGES = 5
+
 
 export async function getUser(email: string): Promise<User[]> {
   try {
@@ -598,5 +605,359 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
       "bad_request:database",
       "Failed to get stream ids by chat id"
     );
+  }
+}
+
+
+// TODO implement messages and file uploads limit for both guests and users
+
+
+// Message quota functions
+export async function getGuestMessageQuota(userId: string): Promise<{ messagesUsed: number; maxMessages: number }> {
+  try {
+    const [quota] = await db
+      .select()
+      .from(guestMessageQuota)
+      .where(eq(guestMessageQuota.userId, userId));
+
+    if (!quota) {
+      // Create quota record for new guest
+      await db.insert(guestMessageQuota).values({
+        userId,
+        messagesUsed: 0,
+        // ipAddress is optional, don't include it here
+      });
+      return { messagesUsed: 0, maxMessages: MAX_MESSAGES };
+    }
+
+    return { messagesUsed: quota.messagesUsed || 0, maxMessages: MAX_MESSAGES };
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to get guest message quota");
+  }
+}
+
+export async function incrementGuestMessageCount(userId: string): Promise<void> {
+  try {
+    await db
+      .insert(guestMessageQuota)
+      .values({
+        userId,
+        messagesUsed: 1,
+      })
+      .onConflictDoUpdate({
+        target: guestMessageQuota.userId,
+        set: {
+          messagesUsed: sql`${guestMessageQuota.messagesUsed} + 1`,
+          updatedAt: new Date(),
+        },
+      });
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to increment guest message count");
+  }
+}
+
+export async function getUserMessageQuota(userId: string): Promise<{ messagesUsed: number; maxMessages: number; remaining: number }> {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    const [quota] = await db
+      .select()
+      .from(userMessageQuota)
+      .where(and(
+        eq(userMessageQuota.userId, userId),
+        eq(userMessageQuota.date, today)
+      ));
+
+    if (!quota) {
+      // Create daily quota record for user
+      await db.insert(userMessageQuota).values({
+        userId,
+        messagesUsed: 0,
+        date: today,
+      });
+      return { messagesUsed: 0, maxMessages: MAX_MESSAGES, remaining: MAX_MESSAGES };
+    }
+
+    const remaining = Math.max(0, MAX_MESSAGES - quota.messagesUsed);
+    return { messagesUsed: quota.messagesUsed, maxMessages: MAX_MESSAGES, remaining };
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to get user message quota");
+  }
+}
+
+export async function incrementUserMessageCount(userId: string): Promise<void> {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    await db
+      .insert(userMessageQuota)
+      .values({
+        userId,
+        messagesUsed: 1,
+        date: today,
+      })
+      .onConflictDoUpdate({
+        target: [userMessageQuota.userId, userMessageQuota.date],
+        set: {
+          messagesUsed: sql`${userMessageQuota.messagesUsed} + 1`,
+          updatedAt: new Date(),
+        },
+      });
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to increment user message count");
+  }
+}
+
+
+// hamza
+
+export async function getUserImageUsage(userId: string, days: number = 1): Promise<number> {
+  try {
+    const isGuest = userId.startsWith('guest-');
+
+    if (isGuest) {
+      // For guests, check GuestMessageQuota table
+      const [quota] = await db
+        .select()
+        .from(guestMessageQuota)
+        .where(eq(guestMessageQuota.userId, userId));
+
+      return quota?.imagesUsed || 0;
+    } else {
+      // For logged-in users - TODO: add imagesUsed field to UserMessageQuota schema
+      // For now, return 0 as we don't track user image usage yet
+      console.log("getUserImageUsage called for user:", { userId, days });
+      const [quota] = await db
+        .select()
+        .from(userMessageQuota)
+        .where(eq(userMessageQuota.userId, userId));
+
+      return quota?.imagesUsed || 0;
+    }
+  } catch (error) {
+    console.error("Failed to get user image usage:", error);
+    return 0;
+  }
+}
+
+export async function recordImageUsage(userId: string, isGuest: boolean, chatId?: string | null) {
+  try {
+    if (chatId) {
+      // console.error('No chat ID provided for image usage recording');
+      const chat = await getChatById({ id: chatId });
+      if (!chat) {
+        console.error('Chat not found for image usage recording');
+        return;
+      }
+    }
+
+    // For logged-in users, update UserMessageQuota with date constraint
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    if (isGuest) {
+      // For guests, update GuestMessageQuota with image usage by IP address
+      const guestIpAddress = await getClientIpString();
+      await db
+        .insert(guestMessageQuota)
+        .values({
+          // imagesUsed: 1,
+          imagesUsed: sql`${guestMessageQuota.imagesUsed} + 1`,
+          ipAddress: guestIpAddress,
+          date: today
+        })
+        .onConflictDoUpdate({
+          target: [guestMessageQuota.ipAddress, guestMessageQuota.date], // Composite target
+          set: {
+            imagesUsed: sql`${guestMessageQuota.imagesUsed} + 1`,
+            updatedAt: new Date(),
+          },
+        });
+    } else {
+      await db
+        .insert(userMessageQuota)
+        .values({
+          userId,
+          imagesUsed: sql`${userMessageQuota.imagesUsed} + 1`,
+          date: today,
+        })
+        .onConflictDoUpdate({
+          target: [userMessageQuota.userId, userMessageQuota.date],
+          set: {
+            imagesUsed: sql`${userMessageQuota.imagesUsed} + 1`,
+            updatedAt: new Date(),
+          },
+        });
+    }
+  } catch (error) {
+    console.error('Failed to record image usage:', error);
+  }
+}
+
+export async function canUserUploadImage(userId: string, currentChatImages: number): Promise<{
+  canUpload: boolean;
+  reason?: string;
+  remainingDaily?: number;
+  remainingChat?: number;
+}> {
+  const isGuest = userId.startsWith('guest-');
+  const maxDailyUploads = isGuest ? 1 : 2;
+  const maxChatImages = isGuest ? 1 : 2;
+
+  // Check daily limit
+  const dailyUsage = await getUserImageUsage(userId, 1);
+  const remainingDaily = maxDailyUploads - dailyUsage;
+
+  if (process.env.NODE_ENV === "production" && dailyUsage >= maxDailyUploads) {
+    return {
+      canUpload: false,
+      reason: `Daily image limit reached (${maxDailyUploads} images per day)`,
+      remainingDaily: 0,
+      remainingChat: maxChatImages - currentChatImages,
+    };
+  }
+
+  // Check per-chat limit
+  const remainingChat = maxChatImages - currentChatImages;
+  if (process.env.NODE_ENV === "production" && currentChatImages >= maxChatImages) {
+    return {
+      canUpload: false,
+      reason: `Chat image limit reached (${maxChatImages} images per chat)`,
+      remainingDaily,
+      remainingChat: 0,
+    };
+  }
+
+  return {
+    canUpload: true,
+    remainingDaily,
+    remainingChat,
+  };
+}
+
+// Guest IP quota functions - now using GuestMessageQuota table
+export async function getGuestQuotaByIP(ipAddress?: string): Promise<{
+  messagesUsed: number;
+  imagesUsed: number;
+  maxMessages: number;
+  maxImages: number;
+}> {
+  if (!ipAddress) {
+    throw new ChatbotError("bad_request:database", "Failed to get guest IP quota");
+  }
+
+  try {
+    const [quota] = await db
+      .select()
+      .from(guestMessageQuota)
+      .where(eq(guestMessageQuota.ipAddress, ipAddress));
+
+    if (!quota) {
+      // Create quota record for new IP
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      await db.insert(guestMessageQuota).values({
+        ipAddress,
+        messagesUsed: 0,
+        imagesUsed: 0,
+        date: today, // Add date field
+      });
+
+      return {
+        messagesUsed: 0,
+        imagesUsed: 0,
+        maxMessages: MAX_MESSAGES,
+        maxImages: 1,
+      };
+    }
+
+    // const remainingMessages = Math.max(0, 3 - (quota.messagesUsed || 0));
+    // const remainingImages = Math.max(0, 1 - (quota.imagesUsed || 0));
+
+    return {
+      messagesUsed: quota.messagesUsed || 0,
+      imagesUsed: quota.imagesUsed || 0,
+      maxMessages: MAX_MESSAGES,
+      maxImages: 1,
+    };
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to get guest IP quota");
+  }
+}
+
+export async function incrementGuestMessageUsageByIP(ipAddress?: string): Promise<void> {
+  if (!ipAddress) {
+    throw new ChatbotError("bad_request:database", "Failed to increment guest IP message count");
+  }
+
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    console.log('🔍 GUEST QUOTA DEBUG:', { ipAddress, today });
+
+    // Use onConflictDoUpdate to handle existing records properly
+    const result = await db
+      .insert(guestMessageQuota)
+      .values({
+        ipAddress,
+        messagesUsed: 1,
+        imagesUsed: 0,
+        date: today,
+      })
+      .onConflictDoUpdate({
+        target: [guestMessageQuota.ipAddress, guestMessageQuota.date],
+        set: {
+          messagesUsed: sql`${guestMessageQuota.messagesUsed} + 1`,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    console.log('🔍 GUEST QUOTA RESULT:', result);
+  } catch (error) {
+    console.error('🔍 GUEST QUOTA ERROR:', {
+      error,
+      ipAddress,
+      today: new Date().toISOString().split('T')[0],
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined
+    });
+    throw new ChatbotError("bad_request:database", "Failed to increment guest IP message count");
+  }
+}
+
+export async function incrementGuestImageUsageByIP(ipAddress: string): Promise<void> {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    await db
+      .insert(guestMessageQuota)
+      .values({
+        ipAddress,
+        messagesUsed: 0,
+        imagesUsed: 1,
+        date: today, // Add date field
+      })
+      .onConflictDoUpdate({
+        target: [guestMessageQuota.ipAddress, guestMessageQuota.date], // Composite target
+        set: {
+          imagesUsed: sql`${guestMessageQuota.imagesUsed} + 1`,
+          updatedAt: new Date(),
+        },
+      });
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to increment guest IP image count");
+  }
+}
+
+export async function getGuestIpImageUsage(ipAddress: string): Promise<number> {
+  try {
+    const [quota] = await db
+      .select()
+      .from(guestMessageQuota)
+      .where(eq(guestMessageQuota.ipAddress, ipAddress));
+
+    return quota?.imagesUsed || 0;
+  } catch (error) {
+    console.error('Failed to get guest IP image usage:', error);
+    return 0;
   }
 }

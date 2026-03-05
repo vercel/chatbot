@@ -42,3 +42,10 @@ yarn-error.log*
 /playwright-report/
 /blob-report/
 /playwright/*
+
+
+package-lock.json
+
+**/*backup*
+**/*ignore*
+!.gitignore

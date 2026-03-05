@@ -14,3 +14,7 @@ export function generateDummyPassword() {
 
   return hashedPassword;
 }
+
+export function generateUUID() {
+  return generateId();
+}

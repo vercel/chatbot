@@ -31,6 +31,7 @@ import { MultimodalInput } from "./multimodal-input";
 import { getChatHistoryPaginationKey } from "./sidebar-history";
 import { toast } from "./toast";
 import type { VisibilityType } from "./visibility-selector";
+import { ChatSearch } from "./chat-search";
 
 export function Chat({
   id,
@@ -177,6 +178,7 @@ export function Chat({
   );
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
 
   useAutoResume({
@@ -194,6 +196,37 @@ export function Chat({
           isReadonly={isReadonly}
           selectedVisibilityType={initialVisibilityType}
         />
+
+<ChatSearch 
+  messages={messages} 
+  onMessageSelect={(messageId: string) => {
+    // Find and scroll to the selected message
+    const messageElements = document.querySelectorAll('[data-testid*="message-"]');
+    messageElements.forEach(element => {
+      // Check if this element contains the message we're looking for
+      const messageContent = element.textContent || '';
+      const targetMessage = messages.find(msg => msg.id === messageId);
+      if (targetMessage) {
+        // Simple check: if the element contains text from our target message
+        const targetText = targetMessage.parts
+          .filter((part) => part.type === "text" && "text" in part && part.text)
+          .map((part) => (part as any).text)
+          .join(" ");
+        
+        if (messageContent.includes(targetText.substring(0, 50))) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight the message temporarily
+          element.classList.add('ring-2', 'ring-blue-500');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-blue-500');
+          }, 2000);
+          return;
+        }
+      }
+    });
+  }} 
+  onSearchClose={() => setIsSearchExpanded(false)} 
+/>
 
         <Messages
           addToolApprovalResponse={addToolApprovalResponse}

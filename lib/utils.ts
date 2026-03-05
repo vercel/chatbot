@@ -114,3 +114,36 @@ export function getTextFromMessage(message: ChatMessage | UIMessage): string {
     .map((part) => (part as { type: 'text'; text: string}).text)
     .join('');
 }
+
+
+export const isValidEmail = (email: string | null | undefined): boolean => {
+  // Handle null, undefined, or empty strings
+  if (!email || typeof email !== 'string' || email.trim().length === 0) {
+    return false
+  }
+
+  const trimmedEmail = email.trim()
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  // Basic regex validation
+  if (!emailRegex.test(trimmedEmail)) return false
+
+  // RFC 5321: Maximum email length is 254 characters
+  if (trimmedEmail.length > 254) return false
+
+  // RFC 5321: Local part (before @) maximum 64 characters
+  const localPart = trimmedEmail.split('@')[0]
+  if (localPart.length > 64) return false
+
+  // Domain part validation
+  const domainPart = trimmedEmail.split('@')[1]
+  if (!domainPart || domainPart.length === 0) return false
+
+  // Check for valid domain structure (at least one dot after @)
+  if (!domainPart.includes('.')) return false
+
+  // Check domain part length (max 255, but we already checked total length)
+  if (domainPart.length > 253) return false
+
+  return true
+}
