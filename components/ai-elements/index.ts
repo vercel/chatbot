@@ -13,4 +13,4 @@ export { GapAnalysisCard } from './gap-analysis-card';
 
 export { FormSummaryCard } from './form-summary-card';
 
-export { Checkpoint, CheckpointIcon, CheckpointTrigger, CheckpointCard } from './checkpoint';
+export { CheckpointCard } from './checkpoint';
