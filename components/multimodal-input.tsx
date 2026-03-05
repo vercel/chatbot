@@ -252,22 +252,6 @@ function PureMultimodalInput({
         )}
       </AnimatePresence>
 
-      {!isLoggedIn && (
-        <Alert variant="default" className="mb-6 bg-primary/10 border-primary/30">
-          <AlertDescription className="flex items-center justify-between">
-            <div className="flex flex-col gap-1 font-inter">
-              <span className="text-base font-medium">Log in to get started</span>
-              <span className="text-sm text-muted-foreground">You'll be able to complete applications once you're logged in.</span>
-            </div>
-            <Button
-              onClick={() => router.push('/login')}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 shrink-0"
-            >
-              Log in
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
       {messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 &&
