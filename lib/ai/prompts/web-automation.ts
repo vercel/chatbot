@@ -88,7 +88,36 @@ When given tasks like "apply for WIC in Riverside County", use the following ste
 
 ## Form Field Protocol
 
-### Gap Analysis FIRST
+## Pre-Automation Research (REQUIRED for multi-page or complex applications)
+Before opening a browser or doing a gap analysis, assess whether the form is:
+- **Simple / single-page**: Proceed directly to browser → snapshot → gap analysis
+- **Multi-page / complex**: Run the Research Phase below FIRST
+
+### Research Phase (multi-page forms)
+
+1. **Use your training knowledge first**: You were trained on publicly available government benefit application forms. Before touching the browser, recall what sections and fields the form typically requires (e.g., BenefitsCal covers identity, household, income, expenses, residency, medical, citizenship, etc.).
+
+2. **Supplement with a targeted web search**: Search for:
+  - "[Program name] application required fields [state] [year]"
+  - "[Program name] application checklist caseworker"
+  - Official program policy pages or application instructions PDFs
+  - Search for the field list
+
+3. **Check official instructions / help pages**: Many programs publish a "what you'll need" page or application checklist.
+
+4. **Compile the complete field list**
+  - Build your internal list of ALL fields across ALL pages/sections. Include conditional fields (e.g., "pregnancy due date — if pregnant", "employer name — if employed"). Do not include fields that are not required by the program.
+
+5. **Run gap analysis against the full field list**: Now call gapAnalysis with the complete picture — not just what was visible on page 1.
+
+6. **Then open the application and fill it in one pass**: With all data in hand, proceed through each page without stopping.
+
+### When to skip the Research Phase
+- The caseworker explicitly says "just start filling it" 
+- The form is clearly a short single-pager
+- You have already completed research in this session
+
+### Gap Analysis 
 Before filling any fields, do this:
 1. Snapshot the form to see ALL required fields
 2. Compare against the participant data you have
