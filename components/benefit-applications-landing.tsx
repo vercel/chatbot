@@ -50,6 +50,7 @@ export function BenefitApplicationsLanding({
   const [query, setQuery] = useState('');
   const [isComboOpen, setIsComboOpen] = useState(false);
   const comboRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isLoggedIn = !!session;
 
   const isUrl = (s: string) => {
@@ -95,6 +96,9 @@ export function BenefitApplicationsLanding({
     if (!isLoggedIn || !input.trim()) return;
     submitMessage(input.trim());
     setInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
   const loginAlert = (
@@ -262,15 +266,21 @@ export function BenefitApplicationsLanding({
           <p className="mb-2 font-inter text-[15px] text-foreground">
             Or, write your own prompt:
           </p>
-          <div className="flex h-14 items-center gap-2 rounded-xl border-2 border-input bg-card px-4">
-            <input
-              type="text"
+          <div className="flex min-h-14 items-end gap-2 rounded-xl border-2 border-input bg-card px-4 py-3">
+            <textarea
+              ref={textareaRef}
+              rows={1}
               placeholder="Retrieve ID #XXXXX and apply for WIC"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleCustomPrompt()}
+              onChange={(e) => {
+                setInput(e.target.value);
+                const el = e.target;
+                el.style.height = 'auto';
+                el.style.height = `${el.scrollHeight}px`;
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleCustomPrompt())}
               disabled={!isLoggedIn}
-              className="flex-1 bg-transparent font-inter text-base placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex-1 resize-none overflow-hidden bg-transparent font-inter text-base leading-6 placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
             />
             <button
               onClick={handleCustomPrompt}
