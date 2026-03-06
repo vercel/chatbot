@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CornerDownLeft, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import type { ChatMessage, Attachment } from '@/lib/types';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
@@ -10,6 +10,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { Session } from 'next-auth';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MultimodalInput } from '@/components/multimodal-input';
 
 const PROGRAMS = [
   // { id: 'benefits-cal', name: 'Benefits Cal', website: 'https://benefitscal.com/' },
@@ -43,6 +44,13 @@ export function BenefitApplicationsLanding({
   chatId,
   sendMessage,
   session,
+  status,
+  stop,
+  attachments,
+  setAttachments,
+  messages,
+  setMessages,
+  selectedVisibilityType,
 }: BenefitApplicationsLandingProps) {
   const router = useRouter();
   const [clientId, setClientId] = useState('');
@@ -89,12 +97,6 @@ export function BenefitApplicationsLanding({
     if (!isLoggedIn || !clientId || (!program && !isUrl(query))) return;
     const target = program ? `${program.name} at ${program.website}` : query;
     submitMessage(`Retrieve ID #${clientId} and apply for ${target}`);
-  };
-
-  const handleCustomPrompt = () => {
-    if (!isLoggedIn || !input.trim()) return;
-    submitMessage(input.trim());
-    setInput('');
   };
 
   const loginAlert = (
@@ -262,25 +264,22 @@ export function BenefitApplicationsLanding({
           <p className="mb-2 font-inter text-[15px] text-foreground">
             Or, write your own prompt:
           </p>
-          <div className="flex h-14 items-center gap-2 rounded-xl border-2 border-input bg-card px-4">
-            <input
-              type="text"
-              placeholder="Retrieve ID #XXXXX and apply for WIC"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleCustomPrompt()}
-              disabled={!isLoggedIn}
-              className="flex-1 bg-transparent font-inter text-base placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-            />
-            <button
-              onClick={handleCustomPrompt}
-              disabled={!isLoggedIn || !input.trim()}
-              className="flex items-center bg-primary gap-1 rounded-full px-3 py-1.5 font-inter text-sm font-medium text-white transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              <CornerDownLeft className="h-4 w-4 text-white" />
-              <span className="text-white">Submit</span>
-            </button>
-          </div>
+          <MultimodalInput
+            chatId={chatId}
+            input={input}
+            setInput={setInput}
+            status={status}
+            stop={stop}
+            attachments={attachments}
+            setAttachments={setAttachments}
+            messages={messages}
+            setMessages={setMessages}
+            sendMessage={sendMessage}
+            selectedVisibilityType={selectedVisibilityType}
+            showStopButton={false}
+            placeholder="Retrieve ID #XXXXX and apply for WIC"
+            session={session}
+          />
         </div>
       </div>
     </div>
