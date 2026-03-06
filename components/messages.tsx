@@ -105,6 +105,7 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (!equal(prevProps.messages, nextProps.messages)) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
   if (prevProps.checkpoints?.length !== nextProps.checkpoints?.length) return false;
+  if (prevProps.isCompacting !== nextProps.isCompacting) return false;
 
-  return false;
+  return true;
 });

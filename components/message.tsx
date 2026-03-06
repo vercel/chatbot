@@ -225,7 +225,7 @@ const PurePreviewMessage = ({
                       startIndex={processed.startIndex}
                     />
                     {cpCards?.map((cp, i) => (
-                      <CheckpointCard key={`checkpoint-${cp.partCount}-${i}`} summary={cp.summary} />
+                      <CheckpointCard key={`checkpoint-${cp.stepNumber}-${i}`} summary={cp.summary} />
                     ))}
                   </div>
                 );
@@ -611,7 +611,7 @@ const PurePreviewMessage = ({
               <div className="flex items-center gap-2 p-3 border-0 rounded-md">
                 <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground flex items-center gap-2">
                   <Spinner className="size-3 shrink-0 text-primary" />
-                  {isCompacting ? 'Summarizing context...' : 'Processing...'}
+                  {isCompacting ? 'Summarizing the conversation...' : 'Processing...'}
                 </div>
               </div>
             )}

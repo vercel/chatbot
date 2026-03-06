@@ -12,7 +12,34 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { createContext, useContext, useMemo } from "react";
-import { getUsage } from "tokenlens";
+
+// Inline pricing lookup — replaces tokenlens which doesn't support claude-sonnet-4-6.
+// Prices are per million tokens. Source: https://platform.claude.com/docs/en/about-claude/pricing
+const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead?: number }> = {
+  'claude-sonnet-4-6':  { input: 3, output: 15, cacheRead: 0.30 },
+  'claude-sonnet-4-5':  { input: 3, output: 15, cacheRead: 0.30 },
+  'claude-sonnet-4':    { input: 3, output: 15, cacheRead: 0.30 },
+  'claude-haiku-4-5':   { input: 1, output: 5,  cacheRead: 0.10 },
+  'claude-opus-4-6':    { input: 5, output: 25, cacheRead: 0.50 },
+  'claude-opus-4-1':    { input: 5, output: 25, cacheRead: 0.50 },
+  'claude-opus-4':      { input: 5, output: 25, cacheRead: 0.50 },
+};
+
+function getUsage({ modelId, usage }: {
+  modelId: string;
+  usage: { input?: number; output?: number; cacheReads?: number; reasoningTokens?: number };
+}): { costUSD?: { totalUSD: number } } {
+  // Strip provider prefix (e.g. "anthropic:claude-sonnet-4-6" → "claude-sonnet-4-6")
+  const model = modelId.includes(':') ? modelId.split(':').pop()! : modelId;
+  const pricing = MODEL_PRICING[model];
+  if (!pricing) return {};
+
+  const inputCost = ((usage.input ?? 0) / 1_000_000) * pricing.input;
+  const outputCost = (((usage.output ?? 0) + (usage.reasoningTokens ?? 0)) / 1_000_000) * pricing.output;
+  const cacheCost = ((usage.cacheReads ?? 0) / 1_000_000) * (pricing.cacheRead ?? 0);
+
+  return { costUSD: { totalUSD: inputCost + outputCost + cacheCost } };
+}
 
 const PERCENT_MAX = 100;
 const ICON_RADIUS = 10;

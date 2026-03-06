@@ -45,7 +45,7 @@ import { createBrowserTool } from '@/lib/ai/tools/browser';
 import { gapAnalysis } from '@/lib/ai/tools/gap-analysis';
 import { formSummary } from '@/lib/ai/tools/form-summary';
 import { webAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
-import { createMessageCompressor } from '@/lib/ai/context-compression';
+import { createMessageCompressor, preCompactMessages } from '@/lib/ai/context-compression';
 
 // Feature flag for AI SDK agent vs Mastra
 const useAiSdkAgent = process.env.USE_AI_SDK_AGENT === 'true';
@@ -135,6 +135,24 @@ export async function POST(request: Request) {
 
     const messagesFromDb = await getMessagesByChatId({ id });
     const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+    const existingMessageIds = new Set(uiMessages.map((m) => m.id));
+
+    // Save only messages generated during this request (not already in DB).
+    const saveNewMessages = async (messages: Array<{ id: string; role: string; parts: unknown }>) => {
+      const newMessages = messages.filter((m) => !existingMessageIds.has(m.id));
+      if (newMessages.length > 0) {
+        await saveMessages({
+          messages: newMessages.map((m) => ({
+            id: m.id,
+            role: m.role,
+            parts: m.parts,
+            createdAt: new Date(),
+            attachments: [],
+            chatId: id,
+          })),
+        });
+      }
+    };
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -177,6 +195,32 @@ export async function POST(request: Request) {
 
       const stream = createUIMessageStream({
         execute: async ({ writer: dataStream }) => {
+          // Pre-compact messages loaded from DB if they exceed the context
+          // window threshold. This handles the cross-request case where a
+          // previous request compacted mid-stream but saved raw messages.
+          const initialModelMessages = await convertToModelMessages(uiMessages);
+          const { messages: preCompacted, compacted: wasPreCompacted, summary: preCompactSummary } =
+            await preCompactMessages(initialModelMessages, () => {
+              dataStream.write({
+                type: 'data-compacting',
+                data: { timestamp: Date.now() },
+                transient: true,
+              });
+            });
+
+          if (wasPreCompacted) {
+            dataStream.write({
+              type: 'data-checkpoint',
+              data: {
+                stepNumber: 0,
+                inputTokens: 0,
+                timestamp: Date.now(),
+                summary: preCompactSummary,
+              },
+              transient: true,
+            });
+          }
+
           // One compressor instance per request; its cache persists across all
           // prepareStep calls so generateText is not re-fired on every step.
           const compressStep = createMessageCompressor();
@@ -184,7 +228,7 @@ export async function POST(request: Request) {
           const result = streamText({
             model: webAutomationModel,
             system: webAutomationSystemPrompt,
-            messages: await convertToModelMessages(uiMessages),
+            messages: preCompacted,
             tools: {
               ...apricotTools,
               gapAnalysis,
@@ -248,16 +292,7 @@ export async function POST(request: Request) {
         },
         generateId: generateUUID,
         onFinish: async ({ messages }) => {
-          await saveMessages({
-            messages: messages.map((message) => ({
-              id: message.id,
-              role: message.role,
-              parts: message.parts,
-              createdAt: new Date(),
-              attachments: [],
-              chatId: id,
-            })),
-          });
+          await saveNewMessages(messages);
         },
         onError: () => {
           return 'Oops, an error occurred!';
@@ -319,16 +354,7 @@ export async function POST(request: Request) {
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
-        await saveMessages({
-          messages: messages.map((message) => ({
-            id: message.id,
-            role: message.role,
-            parts: message.parts,
-            createdAt: new Date(),
-            attachments: [],
-            chatId: id,
-          })),
-        });
+        await saveNewMessages(messages);
       },
       onError: () => {
         return 'Oops, an error occurred!';

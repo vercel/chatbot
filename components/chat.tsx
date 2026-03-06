@@ -26,7 +26,7 @@ import { TokenUsageProvider } from '@/hooks/use-token-usage';
 // Feature flag for AI SDK agent vs Mastra (client-side)
 const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
 
-export type CheckpointData = { messageId: string; stepNumber: number; partCount: number; summary: string };
+export type CheckpointData = { messageId: string; stepNumber: number; summary: string };
 
 export function Chat({
   id,
@@ -146,7 +146,6 @@ export function Chat({
             {
               messageId: lastMsg.id,
               stepNumber,
-              partCount: lastMsg.parts?.length ?? 0,
               summary,
             },
           ]);

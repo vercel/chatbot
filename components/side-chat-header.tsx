@@ -100,15 +100,15 @@ function PureSideChatHeader({
             }}
             modelId="anthropic:claude-sonnet-4-6"
           >
-            <ContextTrigger />
-            <ContextContent align="end">
-              <ContextContentHeader />
-              <ContextContentBody>
+            <ContextTrigger className="h-5 px-1.5 text-[10px] gap-1" />
+            <ContextContent align="end" className="min-w-48">
+              <ContextContentHeader className="p-2" />
+              <ContextContentBody className="p-2 space-y-1">
                 <ContextInputUsage />
                 <ContextOutputUsage />
                 <ContextCacheUsage />
               </ContextContentBody>
-              <ContextContentFooter />
+              <ContextContentFooter className="p-2" />
             </ContextContent>
           </Context>
         )}
