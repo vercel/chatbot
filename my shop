@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Новогодний магазин</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body { font-family: Arial; margin: 0; background: #f9f9f9; }
+    header { background: green; color: white; padding: 20px; text-align: center; font-size: 24px; }
+    .product { background: white; margin: 20px; padding: 15px; border-radius: 12px; box-shadow: 0 0 10px #ccc; }
+    img { width: 100%; border-radius: 10px; }
+    button { background: #25D366; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; }
+  </style>
+</head>
+
+<body>
+
+<header>🎄 Новогодний магазин — Ёлки и украшения 🎁</header>
+
+<div class="product">
+  <img src="https://via.placeholder.com/500x300?text=Ель+180см">
+  <h2>Искусственная ель 180см</h2>
+  <p>Пушистая, красивая, эффект снега ✨</p>
+  <h3>129.99$</h3>
+  <button onclick="order('Искусственная ель 180см')">Заказать в WhatsApp</button>
+</div>
+
+<div class="product">
+  <img src="https://via.placeholder.com/500x300?text=Украшения">
+  <h2>Набор украшений — 30 шт</h2>
+  <p>Шары, звезды, гирлянды — готовый комплект 🎀</p>
+  <h3>19.99$</h3>
+  <button onclick="order('Набор украшений 30 шт')">Заказать в WhatsApp</button>
+</div>
+
+<div class="product">
+  <img src="https://via.placeholder.com/500x300?text=Венок">
+  <h2>Рождественский венок</h2>
+  <p>Красивая подсветка, отличное качество ⭐</p>
+  <h3>24.50$</h3>
+  <button onclick="order('Рождественский венок')">Заказать в WhatsApp</button>
+</div>
+
+<script>
+function order(item) {
+  window.location.href = "https://wa.me/7078497647?text=Здравствуйте,+хочу+заказать:+ " + item;
+}
+</script>
+
+</body>
+</html>
+
