@@ -68,6 +68,7 @@ function PureMultimodalInput({
   selectedVisibilityType,
   selectedModelId,
   onModelChange,
+  error
 }: {
   chatId: string;
   input: string;
@@ -83,6 +84,7 @@ function PureMultimodalInput({
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
   onModelChange?: (modelId: string) => void;
+  error?:UseChatHelpers<ChatMessage>["error"];
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -147,6 +149,10 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.pushState({}, "", `/chat/${chatId}`);
 
+    //https://ai-sdk.dev/docs/ai-sdk-ui/error-handling#alternative-replace-last-message
+    if(error){
+      setMessages(prev => prev.slice(0, -1)); // remove last message    
+    }
     sendMessage({
       role: "user",
       parts: [
