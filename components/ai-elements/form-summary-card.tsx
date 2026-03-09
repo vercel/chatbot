@@ -287,7 +287,7 @@ export function FormSummaryCard({
               <div className="flex items-center justify-between gap-4 mb-1">
                 <span className="text-sm font-bold text-card-foreground leading-snug">
                   {item.field}
-                  {item.required && <span className="text-destructive ml-0.5">*</span>}
+                  {item.required && <span className="text-red-500 ml-0.5">*</span>}
                 </span>
                 {isManuallyEdited(item) ? (
                   <SourceLabel label="Manual" />
@@ -324,15 +324,22 @@ export function FormSummaryCard({
 
       <div className="px-6 py-4 border-t border-border flex items-center gap-2">
         {uiMode === 'edit' ? (
-          <>
-            <Button variant="ghost" size="sm" onClick={handleCancel} disabled={!isArtifactVisible}>
-              <XIcon className="w-3 h-3 mr-1.5" />
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleSaveChanges} disabled={!isArtifactVisible || !hasChanges}>
-              Save changes
-            </Button>
-          </>
+          <div className="flex flex-col gap-2 w-full">
+            {allFields.some((f) => f.required) && (
+              <p className="text-xs text-red-500">
+                <span className="font-bold">*</span> Required
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleCancel} disabled={!isArtifactVisible}>
+                <XIcon className="w-3 h-3 mr-1.5" />
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSaveChanges} disabled={!isArtifactVisible || !hasChanges}>
+                Save changes
+              </Button>
+            </div>
+          </div>
         ) : (
           <>
             <Button

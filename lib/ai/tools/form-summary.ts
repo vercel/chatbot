@@ -44,7 +44,9 @@ export const formSummary = tool({
           inputType: z
             .enum(['text', 'select', 'radio', 'checkbox'])
             .optional()
-            .describe('Type of input the form field uses'),
+            .describe(
+              'Type of input the form field uses. Use "select" for single-choice dropdowns, "radio" for single-choice radio buttons, "checkbox" ONLY for fields that allow multiple simultaneous selections, or omit for plain text.',
+            ),
           options: z.array(z.string()).optional().describe('Available choices for select, radio, or checkbox fields'),
           required: z.boolean().optional().describe('Whether the field is required to submit the form'),
         }),
