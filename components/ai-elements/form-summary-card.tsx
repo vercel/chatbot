@@ -102,6 +102,13 @@ export function FormSummaryCard({
     return savedValues[item.field] ?? item.value;
   }
 
+  function isManuallyEdited(item: FieldWithSource) {
+    if (uiMode === 'edit') {
+      return editValues[item.field] !== undefined && editValues[item.field] !== item.value;
+    }
+    return savedValues[item.field] !== undefined && savedValues[item.field] !== item.value;
+  }
+
   function handleEditStart() {
     const initial: Record<string, string> = {};
     for (const item of allFields) {
@@ -115,6 +122,10 @@ export function FormSummaryCard({
     setSavedValues({ ...editValues });
     setUiMode('view');
   }
+
+  const hasChanges = allFields.some(
+    (item) => editValues[item.field] !== undefined && editValues[item.field] !== getDisplayValue(item),
+  );
 
   function handleCancel() {
     setEditValues({});
@@ -180,14 +191,14 @@ export function FormSummaryCard({
                 <span className="text-sm font-bold text-card-foreground leading-snug">
                   {item.field}
                 </span>
-                {item.source === 'inferred' ? (
-                  <AutofilledBadge />
-                ) : item.source === 'missing' ? (
+                {item.source === 'missing' ? (
                   <SourceLabel label="Missing" variant="missing" />
+                ) : isManuallyEdited(item) ? (
+                  <SourceLabel label="Manual" />
+                ) : item.source === 'inferred' ? (
+                  <AutofilledBadge />
                 ) : (
-                  <SourceLabel
-                    label={item.source === 'database' ? 'A360' : 'Manual'}
-                  />
+                  <SourceLabel label={item.source === 'database' ? 'A360' : 'Manual'} />
                 )}
               </div>
 
@@ -229,7 +240,7 @@ export function FormSummaryCard({
               <XIcon className="w-3 h-3 mr-1.5" />
               Cancel
             </Button>
-            <Button size="sm" onClick={handleSaveChanges} disabled={!isArtifactVisible}>
+            <Button size="sm" onClick={handleSaveChanges} disabled={!isArtifactVisible || !hasChanges}>
               Save changes
             </Button>
           </>
