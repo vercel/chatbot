@@ -26,8 +26,8 @@ export function CheckpointCard({ summary, className }: CheckpointCardProps) {
     return (
       <div className={cn("mt-6 mb-2 flex items-center gap-0.5 w-full text-muted-foreground", className)}>
         <BookmarkIcon className="size-4 shrink-0" />
-        <span className="shrink-0 px-2 text-xs">Conversation checkpoint</span><br />
-        <Separator />
+        <span className="shrink-0 px-2 text-xs">Conversation checkpoint</span>
+        <Separator className="flex-1 min-w-0" />
       </div>
     );
   }
@@ -46,8 +46,8 @@ export function CheckpointCard({ summary, className }: CheckpointCardProps) {
               "size-3.5 shrink-0 transition-transform",
               open && "rotate-180"
             )}
-          /><br />
-          <Separator />
+          />
+          <Separator className="flex-1 min-w-0" />
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
