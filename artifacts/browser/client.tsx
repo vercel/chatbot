@@ -13,7 +13,10 @@ import {
 } from '@/components/ui/sheet';
 import { AgentStatusIndicator } from '@/components/agent-status-indicator';
 import { BrowserLoadingState, BrowserErrorState, BrowserTimeoutState } from './browser-states';
+import { closeArtifact, useArtifact } from '@/hooks/use-artifact';
 import { KernelBrowserClient } from './client-kernel';
+import { useRouter } from 'next/navigation';
+import { ExitWarningModal } from '@/components/exit-warning-modal';
 
 // Feature flag for AI SDK agent vs Mastra (client-side)
 const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
@@ -96,6 +99,12 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // =====================================================
     const [lastFrame, setLastFrame] = useState<string | null>(null);
     const isMobile = useIsMobile();
+    const { setArtifact } = useArtifact();
+    const router = useRouter();
+    const [showBackModal, setShowBackModal] = useState(false);
+    // Keep a ref to the latest metadata so the popstate handler never has a stale closure
+    const metadataRef = useRef(metadata);
+    metadataRef.current = metadata;
     const wsRef = useRef<WebSocket | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const frameCountRef = useRef(0);
@@ -618,6 +627,36 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
       };
     }, []);
 
+    // When the browser artifact opens, push a history entry so the browser
+    // back button pops our state instead of navigating away from the chat page.
+    useEffect(() => {
+      window.history.pushState({ browserArtifact: true }, '');
+      const guardActive = { current: true };
+
+      const handlePopState = (event: PopStateEvent) => {
+        if (!guardActive.current) return;
+
+        if (metadataRef.current?.isConnected) {
+          // Capture phase + stopImmediatePropagation prevents Next.js's bubble
+          // phase listener from handling the navigation while the modal is open.
+          event.stopImmediatePropagation();
+          // Restore the guard so cancel keeps the user on this page
+          window.history.pushState({ browserArtifact: true }, '');
+          setShowBackModal(true);
+        } else {
+          guardActive.current = false;
+          closeArtifact(setArtifact);
+          router.push('/home');
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState, { capture: true });
+      return () => {
+        guardActive.current = false;
+        window.removeEventListener('popstate', handlePopState, { capture: true });
+      };
+    }, [setArtifact, router]);
+
     if (!metadata) {
       return <BrowserLoadingState />;
     }
@@ -626,6 +665,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // This uses an iframe with Kernel's live-view instead of WebSocket streaming
     if (useAiSdkAgent && metadata?.sessionId) {
       return (
+        <>
         <KernelBrowserClient
           sessionId={metadata.sessionId}
           controlMode={metadata.controlMode}
@@ -654,6 +694,16 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
           }}
           sendMessage={sendMessage}
         />
+        <ExitWarningModal
+          open={showBackModal}
+          onOpenChange={setShowBackModal}
+          onLeaveSession={() => {
+            setShowBackModal(false);
+            closeArtifact(setArtifact);
+            router.push('/home');
+          }}
+        />
+      </>
       );
     }
 
@@ -919,6 +969,15 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
         <div className="flex-1 relative m-4 overflow-hidden min-h-0">
           {renderBrowserContent()}
           </div>
+        <ExitWarningModal
+          open={showBackModal}
+          onOpenChange={setShowBackModal}
+          onLeaveSession={() => {
+            setShowBackModal(false);
+            closeArtifact(setArtifact);
+            router.push('/home');
+          }}
+        />
         </div>
     );
   },
