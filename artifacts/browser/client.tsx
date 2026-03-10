@@ -630,27 +630,33 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // When the browser artifact opens, push a history entry so the browser
     // back button pops our state instead of navigating away from the chat page.
     useEffect(() => {
+      // Push a guard entry onto the history stack. When the user presses back
+      // from this entry, popstate fires with the *destination* state (the previous
+      // entry) — NOT our guard state — so we track "are we at the guard?" with a
+      // local flag rather than checking event.state.
       window.history.pushState({ browserArtifact: true }, '');
+      const guardActive = { current: true };
 
       const handlePopState = (event: PopStateEvent) => {
-        if (!event.state?.browserArtifact) return;
+        if (!guardActive.current) return;
 
         if (metadataRef.current?.isConnected) {
-          // Block Next.js from handling this navigation by stopping propagation
-          // in the capture phase (our listener fires before Next.js's bubble listener)
+          // Capture phase + stopImmediatePropagation prevents Next.js's bubble
+          // phase listener from handling the navigation while the modal is open.
           event.stopImmediatePropagation();
-          // Re-push the guard entry so cancel leaves the user on this page
+          // Restore the guard so cancel keeps the user on this page
           window.history.pushState({ browserArtifact: true }, '');
           setShowBackModal(true);
         } else {
+          guardActive.current = false;
           closeArtifact(setArtifact);
           router.push('/home');
         }
       };
 
-      // Capture phase fires before Next.js's popstate listener
       window.addEventListener('popstate', handlePopState, { capture: true });
       return () => {
+        guardActive.current = false;
         window.removeEventListener('popstate', handlePopState, { capture: true });
       };
     }, [setArtifact, router]);
