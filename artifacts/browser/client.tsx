@@ -13,7 +13,9 @@ import {
 } from '@/components/ui/sheet';
 import { AgentStatusIndicator } from '@/components/agent-status-indicator';
 import { BrowserLoadingState, BrowserErrorState, BrowserTimeoutState } from './browser-states';
+import { closeArtifact, useArtifact } from '@/hooks/use-artifact';
 import { KernelBrowserClient } from './client-kernel';
+import { useRouter } from 'next/navigation';
 
 // Feature flag for AI SDK agent vs Mastra (client-side)
 const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
@@ -96,6 +98,8 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // =====================================================
     const [lastFrame, setLastFrame] = useState<string | null>(null);
     const isMobile = useIsMobile();
+    const { setArtifact } = useArtifact();
+    const router = useRouter();
     const wsRef = useRef<WebSocket | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const frameCountRef = useRef(0);
@@ -617,6 +621,24 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
         // Chrome stays alive - agent or "Close Browser" button controls its lifecycle
       };
     }, []);
+
+    // When the browser artifact opens, push a history entry so the browser
+    // back button pops our state instead of navigating away from the chat page.
+    useEffect(() => {
+      window.history.pushState({ browserArtifact: true }, '');
+
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.browserArtifact) {
+          closeArtifact(setArtifact);
+          router.push('/home');
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }, [setArtifact, router]);
 
     if (!metadata) {
       return <BrowserLoadingState />;
