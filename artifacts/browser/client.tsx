@@ -630,10 +630,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     // When the browser artifact opens, push a history entry so the browser
     // back button pops our state instead of navigating away from the chat page.
     useEffect(() => {
-      // Push a guard entry onto the history stack. When the user presses back
-      // from this entry, popstate fires with the *destination* state (the previous
-      // entry) — NOT our guard state — so we track "are we at the guard?" with a
-      // local flag rather than checking event.state.
       window.history.pushState({ browserArtifact: true }, '');
       const guardActive = { current: true };
 
