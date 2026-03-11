@@ -1,7 +1,7 @@
 /**
  * Agent-browser skill - Core workflow for browser automation.
  *
- * This is the main skill loaded into context. Keep it concise (<200 lines).
+ * This is the main skill loaded into context. Keep it concise.
  * Detailed references are in ./references/ and loaded on demand.
  */
 export const agentBrowserSkill = `
@@ -79,42 +79,16 @@ browser({ action: "type", selector: ":focus", text: "Doe" })
 
 ## Custom Dropdowns (Select2, Chosen, Drupal)
 
-The \`select\` action ONLY works on native \`<select>\` elements. Many CMS forms (Drupal, WordPress) use Select2 or Chosen widgets that render custom HTML. Signs you're dealing with a custom dropdown:
-- \`select\` command fails or does nothing
-- Snapshot shows a \`<span>\` or \`<div>\` with class like "select2" instead of a \`<select>\`
-- The dropdown trigger looks like a styled container, not a native select
-
-**Pattern for custom dropdowns:**
-\`\`\`
-// 1. Click the dropdown trigger (the visible styled element, NOT a hidden <select>)
-browser({ action: "click", selector: "@e5" })
-// 2. Wait for options to render
-browser({ action: "wait", timeout: 300 })
-// 3. Snapshot to find the options (scope to dropdown panel if possible)
-browser({ action: "snapshot", interactive: true })
-// 4. Click the desired option
-browser({ action: "click", selector: "@e12" })
-// 5. Re-snapshot to confirm selection and get fresh refs
-browser({ action: "snapshot", selector: "form" })
-\`\`\`
-
-**If the dropdown has a search box** (common in Select2):
-\`\`\`
-browser({ action: "click", selector: "@e5" })          // Open dropdown
-browser({ action: "wait", timeout: 300 })
-browser({ action: "type", selector: ":focus", text: "California" })  // Type into search
-browser({ action: "wait", timeout: 300 })
-browser({ action: "snapshot", interactive: true })         // Find filtered options
-browser({ action: "click", selector: "@e12" })          // Click matching option
-\`\`\`
+If \`select\` fails, the dropdown is a custom widget. Click the trigger → wait → snapshot → click the option → re-snapshot. See \`references/form-automation.md\` for detailed patterns including Select2 search boxes.
 
 ## Essential Commands
 
 ### Navigation & Snapshot
-- \`{ action: "navigate", url: "<url>" }\` - Go to URL
+- \`{ action: "navigate", url: "<url>" }\` - Go to URL (already waits for load)
 - \`{ action: "snapshot" }\` - Full accessibility tree (ALWAYS first)
 - \`{ action: "snapshot", selector: "form" }\` - Scoped snapshot (complex pages)
 - \`{ action: "snapshot", interactive: true }\` - Interactive elements with refs only
+- \`{ action: "url" }\` - Get current URL (use to verify you're still on the right domain)
 - \`{ action: "back" }\` / \`{ action: "forward" }\` - Browser navigation (AVOID during form filling — may wipe state)
 
 ### Interaction
@@ -128,10 +102,19 @@ browser({ action: "click", selector: "@e12" })          // Click matching option
 - \`{ action: "scrollintoview", selector: "@e1" }\` - Scroll element into view
 
 ### Information & Waiting
-- \`{ action: "gettext", selector: "<sel>" }\` / \`{ action: "inputvalue", selector: "<sel>" }\` / \`{ action: "url" }\`
+- \`{ action: "gettext", selector: "<sel>" }\` / \`{ action: "inputvalue", selector: "<sel>" }\`
 - \`{ action: "wait", selector: "<sel>" }\` / \`{ action: "wait", timeout: 2000 }\` — use sparingly, only when waiting for async content
 - \`{ action: "waitforloadstate", state: "networkidle" }\` — RARELY needed. Navigate already waits for load. Only use after full-page navigations via link clicks, never after fills/types/clicks on form elements
 - \`{ action: "scroll", direction: "down", amount: 500 }\` / \`{ action: "scroll", direction: "up", amount: 300 }\`
+
+### Tabs & Dialogs
+- \`{ action: "tab_list" }\` - List open tabs
+- \`{ action: "tab_new", url: "<url>" }\` - Open new tab (optionally with URL)
+- \`{ action: "tab_switch", index: 2 }\` - Switch to tab by index
+- \`{ action: "tab_close" }\` - Close current tab
+- \`{ action: "dialog", response: "accept" }\` / \`{ action: "dialog", response: "dismiss" }\` - Handle browser dialogs
+- \`{ action: "frame", selector: "#iframe" }\` - Switch to iframe
+- \`{ action: "mainframe" }\` - Return to main frame
 
 ## Masked/Formatted Fields (CRITICAL)
 
@@ -148,57 +131,6 @@ Many form fields (SSN, birthdate, phone, state, zip) have JavaScript input masks
 - State \`maxlength="2"\` → \`"CA"\`
 
 **Always verify**: After typing into masked fields, use \`inputvalue\` to confirm the value stuck. If empty/wrong, click the field, wait, and re-type.
-
-## Form Workflow Example (with proper snapshot discipline)
-
-\`\`\`
-browser({ action: "navigate", url: "https://example.com/application" })
-browser({ action: "snapshot" })              // 1. Full snapshot first (navigate already waits for load)
-
-// Complex page? Scope to the form area
-browser({ action: "snapshot", selector: "form" })   // 2. Reduces 200+ elements to just form fields
-// Snapshot shows refs: textbox "First Name" [ref=@e3], textbox "Last Name" [ref=@e4],
-//   textbox "Email" [ref=@e5], radio "Yes" [ref=@e7], textbox "SSN" [ref=@e10],
-//   textbox "Birthdate" [ref=@e11], textbox "Phone" [ref=@e12]
-
-// *** PARALLEL: Fill all plain text fields in ONE response (they are independent) ***
-browser({ action: "fill", selector: "@e3", value: "John" })
-browser({ action: "fill", selector: "@e4", value: "Doe" })
-browser({ action: "fill", selector: "@e5", value: "john@example.com" })
-
-// *** PARALLEL: Handle masked fields — each field's click+type+verify is independent ***
-// Field 1: SSN
-browser({ action: "click", selector: "@e10" })
-browser({ action: "type", selector: "@e10", text: "123456789", clear: true })
-// Field 2: Birthdate
-browser({ action: "click", selector: "@e11" })
-browser({ action: "type", selector: "@e11", text: "01022000", clear: true })
-// Field 3: Phone
-browser({ action: "click", selector: "@e12" })
-browser({ action: "type", selector: "@e12", text: "7775551234", clear: true })
-
-// *** PARALLEL: Verify all masked fields at once ***
-browser({ action: "inputvalue", selector: "@e10" })  // Verify SSN
-browser({ action: "inputvalue", selector: "@e11" })  // Verify birthdate
-browser({ action: "inputvalue", selector: "@e12" })  // Verify phone
-
-// Radio button — click ref, then re-snapshot (DOM may change with conditional fields)
-browser({ action: "click", selector: "@e7" })
-browser({ action: "snapshot", selector: "form" })   // 3. Re-snapshot: radio may reveal new fields
-
-// Custom dropdown (Select2) — NOT a native select
-browser({ action: "click", selector: "@e8" })              // Click dropdown trigger
-browser({ action: "wait", timeout: 300 })
-browser({ action: "snapshot", interactive: true })          // Find dropdown options
-browser({ action: "click", selector: "@e15" })             // Click desired option
-browser({ action: "snapshot", selector: "form" })          // 4. Re-snapshot after selection
-
-// Scroll to see more fields if form is long
-browser({ action: "scrollintoview", selector: "@e20" })
-browser({ action: "snapshot", selector: "form" })   // 5. Fresh refs after scroll
-
-browser({ action: "snapshot" })               // Final verification before submit
-\`\`\`
 
 ## Modals, Dialogs & Popups
 
@@ -237,7 +169,8 @@ The browser runs in Kernel stealth mode with an **auto-solver** that handles Clo
    - You can continue doing other independent work (gap analysis, database lookups) while waiting — the auto-solver runs in the background
 3. If a submit button is disabled and you've filled all required fields, wait for the CAPTCHA to resolve: \`{ action: "wait", timeout: 5000 }\` then re-check
 4. If still disabled after waiting, take a snapshot to check for missing required fields — the issue is likely unfilled fields, not the CAPTCHA
-5. Do NOT use \`evaluate\` to debug why the submit button is disabled — the most common causes are: (a) CAPTCHA still solving (wait), (b) required fields not filled (snapshot and check), (c) the form doesn't allow submission and the agent should stop anyway per instructions
+5. **Verification checklist** — if submit is still disabled after the 5-second wait, take a snapshot and confirm ALL of the following: (a) all required fields are filled, (b) the CAPTCHA/Turnstile widget visually shows solved/success (green checkmark, "Success", etc.), (c) no error messages are displayed on the page
+6. **Captcha-stuck-button fix** — if ALL three conditions above are confirmed (fields filled + captcha solved + no errors) and the submit button is STILL disabled, the captcha solver succeeded but the form's JS failed to re-enable the button. Use \`evaluate\` to remove the disabled attribute: \`{ action: "evaluate", script: "const btn = document.querySelector('#btnSubmit, [type=\\"submit\\"]:disabled, button[type=\\"submit\\"]:disabled'); if (btn) btn.removeAttribute('disabled');" }\`. Do NOT click submit after this — proceed with \`formSummary\` as normal so the caseworker can review and submit manually.
 
 ## Form Completion Summary
 
@@ -254,14 +187,19 @@ Do NOT write a bullet list, do NOT summarize fields in your text response — th
 
 ## Forbidden Actions
 
+### Navigation Boundaries
+Once you navigate to the target application, **stay on that domain.** NEVER click social media links (Facebook, Twitter/X, Instagram, YouTube, LinkedIn, TikTok), "Share"/"Follow" buttons, footer links to external sites, banner ads, or any link to a different domain. Focus ONLY on the form content area (\`main\`, \`form\`, \`#content\`). If you accidentally navigate away, immediately use \`{ action: "back" }\` to return, then re-snapshot.
+
+### Evaluate
+
 - NEVER use \`evaluate\` to find, search for, click, fill, select, or check elements. Always use the proper actions (\`snapshot\`, \`click\`, \`fill\`, \`type\`, \`select\`, \`check\`). If you need to find something, use a snapshot — it gives you refs you can interact with directly.
 - NEVER use \`evaluate\` as a fallback when snapshots return empty/minimal content. Empty snapshots mean a modal is blocking — find and dismiss the modal, then snapshots will work again. Do NOT switch to using \`evaluate\` for the rest of the session.
-- NEVER use \`evaluate\` to enable disabled buttons or bypass validation
+- NEVER use \`evaluate\` to enable disabled buttons or bypass validation — **except** for the captcha-stuck-button fix described in the CAPTCHA section above (all three conditions must be confirmed first)
 - NEVER use \`evaluate\` to modify form state or hidden fields
-- \`evaluate\` is acceptable for: reading simple values (e.g. checking a field's maxLength), and removing known third-party overlays that block clicks (e.g. Google Translate bar — see above)
+- \`evaluate\` is acceptable for: reading simple values (e.g. checking a field's maxLength), removing known third-party overlays that block clicks (e.g. Google Translate bar — see above), and removing the disabled attribute from submit buttons when the captcha solver succeeded but the form's JS failed to re-enable them (see CAPTCHA section)
 - If a button is disabled, fill the required fields — don't force-enable it
 - NEVER use \`reload\` while filling a form — reloading wipes all form state and you lose everything you filled. If a page appears blank or a snapshot returns very little content, wait a moment and re-snapshot. If still blank, it's likely a modal overlay or a page transition — do NOT reload.
-- NEVER use \`back\` during multi-page form filling unless recovering from an error — going back may also wipe form state on the current page
+- NEVER use \`back\` during multi-page form filling — going back wipes form state on the current page. The ONE exception: if you accidentally navigated off the target domain, use \`back\` to return immediately.
 
 ## Parameter Types
 
