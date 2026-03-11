@@ -16,6 +16,7 @@ export const agentBrowserSkill = `
 5. **Use \`fill\` ONLY for plain text fields** — name, address, city, email. Nothing with formatting.
 6. **NEVER mention technical terms in your text messages.** No refs, selectors, snapshot, DOM, field IDs, evaluate, CSS, getbylabel, strict mode, interactive elements, or any code-related terms. Your audience is a caseworker. Describe actions in human terms only: "Filling in the personal information" — NOT "I have all the refs" or "Using CSS selectors".
 7. **Call multiple tools in parallel when they are independent.** After a snapshot gives you refs, you can fill/type multiple fields simultaneously in one response. You can also fetch database records while navigating the browser. Do NOT parallelize actions that depend on each other (e.g., snapshot then use refs from that snapshot).
+8. **\`evaluate\` is for workarounds, not form filling.** Use it to remove overlays (Google Translate bar), enable a stuck submit button after CAPTCHA solves, or read field attributes. NEVER use it to find, click, fill, or check elements — use the proper actions instead. For disabled submit buttons, follow the CAPTCHA section step by step before using evaluate.
 
 ## Snapshot Strategy (CRITICAL)
 
@@ -170,7 +171,9 @@ The browser runs in Kernel stealth mode with an **auto-solver** that handles Clo
 3. If a submit button is disabled and you've filled all required fields, wait for the CAPTCHA to resolve: \`{ action: "wait", timeout: 5000 }\` then re-check
 4. If still disabled after waiting, take a snapshot to check for missing required fields — the issue is likely unfilled fields, not the CAPTCHA
 5. **Verification checklist** — if submit is still disabled after the 5-second wait, take a snapshot and confirm ALL of the following: (a) all required fields are filled, (b) the CAPTCHA/Turnstile widget visually shows solved/success (green checkmark, "Success", etc.), (c) no error messages are displayed on the page
-6. **Captcha-stuck-button fix** — if ALL three conditions above are confirmed (fields filled + captcha solved + no errors) and the submit button is STILL disabled, the captcha solver succeeded but the form's JS failed to re-enable the button. Use \`evaluate\` to remove the disabled attribute: \`{ action: "evaluate", script: "const btn = document.querySelector('#btnSubmit, [type=\\"submit\\"]:disabled, button[type=\\"submit\\"]:disabled'); if (btn) btn.removeAttribute('disabled');" }\`. Do NOT click submit after this — proceed with \`formSummary\` as normal so the caseworker can review and submit manually.
+6. **Captcha-stuck-button fix** — if ALL three conditions above are confirmed (fields filled + captcha solved + no errors) and the submit button is STILL disabled, the captcha solver succeeded but the form's JS failed to re-enable the button. Use **exactly this script and nothing else**:
+   \`{ action: "evaluate", script: "const btn = document.querySelector('#btnSubmit, [type=\\"submit\\"]:disabled, button[type=\\"submit\\"]:disabled'); if (btn) btn.removeAttribute('disabled');" }\`
+   Do NOT invent your own JavaScript. Do NOT set JS variables like \`isCaptchaChecked\`, \`isExpanded\`, or any other page state. Do NOT click submit after this — proceed with \`formSummary\` as normal so the caseworker can review and submit manually.
 
 ## Form Completion Summary
 
