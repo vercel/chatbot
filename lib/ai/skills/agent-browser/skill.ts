@@ -142,9 +142,11 @@ Multiple modals can appear in sequence (e.g. address validation → county selec
 **Workflow:**
 1. Snapshot the page
 2. If minimal content → modal is present. Snapshot with: \`selector: "[role=dialog]"\`, or \`.ReactModal__Overlay\`, or \`.modal\`, or \`[aria-modal=true]\`
-3. Use refs from that snapshot to interact (fill dropdowns, click buttons)
+3. Use refs from that snapshot to interact — if there's a native \`<select>\`/combobox, use \`select\`; if it's a custom dropdown (button that opens a listbox), click to open → snapshot again → click the option
 4. After dismissing, go back to step 1 — another modal may have appeared
 5. When the full page is visible again, resume normal workflow
+
+**County/location selection modals** (common on benefits sites): These often appear after address entry. The modal contains a dropdown (native or custom) and a Continue button. Scope your snapshot to \`[role=dialog]\`, select the county, click Continue. Do NOT use \`evaluate\` to dismiss these — use the refs.
 
 ### Google Translate Bar
 
