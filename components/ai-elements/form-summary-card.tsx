@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PencilIcon, XIcon } from 'lucide-react';
+import { CheckIcon, PencilIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,6 +168,9 @@ export function FormSummaryCard({
         };
         return (
           <div className="mt-2 flex flex-col gap-1.5">
+            <p className="text-sm text-muted-foreground italic">
+              Select all that apply.
+            </p>
             {(item.options ?? []).map((opt) => (
               <div key={opt} className="flex items-center gap-2">
                 <Checkbox
@@ -215,11 +218,6 @@ export function FormSummaryCard({
     setUiMode('edit');
   }
 
-  function handleSaveChanges() {
-    setSavedValues({ ...editValues });
-    setUiMode('view');
-  }
-
   const hasChanges = allFields.some(
     (item) => editValues[item.field] !== undefined && editValues[item.field] !== getDisplayValue(item),
   );
@@ -229,11 +227,14 @@ export function FormSummaryCard({
     setUiMode('view');
   }
 
-  function handleLooksGood() {
+  function handleConfirm() {
+    const resolvedValues = { ...savedValues, ...editValues };
+    setSavedValues(resolvedValues);
+
     if (sendMessage) {
       const changes: string[] = [];
       for (const item of allFields) {
-        const currentValue = savedValues[item.field] ?? item.value;
+        const currentValue = resolvedValues[item.field] ?? item.value;
         if (currentValue !== item.value && currentValue.trim() !== '') {
           changes.push(`- ${item.field}: ${currentValue}`);
         }
@@ -270,7 +271,8 @@ export function FormSummaryCard({
   return (
     <div
       className={cn(
-        'rounded-xl border-0 shadow-none bg-muted/40 overflow-hidden flex flex-col',
+        'rounded-lg border shadow-none bg-background overflow-hidden flex flex-col',
+        uiMode === 'edit' ? 'border-[#c85aab]' : 'border-[#f5e4f0]',
         className,
       )}
     >
@@ -280,14 +282,14 @@ export function FormSummaryCard({
         </div>
       )}
 
-      <div className="overflow-y-auto max-h-[500px]">
+      <div>
         <div className="px-6">
           {allFields.map((item, i) => (
             <div key={i} className="py-4 border-b border-border last:border-b-0">
               <div className="flex items-center justify-between gap-4 mb-1">
                 <span className="text-sm font-bold text-card-foreground leading-snug">
                   {item.field}
-                  {item.required && <span className="text-red-500 ml-0.5">*</span>}
+                  {item.required && <span> (<span className="text-red-500 ml-0.5">*Required</span>)</span>}
                 </span>
                 {isManuallyEdited(item) ? (
                   <SourceLabel label="Manual" />
@@ -322,41 +324,34 @@ export function FormSummaryCard({
         </p>
       )}
 
-      <div className="px-6 py-4 border-t border-border flex items-center gap-2">
+      <div className="px-6 py-4 border-t border-border flex flex-col gap-2">
         {uiMode === 'edit' ? (
-          <div className="flex flex-col gap-2 w-full">
-            {allFields.some((f) => f.required) && (
-              <p className="text-xs text-red-500">
-                <span className="font-bold">*</span> Required
-              </p>
-            )}
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCancel} disabled={!isArtifactVisible}>
-                <XIcon className="w-3 h-3 mr-1.5" />
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleSaveChanges} disabled={!isArtifactVisible || !hasChanges}>
-                Save changes
-              </Button>
-            </div>
-          </div>
+          <>
+            <Button size="sm" className="w-full" onClick={handleConfirm} disabled={!isArtifactVisible}>
+              <CheckIcon className="w-3 h-3 mr-1.5" />
+              Confirm and submit
+            </Button>
+            <Button variant="outline" size="sm" className="w-full" onClick={handleCancel} disabled={!isArtifactVisible}>
+              Discard changes
+            </Button>
+          </>
         ) : (
           <>
             <Button
-              variant="outline"
-              size="sm"
+              className="w-full"
               onClick={handleEditStart}
               disabled={uiMode === 'confirmed' || !isArtifactVisible}
             >
               <PencilIcon className="w-3 h-3 mr-1.5" />
-              Edit
+              Edit responses
             </Button>
             <Button
-              size="sm"
-              onClick={handleLooksGood}
+              variant="outline"
+              className="w-full"
+              onClick={handleConfirm}
               disabled={uiMode === 'confirmed' || !isArtifactVisible}
             >
-              Looks good
+              Confirm and submit
             </Button>
           </>
         )}
