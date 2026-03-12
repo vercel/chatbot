@@ -213,6 +213,20 @@
     @apply bg-blue-200 hover:bg-blue-300 dark:hover:bg-blue-400/50 dark:text-blue-50 dark:bg-blue-500/40;
 }
 
+/* Streamdown list indent and bullet styling */
+[data-streamdown="unordered-list"],
+[data-streamdown="ordered-list"] {
+    padding-left: 1.25rem;
+}
+
+[data-streamdown="unordered-list"] {
+    list-style-type: disc;
+}
+
+[data-streamdown="ordered-list"] {
+    list-style-type: decimal;
+}
+
 /* Assistant message bubble styling */
 .assistant-message-bubble {
     @apply text-black dark:text-white text-xs leading-[18px] text-left p-0 bg-transparent border-0 outline-none font-source-serif;
