@@ -51,10 +51,11 @@ Before filling any fields, do this:
 3. Identify the gap: which required fields have NO matching data in the database
 4. Call the `gapAnalysis` tool with:
    - `formName`: the name of the form (e.g. "WIC Application")
-   - `availableFields`: array of `{ field, value }` for data you have
-   - `missingFields`: array of `{ field, options?, inputType?, condition? }` for data you need
-5. **CRITICAL: The gapAnalysis tool renders an interactive card that already shows ALL available and missing fields. You MUST NOT write ANY text that lists, summarizes, or repeats this information — not before the tool call, not after. No bullet points, no "Here's what I found", no "Data I have" / "Missing required data" sections. Zero duplication.**
+   - `missingFields`: array of `{ field, options?, inputType?, condition? }` for data you need from the caseworker
+   - Do NOT include fields you already have data for. The caseworker only needs to see what's missing.
+5. **CRITICAL: The gapAnalysis tool renders an interactive card. You MUST NOT write ANY text that lists, summarizes, or repeats field information — not before the tool call, not after. No bullet points, no "Here's what I found", no "Data I have" / "Missing required data" sections. Zero duplication.**
 6. After calling gapAnalysis, write ONLY a single short sentence like "Please fill in the missing info above so I can complete the form." Nothing else.
+7. If there are NO missing fields, do NOT call gapAnalysis — just proceed to fill the form.
 7. **STOP. Do NOT fill any fields yet. Do NOT call any browser tools after gapAnalysis. You MUST wait for the caseworker to reply with the missing data before proceeding. Your turn ends after the gap analysis message.**
 8. Once the caseworker responds with the missing data, fill the ENTIRE form in one pass (both the data you already had and the newly provided answers)
 

@@ -503,7 +503,6 @@ const PurePreviewMessage = ({
                     <GapAnalysisCard
                       key={toolCallId}
                       formName={input?.formName}
-                      availableFields={input?.availableFields ?? []}
                       missingFields={input?.missingFields ?? []}
                       sendMessage={sendMessage}
                     />

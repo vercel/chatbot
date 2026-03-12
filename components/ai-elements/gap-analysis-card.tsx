@@ -20,11 +20,6 @@ import { cn } from '@/lib/utils';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 
-interface AvailableField {
-  field: string;
-  value: string;
-}
-
 interface MissingField {
   field: string;
   options?: string[];
@@ -35,7 +30,6 @@ interface MissingField {
 
 interface GapAnalysisCardProps {
   formName?: string;
-  availableFields: AvailableField[];
   missingFields: MissingField[];
   sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
   isSubmitted?: boolean;
@@ -45,7 +39,6 @@ interface GapAnalysisCardProps {
 
 export function GapAnalysisCard({
   formName,
-  availableFields,
   missingFields,
   sendMessage,
   isSubmitted: initialSubmitted = false,
@@ -299,22 +292,6 @@ export function GapAnalysisCard({
         <div className="font-source-serif leading-[1.5] text-foreground">
           {formName && (
             <p className="text-lg font-bold mb-1">{formName}</p>
-          )}
-
-          {availableFields.length > 0 && (
-            <div className="mb-5">
-              <p className="text-sm text-muted-foreground italic mb-3">
-                Available from Database
-              </p>
-              {availableFields.map((item, i) => (
-                <p key={i} className="flex items-center gap-2 text-sm">
-                  <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
-                  <span>
-                    {item.field}: {item.value}
-                  </span>
-                </p>
-              ))}
-            </div>
           )}
 
           {missingFields.length > 0 && (
