@@ -38,13 +38,18 @@ const RESPONSIVE_MIN_HEIGHT = 'min-h-[calc(100vh-22rem)] md:min-h-[calc(100vh-24
 
 // Keywords that indicate the agent is asking the caseworker to intervene
 const USER_ACTION_KEYWORDS = [
-  'action required',
   'take control',
   'user intervention',
-  'missing information',
   'complete the application',
   'form is complete',
   'ready for submission',
+  'submit the form',
+  'please submit',
+  'you can now submit',
+  'ready to submit',
+  'go ahead and submit',
+  'proceed to submit',
+  'form is all yours'
 ];
 
 // Parse partner data from XML-wrapped content in user messages
@@ -518,6 +523,8 @@ const PurePreviewMessage = ({
                       fromCaseworker={input?.fromCaseworker ?? []}
                       inferred={input?.inferred ?? []}
                       missing={input?.missing}
+                      sendMessage={sendMessage}
+                      isArtifactVisible={isArtifactVisible}
                     />
                   );
                 }

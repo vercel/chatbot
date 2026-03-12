@@ -4,6 +4,20 @@ import { z } from 'zod';
 const summaryFieldSchema = z.object({
   field: z.string().describe('Field label'),
   value: z.string().describe('Value that was entered'),
+  inputType: z
+    .enum(['text', 'select', 'radio', 'checkbox'])
+    .optional()
+    .describe(
+      'Type of input the form field uses. Use "select" for dropdowns, "radio" for single-choice radio buttons, "checkbox" for multi-select checkboxes, or omit for plain text.',
+    ),
+  options: z
+    .array(z.string())
+    .optional()
+    .describe('Available choices for select, radio, or checkbox fields'),
+  required: z
+    .boolean()
+    .optional()
+    .describe('Whether the field is required to submit the form'),
 });
 
 export const formSummary = tool({
@@ -24,9 +38,21 @@ export const formSummary = tool({
       .array(summaryFieldSchema)
       .describe('Fields where the agent made a reasonable inference (e.g. deduced clinic location from address, assumed living alone from no household members listed)'),
     missing: z
-      .array(z.string())
+      .array(
+        z.object({
+          field: z.string().describe('Field label'),
+          inputType: z
+            .enum(['text', 'select', 'radio', 'checkbox'])
+            .optional()
+            .describe(
+              'Type of input the form field uses. Use "select" for single-choice dropdowns, "radio" for single-choice radio buttons, "checkbox" ONLY for fields that allow multiple simultaneous selections, or omit for plain text.',
+            ),
+          options: z.array(z.string()).optional().describe('Available choices for select, radio, or checkbox fields'),
+          required: z.boolean().optional().describe('Whether the field is required to submit the form'),
+        }),
+      )
       .optional()
-      .describe('Field labels that could not be filled (e.g. "File upload required", "CAPTCHA blocked submission")'),
+      .describe('Fields that could not be filled (e.g. "File upload required", "CAPTCHA blocked submission"). Include inputType, options, and required if you observed them on the form.'),
     notes: z
       .string()
       .optional()
