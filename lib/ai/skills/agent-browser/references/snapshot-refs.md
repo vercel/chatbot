@@ -1,29 +1,29 @@
 # Snapshot and Refs Guide
 
-Understanding when to use snapshots vs label locators.
+Understanding snapshot modes, ref lifecycle, and selector strategy.
 
-## When to Use What
+## Selector Priority
 
-### Use `find label` (PREFERRED for forms)
-When the form has visible labels next to fields:
-```
-browser({ command: "find label \"First Name\" fill \"John\"" })
-browser({ command: "find label \"Email\" fill \"john@example.com\"" })
-```
-No snapshot needed - uses accessibility tree directly.
+### 1. Refs (@e3) or CSS IDs (#id) — PREFERRED
+After every snapshot you get refs. If the snapshot also shows `[id="..."]`, you can use `#id` directly — CSS IDs are stable across DOM changes.
 
-### Use Snapshot + Refs
-When you need to see the page structure or labels aren't working:
 ```
-browser({ command: "snapshot -i" })
-# Output: textbox [ref=@e1], button [ref=@e2]
-browser({ command: "fill @e1 \"John\"" })
+browser({ action: "snapshot", selector: "form" })
+// Output: textbox "First Name" [ref=@e3] [id="firstNameTxt"]
+
+// Either works:
+browser({ action: "fill", selector: "@e3", value: "John" })
+browser({ action: "fill", selector: "#firstNameTxt", value: "John" })
 ```
 
-### Use CSS Selectors
-When IDs are visible and labels/refs don't work:
+### 2. Label Locators — LAST RESORT
+Use `getbylabel` ONLY when the label is globally unique AND the element has no ID. NEVER use for common labels like "Yes", "No", "First Name", "State" — these appear multiple times on benefit forms and cause strict-mode violations.
+
+**NEVER include asterisks or colons** in labels.
+
 ```
-browser({ command: "fill \"#firstName\" \"John\"" })
+// Only when label is truly unique and no IDs available:
+browser({ action: "getbylabel", label: "Social Security Number", subaction: "fill", value: "123456789" })
 ```
 
 ## Ref Format
@@ -36,15 +36,15 @@ browser({ command: "fill \"#firstName\" \"John\"" })
 ```
 
 Each ref includes:
-- `@eN` - The reference ID
-- `[type attributes]` - Element type and key attributes
-- `"text"` - Visible text content
+- `@eN` — The reference ID
+- `[type attributes]` — Element type and key attributes
+- `"text"` — Visible text content
 
 ## The Golden Rule
 
 **Refs are invalidated when the page changes.**
 
-You MUST re-snapshot after:
+Re-snapshot after:
 - Page navigation (`open`, clicking links)
 - Form submission
 - Dropdown/modal opening
@@ -54,7 +54,7 @@ You MUST re-snapshot after:
 ## Snapshot Modes
 
 ### `snapshot` (Full Tree)
-Shows page structure with labels - useful for understanding the form:
+Shows page structure with labels — useful for understanding the form:
 ```
 heading "Welcome to Our Site"
   paragraph "Please fill out the form below"
@@ -75,7 +75,7 @@ button "Submit" [ref=@e4]
 ### `snapshot -s "#formId"` (Scoped)
 For large pages, scope to a specific container:
 ```
-browser({ command: "snapshot -i -s \"#registrationForm\"" })
+browser({ action: "snapshot", selector: "#registrationForm" })
 ```
 
 ## Troubleshooting
@@ -90,15 +90,12 @@ browser({ command: "snapshot -i -s \"#registrationForm\"" })
 
 ### Too many elements in snapshot
 **Cause**: Page is large/complex
-**Fix**: Use `-s` to scope to a container
-
-### Ref is ambiguous
-**Cause**: Multiple similar elements
-**Fix**: Use CSS selector if IDs are visible, or use `find first @e1` / `find nth 2 @e1`
+**Fix**: Use `selector` to scope to a container (`form`, `main`, `#content`)
 
 ## Best Practices
 
-1. **Snapshot → Interact → Snapshot** - Always follow this cycle
-2. **Use `-i` for forms** - Cleaner output, less noise
-3. **Check refs before critical actions** - Re-snapshot before submitting
-4. **Don't cache refs** - Always use refs from the most recent snapshot
+1. **Snapshot → Interact → Snapshot** — Always follow this cycle
+2. **Scope on complex pages** — Use `selector: "form"` to reduce noise
+3. **Check refs before critical actions** — Re-snapshot before submitting
+4. **Don't cache refs** — Always use refs from the most recent snapshot
+5. **Prefer CSS IDs when available** — More stable than refs across DOM changes

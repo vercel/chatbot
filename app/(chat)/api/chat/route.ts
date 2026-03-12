@@ -44,7 +44,9 @@ import { apricotTools } from '@/lib/ai/tools/apricot';
 import { createBrowserTool } from '@/lib/ai/tools/browser';
 import { gapAnalysis } from '@/lib/ai/tools/gap-analysis';
 import { formSummary } from '@/lib/ai/tools/form-summary';
-import { webAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
+import { getWebAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
+import { loadSkill } from '@/lib/ai/tools/load-skill';
+import { readSkillFile } from '@/lib/ai/tools/read-skill-file';
 import { createMessageCompressor, preCompactMessages } from '@/lib/ai/context-compression';
 
 // Feature flag for AI SDK agent vs Mastra
@@ -227,13 +229,15 @@ export async function POST(request: Request) {
 
           const result = streamText({
             model: webAutomationModel,
-            system: webAutomationSystemPrompt,
+            system: getWebAutomationSystemPrompt(),
             messages: preCompacted,
             tools: {
               ...apricotTools,
               gapAnalysis,
               formSummary,
               browser: createBrowserTool(sessionId, session.user.id),
+              loadSkill,
+              readSkillFile,
             },
             stopWhen: stepCountIs(500),
             abortSignal: request.signal,

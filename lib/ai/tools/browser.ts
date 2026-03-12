@@ -38,25 +38,9 @@ export const createBrowserTool = (sessionId: string, userId: string) =>
   tool({
     description: `Execute browser automation commands on a remote Kernel browser.
 
-Send structured JSON commands with an "action" field and action-specific parameters.
+Send structured JSON commands with an "action" field and action-specific parameters. See the Browser Automation skill for snapshot discipline, selector strategy, and workflow rules.
 
-SNAPSHOT DISCIPLINE (critical for reliable automation):
-- ALWAYS run { action: "snapshot" } as the FIRST command after navigating
-- On complex pages (Drupal, long forms), scope with { action: "snapshot", selector: "form" } or { action: "snapshot", selector: "main" }
-- Use { action: "snapshot", interactive: true } only when you specifically need just interactive element refs
-- ALWAYS re-snapshot after ANY action that changes the DOM (click, select, fill that triggers dynamic fields, navigation)
-- NEVER reuse refs from a previous snapshot after a DOM-changing action — they may be stale
-
-Core workflow:
-1. { action: "navigate", url: "<url>" } — navigate to the page (already waits for load — do NOT add waitforloadstate after this)
-2. { action: "snapshot" } — full page snapshot to understand structure
-3. { action: "snapshot", selector: "form" } — scope to form on complex pages
-4. Interact using refs (@e1, @e2) or label locators
-5. Re-snapshot after every DOM-changing interaction
-
-IMPORTANT: Do NOT use "waitforloadstate" after clicks, fills, types, or other in-page interactions — it wastes a tool call. Navigate already waits for page load internally.
-
-Common commands:
+Commands:
 - { action: "navigate", url: "<url>" } - Navigate to URL
 - { action: "snapshot" } - Full accessibility tree (ALWAYS do this first)
 - { action: "snapshot", selector: "form" } - Scoped snapshot (reduces noise)
@@ -81,17 +65,12 @@ Common commands:
 - { action: "scroll", direction: "down", amount: 500 } - Scroll down 500px
 - { action: "screenshot" } - Take screenshot
 - { action: "back" } / { action: "forward" } - Browser navigation (AVOID during form filling — may wipe state)
-- { action: "evaluate", script: "document.title" } - Run JavaScript (ONLY for reading simple values like maxLength — NEVER to find/search/click elements, use snapshot instead)
+- { action: "evaluate", script: "document.title" } - Run JavaScript (ONLY for reading simple values — NEVER to find/click elements)
+- { action: "tab_list" } / { action: "tab_switch", index: N } / { action: "tab_new" } / { action: "tab_close" } - Tab management
+- { action: "dialog", response: "accept" } / { action: "dialog", response: "dismiss" } - Handle browser dialogs
+- { action: "frame", selector: "#iframe" } / { action: "mainframe" } - Switch between frames
 
-Custom dropdowns (Select2, Chosen, Drupal):
-If "select" fails, the dropdown is likely a custom widget. Use this pattern:
-1. { action: "click", selector: "@e1" } — click the dropdown trigger
-2. { action: "wait", timeout: 300 } — let options render
-3. { action: "snapshot", interactive: true } — find the options
-4. { action: "click", selector: "@e5" } — click the desired option
-
-NEVER use "evaluate" to find, search for, or click elements — use snapshot instead (it gives refs you can click).
-NEVER use "evaluate" to enable disabled buttons, bypass validation, or modify page state.`,
+NEVER navigate away from the target application domain. Do NOT click social media links, share buttons, or external links.`,
     inputSchema: z
       .object({
         action: z.string().describe('The command action (e.g. "navigate", "click", "snapshot", "fill")'),
@@ -111,6 +90,9 @@ NEVER use "evaluate" to enable disabled buttons, bypass validation, or modify pa
         clear: z.boolean().optional().describe('Clear field before typing — must be boolean'),
         direction: z.string().optional().describe('Scroll direction: "up" or "down"'),
         state: z.string().optional().describe('Load state for waitforloadstate (e.g. "networkidle")'),
+        index: z.number().optional().describe('Tab index for tab_switch/tab_close'),
+        response: z.string().optional().describe('Dialog response: "accept" or "dismiss"'),
+        promptText: z.string().optional().describe('Text to enter in prompt dialog'),
       })
       .describe('Structured command object with action and action-specific parameters'),
     execute: async (

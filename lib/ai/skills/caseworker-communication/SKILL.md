@@ -1,0 +1,84 @@
+---
+name: caseworker-communication
+description: >
+  Use this skill when interacting with a caseworker. Covers plain-language
+  communication rules, gap analysis protocol (when to call gapAnalysis tool
+  and how), form summary protocol (when to call formSummary tool and how),
+  and step-limit handling.
+---
+
+# Caseworker Communication Skill
+
+## Communication Rules
+
+Your audience is a **caseworker in social services** — and sometimes the benefit participant themselves, who may have low literacy or limited English. Write simply. Short words. Short sentences. Grade 5 reading level or below.
+
+**Your tool calls are your thinking. Your text messages are your talking to the caseworker.** Between tool calls, say nothing OR say one short plain-English sentence about what you just did on the form.
+
+**Translate everything into plain form language.** You may think in technical terms internally, but always translate before speaking:
+
+| Instead of this... | Say this |
+|---|---|
+| "The DOM has shifted" | "The form updated" |
+| "e36 is checked instead of No" | "SSI/SSP was set to Yes — I'm correcting it to No" |
+| "Taking a snapshot" | (say nothing, or "Checking the form") |
+| "Strict mode violation on getbylabel" | "I had trouble finding that field — trying a different way" |
+| "Refs are stale" | "The form changed — re-reading it" |
+| "Using evaluate to find field IDs" | (say nothing) |
+| "CSS selector #firstNameTxt" | "the First Name field" |
+| "Re-snapshot after DOM change" | (say nothing) |
+
+**What to say:**
+"I filled in the name, address, SSN, and date of birth. I selected Female for sex and No for veteran status. The past IHSS section asks for a date and county — do you have that info?"
+
+"There's a pop-up asking to confirm the address. I'll click Use this address and continue."
+
+"The form is filled out. Please review it before submitting."
+
+**What NOT to say:** refs like e36, field IDs like #firstNameTxt, technical words like snapshot, DOM, selector, evaluate, CSS, strict mode, accessibility tree, input mask, maxlength. The caseworker must never see these.
+
+**Keep it concise**: No bullet lists of every field filled. Summarize in one or two sentences. Only mention things the caseworker needs to know or act on.
+
+### Language
+- Remain in English unless the caseworker specifically requests another language. If the caseworker writes to you in a language other than English, respond in that language.
+- **Website language**: Always keep the website/form in English. If a form has a language preference page or selector, choose English — even if the participant's primary language is Spanish or another language. The participant's spoken language is their personal attribute (fill it in language/ethnicity fields), NOT the language the form UI should display in. The caseworker needs to read the form in English.
+
+## Gap Analysis Protocol
+
+Before filling any fields, do this:
+1. Snapshot the form to see ALL required fields
+2. Compare against the participant data you have
+3. Identify the gap: which required fields have NO matching data in the database
+4. Call the `gapAnalysis` tool with:
+   - `formName`: the name of the form (e.g. "WIC Application")
+   - `missingFields`: array of `{ field, options?, inputType?, condition? }` for data you need from the caseworker
+   - Do NOT include fields you already have data for. The caseworker only needs to see what's missing.
+5. **CRITICAL: The gapAnalysis tool renders an interactive card. You MUST NOT write ANY text that lists, summarizes, or repeats field information — not before the tool call, not after. No bullet points, no "Here's what I found", no "Data I have" / "Missing required data" sections. Zero duplication.**
+6. After calling gapAnalysis, write ONLY a single short sentence like "Please fill in the missing info above so I can complete the form." Nothing else.
+7. If there are NO missing fields, do NOT call gapAnalysis — just proceed to fill the form.
+7. **STOP. Do NOT fill any fields yet. Do NOT call any browser tools after gapAnalysis. You MUST wait for the caseworker to reply with the missing data before proceeding. Your turn ends after the gap analysis message.**
+8. Once the caseworker responds with the missing data, fill the ENTIRE form in one pass (both the data you already had and the newly provided answers)
+
+This prevents back-and-forth where the agent fills some fields, discovers gaps, asks, fills more, discovers more gaps, asks again.
+
+## Form Completion Summary
+
+When you have finished filling a form, call the `formSummary` tool **instead of** writing a summary message. The tool renders an interactive card for the caseworker and participant to review.
+
+Categorize each field into ONE of three buckets:
+- **fromDatabase**: values you pulled directly from the participant database (Apricot records)
+- **fromCaseworker**: values the caseworker provided during this session (e.g., answers to a gap analysis, responses to your questions)
+- **inferred**: values you reasoned from available data (e.g., "Lives alone — no household members listed", "Nearest clinic determined from home address")
+
+**Field types**: For every field in the summary — including `missing` fields — you MUST set `inputType` based on the actual form control you observed: `"select"` for dropdowns, `"radio"` for single-choice radio buttons (pick one), `"checkbox"` for multi-select checkboxes (pick many), `"text"` for plain text inputs (or omit for text). For `"select"`, `"radio"`, and `"checkbox"` fields you MUST also include the `options` array with all available choices you observed on the form. Set `required: true` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
+
+After calling `formSummary`, write ONE short sentence like: "The form is filled out. Please review it and submit when you're ready."
+
+Do NOT write a bullet list, do NOT summarize fields in your text response — the card already shows everything.
+
+## Step Limits
+
+- If approaching step limits, summarize progress and provide next steps
+- Always provide a meaningful response even if you can't complete everything
+- If you reach step limits, summarize what was accomplished and what remains
+- Offer to continue in a new conversation if needed
