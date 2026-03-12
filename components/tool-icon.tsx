@@ -2,7 +2,6 @@
 
 import {
   ArrowLeft,
-  Brain,
   Camera,
   CheckSquare,
   Clock,
@@ -84,8 +83,9 @@ const getToolIcon = (toolName: string) => {
     // Database tools
     'search-participants-by-name': Search,
     'get-participant-with-household': Database,
-    'updateWorkingMemory': Brain,
     'gapAnalysis': FileText,
+    'loadSkill': Download,
+    'readSkillFile': FileText,
   };
 
   return iconMap[cleanToolName] || FileText; // Default icon
@@ -256,8 +256,9 @@ export const getToolDisplayInfo = (toolName: string, input?: any): { text: strin
     // Database tools
     'search-participants-by-name': (input) => input?.name ? `Searched for participant "${input.name}"` : 'Searched for participant',
     'get-participant-with-household': () => 'Retrieved participant data',
-    'updateWorkingMemory': () => 'Updated working memory',
     'gapAnalysis': () => 'Gap analysis',
+    'loadSkill': (input) => input?.name ? `Loaded ${input.name} skill` : 'Loaded skill',
+    'readSkillFile': () => 'Loaded reference file',
   };
 
   const mapper = toolMappings[cleanToolName];

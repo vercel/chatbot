@@ -42,7 +42,6 @@ const EXCLUDED_TOOL_TYPES = new Set([
 
 // Tools that are hidden or have special rendering via CollapsibleWrapper
 const HIDDEN_DISPLAY_NAMES = new Set([
-  'Updated working memory',
   'Executed JavaScript',
   'Retrieved participant data',
 ]);

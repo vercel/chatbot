@@ -619,6 +619,7 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
     }, []);
 
     if (!metadata) {
+      console.log('[BrowserArtifact] metadata is null — KernelBrowserClient will UNMOUNT');
       return <BrowserLoadingState />;
     }
 

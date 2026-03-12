@@ -59,6 +59,14 @@ export function KernelBrowserClient({
   const initializedSessionRef = useRef<string | null>(null);
   const initInFlightRef = useRef(false);
 
+  // Diagnostic: track mount/unmount to find stale iframe root cause
+  useEffect(() => {
+    console.log('[KernelBrowserClient] MOUNTED, sessionId:', sessionId);
+    return () => {
+      console.log('[KernelBrowserClient] UNMOUNTED, sessionId:', sessionId);
+    };
+  }, [sessionId]);
+
   const initBrowser = useCallback(async (force = false) => {
     // Skip if already initialized for this session (unless forced)
     if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
@@ -136,6 +144,7 @@ export function KernelBrowserClient({
   useEffect(() => {
     const cleanup = () => {
       try {
+        console.log('[KernelBrowserClient] CLEANUP firing — sending delete for session:', sessionIdRef.current);
         const payload = JSON.stringify({ action: 'delete', sessionId: sessionIdRef.current });
         navigator.sendBeacon(
           '/api/kernel-browser',
