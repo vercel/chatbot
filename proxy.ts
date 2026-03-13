@@ -1,4 +1,3 @@
-import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 
 export function proxy(request: NextRequest) {
@@ -14,14 +13,6 @@ export function proxy(request: NextRequest) {
 
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
-  }
-
-  const sessionCookie = getSessionCookie(request);
-
-  if (sessionCookie && ["/login", "/register"].includes(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
