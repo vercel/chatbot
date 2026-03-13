@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronUp } from "lucide-react";
+import { ChevronsUpDown, LogIn, LogOut, Moon, Sun } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -15,6 +15,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { signOut, useSession } from "@/lib/client";
 import { LoaderIcon } from "./icons";
@@ -26,7 +27,8 @@ export function SidebarUserNav({
   user: { email?: string | null; isAnonymous?: boolean | null };
 }) {
   const router = useRouter();
-  const { data, isPending } = useSession();
+  const { isMobile } = useSidebar();
+  const { data, status } = useSession();
   const { setTheme, resolvedTheme } = useTheme();
 
   const isGuest = data?.user?.isAnonymous ?? user.isAnonymous ?? false;
@@ -36,41 +38,49 @@ export function SidebarUserNav({
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            {isPending ? (
-              <SidebarMenuButton className="h-10 justify-between bg-background data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                <div className="flex flex-row gap-2">
-                  <div className="size-6 animate-pulse rounded-full bg-neutral-500/30" />
+            {status === "loading" ? (
+              <SidebarMenuButton
+                size="lg"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              >
+                <div className="size-8 animate-pulse rounded-lg bg-neutral-500/30" />
+                <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="animate-pulse rounded-md bg-neutral-500/30 text-transparent">
-                    Loading auth status
+                    Loading
                   </span>
                 </div>
-                <div className="animate-spin text-neutral-500">
+                <div className="ml-auto animate-spin text-neutral-500">
                   <LoaderIcon />
                 </div>
               </SidebarMenuButton>
             ) : (
               <SidebarMenuButton
-                className="h-10 bg-background data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                size="lg"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 data-testid="user-nav-button"
               >
                 <Image
                   alt={user.email ?? "User Avatar"}
-                  className="rounded-full"
-                  height={24}
+                  className="size-8 rounded-lg"
+                  height={32}
                   src={`https://avatar.vercel.sh/${user.email}`}
-                  width={24}
+                  width={32}
                 />
-                <span className="truncate" data-testid="user-email">
-                  {isGuest ? "Guest" : user?.email}
-                </span>
-                <ChevronUp className="ml-auto" />
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium" data-testid="user-email">
+                    {isGuest ? "Guest" : user?.email}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto size-4" />
               </SidebarMenuButton>
             )}
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-popper-anchor-width)"
+            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             data-testid="user-nav-menu"
-            side="top"
+            side={isMobile ? "bottom" : "right"}
+            align="end"
+            sideOffset={4}
           >
             <DropdownMenuItem
               className="cursor-pointer"
@@ -79,14 +89,18 @@ export function SidebarUserNav({
                 setTheme(resolvedTheme === "dark" ? "light" : "dark")
               }
             >
+              {resolvedTheme === "light" ? <Moon /> : <Sun />}
               {`Toggle ${resolvedTheme === "light" ? "dark" : "light"} mode`}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild data-testid="user-nav-item-auth">
+            <DropdownMenuItem
+              asChild
+              data-testid="user-nav-item-auth"
+            >
               <button
                 className="w-full cursor-pointer"
                 onClick={() => {
-                  if (isPending) {
+                  if (status === "loading") {
                     toast({
                       type: "error",
                       description:
@@ -111,6 +125,7 @@ export function SidebarUserNav({
                 }}
                 type="button"
               >
+                {isGuest ? <LogIn /> : <LogOut />}
                 {isGuest ? "Login to your account" : "Sign out"}
               </button>
             </DropdownMenuItem>

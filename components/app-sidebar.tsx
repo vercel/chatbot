@@ -1,24 +1,26 @@
 "use client";
 
+import { MessageSquareIcon, PlusIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
-import { PlusIcon, TrashIcon } from "@/components/icons";
 import {
   getChatHistoryPaginationKey,
   SidebarHistory,
 } from "@/components/sidebar-history";
 import { SidebarUserNav } from "@/components/sidebar-user-nav";
-import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/auth";
@@ -63,33 +65,40 @@ export function AppSidebar({ user }: { user: AuthUser | undefined }) {
 
   return (
     <>
-      <Sidebar className="group-data-[side=left]:border-r-0">
+      <Sidebar collapsible="icon">
         <SidebarHeader>
           <SidebarMenu>
-            <div className="flex flex-row items-center justify-between">
-              <Link
-                className="flex flex-row items-center gap-3"
-                href="/"
-                onClick={() => {
-                  setOpenMobile(false);
-                }}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                size="lg"
+                tooltip="Chatbot"
               >
-                <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  Chatbot
-                </span>
-              </Link>
+                <Link
+                  href="/"
+                  onClick={() => setOpenMobile(false)}
+                >
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <MessageSquareIcon className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">Chatbot</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
               <div className="flex flex-row gap-1">
                 {user && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
+                      <SidebarMenuButton
                         onClick={() => setShowDeleteAllDialog(true)}
-                        size="icon-sm"
-                        type="button"
-                        variant="ghost"
+                        tooltip="Delete All Chats"
                       >
                         <TrashIcon />
-                      </Button>
+                        <span>Delete All</span>
+                      </SidebarMenuButton>
                     </TooltipTrigger>
                     <TooltipContent align="end" className="hidden md:block">
                       Delete All Chats
@@ -98,33 +107,31 @@ export function AppSidebar({ user }: { user: AuthUser | undefined }) {
                 )}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
+                    <SidebarMenuButton
                       onClick={() => {
                         setOpenMobile(false);
                         router.push("/");
                         router.refresh();
                       }}
-                      size="icon-sm"
-                      type="button"
-                      variant="ghost"
+                      tooltip="New Chat"
                     >
                       <PlusIcon />
-                    </Button>
+                      <span>New Chat</span>
+                    </SidebarMenuButton>
                   </TooltipTrigger>
                   <TooltipContent align="end" className="hidden md:block">
                     New Chat
                   </TooltipContent>
                 </Tooltip>
               </div>
-            </div>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
           <SidebarHistory user={user} />
         </SidebarContent>
-        <SidebarFooter>
-          <SidebarUserNav user={user ?? { email: null, isAnonymous: true }} />
-        </SidebarFooter>
+        <SidebarFooter>{user && <SidebarUserNav user={user} />}</SidebarFooter>
+        <SidebarRail />
       </Sidebar>
 
       <AlertDialog
