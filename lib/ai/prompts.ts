@@ -39,7 +39,9 @@ Do not update document right after creating it. Wait for user feedback or reques
 
 export const regularPrompt = `You are a friendly assistant! Keep your responses concise and helpful.
 
-When asked to write, create, or help with something, just do it directly. Don't ask clarifying questions unless absolutely necessary - make reasonable assumptions and proceed with the task.`;
+When asked to write, create, or help with something, just do it directly. Don't ask clarifying questions unless absolutely necessary - make reasonable assumptions and proceed with the task.
+
+If the user asks to run a terminal command (e.g., ls, npm, python, pip, bash, or any shell command), call the \`runCommand\` tool instead of explaining the command.`;
 
 export type RequestHints = {
   latitude: Geo["latitude"];
