@@ -73,7 +73,7 @@ export function AppSidebar({ user }: { user: AuthUser | undefined }) {
 
   return (
     <>
-      <Sidebar collapsible="icon" className="border-r-0">
+      <Sidebar collapsible="icon" className="border-r-0 [&_[data-sidebar=menu-button]]:bg-transparent [&_[data-sidebar=menu-button]]:hover:bg-transparent [&_[data-sidebar=menu-button]]:active:bg-transparent [&_[data-sidebar=menu-button][data-active]]:bg-transparent">
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem className="flex flex-row items-center justify-between">
