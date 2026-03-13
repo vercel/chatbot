@@ -1,9 +1,9 @@
 import type { UIMessageStreamWriter } from "ai";
-import type { AuthSession } from "@/lib/auth";
 import { codeDocumentHandler } from "@/artifacts/code/server";
 import { sheetDocumentHandler } from "@/artifacts/sheet/server";
 import { textDocumentHandler } from "@/artifacts/text/server";
 import type { ArtifactKind } from "@/components/artifact";
+import type { AuthSession } from "@/lib/auth";
 import { saveDocument } from "../db/queries";
 import type { Document } from "../db/schema";
 import type { ChatMessage } from "../types";

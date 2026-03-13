@@ -27,9 +27,9 @@ import {
   type Suggestion,
   stream,
   suggestion,
-  user,
   vote,
 } from "./schema";
+
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);

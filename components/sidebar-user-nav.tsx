@@ -20,7 +20,11 @@ import { signOut, useSession } from "@/lib/client";
 import { LoaderIcon } from "./icons";
 import { toast } from "./toast";
 
-export function SidebarUserNav({ user }: { user: { email?: string | null; isAnonymous?: boolean | null } }) {
+export function SidebarUserNav({
+  user,
+}: {
+  user: { email?: string | null; isAnonymous?: boolean | null };
+}) {
   const router = useRouter();
   const { data, isPending } = useSession();
   const { setTheme, resolvedTheme } = useTheme();
