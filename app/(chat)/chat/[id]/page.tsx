@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { auth } from "@/app/(auth)/auth";
+import { getSession } from "@/lib/auth";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
@@ -25,10 +25,10 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     redirect("/");
   }
 
-  const session = await auth();
+  const session = await getSession();
 
   if (!session) {
-    redirect("/api/auth/guest");
+    redirect("/login");
   }
 
   if (chat.visibility === "private") {

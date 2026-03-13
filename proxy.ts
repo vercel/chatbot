@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
-import { guestRegex, isDevelopmentEnvironment } from "./lib/constants";
+import { getSessionCookie } from "better-auth/cookies";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -17,24 +16,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    secureCookie: !isDevelopmentEnvironment,
-  });
+  const sessionCookie = getSessionCookie(request);
 
-  if (!token) {
-    const redirectUrl = encodeURIComponent(request.url);
-    const url = request.nextUrl.clone();
-    url.pathname = "/api/auth/guest";
-    url.search = `?redirectUrl=${redirectUrl}`;
-
-    return NextResponse.redirect(url);
-  }
-
-  const isGuest = guestRegex.test(token?.email ?? "");
-
-  if (token && !isGuest && ["/login", "/register"].includes(pathname)) {
+  if (sessionCookie && ["/login", "/register"].includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

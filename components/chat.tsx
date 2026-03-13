@@ -176,7 +176,7 @@ export function Chat({
   }, [query, sendMessage, hasAppendedQuery, id]);
 
   const { data: votes } = useSWR<Vote[]>(
-    messages.length >= 2
+    !isReadonly && messages.length >= 2
       ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote?chatId=${id}`
       : null,
     fetcher

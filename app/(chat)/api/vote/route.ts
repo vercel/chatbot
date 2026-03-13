@@ -1,4 +1,4 @@
-import { auth } from "@/app/(auth)/auth";
+import { getSession } from "@/lib/auth";
 import { getChatById, getVotesByChatId, voteMessage } from "@/lib/db/queries";
 import { ChatbotError } from "@/lib/errors";
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     ).toResponse();
   }
 
-  const session = await auth();
+  const session = await getSession();
 
   if (!session?.user) {
     return new ChatbotError("unauthorized:vote").toResponse();
@@ -49,7 +49,7 @@ export async function PATCH(request: Request) {
     ).toResponse();
   }
 
-  const session = await auth();
+  const session = await getSession();
 
   if (!session?.user) {
     return new ChatbotError("unauthorized:vote").toResponse();
