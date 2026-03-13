@@ -16,7 +16,7 @@ function PureChatHeader({
   isReadonly: boolean;
 }) {
   return (
-    <header className="sticky top-0 flex items-center gap-2 bg-background px-2 py-1.5 md:px-2">
+    <header className="sticky top-0 flex items-center gap-2 bg-background p-3">
       {!isReadonly && (
         <VisibilitySelector
           chatId={chatId}
