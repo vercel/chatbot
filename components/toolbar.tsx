@@ -76,11 +76,11 @@ const Tool = ({
       return;
     }
 
-    if (selectedTool !== description) {
-      setSelectedTool(description);
-    } else {
+    if (selectedTool === description) {
       setSelectedTool(null);
       onClick({ sendMessage });
+    } else {
+      setSelectedTool(description);
     }
   };
 
