@@ -35,9 +35,9 @@ function PureSuggestedActions({
       action: 'Help participant ID: 339622 apply for IHSS at https://riversideihss.org/Home/IHSSApply',
     },
     {
-      title: 'Help Marceline Thomas apply for IHSS',
-      label: 'riversideihss.org/Home/IHSSApply',
-      action: 'Help participant ID: 339624 apply for IHSS at https://riversideihss.org/Home/IHSSApply',
+      title: 'Help Marceline Thomas apply for Benefits Cal',
+      label: 'BenefitsCal.com',
+      action: 'Help participant ID: 339624 apply for CalFresh at BenefitsCal.com',
     },
   ];
 
