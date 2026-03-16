@@ -49,6 +49,19 @@ export const chatModels: ChatModel[] = [
     provider: "xai",
     description: "Fast with 30K context",
   },
+  // MiniMax
+  {
+    id: "minimax/MiniMax-M2.5",
+    name: "MiniMax M2.5",
+    provider: "minimax",
+    description: "Peak performance with 204K context window",
+  },
+  {
+    id: "minimax/MiniMax-M2.5-highspeed",
+    name: "MiniMax M2.5 Highspeed",
+    provider: "minimax",
+    description: "Same performance, faster and more agile",
+  },
   // Reasoning models (extended thinking)
   {
     id: "anthropic/claude-3.7-sonnet-thinking",

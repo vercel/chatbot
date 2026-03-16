@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const MODEL_BUTTON_REGEX = /Gemini|Claude|GPT|Grok/i;
+const MODEL_BUTTON_REGEX = /Gemini|Claude|GPT|Grok|MiniMax/i;
 
 test.describe("Model Selector", () => {
   test.beforeEach(async ({ page }) => {

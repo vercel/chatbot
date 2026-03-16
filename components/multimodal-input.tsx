@@ -482,6 +482,7 @@ function PureModelSelectorCompact({
     openai: "OpenAI",
     google: "Google",
     xai: "xAI",
+    minimax: "MiniMax",
     reasoning: "Reasoning",
   };
 

@@ -24,7 +24,7 @@
 - [AI SDK](https://ai-sdk.dev/docs/introduction)
   - Unified API for generating text, structured objects, and tool calls with LLMs
   - Hooks for building dynamic chat and generative user interfaces
-  - Supports OpenAI, Anthropic, Google, xAI, and other model providers via AI Gateway
+  - Supports OpenAI, Anthropic, Google, xAI, MiniMax, and other model providers
 - [shadcn/ui](https://ui.shadcn.com)
   - Styling with [Tailwind CSS](https://tailwindcss.com)
   - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
@@ -36,13 +36,20 @@
 
 ## Model Providers
 
-This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. The default model is [OpenAI](https://openai.com) GPT-4.1 Mini, with support for Anthropic, Google, and xAI models.
+This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. The default model is [OpenAI](https://openai.com) GPT-4.1 Mini, with support for Anthropic, Google, xAI, and [MiniMax](https://platform.minimax.io) models.
 
 ### AI Gateway Authentication
 
 **For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
 
 **For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
+
+### MiniMax
+
+[MiniMax](https://platform.minimax.io) models are accessed directly via the OpenAI-compatible API (not via AI Gateway). Set the `MINIMAX_API_KEY` environment variable to enable MiniMax models. Available models:
+
+- **MiniMax M2.5** – Peak performance with 204K context window
+- **MiniMax M2.5 Highspeed** – Same performance, faster and more agile
 
 With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
 

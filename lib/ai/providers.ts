@@ -1,10 +1,19 @@
 import { gateway } from "@ai-sdk/gateway";
+import { createOpenAI } from "@ai-sdk/openai";
 import {
   customProvider,
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from "ai";
 import { isTestEnvironment } from "../constants";
+
+function getMiniMaxProvider() {
+  return createOpenAI({
+    name: "minimax",
+    apiKey: process.env.MINIMAX_API_KEY,
+    baseURL: process.env.MINIMAX_BASE_URL ?? "https://api.minimax.io/v1",
+  });
+}
 
 const THINKING_SUFFIX_REGEX = /-thinking$/;
 
@@ -30,6 +39,12 @@ export const myProvider = isTestEnvironment
 export function getLanguageModel(modelId: string) {
   if (isTestEnvironment && myProvider) {
     return myProvider.languageModel(modelId);
+  }
+
+  // MiniMax models use direct API (not via AI Gateway)
+  if (modelId.startsWith("minimax/")) {
+    const minimax = getMiniMaxProvider();
+    return minimax(modelId.replace("minimax/", ""));
   }
 
   const isReasoningModel =
