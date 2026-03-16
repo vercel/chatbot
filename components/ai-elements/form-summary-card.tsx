@@ -103,20 +103,6 @@ function SourceLabel({
       </TooltipProvider>
     );
   }
-  if (label === 'Apricot 360') {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 border border-border rounded px-2 py-0.5 text-foreground cursor-default">
-              {label}
-            </span>
-          </TooltipTrigger>
-          {tooltip && <TooltipContent align="end">{tooltip}</TooltipContent>}
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
   return (
     <TooltipProvider>
       <Tooltip>
