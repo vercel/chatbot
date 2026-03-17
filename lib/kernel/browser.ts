@@ -13,6 +13,7 @@ export interface BrowserSession {
   cdpWsUrl: string;
   userId: string;
   browserManager: BrowserManager;
+  replayId?: string;
 }
 
 // =============================================================================
@@ -93,12 +94,25 @@ export async function getOrCreateBrowser(
         cdpUrl: browser.cdp_ws_url,
       });
 
+      // Start session replay recording
+      let replayId: string | undefined;
+      try {
+        const replay = await kernel.browsers.replays.start(browser.session_id);
+        replayId = replay.replay_id;
+        console.log(
+          `[Kernel] Started replay ${replayId} for browser ${browser.session_id}`,
+        );
+      } catch (err) {
+        console.error('[Kernel] Failed to start replay recording:', err);
+      }
+
       const session: BrowserSession = {
         kernelSessionId: browser.session_id,
         liveViewUrl: browser.browser_live_view_url,
         cdpWsUrl: browser.cdp_ws_url,
         userId,
         browserManager: manager,
+        replayId,
       };
 
       sessions.set(key, session);
@@ -162,6 +176,30 @@ export async function deleteBrowser(
 
   // Remove from cache first
   sessions.delete(key);
+
+  // Stop replay recording and log the view URL
+  if (session.replayId) {
+    try {
+      await kernel.browsers.replays.stop(session.replayId, {
+        id: session.kernelSessionId,
+      });
+      console.log(
+        `[Kernel] Stopped replay ${session.replayId} for browser ${session.kernelSessionId}`,
+      );
+
+      // List replays to get view URLs for Cloud Run logs
+      const replays = await kernel.browsers.replays.list(
+        session.kernelSessionId,
+      );
+      for (const r of replays) {
+        console.log(
+          `[Kernel] Replay available — id: ${r.replay_id}, view: ${r.replay_view_url}`,
+        );
+      }
+    } catch (err) {
+      console.error('[Kernel] Failed to stop/list replays:', err);
+    }
+  }
 
   // Close BrowserManager (disconnects Playwright from CDP)
   try {
