@@ -19,34 +19,23 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 
-interface SummaryField {
-  field: string;
-  value: string;
-  inputType?: 'text' | 'select' | 'radio' | 'checkbox';
-  options?: string[];
-  required?: boolean;
-}
-
-interface FormSummaryCardProps {
-  formName?: string;
-  fromDatabase: SummaryField[];
-  fromCaseworker: SummaryField[];
-  inferred: SummaryField[];
-  missing?: { field: string; inputType?: 'text' | 'select' | 'radio' | 'checkbox'; options?: string[]; required?: boolean }[];
-  notes?: string;
-  sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
-  isArtifactVisible?: boolean;
-  className?: string;
-}
-
 type FieldWithSource = {
   field: string;
-  value: string;
+  value?: string;
   source: 'database' | 'caseworker' | 'inferred' | 'missing';
   inputType?: 'text' | 'select' | 'radio' | 'checkbox';
   options?: string[];
   required?: boolean;
 };
+
+interface FormSummaryCardProps {
+  formName?: string;
+  fields: FieldWithSource[];
+  notes?: string;
+  sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
+  isArtifactVisible?: boolean;
+  className?: string;
+}
 
 function AutofilledBadge() {
   return (
@@ -119,10 +108,7 @@ function SourceLabel({
 
 export function FormSummaryCard({
   formName,
-  fromDatabase,
-  fromCaseworker,
-  inferred,
-  missing,
+  fields,
   notes,
   sendMessage,
   isArtifactVisible = true,
@@ -132,16 +118,7 @@ export function FormSummaryCard({
   const [savedValues, setSavedValues] = useState<Record<string, string>>({});
   const [editValues, setEditValues] = useState<Record<string, string>>({});
 
-  const allFields: FieldWithSource[] = [
-    ...fromDatabase.map((f) => ({ ...f, source: 'database' as const })),
-    ...fromCaseworker.map((f) => ({ ...f, source: 'caseworker' as const })),
-    ...inferred.map((f) => ({ ...f, source: 'inferred' as const })),
-    ...(missing ?? []).map((f) =>
-      typeof f === 'string'
-        ? { field: f, value: '', source: 'missing' as const }
-        : { ...f, value: '', source: 'missing' as const },
-    ),
-  ];
+  const allFields: FieldWithSource[] = fields;
 
   function renderEditInput(item: FieldWithSource) {
     const currentValue = editValues[item.field] ?? getDisplayValue(item);
@@ -224,7 +201,7 @@ export function FormSummaryCard({
   }
 
   function getDisplayValue(item: FieldWithSource) {
-    return savedValues[item.field] ?? item.value;
+    return savedValues[item.field] ?? item.value ?? '';
   }
 
   function isManuallyEdited(item: FieldWithSource) {
