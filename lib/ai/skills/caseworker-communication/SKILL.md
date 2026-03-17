@@ -65,12 +65,15 @@ This prevents back-and-forth where the agent fills some fields, discovers gaps, 
 
 When you have finished filling a form, call the `formSummary` tool **instead of** writing a summary message. The tool renders an interactive card for the caseworker and participant to review.
 
-Categorize each field into ONE of three buckets:
-- **fromDatabase**: values you pulled directly from the participant database (Apricot records)
-- **fromCaseworker**: values the caseworker provided during this session (e.g., answers to a gap analysis, responses to your questions)
-- **inferred**: values you reasoned from available data (e.g., "Lives alone — no household members listed", "Nearest clinic determined from home address")
+Pass a single `fields` array in the order fields appear on the original form. For each field, set `source` to one of:
+- **`database`**: value pulled directly from Apricot records
+- **`caseworker`**: value provided by the caseworker this session (e.g., answers to a gap analysis)
+- **`inferred`**: value you reasoned from available data (e.g., "Lives alone — no household members listed")
+- **`missing`**: field could not be filled — omit `value` or leave it empty
 
-**Field types**: For every field in the summary — including `missing` fields — you MUST set `inputType` based on the actual form control you observed: `"select"` for dropdowns, `"radio"` for single-choice radio buttons (pick one), `"checkbox"` for multi-select checkboxes (pick many), `"text"` for plain text inputs (or omit for text). For `"select"`, `"radio"`, and `"checkbox"` fields you MUST also include the `options` array with all available choices you observed on the form. Set `required: true` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
+**Field order**: Always list fields in the order they appear on the original form. Do NOT group by source.
+
+**Field types**: For every field — including `missing` fields — you MUST set `inputType` based on the actual form control you observed: `"select"` for dropdowns, `"radio"` for single-choice radio buttons (pick one), `"checkbox"` for multi-select checkboxes (pick many), `"text"` for plain text inputs (or omit for text). For `"select"`, `"radio"`, and `"checkbox"` fields you MUST also include the `options` array with all available choices you observed on the form. Set `required: true` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
 
 After calling `formSummary`, write ONE short sentence like: "The form is filled out. Please review it and submit when you're ready."
 

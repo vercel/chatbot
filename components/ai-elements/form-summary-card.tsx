@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckIcon, PencilIcon } from 'lucide-react';
+import { CheckIcon, PencilIcon, Sparkles, TriangleAlert, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,89 +15,100 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 
-interface SummaryField {
-  field: string;
-  value: string;
-  inputType?: 'text' | 'select' | 'radio' | 'checkbox';
-  options?: string[];
-  required?: boolean;
-}
-
-interface FormSummaryCardProps {
-  formName?: string;
-  fromDatabase: SummaryField[];
-  fromCaseworker: SummaryField[];
-  inferred: SummaryField[];
-  missing?: { field: string; inputType?: 'text' | 'select' | 'radio' | 'checkbox'; options?: string[]; required?: boolean }[];
-  notes?: string;
-  sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
-  isArtifactVisible?: boolean;
-  className?: string;
-}
-
 type FieldWithSource = {
   field: string;
-  value: string;
+  value?: string;
   source: 'database' | 'caseworker' | 'inferred' | 'missing';
   inputType?: 'text' | 'select' | 'radio' | 'checkbox';
   options?: string[];
   required?: boolean;
 };
 
+interface FormSummaryCardProps {
+  formName?: string;
+  fields: FieldWithSource[];
+  notes?: string;
+  sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
+  isArtifactVisible?: boolean;
+  className?: string;
+}
+
 function AutofilledBadge() {
   return (
-    <span className="text-[10px] text-primary font-medium bg-accent px-2 py-0.5 rounded-full uppercase tracking-wide font-mono inline-flex items-center gap-1 whitespace-nowrap">
-      <svg
-        className="w-3 h-3 fill-current shrink-0"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <text
-          x="12"
-          y="16"
-          textAnchor="middle"
-          fill="white"
-          fontSize="12"
-          fontWeight="bold"
-        >
-          i
-        </text>
-      </svg>
-      Autofilled
-    </span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 bg-pink-50 text-fuchsia-700 border border-pink-100 rounded px-2 py-0.5 cursor-default">
+            <Sparkles className="w-3 h-3 shrink-0" />
+            Auto-filled
+          </span>
+        </TooltipTrigger>
+        <TooltipContent align="end">Filled in automatically by the AI.</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
 function SourceLabel({
   label,
   variant = 'default',
+  tooltip,
 }: {
   label: string;
   variant?: 'default' | 'missing';
+  tooltip?: string;
 }) {
+  if (variant === 'missing' && label === 'Required') {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 bg-red-50 text-red-700 border border-red-200 rounded px-2 py-0.5 cursor-default">
+              <TriangleAlert className="w-3 h-3 shrink-0" />
+              {label}
+            </span>
+          </TooltipTrigger>
+          {tooltip && <TooltipContent align="end">{tooltip}</TooltipContent>}
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  if (label === 'Optional') {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 bg-stone-50 text-zinc-700 border border-stone-200 rounded px-2 py-0.5 cursor-default">
+              <Info className="w-3 h-3 shrink-0" />
+              {label}
+            </span>
+          </TooltipTrigger>
+          {tooltip && <TooltipContent align="end">{tooltip}</TooltipContent>}
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
   return (
-    <span
-      className={cn(
-        'text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap',
-        variant === 'missing' ? 'text-destructive' : 'text-muted-foreground',
-      )}
-    >
-      {label}
-    </span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 bg-stone-50 text-zinc-700 border border-stone-200 rounded px-2 py-0.5 cursor-default">
+            {label}
+          </span>
+        </TooltipTrigger>
+        {tooltip && <TooltipContent align="end">{tooltip}</TooltipContent>}
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
 export function FormSummaryCard({
   formName,
-  fromDatabase,
-  fromCaseworker,
-  inferred,
-  missing,
+  fields,
   notes,
   sendMessage,
   isArtifactVisible = true,
@@ -107,16 +118,7 @@ export function FormSummaryCard({
   const [savedValues, setSavedValues] = useState<Record<string, string>>({});
   const [editValues, setEditValues] = useState<Record<string, string>>({});
 
-  const allFields: FieldWithSource[] = [
-    ...fromDatabase.map((f) => ({ ...f, source: 'database' as const })),
-    ...fromCaseworker.map((f) => ({ ...f, source: 'caseworker' as const })),
-    ...inferred.map((f) => ({ ...f, source: 'inferred' as const })),
-    ...(missing ?? []).map((f) =>
-      typeof f === 'string'
-        ? { field: f, value: '', source: 'missing' as const }
-        : { ...f, value: '', source: 'missing' as const },
-    ),
-  ];
+  const allFields: FieldWithSource[] = fields;
 
   function renderEditInput(item: FieldWithSource) {
     const currentValue = editValues[item.field] ?? getDisplayValue(item);
@@ -168,7 +170,7 @@ export function FormSummaryCard({
         };
         return (
           <div className="mt-2 flex flex-col gap-1.5">
-            <p className="text-sm text-muted-foreground italic">
+            <p className="text-sm text-neutral-900 font-source-serif">
               Select all that apply.
             </p>
             {(item.options ?? []).map((opt) => (
@@ -199,7 +201,7 @@ export function FormSummaryCard({
   }
 
   function getDisplayValue(item: FieldWithSource) {
-    return savedValues[item.field] ?? item.value;
+    return savedValues[item.field] ?? item.value ?? '';
   }
 
   function isManuallyEdited(item: FieldWithSource) {
@@ -276,37 +278,44 @@ export function FormSummaryCard({
         className,
       )}
     >
-      {formName && (
-        <div className="px-6 pt-5 pb-3 border-b border-border">
-          <p className="text-base font-bold text-foreground font-source-serif">{formName}</p>
-        </div>
-      )}
+      
+    <div className="px-6 pt-5 pb-3 border-b border-border">
+      <p className="text-base font-bold text-foreground font-source-serif">Review and confirm</p>
+      <p className="text-sm text-neutral-900 font-source-serif">Verify the details before submitting. Required fields are marked with an asterisk (<span className="text-red-700">*</span>).</p>
+    </div>
 
       <div>
         <div className="px-6">
           {allFields.map((item, i) => (
             <div key={i} className="py-4 border-b border-border last:border-b-0">
               <div className="flex items-center justify-between gap-4 mb-1">
-                <span className="text-sm font-bold text-card-foreground leading-snug">
+                <span className="text-sm font-bold text-card-foreground leading-snug font-source-serif">
                   {item.field}
-                  {item.required && <span> (<span className="text-red-500 ml-0.5">*Required</span>)</span>}
+                  {item.required && <span className="text-red-700 ml-0.5">*</span>}
                 </span>
                 {isManuallyEdited(item) ? (
-                  <SourceLabel label="Manual" />
-                ) : item.source === 'missing' ? (
-                  <SourceLabel label="Missing" variant="missing" />
+                  <SourceLabel label="Manual" tooltip="Entered by you." />
+                ) : item.source === 'missing' && item.required ? (
+                  <SourceLabel label="Required" variant="missing" tooltip="Required to submit." />
+                ) : item.source === 'missing' && !item.required ? (
+                  <SourceLabel label="Optional" tooltip="Not required to submit." />
                 ) : item.source === 'inferred' ? (
                   <AutofilledBadge />
                 ) : (
-                  <SourceLabel label={item.source === 'database' ? 'Apricot 360' : 'Manual'} />
+                  <SourceLabel
+                    label={item.source === 'database' ? 'Apricot 360' : 'Manual'}
+                    tooltip={item.source === 'database' ? 'Filled in automatically from Apricot 360.' : 'Entered by you.'}
+                  />
                 )}
               </div>
 
               {uiMode === 'edit' ? (
                 renderEditInput(item)
               ) : (
-                getDisplayValue(item) && (
-                  <p className="text-sm text-foreground">{getDisplayValue(item)}</p>
+                getDisplayValue(item) ? (
+                  <p className="text-sm text-foreground font-inter">{getDisplayValue(item)}</p>
+                ) : (
+                  <p className={cn('text-sm font-inter', item.required ? 'text-red-700' : 'text-neutral-900')}>Not provided</p>
                 )
               )}
             </div>

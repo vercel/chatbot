@@ -1,14 +1,22 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
-const summaryFieldSchema = z.object({
+const fieldSchema = z.object({
   field: z.string().describe('Field label'),
-  value: z.string().describe('Value that was entered'),
+  value: z
+    .string()
+    .optional()
+    .describe('Value that was filled in. Omit or leave empty for fields that could not be filled.'),
+  source: z
+    .enum(['database', 'caseworker', 'inferred', 'missing'])
+    .describe(
+      '"database" = pulled from Apricot records, "caseworker" = provided by the caseworker this session, "inferred" = agent reasoned from available data, "missing" = field could not be filled',
+    ),
   inputType: z
     .enum(['text', 'select', 'radio', 'checkbox'])
     .optional()
     .describe(
-      'Type of input the form field uses. Use "select" for dropdowns, "radio" for single-choice radio buttons, "checkbox" for multi-select checkboxes, or omit for plain text.',
+      'Type of input the form field uses. Use "select" for dropdowns, "radio" for single-choice radio buttons, "checkbox" ONLY for fields that allow multiple simultaneous selections, or omit for plain text.',
     ),
   options: z
     .array(z.string())
@@ -28,31 +36,11 @@ export const formSummary = tool({
       .string()
       .optional()
       .describe('Name of the form that was filled, e.g. "WIC Application"'),
-    fromDatabase: z
-      .array(summaryFieldSchema)
-      .describe('Fields filled using data from the participant database'),
-    fromCaseworker: z
-      .array(summaryFieldSchema)
-      .describe('Fields filled using data provided by the caseworker during this session'),
-    inferred: z
-      .array(summaryFieldSchema)
-      .describe('Fields where the agent made a reasonable inference (e.g. deduced clinic location from address, assumed living alone from no household members listed)'),
-    missing: z
-      .array(
-        z.object({
-          field: z.string().describe('Field label'),
-          inputType: z
-            .enum(['text', 'select', 'radio', 'checkbox'])
-            .optional()
-            .describe(
-              'Type of input the form field uses. Use "select" for single-choice dropdowns, "radio" for single-choice radio buttons, "checkbox" ONLY for fields that allow multiple simultaneous selections, or omit for plain text.',
-            ),
-          options: z.array(z.string()).optional().describe('Available choices for select, radio, or checkbox fields'),
-          required: z.boolean().optional().describe('Whether the field is required to submit the form'),
-        }),
-      )
-      .optional()
-      .describe('Fields that could not be filled (e.g. "File upload required", "CAPTCHA blocked submission"). Include inputType, options, and required if you observed them on the form.'),
+    fields: z
+      .array(fieldSchema)
+      .describe(
+        'All form fields in the order they appear on the original form. Each field has a source indicating where the value came from.',
+      ),
     notes: z
       .string()
       .optional()

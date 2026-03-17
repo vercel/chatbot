@@ -518,10 +518,8 @@ const PurePreviewMessage = ({
                     <FormSummaryCard
                       key={toolCallId}
                       formName={input?.formName}
-                      fromDatabase={input?.fromDatabase ?? []}
-                      fromCaseworker={input?.fromCaseworker ?? []}
-                      inferred={input?.inferred ?? []}
-                      missing={input?.missing}
+                      fields={input?.fields ?? []}
+                      notes={input?.notes}
                       sendMessage={sendMessage}
                       isArtifactVisible={isArtifactVisible}
                     />
