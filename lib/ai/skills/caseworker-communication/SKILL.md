@@ -70,6 +70,8 @@ Categorize each field into ONE of three buckets:
 - **fromCaseworker**: values the caseworker provided during this session (e.g., answers to a gap analysis, responses to your questions)
 - **inferred**: values you reasoned from available data (e.g., "Lives alone — no household members listed", "Nearest clinic determined from home address")
 
+**Field order**: List the fields in the order they appear on the original form.
+
 **Field types**: For every field in the summary — including `missing` fields — you MUST set `inputType` based on the actual form control you observed: `"select"` for dropdowns, `"radio"` for single-choice radio buttons (pick one), `"checkbox"` for multi-select checkboxes (pick many), `"text"` for plain text inputs (or omit for text). For `"select"`, `"radio"`, and `"checkbox"` fields you MUST also include the `options` array with all available choices you observed on the form. Set `required: true` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
 
 After calling `formSummary`, write ONE short sentence like: "The form is filled out. Please review it and submit when you're ready."

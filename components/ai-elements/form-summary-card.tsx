@@ -53,7 +53,7 @@ function AutofilledBadge() {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 bg-pink-50 text-pink-600 border border-pink-200 rounded px-2 py-0.5 cursor-default">
+          <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 bg-pink-50 text-fuchsia-700 border border-pink-100 rounded px-2 py-0.5 cursor-default">
             <Sparkles className="w-3 h-3 shrink-0" />
             Auto-filled
           </span>
@@ -93,7 +93,7 @@ function SourceLabel({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 border border-border rounded px-2 py-0.5 text-foreground cursor-default">
+            <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 bg-stone-50 text-zinc-700 border border-stone-200 rounded px-2 py-0.5 cursor-default">
               <Info className="w-3 h-3 shrink-0" />
               {label}
             </span>
@@ -107,7 +107,7 @@ function SourceLabel({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 border border-border rounded px-2 py-0.5 text-foreground cursor-default">
+          <span className="text-[10px] font-medium uppercase tracking-wide font-mono whitespace-nowrap inline-flex items-center gap-1 bg-stone-50 text-zinc-700 border border-stone-200 rounded px-2 py-0.5 cursor-default">
             {label}
           </span>
         </TooltipTrigger>
@@ -193,7 +193,7 @@ export function FormSummaryCard({
         };
         return (
           <div className="mt-2 flex flex-col gap-1.5">
-            <p className="text-sm text-muted-foreground italic">
+            <p className="text-sm text-neutral-900 font-source-serif">
               Select all that apply.
             </p>
             {(item.options ?? []).map((opt) => (
@@ -304,7 +304,7 @@ export function FormSummaryCard({
       
     <div className="px-6 pt-5 pb-3 border-b border-border">
       <p className="text-base font-bold text-foreground font-source-serif">Review and confirm</p>
-      <p className="text-sm text-muted-foreground font-source-serif">Verify the details before submitting. Required fields are marked with an asterisk (<span className="text-red-700">*</span>).</p>
+      <p className="text-sm text-neutral-900 font-source-serif">Verify the details before submitting. Required fields are marked with an asterisk (<span className="text-red-700">*</span>).</p>
     </div>
 
       <div>
@@ -338,7 +338,7 @@ export function FormSummaryCard({
                 getDisplayValue(item) ? (
                   <p className="text-sm text-foreground font-inter">{getDisplayValue(item)}</p>
                 ) : (
-                  <p className={cn('text-sm font-inter', item.required ? 'text-red-700' : 'text-muted-foreground')}>Not provided</p>
+                  <p className={cn('text-sm font-inter', item.required ? 'text-red-700' : 'text-neutral-900')}>Not provided</p>
                 )
               )}
             </div>
@@ -356,7 +356,7 @@ export function FormSummaryCard({
         </p>
       )}
 
-      <div className="px-6 py-4 border-t border-border flex flex-col gap-2 font-inter">
+      <div className="px-6 py-4 border-t border-border flex flex-col gap-2">
         {uiMode === 'edit' ? (
           <>
             <Button size="sm" className="w-full" onClick={handleConfirm} disabled={!isArtifactVisible}>
