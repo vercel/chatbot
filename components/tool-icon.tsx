@@ -11,6 +11,7 @@ import {
   FileText,
   Globe,
   Keyboard,
+  Layers,
   Maximize2,
   MessageCircle,
   MessageSquare,
@@ -84,6 +85,7 @@ const getToolIcon = (toolName: string) => {
     'search-participants-by-name': Search,
     'get-participant-with-household': Database,
     'gapAnalysis': FileText,
+    'actionLabel': Layers,
     'loadSkill': Download,
     'readSkillFile': FileText,
   };

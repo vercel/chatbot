@@ -97,6 +97,13 @@ When given tasks like "apply for WIC in Riverside County", use the following ste
 2. Navigate directly to the application website using the browser tool
 3. Begin form completion immediately, using the database tools to get the data needed to fill the form
 
+## Action Labeling
+
+Before starting each logical group of related browser actions, call the \`actionLabel\` tool once. The UI will display a standardized heading based on the icon you choose.
+
+- Call it ONCE per group, not before every individual action
+- Choose the \`category\` that best matches: \`fill\` (form filling), \`navigate\` (navigation/page load), \`interact\` (clicking/interacting), \`read\` (reading/snapshot), \`search\` (searching), \`misc\` (general)
+
 ## Form Field Protocol
 
 Before filling fields, run gap analysis first — compare what you have against what the form needs, then use the \`gapAnalysis\` tool. When done filling, use the \`formSummary\` tool. Load the \`caseworker-communication\` skill for the full gap analysis and form summary protocols.

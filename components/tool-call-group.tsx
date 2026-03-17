@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Layers } from 'lucide-react';
+import { CheckIcon, ChevronDown, Globe, Layers, Monitor, MousePointer, Pencil, Search } from 'lucide-react';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Collapsible,
@@ -9,8 +10,8 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { getToolDisplayInfo } from './tool-icon';
-import { Spinner } from './ui/spinner';
 import { cn } from '@/lib/utils';
+import { Shimmer } from '@/components/ai-elements/shimmer';
 
 // --- Types ---
 
@@ -40,8 +41,14 @@ const EXCLUDED_TOOL_TYPES = new Set([
   'tool-formSummary',
 ]);
 
+// Tools included in groups but not shown in the expanded list (they're metadata, not actions)
+const LABEL_TOOL_TYPES = new Set([
+  'tool-actionLabel',
+]);
+
 // Tools that are hidden or have special rendering via CollapsibleWrapper
 const HIDDEN_DISPLAY_NAMES = new Set([
+  'Updated working memory',
   'Executed JavaScript',
   'Retrieved participant data',
 ]);
@@ -139,7 +146,13 @@ export function groupMessageParts(parts: MessagePart[]): ProcessedPart[] {
 
   function flushGroup() {
     if (currentGroupTools.length === 0) return;
-    if (currentGroupTools.length === 1) {
+    // If the only part is a label tool (no real actions), discard it
+    const actionParts = currentGroupTools.filter((p) => !LABEL_TOOL_TYPES.has(p.type));
+    if (actionParts.length === 0) {
+      currentGroupTools = [];
+      return;
+    }
+    if (currentGroupTools.length === 1 && !LABEL_TOOL_TYPES.has(currentGroupTools[0].type)) {
       result.push({
         kind: 'passthrough',
         part: currentGroupTools[0],
@@ -228,18 +241,43 @@ export function generateGroupSummary(parts: MessagePart[]): { noun: string; coun
   return Object.entries(counts).map(([noun, count]) => ({ noun, count }));
 }
 
+// --- Group title generation ---
+
+const GROUP_TITLE_MAP: Record<string, {
+  inProgress: string;
+  done: string;
+  icon: React.ComponentType<any>;
+}> = {
+  fill:     { inProgress: 'Filling in form',       done: 'Filled the form',      icon: Pencil },
+  navigate: { inProgress: 'Navigating to page',    done: 'Navigated to page',    icon: Globe },
+  interact: { inProgress: 'Interacting with page', done: 'Interacted with page', icon: MousePointer },
+  read:     { inProgress: 'Reading page',          done: 'Read page',            icon: Monitor },
+  search:   { inProgress: 'Searching',             done: 'Search complete',      icon: Search },
+  misc:     { inProgress: 'Working on page',       done: 'Completed actions',    icon: Layers },
+};
+
+function getGroupTitle(
+  parts: MessagePart[],
+  isProcessing: boolean,
+): { label: string; Icon: React.ComponentType<any> } {
+  const labelPart = parts.find((p) => p.type === 'tool-actionLabel');
+  const entry = GROUP_TITLE_MAP[labelPart?.input?.category] ?? GROUP_TITLE_MAP.misc;
+  return {
+    label: isProcessing ? entry.inProgress : entry.done,
+    Icon: isProcessing ? entry.icon : CheckIcon,
+  };
+}
+
 // --- Component ---
 
 interface ToolCallGroupProps {
   parts: MessagePart[];
-  messageId: string;
-  startIndex: number;
+  isStreaming?: boolean;
 }
 
 export function ToolCallGroup({
   parts,
-  messageId,
-  startIndex,
+  isStreaming = false,
 }: ToolCallGroupProps) {
   const [open, setOpen] = useState(false);
 
@@ -251,32 +289,34 @@ export function ToolCallGroup({
     return <SingleToolLine part={deduped[0]} />;
   }
 
-  // If the latest tool is still running, show it separately below the summary.
-  // Otherwise all tools are done — include everything in the summary counts.
-  const lastTool = deduped[deduped.length - 1];
-  const isLastRunning = lastTool.state === 'input-available';
-  const summaryParts = isLastRunning ? deduped.slice(0, -1) : deduped;
+  // Group is "in progress" while the parent signals the agent is still streaming this group.
+  const isInProgress = isStreaming;
+  const completedParts = deduped.filter((p) => p.state === 'output-available' && !LABEL_TOOL_TYPES.has(p.type));
+  const displayParts = (isInProgress ? completedParts : deduped).filter((p) => !LABEL_TOOL_TYPES.has(p.type));
 
-  const summary = generateGroupSummary(summaryParts);
+  const { label, Icon: TitleIcon } = getGroupTitle(deduped, isInProgress);
 
   return (
     <Alert className="rounded-xl border-accent bg-background p-3">
       <AlertDescription>
         <Collapsible open={open} onOpenChange={setOpen}>
           {/* Summary line — always visible, clickable to expand */}
-          <CollapsibleTrigger className="flex items-start justify-between w-full cursor-pointer gap-2">
-            <div className="flex items-start gap-2 min-w-0">
-              <Layers size={12} className="text-gray-500 shrink-0 mt-1" />
-              <div className="flex flex-wrap gap-x-1.5 gap-y-1">
-                {summary.map(({ noun, count }) => (
-                  <span
-                    key={noun}
-                    className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground whitespace-nowrap border border-border rounded px-1.5 py-0.5"
-                  >
-                    {count} {count === 1 ? noun : noun + 's'}
-                  </span>
-                ))}
-              </div>
+          <CollapsibleTrigger className="flex items-center justify-between w-full cursor-pointer gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <TitleIcon size={12} className="text-gray-500 shrink-0" />
+              {isInProgress ? (
+                <Shimmer
+                  as="span"
+                  className="text-[10px] leading-[150%] font-ibm-plex-mono"
+                  duration={1.5}
+                >
+                  {label}
+                </Shimmer>
+              ) : (
+                <span className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground">
+                  {label}
+                </span>
+              )}
             </div>
             <span className="inline-flex items-center justify-center p-1 h-auto text-muted-foreground">
               <ChevronDown
@@ -290,10 +330,10 @@ export function ToolCallGroup({
             </span>
           </CollapsibleTrigger>
 
-          {/* Expanded: full sequential list */}
+          {/* Expanded: show completed tools (or all when done) */}
           <CollapsibleContent>
             <div className="flex flex-col gap-0 mt-2 border-t border-border pt-1">
-              {(isLastRunning ? summaryParts : deduped).map((part) => (
+              {displayParts.map((part) => (
                 <SingleToolLine
                   key={part.toolCallId}
                   part={part}
@@ -303,17 +343,6 @@ export function ToolCallGroup({
             </div>
           </CollapsibleContent>
         </Collapsible>
-
-        {/* Current tool — only shown while still running */}
-        {isLastRunning && (
-          <div className="mt-1">
-            <SingleToolLine
-              part={lastTool}
-              compact
-              isRunning
-            />
-          </div>
-        )}
       </AlertDescription>
     </Alert>
   );
@@ -337,11 +366,9 @@ function deduplicateParts(parts: MessagePart[]): MessagePart[] {
 function SingleToolLine({
   part,
   compact = false,
-  isRunning = false,
 }: {
   part: MessagePart;
   compact?: boolean;
-  isRunning?: boolean;
 }) {
   const { text: displayName, icon: Icon } = getToolDisplayInfo(
     part.type,
@@ -355,11 +382,7 @@ function SingleToolLine({
       )}
     >
       <div className="text-[10px] leading-[150%] font-ibm-plex-mono text-muted-foreground flex items-center gap-2">
-        {isRunning ? (
-          <Spinner className="size-3 shrink-0 text-primary" />
-        ) : (
-          Icon && <Icon size={12} className="text-gray-500 shrink-0" />
-        )}
+        {Icon && <Icon size={12} className="text-gray-500 shrink-0" />}
         {displayName}
       </div>
     </div>

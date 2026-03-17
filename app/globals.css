@@ -25,6 +25,9 @@
 @layer base {
     :root {
         --background: 0 0% 100%;
+        /* ai-elements Shimmer component aliases */
+        --color-background: hsl(var(--background));
+        --color-muted-foreground: hsl(var(--muted-foreground));
         --foreground: 48 20% 20%;
         --chat-background: 320 45% 94%;
         --card: 0 0% 100%;
@@ -61,6 +64,9 @@
     }
     .dark {
         --background: 60 6% 10%;
+        /* ai-elements Shimmer component aliases */
+        --color-background: hsl(var(--background));
+        --color-muted-foreground: hsl(var(--muted-foreground));
         --foreground: 46 10% 74%;
         --chat-background: 45 7% 11%;
         --card: 60 3% 15%;

@@ -44,6 +44,7 @@ import { apricotTools } from '@/lib/ai/tools/apricot';
 import { createBrowserTool } from '@/lib/ai/tools/browser';
 import { gapAnalysis } from '@/lib/ai/tools/gap-analysis';
 import { formSummary } from '@/lib/ai/tools/form-summary';
+import { actionLabel } from '@/lib/ai/tools/action-label';
 import { getWebAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
 import { loadSkill } from '@/lib/ai/tools/load-skill';
 import { readSkillFile } from '@/lib/ai/tools/read-skill-file';
@@ -235,6 +236,7 @@ export async function POST(request: Request) {
               ...apricotTools,
               gapAnalysis,
               formSummary,
+              actionLabel,
               browser: createBrowserTool(sessionId, session.user.id),
               loadSkill,
               readSkillFile,
