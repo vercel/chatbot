@@ -51,6 +51,18 @@ export const chatModels: ChatModel[] = [
   },
   // MiniMax
   {
+    id: "minimax/MiniMax-M2.7",
+    name: "MiniMax M2.7",
+    provider: "minimax",
+    description: "Latest flagship model with enhanced reasoning and coding",
+  },
+  {
+    id: "minimax/MiniMax-M2.7-highspeed",
+    name: "MiniMax M2.7 Highspeed",
+    provider: "minimax",
+    description: "High-speed version of M2.7 for low-latency scenarios",
+  },
+  {
     id: "minimax/MiniMax-M2.5",
     name: "MiniMax M2.5",
     provider: "minimax",

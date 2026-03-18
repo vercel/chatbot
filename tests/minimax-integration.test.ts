@@ -15,7 +15,7 @@ async function testBasicChat() {
       Authorization: `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: "MiniMax-M2.5",
+      model: "MiniMax-M2.7",
       messages: [{ role: "user", content: 'Say "MiniMax test passed"' }],
       max_tokens: 20,
       temperature: 1.0,
@@ -44,7 +44,7 @@ async function testStreaming() {
       Authorization: `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: "MiniMax-M2.5",
+      model: "MiniMax-M2.7",
       messages: [{ role: "user", content: "Count 1 to 3" }],
       max_tokens: 50,
       stream: true,
@@ -86,25 +86,36 @@ async function testModelList() {
     m.id.startsWith("minimax/")
   );
 
-  if (minimaxModels.length !== 2) {
-    throw new Error(`Expected 2 MiniMax models, got ${minimaxModels.length}`);
+  if (minimaxModels.length !== 4) {
+    throw new Error(`Expected 4 MiniMax models, got ${minimaxModels.length}`);
   }
 
+  const hasM27 = minimaxModels.some((m) => m.id === "minimax/MiniMax-M2.7");
+  const hasM27Highspeed = minimaxModels.some(
+    (m) => m.id === "minimax/MiniMax-M2.7-highspeed"
+  );
   const hasM25 = minimaxModels.some((m) => m.id === "minimax/MiniMax-M2.5");
-  const hasHighspeed = minimaxModels.some(
+  const hasM25Highspeed = minimaxModels.some(
     (m) => m.id === "minimax/MiniMax-M2.5-highspeed"
   );
 
-  if (!hasM25 || !hasHighspeed) {
+  if (!hasM27 || !hasM27Highspeed || !hasM25 || !hasM25Highspeed) {
     throw new Error("Missing expected MiniMax models");
   }
 
-  if (!models.allowedModelIds.has("minimax/MiniMax-M2.5")) {
-    throw new Error("MiniMax-M2.5 not in allowedModelIds");
+  // M2.7 should come before M2.5 in the list
+  const m27Index = minimaxModels.findIndex((m) => m.id === "minimax/MiniMax-M2.7");
+  const m25Index = minimaxModels.findIndex((m) => m.id === "minimax/MiniMax-M2.5");
+  if (m27Index > m25Index) {
+    throw new Error("MiniMax-M2.7 should appear before MiniMax-M2.5 in model list");
+  }
+
+  if (!models.allowedModelIds.has("minimax/MiniMax-M2.7")) {
+    throw new Error("MiniMax-M2.7 not in allowedModelIds");
   }
 
   const minimaxGroup = models.modelsByProvider["minimax"];
-  if (!minimaxGroup || minimaxGroup.length !== 2) {
+  if (!minimaxGroup || minimaxGroup.length !== 4) {
     throw new Error("MiniMax not properly grouped in modelsByProvider");
   }
 

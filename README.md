@@ -48,6 +48,8 @@ This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) t
 
 [MiniMax](https://platform.minimax.io) models are accessed directly via the OpenAI-compatible API (not via AI Gateway). Set the `MINIMAX_API_KEY` environment variable to enable MiniMax models. Available models:
 
+- **MiniMax M2.7** – Latest flagship model with enhanced reasoning and coding
+- **MiniMax M2.7 Highspeed** – High-speed version of M2.7 for low-latency scenarios
 - **MiniMax M2.5** – Peak performance with 204K context window
 - **MiniMax M2.5 Highspeed** – Same performance, faster and more agile
 
