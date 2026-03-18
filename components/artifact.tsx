@@ -19,7 +19,6 @@ import { ArtifactActions } from './artifact-actions';
 import { ArtifactCloseButton } from './artifact-close-button';
 import { ArtifactMessages } from './artifact-messages';
 import type { CheckpointData } from './chat';
-import { SideChatHeader } from './side-chat-header';
 import { useSidebar } from './ui/sidebar';
 import { useArtifact } from '@/hooks/use-artifact';
 import { browserArtifact } from '@/artifacts/browser/client';
@@ -370,13 +369,6 @@ function PureArtifact({
               </AnimatePresence>
 
               <div className="flex flex-col h-full">
-                <SideChatHeader
-                  title="Chat"
-                  artifactTitle={artifact.title}
-                  sessionStartTime={document ? new Date(document.createdAt) : undefined}
-                  artifactKind={artifact.kind}
-                  metadata={metadata}
-                />
                 <div className="flex-1 overflow-y-auto">
                   <ArtifactMessages
                     chatId={chatId}
