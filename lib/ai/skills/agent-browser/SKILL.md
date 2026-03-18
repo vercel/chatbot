@@ -139,8 +139,8 @@ Follow these steps IN ORDER. Do NOT use `evaluate` to probe or debug before comp
 1. **Check for missing fields**: Take a snapshot and verify ALL required fields are filled.
 2. **Check for expand/acknowledge sections**: Look in the snapshot for collapsible sections. Click them using refs (see above).
 3. **Wait for the auto-solver**: `{ action: "wait", timeout: 5000 }` then re-snapshot.
-4. **Verification checklist**: If submit is still disabled, confirm ALL of these: (a) all required fields are filled, (b) any expand/acknowledge sections are open, (c) the Turnstile/CAPTCHA widget visually shows solved (green checkmark, "Success", "Ready!"), (d) no error messages on the page.
-5. **Still disabled?** Use `readSkillFile` to load `references/form-submission.md` for the advanced JS debugging protocol (finding page scripts, gating variables, minimal evaluate fix).
+4. **Verification checklist (observation-only)**: After the wait, take a fresh snapshot and simply confirm whether ALL of these are true: (a) all required fields are filled, (b) any expand/acknowledge sections are open, (c) the Turnstile/CAPTCHA widget visually shows solved (green checkmark, "Success", "Ready!"), (d) no error messages on the page. Do **not** attempt new corrective actions here — just note which items are/aren't satisfied.
+5. **Still disabled?** Immediately load the Advanced Debugging skill by running `readSkillFile` on `references/form-submission.md`. That skill handles the fix (finding page scripts, gating variables, minimal evaluate) using the verification notes — do not retry steps 1–3.
 
 ### After unlocking submit
 
