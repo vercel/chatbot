@@ -11,6 +11,7 @@ import type { Session } from 'next-auth';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MultimodalInput } from '@/components/multimodal-input';
+import { useModelOverride } from '@/hooks/use-model-override';
 
 const PROGRAMS = [
   // { id: 'benefits-cal', name: 'Benefits Cal', website: 'https://benefitscal.com/' },
@@ -53,6 +54,7 @@ export function BenefitApplicationsLanding({
   selectedVisibilityType,
 }: BenefitApplicationsLandingProps) {
   const router = useRouter();
+  const modelOverride = useModelOverride();
   const [clientId, setClientId] = useState('');
   const [program, setProgram] = useState<(typeof PROGRAMS)[number] | null>(null);
   const [query, setQuery] = useState('');
@@ -87,10 +89,10 @@ export function BenefitApplicationsLanding({
 
   const submitMessage = (text: string) => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
-    sendMessage({
-      role: 'user',
-      parts: [{ type: 'text', text }],
-    });
+    sendMessage(
+      { role: 'user', parts: [{ type: 'text', text }] },
+      modelOverride,
+    );
   };
 
   const handleStartAutoFilling = () => {

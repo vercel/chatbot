@@ -6,6 +6,7 @@ import { memo } from 'react';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
 import type { ChatMessage } from '@/lib/types';
+import { useModelOverride } from '@/hooks/use-model-override';
 
 interface SuggestedActionsProps {
   chatId: string;
@@ -18,6 +19,7 @@ function PureSuggestedActions({
   sendMessage,
   selectedVisibilityType,
 }: SuggestedActionsProps) {
+  const modelOverride = useModelOverride();
   const suggestedActions = [
     {
       title: 'Help Elodi Thomas apply for WIC',
@@ -60,10 +62,10 @@ function PureSuggestedActions({
             onClick={async () => {
               window.history.replaceState({}, '', `/chat/${chatId}`);
 
-              sendMessage({
-                role: 'user',
-                parts: [{ type: 'text', text: suggestedAction.action }],
-              });
+              sendMessage(
+                { role: 'user', parts: [{ type: 'text', text: suggestedAction.action }] },
+                modelOverride,
+              );
             }}
             className="text-left border border-sidebar-border rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 text-sm gap-1 flex-col w-full h-auto justify-start items-start transition-colors duration-200 bg-[#E8D0E0] hover:bg-[#DCC0D0] hover:text-black dark:bg-[#2D1B2E] dark:hover:bg-[#3D2A3E] whitespace-normal overflow-hidden"
           >

@@ -126,8 +126,9 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
+    console.log(`[multimodal-input] selectedModelId="${selectedModelId}" isProduction=${isProductionEnvironment}`);
     const messageBody = !isProductionEnvironment && selectedModelId
-      ? { selectedChatModel: selectedModelId }
+      ? { modelOverride: selectedModelId }
       : undefined;
 
     sendMessage(

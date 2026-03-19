@@ -22,18 +22,20 @@ export const postRequestBodySchema = z.object({
     parts: z.array(partSchema),
   }),
   selectedChatModel: z.enum([
-    // Production models
     'chat-model',
     'chat-model-reasoning',
     'web-automation-model',
-    // Dev-only selectable models (gated in UI by isProductionEnvironment)
+  ]),
+  // Dev-only: overrides the actual LLM used without changing the routing logic.
+  // Ignored in production environments.
+  modelOverride: z.enum([
     'gpt-4o',
     'gpt-4o-mini',
     'o1-mini',
     'claude-sonnet-4-6',
     'claude-haiku-4-5',
     'grok-2-1212',
-  ]),
+  ]).optional(),
   selectedVisibilityType: z.enum(['public', 'private']),
 });
 
