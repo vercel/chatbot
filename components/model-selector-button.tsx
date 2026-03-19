@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLocalStorage } from 'usehooks-ts';
 import { ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import {
@@ -37,7 +38,6 @@ const MODEL_GROUPS: Array<{ name: string; models: ModelOption[] }> = [
     models: [
       { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', provider: 'anthropic' },
       { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5', provider: 'anthropic' },
-      { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', provider: 'anthropic' },
     ],
   },
   {
@@ -54,7 +54,10 @@ type ModelSelectorButtonProps = {
 
 export function ModelSelectorButton({ onModelChange }: ModelSelectorButtonProps = {}) {
   const [open, setOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ModelOption>(MODEL_GROUPS[0].models[0]);
+  const [selectedModel, setSelectedModel] = useLocalStorage<ModelOption>(
+    'selected-chat-model',
+    MODEL_GROUPS[0].models[0],
+  );
 
   if (isProductionEnvironment) return null;
 

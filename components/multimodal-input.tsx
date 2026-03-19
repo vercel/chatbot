@@ -72,6 +72,7 @@ function PureMultimodalInput({
   const { width } = useWindowSize();
   const router = useRouter();
   const isLoggedIn = !!session;
+  const [selectedModelId, setSelectedModelId] = useLocalStorage<string>('selected-chat-model-id', '');
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -125,21 +126,28 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
-    sendMessage({
-      role: 'user',
-      parts: [
-        ...attachments.map((attachment) => ({
-          type: 'file' as const,
-          url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
-        })),
-        {
-          type: 'text',
-          text: input,
-        },
-      ],
-    });
+    const messageBody = !isProductionEnvironment && selectedModelId
+      ? { selectedChatModel: selectedModelId }
+      : undefined;
+
+    sendMessage(
+      {
+        role: 'user',
+        parts: [
+          ...attachments.map((attachment) => ({
+            type: 'file' as const,
+            url: attachment.url,
+            name: attachment.name,
+            mediaType: attachment.contentType,
+          })),
+          {
+            type: 'text',
+            text: input,
+          },
+        ],
+      },
+      messageBody ? { body: messageBody } : undefined,
+    );
 
     setAttachments([]);
     setLocalStorageInput('');
@@ -158,6 +166,7 @@ function PureMultimodalInput({
     setLocalStorageInput,
     width,
     chatId,
+    selectedModelId,
   ]);
 
   const uploadFile = async (file: File) => {
@@ -334,7 +343,7 @@ function PureMultimodalInput({
 
       <div className="flex flex-row justify-between gap-2 mt-1">
         <div className="flex flex-row gap-2">
-          <ModelSelectorButton />
+          <ModelSelectorButton onModelChange={(model) => setSelectedModelId(model.id)} />
         </div>
         <div className="flex flex-row gap-2">
           {showStopButton && (

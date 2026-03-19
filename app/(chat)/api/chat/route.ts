@@ -318,6 +318,7 @@ export async function POST(request: Request) {
     }
 
     // Default handling for other models
+    console.log(`[chat] using model: ${selectedChatModel}`);
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
         const result = streamText({

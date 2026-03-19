@@ -37,6 +37,13 @@ export const myProvider = isTestEnvironment
         }),
         'title-model': openai('gpt-4o-mini'),
         'artifact-model': openai('gpt-4o'),
+        // Dev-only selectable models (shown in ModelSelectorButton, hidden in production)
+        'gpt-4o': openai('gpt-4o'),
+        'gpt-4o-mini': openai('gpt-4o-mini'),
+        'o1-mini': openai('o1-mini'),
+        'claude-sonnet-4-6': vertexAnthropic('claude-sonnet-4-6'),
+        'claude-haiku-4-5': vertexAnthropic('claude-haiku-4-5'),
+        'grok-2-1212': xai('grok-2-1212'),
       },
       imageModels: {
         'small-model': openai.image('dall-e-3'),
