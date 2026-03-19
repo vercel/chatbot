@@ -33,6 +33,7 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from './ui/alert';
 import { isProductionEnvironment } from '@/lib/constants';
+import { ModelSelectorButton } from './model-selector-button';
 
 function PureMultimodalInput({
   chatId,
@@ -331,8 +332,11 @@ function PureMultimodalInput({
         />
       </div>
 
-      <div className="flex flex-row justify-end gap-2 mt-1">
-        <>
+      <div className="flex flex-row justify-between gap-2 mt-1">
+        <div className="flex flex-row gap-2">
+          <ModelSelectorButton />
+        </div>
+        <div className="flex flex-row gap-2">
           {showStopButton && (
             <StopButton status={status} stop={stop} setMessages={setMessages} />
           )}
@@ -343,7 +347,7 @@ function PureMultimodalInput({
             status={status}
             isLoggedIn={isLoggedIn}
           />
-        </>
+        </div>
       </div>
     </div>
   );
