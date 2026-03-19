@@ -46,6 +46,14 @@ const MODEL_GROUPS: Array<{ name: string; models: ModelOption[] }> = [
       { id: 'grok-2-1212', name: 'Grok 2', provider: 'xai' },
     ],
   },
+  {
+    name: 'Google',
+    models: [
+      { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google' },
+      { id: 'gemini-3.1', name: 'Gemini 3.1', provider: 'google' },
+      { id: 'gemini-3.1-flash', name: 'Gemini 3.1 Flash', provider: 'google' },
+    ],
+  },
 ];
 
 type ModelSelectorButtonProps = {

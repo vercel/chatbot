@@ -14,6 +14,7 @@ import {
   titleModel,
 } from './models.test';
 import { isTestEnvironment } from '../constants';
+import { google } from '@ai-sdk/google';
 
 // Anthropic model for web automation via Vertex AI
 export const webAutomationModel = vertexAnthropic('claude-sonnet-4-6');
@@ -44,6 +45,9 @@ export const myProvider = isTestEnvironment
         'claude-sonnet-4-6': vertexAnthropic('claude-sonnet-4-6'),
         'claude-haiku-4-5': vertexAnthropic('claude-haiku-4-5'),
         'grok-2-1212': xai('grok-2-1212'),
+        'gemini-2.5-flash': google('gemini-2.5-flash'),  
+        'gemini-3.1': google('gemini-3.1-pro-preview'),
+        'gemini-3.1-flash': google('gemini-3.1-flash-lite-preview')
       },
       imageModels: {
         'small-model': openai.image('dall-e-3'),

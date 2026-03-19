@@ -35,6 +35,9 @@ export const postRequestBodySchema = z.object({
     'claude-sonnet-4-6',
     'claude-haiku-4-5',
     'grok-2-1212',
+    'gemini-2.5-flash',
+    'gemini-3.1',
+    'gemini-3.1-flash',
   ]).optional(),
   selectedVisibilityType: z.enum(['public', 'private']),
 });
