@@ -9,7 +9,12 @@ const nextConfig: NextConfig = {
         basePath,
         assetPrefix: "/demo-assets",
         redirects: async () => [
-          { source: "/", destination: basePath, permanent: false },
+          {
+            source: "/",
+            destination: basePath,
+            permanent: false,
+            basePath: false,
+          },
         ],
       }
     : {}),
