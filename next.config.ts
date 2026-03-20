@@ -4,7 +4,15 @@ import type { NextConfig } from "next";
 const basePath = process.env.IS_DEMO === "1" ? "/demo" : "";
 
 const nextConfig: NextConfig = {
-  ...(basePath ? { basePath, assetPrefix: "/demo-assets" } : {}),
+  ...(basePath
+    ? {
+        basePath,
+        assetPrefix: "/demo-assets",
+        redirects: async () => [
+          { source: "/", destination: basePath, permanent: false },
+        ],
+      }
+    : {}),
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
