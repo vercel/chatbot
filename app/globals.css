@@ -396,10 +396,6 @@ textarea:focus-visible {
   @apply min-w-[3rem] text-muted-foreground/40 text-[11px]!;
 }
 
-.cm-gutter.cm-lineNumbers .cm-gutterElement {
-  padding-right: 12px !important;
-}
-
 .cm-scroller {
   @apply overflow-auto!;
 }
@@ -431,6 +427,10 @@ textarea:focus-visible {
 .cm-activeLineGutter .cm-gutterElement {
   color: var(--foreground) !important;
   opacity: 0.7;
+}
+
+.cm-gutter.cm-lineNumbers .cm-gutterElement {
+  padding-right: 12px !important;
 }
 
 .cm-foldGutter {
