@@ -1,7 +1,7 @@
 import { toast } from "sonner";
-import { Artifact } from "@/components/create-artifact";
-import { DiffView } from "@/components/diffview";
-import { DocumentSkeleton } from "@/components/document-skeleton";
+import { Artifact } from "@/components/chat/create-artifact";
+import { DiffView } from "@/components/chat/diffview";
+import { DocumentSkeleton } from "@/components/chat/document-skeleton";
 import {
   ClockRewind,
   CopyIcon,
@@ -9,8 +9,8 @@ import {
   PenIcon,
   RedoIcon,
   UndoIcon,
-} from "@/components/icons";
-import { Editor } from "@/components/text-editor";
+} from "@/components/chat/icons";
+import { Editor } from "@/components/chat/text-editor";
 import type { Suggestion } from "@/lib/db/schema";
 import { getSuggestions } from "../actions";
 
@@ -69,21 +69,31 @@ export const textArtifact = new Artifact<"text", TextArtifactMetadata>({
     }
 
     if (mode === "diff") {
-      const oldContent = getDocumentContentById(currentVersionIndex - 1);
-      const newContent = getDocumentContentById(currentVersionIndex);
+      const selectedContent = getDocumentContentById(currentVersionIndex);
+      const prevContent =
+        currentVersionIndex > 0
+          ? getDocumentContentById(currentVersionIndex - 1)
+          : selectedContent;
 
-      return <DiffView newContent={newContent} oldContent={oldContent} />;
+      return (
+        <div className="flex flex-row px-4 py-8 md:px-16 md:py-12 lg:px-20">
+          <DiffView
+            newContent={selectedContent}
+            oldContent={prevContent}
+          />
+        </div>
+      );
     }
 
     return (
-      <div className="flex flex-row px-4 py-8 md:p-20">
+      <div className="flex flex-row px-4 py-8 md:px-16 md:py-12 lg:px-20">
         <Editor
           content={content}
           currentVersionIndex={currentVersionIndex}
           isCurrentVersion={isCurrentVersion}
           onSaveContent={onSaveContent}
           status={status}
-          suggestions={metadata ? metadata.suggestions : []}
+          suggestions={isCurrentVersion && metadata ? metadata.suggestions : []}
         />
 
         {metadata?.suggestions && metadata.suggestions.length > 0 ? (

@@ -1,16 +1,16 @@
 import { parse, unparse } from "papaparse";
 import { toast } from "sonner";
-import { Artifact } from "@/components/create-artifact";
+import { Artifact } from "@/components/chat/create-artifact";
 import {
   CopyIcon,
   LineChartIcon,
   RedoIcon,
   SparklesIcon,
   UndoIcon,
-} from "@/components/icons";
-import { SpreadsheetEditor } from "@/components/sheet-editor";
+} from "@/components/chat/icons";
+import { SpreadsheetEditor } from "@/components/chat/sheet-editor";
 
-type Metadata = any;
+type Metadata = Record<string, never>;
 
 export const sheetArtifact = new Artifact<"sheet", Metadata>({
   kind: "sheet",

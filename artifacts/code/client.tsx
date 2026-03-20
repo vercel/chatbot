@@ -1,11 +1,11 @@
 import { toast } from "sonner";
-import { CodeEditor } from "@/components/code-editor";
+import { CodeEditor } from "@/components/chat/code-editor";
 import {
   Console,
   type ConsoleOutput,
   type ConsoleOutputContent,
-} from "@/components/console";
-import { Artifact } from "@/components/create-artifact";
+} from "@/components/chat/console";
+import { Artifact } from "@/components/chat/create-artifact";
 import {
   CopyIcon,
   LogsIcon,
@@ -13,7 +13,7 @@ import {
   PlayIcon,
   RedoIcon,
   UndoIcon,
-} from "@/components/icons";
+} from "@/components/chat/icons";
 import { generateUUID } from "@/lib/utils";
 
 const OUTPUT_HANDLERS = {
@@ -93,7 +93,7 @@ export const codeArtifact = new Artifact<"code", Metadata>({
   content: ({ metadata, setMetadata, ...props }) => {
     return (
       <>
-        <div className="px-1">
+        <div className="relative min-h-[200px]">
           <CodeEditor {...props} />
         </div>
 
@@ -193,14 +193,20 @@ export const codeArtifact = new Artifact<"code", Metadata>({
               },
             ],
           }));
-        } catch (error: any) {
+        } catch (error: unknown) {
           setMetadata((metadata) => ({
             ...metadata,
             outputs: [
               ...metadata.outputs.filter((output) => output.id !== runId),
               {
                 id: runId,
-                contents: [{ type: "text", value: error.message }],
+                contents: [
+                  {
+                    type: "text",
+                    value:
+                      error instanceof Error ? error.message : String(error),
+                  },
+                ],
                 status: "failed",
               },
             ],
