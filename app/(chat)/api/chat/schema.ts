@@ -29,17 +29,20 @@ export const postRequestBodySchema = z.object({
   // Dev-only: overrides the actual LLM used without changing the routing logic.
   // Ignored in production environments.
   modelOverride: z.enum([
-    'gpt-4o',
-    'gpt-4o-mini',
-    'o1-mini',
     'claude-sonnet-4-6',
     'claude-haiku-4-5',
-    'grok-2-1212',
+    'gpt-5.4',
+    'gpt-5.4-pro',
+    'gpt-5.4-mini',
+    'gpt-5.4-nano',
+    'grok-4',
+    'grok-4-fast',
+    'grok-4.1-fast',
     'gemini-2.5-flash',
     'gemini-2.5-pro',
     'gemini-2.5-flash-lite',
-    // 'gemini-3.1',
-    // 'gemini-3.1-flash',
+    'gemini-3.1',
+    'gemini-3.1-flash',
   ]).optional(),
   selectedVisibilityType: z.enum(['public', 'private']),
 });

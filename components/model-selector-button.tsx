@@ -28,9 +28,10 @@ const MODEL_GROUPS: Array<{ name: string; models: ModelOption[] }> = [
   {
     name: 'OpenAI',
     models: [
-      { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai' },
-      { id: 'o1-mini', name: 'o1 Mini', provider: 'openai' },
+      { id: 'gpt-5.4', name: 'GPT-5.4', provider: 'openai' },
+      { id: 'gpt-5.4-pro', name: 'GPT-5.4 Pro', provider: 'openai' },
+      { id: 'gpt-5.4-mini', name: 'GPT-5.4 Mini', provider: 'openai' },
+      { id: 'gpt-5.4-nano', name: 'GPT-5.4 Nano', provider: 'openai' },
     ],
   },
   {
@@ -43,7 +44,9 @@ const MODEL_GROUPS: Array<{ name: string; models: ModelOption[] }> = [
   {
     name: 'xAI',
     models: [
-      { id: 'grok-2-1212', name: 'Grok 2', provider: 'xai' },
+      { id: 'grok-4', name: 'Grok 4', provider: 'xai' },
+      { id: 'grok-4-fast', name: 'Grok 4 Fast', provider: 'xai' },
+      { id: 'grok-4.1-fast', name: 'Grok 4.1 Fast', provider: 'xai' },
     ],
   },
   {
@@ -52,8 +55,8 @@ const MODEL_GROUPS: Array<{ name: string; models: ModelOption[] }> = [
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google' },
       { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'google' },
       { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', provider: 'google' },
-      // { id: 'gemini-3.1', name: 'Gemini 3.1', provider: 'google' },
-      // { id: 'gemini-3.1-flash', name: 'Gemini 3.1 Flash', provider: 'google' },
+      { id: 'gemini-3.1', name: 'Gemini 3.1', provider: 'google' },
+      { id: 'gemini-3.1-flash', name: 'Gemini 3.1 Flash', provider: 'google' },
     ],
   },
 ];
