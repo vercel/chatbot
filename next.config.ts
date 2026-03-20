@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
   cacheComponents: true,
+  devIndicators: false,
+  poweredByHeader: false,
+  reactCompiler: true,
+  logging: {
+    fetches: {
+      fullUrl: false,
+    },
+    incomingRequests: false,
+  },
   images: {
     remotePatterns: [
       {
@@ -17,10 +26,16 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        //https://nextjs.org/docs/messages/next-image-unconfigured-host
         hostname: "*.public.blob.vercel-storage.com",
       },
     ],
+  },
+  experimental: {
+    prefetchInlining: true,
+    cachedNavigations: true,
+    appNewScrollHandler: true,
+    inlineCss: true,
+    turbopackFileSystemCacheForDev: true,
   },
 };
 
