@@ -1,7 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+
+import { createUser, getUser } from "@/lib/db/queries";
+
+import { signIn } from "./auth";
 
 const authFormSchema = z.object({
   email: z.string().email(),
@@ -22,11 +25,10 @@ export const login = async (
       password: formData.get("password"),
     });
 
-    await auth.api.signInEmail({
-      body: {
-        email: validatedData.email,
-        password: validatedData.password,
-      },
+    await signIn("credentials", {
+      email: validatedData.email,
+      password: validatedData.password,
+      redirect: false,
     });
 
     return { status: "success" };
@@ -59,27 +61,22 @@ export const register = async (
       password: formData.get("password"),
     });
 
-    const result = await auth.api.signUpEmail({
-      body: {
-        email: validatedData.email,
-        password: validatedData.password,
-        name: validatedData.email,
-      },
-    });
+    const [user] = await getUser(validatedData.email);
 
-    if (!result) {
-      return { status: "failed" };
+    if (user) {
+      return { status: "user_exists" } as RegisterActionState;
     }
+    await createUser(validatedData.email, validatedData.password);
+    await signIn("credentials", {
+      email: validatedData.email,
+      password: validatedData.password,
+      redirect: false,
+    });
 
     return { status: "success" };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { status: "invalid_data" };
-    }
-
-    const message = error instanceof Error ? error.message : "";
-    if (message.includes("already exists") || message.includes("UNIQUE")) {
-      return { status: "user_exists" };
     }
 
     return { status: "failed" };
