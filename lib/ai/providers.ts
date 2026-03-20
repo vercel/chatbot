@@ -49,8 +49,8 @@ export const myProvider = isTestEnvironment
         'gemini-2.5-pro': vertex('gemini-2.5-pro'),
         'gemini-2.5-flash': vertex('gemini-2.5-flash'),
         'gemini-2.5-flash-lite': vertex('gemini-2.5-flash-lite'),
-        'gemini-3.1': vertex('gemini-3.1-pro-preview'),
-        'gemini-3.1-flash': vertex('gemini-3.1-flash-lite-preview')
+        // 'gemini-3.1': vertex('gemini-3.1-pro-preview'),
+        // 'gemini-3.1-flash': vertex('gemini-3.1-flash-lite-preview')
       },
       imageModels: {
         'small-model': openai.image('dall-e-3'),
