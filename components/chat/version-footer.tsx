@@ -89,35 +89,39 @@ export const VersionFooter = ({
           onClick={async () => {
             setIsMutating(true);
 
-            mutate(
-              `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}`,
-              await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}&timestamp=${getDocumentTimestampByIndex(
-                  documents,
-                  currentVersionIndex
-                )}`,
+            try {
+              await mutate(
+                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}`,
+                await fetch(
+                  `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}&timestamp=${getDocumentTimestampByIndex(
+                    documents,
+                    currentVersionIndex
+                  )}`,
+                  {
+                    method: "DELETE",
+                  }
+                ),
                 {
-                  method: "DELETE",
-                }
-              ),
-              {
-                optimisticData: documents
-                  ? [
-                      ...documents.filter((document) =>
-                        isAfter(
-                          new Date(document.createdAt),
-                          new Date(
-                            getDocumentTimestampByIndex(
-                              documents,
-                              currentVersionIndex
+                  optimisticData: documents
+                    ? [
+                        ...documents.filter((document) =>
+                          isAfter(
+                            new Date(document.createdAt),
+                            new Date(
+                              getDocumentTimestampByIndex(
+                                documents,
+                                currentVersionIndex
+                              )
                             )
                           )
-                        )
-                      ),
-                    ]
-                  : [],
-              }
-            );
+                        ),
+                      ]
+                    : [],
+                }
+              );
+            } finally {
+              setIsMutating(false);
+            }
           }}
           type="button"
         >
