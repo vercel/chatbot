@@ -469,13 +469,15 @@ function PureAttachmentsButton({
   status: UseChatHelpers<ChatMessage>["status"];
   selectedModelId: string;
 }) {
-  const { data: capabilities } = useSWR<Record<string, ModelCapabilities>>(
+  const { data: modelsResponse } = useSWR(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
     (url: string) => fetch(url).then((r) => r.json()),
     { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
   );
 
-  const hasVision = capabilities?.[selectedModelId]?.vision ?? false;
+  const caps: Record<string, ModelCapabilities> | undefined =
+    modelsResponse?.capabilities ?? modelsResponse;
+  const hasVision = caps?.[selectedModelId]?.vision ?? false;
 
   return (
     <Button
