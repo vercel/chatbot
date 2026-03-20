@@ -1,9 +1,10 @@
-import type { ArtifactKind } from "@/components/artifact";
-import { getSession } from "@/lib/auth";
+import { auth } from "@/app/(auth)/auth";
+import type { ArtifactKind } from "@/components/chat/artifact";
 import {
   deleteDocumentsByIdAfterTimestamp,
   getDocumentsById,
   saveDocument,
+  updateDocumentContent,
 } from "@/lib/db/queries";
 import { ChatbotError } from "@/lib/errors";
 
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     ).toResponse();
   }
 
-  const session = await getSession();
+  const session = await auth();
 
   if (!session?.user) {
     return new ChatbotError("unauthorized:document").toResponse();
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     ).toResponse();
   }
 
-  const session = await getSession();
+  const session = await auth();
 
   if (!session?.user) {
     return new ChatbotError("not_found:document").toResponse();
@@ -60,8 +61,13 @@ export async function POST(request: Request) {
     content,
     title,
     kind,
-  }: { content: string; title: string; kind: ArtifactKind } =
-    await request.json();
+    isManualEdit,
+  }: {
+    content: string;
+    title: string;
+    kind: ArtifactKind;
+    isManualEdit?: boolean;
+  } = await request.json();
 
   const documents = await getDocumentsById({ id });
 
@@ -71,6 +77,11 @@ export async function POST(request: Request) {
     if (doc.userId !== session.user.id) {
       return new ChatbotError("forbidden:document").toResponse();
     }
+  }
+
+  if (isManualEdit && documents.length > 0) {
+    const result = await updateDocumentContent({ id, content });
+    return Response.json(result, { status: 200 });
   }
 
   const document = await saveDocument({
@@ -103,7 +114,7 @@ export async function DELETE(request: Request) {
     ).toResponse();
   }
 
-  const session = await getSession();
+  const session = await auth();
 
   if (!session?.user) {
     return new ChatbotError("unauthorized:document").toResponse();
@@ -117,9 +128,18 @@ export async function DELETE(request: Request) {
     return new ChatbotError("forbidden:document").toResponse();
   }
 
+  const parsedTimestamp = new Date(timestamp);
+
+  if (Number.isNaN(parsedTimestamp.getTime())) {
+    return new ChatbotError(
+      "bad_request:api",
+      "Invalid timestamp."
+    ).toResponse();
+  }
+
   const documentsDeleted = await deleteDocumentsByIdAfterTimestamp({
     id,
-    timestamp: new Date(timestamp),
+    timestamp: parsedTimestamp,
   });
 
   return Response.json(documentsDeleted, { status: 200 });

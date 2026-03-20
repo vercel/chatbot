@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { auth } from "@/app/(auth)/auth";
 import { getSuggestionsByDocumentId } from "@/lib/db/queries";
 import { ChatbotError } from "@/lib/errors";
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     ).toResponse();
   }
 
-  const session = await getSession();
+  const session = await auth();
 
   if (!session?.user) {
     return new ChatbotError("unauthorized:suggestions").toResponse();

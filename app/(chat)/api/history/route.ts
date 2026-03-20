@@ -1,12 +1,12 @@
 import type { NextRequest } from "next/server";
-import { getSession } from "@/lib/auth";
+import { auth } from "@/app/(auth)/auth";
 import { deleteAllChatsByUserId, getChatsByUserId } from "@/lib/db/queries";
 import { ChatbotError } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
 
-  const limit = Number.parseInt(searchParams.get("limit") || "10", 10);
+  const limit = Math.min(Math.max(Number.parseInt(searchParams.get("limit") || "10", 10), 1), 50);
   const startingAfter = searchParams.get("starting_after");
   const endingBefore = searchParams.get("ending_before");
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     ).toResponse();
   }
 
-  const session = await getSession();
+  const session = await auth();
 
   if (!session?.user) {
     return new ChatbotError("unauthorized:chat").toResponse();
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE() {
-  const session = await getSession();
+  const session = await auth();
 
   if (!session?.user) {
     return new ChatbotError("unauthorized:chat").toResponse();
