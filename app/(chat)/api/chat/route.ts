@@ -92,13 +92,14 @@ export async function POST(request: Request) {
       id,
       message,
       selectedChatModel,
+      modelOverride,
       selectedVisibilityType,
-    }: {
-      id: string;
-      message: ChatMessage;
-      selectedChatModel: ChatModel['id'];
-      selectedVisibilityType: VisibilityType;
     } = requestBody;
+
+    // Only honour modelOverride in non-production environments.
+    const resolvedModelOverride = !isProductionEnvironment ? modelOverride : undefined;
+
+    console.log(`[chat] selectedChatModel=${selectedChatModel} rawModelOverride=${modelOverride ?? 'none'} isProduction=${isProductionEnvironment} resolvedOverride=${resolvedModelOverride ?? 'none'}`);
 
     const session = await auth();
 
@@ -228,8 +229,12 @@ export async function POST(request: Request) {
           // prepareStep calls so generateText is not re-fired on every step.
           const compressStep = createMessageCompressor();
 
+          const activeModel = resolvedModelOverride
+            ? myProvider.languageModel(resolvedModelOverride)
+            : webAutomationModel;
+
           const result = streamText({
-            model: webAutomationModel,
+            model: activeModel,
             system: getWebAutomationSystemPrompt(),
             messages: preCompacted,
             tools: {
