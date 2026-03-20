@@ -7,6 +7,7 @@ import { xai } from '@ai-sdk/xai';
 import { openai } from '@ai-sdk/openai';
 import { gateway } from '@ai-sdk/gateway';
 import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+import { vertex } from '@ai-sdk/google-vertex';
 import {
   artifactModel,
   chatModel,
@@ -45,9 +46,10 @@ export const myProvider = isTestEnvironment
         'claude-sonnet-4-6': vertexAnthropic('claude-sonnet-4-6'),
         'claude-haiku-4-5': vertexAnthropic('claude-haiku-4-5'),
         'grok-2-1212': xai('grok-2-1212'),
-        'gemini-2.5-flash': google('gemini-2.5-flash'),  
-        'gemini-3.1': google('gemini-3.1-pro-preview'),
-        'gemini-3.1-flash': google('gemini-3.1-flash-lite-preview')
+        'gemini-2.5-flash': vertex('gemini-2.5-flash'),
+        'gemini-2.5-flash-lite': vertex('gemini-2.5-flash-lite'),
+        'gemini-3.1': vertex('gemini-3.1-pro-preview'),
+        'gemini-3.1-flash': vertex('gemini-3.1-flash-lite-preview')
       },
       imageModels: {
         'small-model': openai.image('dall-e-3'),
