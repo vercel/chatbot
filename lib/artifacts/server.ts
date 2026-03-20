@@ -1,9 +1,9 @@
 import type { UIMessageStreamWriter } from "ai";
+import type { Session } from "next-auth";
 import { codeDocumentHandler } from "@/artifacts/code/server";
 import { sheetDocumentHandler } from "@/artifacts/sheet/server";
 import { textDocumentHandler } from "@/artifacts/text/server";
-import type { ArtifactKind } from "@/components/artifact";
-import type { AuthSession } from "@/lib/auth";
+import type { ArtifactKind } from "@/components/chat/artifact";
 import { saveDocument } from "../db/queries";
 import type { Document } from "../db/schema";
 import type { ChatMessage } from "../types";
@@ -20,14 +20,16 @@ export type CreateDocumentCallbackProps = {
   id: string;
   title: string;
   dataStream: UIMessageStreamWriter<ChatMessage>;
-  session: NonNullable<AuthSession>;
+  session: Session;
+  modelId: string;
 };
 
 export type UpdateDocumentCallbackProps = {
   document: Document;
   description: string;
   dataStream: UIMessageStreamWriter<ChatMessage>;
-  session: NonNullable<AuthSession>;
+  session: Session;
+  modelId: string;
 };
 
 export type DocumentHandler<T = ArtifactKind> = {
@@ -49,6 +51,7 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
         title: args.title,
         dataStream: args.dataStream,
         session: args.session,
+        modelId: args.modelId,
       });
 
       if (args.session?.user?.id) {
@@ -69,6 +72,7 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
         description: args.description,
         dataStream: args.dataStream,
         session: args.session,
+        modelId: args.modelId,
       });
 
       if (args.session?.user?.id) {
@@ -86,9 +90,6 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
   };
 }
 
-/*
- * Use this array to define the document handlers for each artifact kind.
- */
 export const documentHandlersByArtifactKind: DocumentHandler[] = [
   textDocumentHandler,
   codeDocumentHandler,
