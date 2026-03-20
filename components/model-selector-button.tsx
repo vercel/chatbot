@@ -50,6 +50,8 @@ const MODEL_GROUPS: Array<{ name: string; models: ModelOption[] }> = [
     name: 'Google',
     models: [
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google' },
+      { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'google' },
+      { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', provider: 'google' },
       { id: 'gemini-3.1', name: 'Gemini 3.1', provider: 'google' },
       { id: 'gemini-3.1-flash', name: 'Gemini 3.1 Flash', provider: 'google' },
     ],
