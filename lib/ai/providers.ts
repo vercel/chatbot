@@ -7,7 +7,12 @@ import { xai } from '@ai-sdk/xai';
 import { openai } from '@ai-sdk/openai';
 import { gateway } from '@ai-sdk/gateway';
 import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
-import { vertex } from '@ai-sdk/google-vertex';
+import { createVertex } from '@ai-sdk/google-vertex';
+
+const vertex = createVertex({
+  location: process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1',
+  project: process.env.GOOGLE_VERTEX_PROJECT,
+});
 import {
   artifactModel,
   chatModel,
@@ -15,7 +20,6 @@ import {
   titleModel,
 } from './models.test';
 import { isTestEnvironment } from '../constants';
-import { google } from '@ai-sdk/google';
 
 // Anthropic model for web automation via Vertex AI
 export const webAutomationModel = vertexAnthropic('claude-sonnet-4-6');
