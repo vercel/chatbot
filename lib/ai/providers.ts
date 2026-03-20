@@ -11,7 +11,7 @@ import { createVertex } from '@ai-sdk/google-vertex';
 
 const vertex = createVertex({
   location: process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1',
-  project: process.env.GOOGLE_VERTEX_PROJECT,
+  project: process.env.GOOGLE_VERTEX_PROJECT ?? 'placeholder',
 });
 import {
   artifactModel,
