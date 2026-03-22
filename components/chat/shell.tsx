@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,19 +55,14 @@ export function ChatShell() {
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
   const { setArtifact } = useArtifact();
 
-  const stopRef = useRef(stop);
-  stopRef.current = stop;
-
-  const prevChatIdRef = useRef(chatId);
-  useEffect(() => {
-    if (prevChatIdRef.current !== chatId) {
-      prevChatIdRef.current = chatId;
-      stopRef.current();
-      setArtifact(initialArtifactData);
-      setEditingMessage(null);
-      setAttachments([]);
-    }
-  }, [chatId, setArtifact]);
+  const [prevChatId, setPrevChatId] = useState(chatId);
+  if (prevChatId !== chatId) {
+    setPrevChatId(chatId);
+    stop();
+    setArtifact(initialArtifactData);
+    setEditingMessage(null);
+    setAttachments([]);
+  }
 
   return (
     <>
