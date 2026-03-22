@@ -49,7 +49,15 @@ function PureEditor({
   const [activeSuggestion, setActiveSuggestion] = useState<UISuggestion | null>(
     null
   );
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const suggestionsRef = useRef<UISuggestion[]>([]);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const target = containerRef.current.closest("[data-slot='artifact-content']") as HTMLElement | null;
+      setPortalTarget(target);
+    }
+  }, []);
 
   useEffect(() => {
     if (containerRef.current && !editorRef.current) {
@@ -213,16 +221,14 @@ function PureEditor({
         ref={containerRef}
       />
       {activeSuggestion &&
-        containerRef.current?.closest("[data-slot='artifact-content']") &&
+        portalTarget &&
         createPortal(
           <SuggestionDialog
             onApply={handleApply}
             onClose={() => setActiveSuggestion(null)}
             suggestion={activeSuggestion}
           />,
-          containerRef.current.closest(
-            "[data-slot='artifact-content']"
-          ) as HTMLElement
+          portalTarget
         )}
     </>
   );

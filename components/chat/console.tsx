@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {
   type Dispatch,
   type SetStateAction,
@@ -162,15 +163,15 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
                 <div className="no-scrollbar flex w-full min-w-0 flex-col gap-2 overflow-x-auto text-foreground">
                   {consoleOutput.contents.map((content) =>
                     content.type === "image" ? (
-                      <picture
+                      <Image
+                        alt="output"
+                        className="max-w-full rounded-md"
+                        height={400}
                         key={`${consoleOutput.id}-img-${content.value.slice(0, 32)}`}
-                      >
-                        <img
-                          alt="output"
-                          className="max-w-full rounded-md"
-                          src={content.value}
-                        />
-                      </picture>
+                        src={content.value}
+                        unoptimized
+                        width={600}
+                      />
                     ) : (
                       <div
                         className="w-full whitespace-pre-line break-words"

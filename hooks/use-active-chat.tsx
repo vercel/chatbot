@@ -6,12 +6,12 @@ import { DefaultChatTransport } from "ai";
 import { usePathname } from "next/navigation";
 import {
   createContext,
-  type Dispatch,
   type ReactNode,
-  type SetStateAction,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from "react";
@@ -38,7 +38,7 @@ type ActiveChatContextValue = {
   regenerate: UseChatHelpers<ChatMessage>["regenerate"];
   addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
   input: string;
-  setInput: Dispatch<SetStateAction<string>>;
+  setInput: (val: string) => void;
   visibilityType: VisibilityType;
   isReadonly: boolean;
   isLoading: boolean;
@@ -46,10 +46,38 @@ type ActiveChatContextValue = {
   currentModelId: string;
   setCurrentModelId: (id: string) => void;
   showCreditCardAlert: boolean;
-  setShowCreditCardAlert: Dispatch<SetStateAction<boolean>>;
+  setShowCreditCardAlert: (val: boolean) => void;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
+
+type ChatUIState = {
+  currentModelId: string;
+  input: string;
+  showCreditCardAlert: boolean;
+  hasLoadedCookieModel: boolean;
+};
+
+type ChatUIAction =
+  | { type: "SET_MODEL"; modelId: string }
+  | { type: "SET_INPUT"; input: string }
+  | { type: "SET_CREDIT_CARD_ALERT"; show: boolean }
+  | { type: "SET_COOKIE_MODEL_LOADED" };
+
+function chatUIReducer(state: ChatUIState, action: ChatUIAction): ChatUIState {
+  switch (action.type) {
+    case "SET_MODEL":
+      return { ...state, currentModelId: action.modelId };
+    case "SET_INPUT":
+      return { ...state, input: action.input };
+    case "SET_CREDIT_CARD_ALERT":
+      return { ...state, showCreditCardAlert: action.show };
+    case "SET_COOKIE_MODEL_LOADED":
+      return { ...state, hasLoadedCookieModel: true };
+    default:
+      return state;
+  }
+}
 
 function extractChatId(pathname: string): string | null {
   const match = pathname.match(/\/chat\/([^/]+)/);
@@ -63,24 +91,36 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const chatIdFromUrl = extractChatId(pathname);
   const isNewChat = !chatIdFromUrl;
-  const newChatIdRef = useRef(generateUUID());
-  const prevPathnameRef = useRef(pathname);
+  const [newChatId, setNewChatId] = useState(generateUUID);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
-  if (isNewChat && prevPathnameRef.current !== pathname) {
-    newChatIdRef.current = generateUUID();
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    if (isNewChat) {
+      setNewChatId(generateUUID());
+    }
   }
-  prevPathnameRef.current = pathname;
 
-  const chatId = chatIdFromUrl ?? newChatIdRef.current;
+  const chatId = chatIdFromUrl ?? newChatId;
 
-  const [currentModelId, setCurrentModelId] = useState(DEFAULT_CHAT_MODEL);
-  const currentModelIdRef = useRef(currentModelId);
-  useEffect(() => {
-    currentModelIdRef.current = currentModelId;
-  }, [currentModelId]);
+  const [uiState, dispatchUI] = useReducer(chatUIReducer, {
+    currentModelId: DEFAULT_CHAT_MODEL,
+    input: "",
+    showCreditCardAlert: false,
+    hasLoadedCookieModel: false,
+  });
+  const { currentModelId, showCreditCardAlert } = uiState;
+  const input = uiState.input;
 
-  const [input, setInput] = useState("");
-  const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
+  const setInput = useCallback(
+    (val: string) => dispatchUI({ type: "SET_INPUT", input: val }),
+    []
+  );
+  const setCurrentModelId = (id: string) => dispatchUI({ type: "SET_MODEL", modelId: id });
+  const setShowCreditCardAlert = useCallback(
+    (val: boolean) => dispatchUI({ type: "SET_CREDIT_CARD_ALERT", show: val }),
+    []
+  );
 
   const { data: chatData, isLoading } = useSWR(
     isNewChat
@@ -144,7 +184,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
             ...(isToolApprovalContinuation
               ? { messages: request.messages }
               : { message: lastMessage }),
-            selectedChatModel: currentModelIdRef.current,
+            selectedChatModel: currentModelId,
             selectedVisibilityType: visibility,
             ...request.body,
           },
@@ -173,9 +213,11 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const loadedChatIds = useRef(new Set<string>());
 
-  if (isNewChat && !loadedChatIds.current.has(newChatIdRef.current)) {
-    loadedChatIds.current.add(newChatIdRef.current);
-  }
+  useEffect(() => {
+    if (isNewChat && !loadedChatIds.current.has(chatId)) {
+      loadedChatIds.current.add(chatId);
+    }
+  }, [isNewChat, chatId]);
 
   useEffect(() => {
     if (loadedChatIds.current.has(chatId)) {
@@ -197,8 +239,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     }
   }, [chatId, isNewChat, setMessages]);
 
-  useEffect(() => {
-    if (chatData && !isNewChat) {
+  if (chatData && !isNewChat && !uiState.hasLoadedCookieModel) {
+    dispatchUI({ type: "SET_COOKIE_MODEL_LOADED" });
+    if (typeof document !== "undefined") {
       const cookieModel = document.cookie
         .split("; ")
         .find((row) => row.startsWith("chat-model="))
@@ -207,7 +250,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         setCurrentModelId(decodeURIComponent(cookieModel));
       }
     }
-  }, [chatData, isNewChat]);
+  }
 
   const hasAppendedQueryRef = useRef(false);
   useEffect(() => {
@@ -275,6 +318,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       regenerate,
       addToolApprovalResponse,
       input,
+      setInput,
       visibility,
       isReadonly,
       isNewChat,
@@ -282,6 +326,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       votes,
       currentModelId,
       showCreditCardAlert,
+      setShowCreditCardAlert,
     ]
   );
 

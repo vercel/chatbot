@@ -1,9 +1,8 @@
 "use client";
 
 import { isAfter } from "date-fns";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { ChevronLeftIcon, ChevronRightIcon, DiffIcon } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { useSWRConfig } from "swr";
 import { useArtifact } from "@/hooks/use-artifact";
@@ -16,7 +15,7 @@ type VersionFooterProps = {
   documents: Document[] | undefined;
   currentVersionIndex: number;
   mode: "edit" | "diff";
-  setMode: Dispatch<SetStateAction<"edit" | "diff">>;
+  setMode: (mode: "edit" | "diff") => void;
 };
 
 export const VersionFooter = ({
@@ -39,7 +38,7 @@ export const VersionFooter = ({
   const isLast = currentVersionIndex === documents.length - 1;
 
   return (
-    <motion.div
+    <m.div
       animate={{ opacity: 1 }}
       className="z-50 flex w-full shrink-0 items-center justify-between gap-3 border-t border-border/50 bg-background px-4 py-3"
       exit={{ opacity: 0, transition: { duration: 0 } }}
@@ -89,39 +88,29 @@ export const VersionFooter = ({
           onClick={async () => {
             setIsMutating(true);
 
+            const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+            const docApiUrl = `${basePath}/api/document?id=${artifact.documentId}`;
+            const timestamp = getDocumentTimestampByIndex(documents, currentVersionIndex);
+            const deleteUrl = `${docApiUrl}&timestamp=${timestamp}`;
+            const optimisticData = documents
+              ? documents.filter((document) =>
+                  isAfter(
+                    new Date(document.createdAt),
+                    new Date(timestamp)
+                  )
+                )
+              : [];
+
             try {
               await mutate(
-                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}`,
-                await fetch(
-                  `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}&timestamp=${getDocumentTimestampByIndex(
-                    documents,
-                    currentVersionIndex
-                  )}`,
-                  {
-                    method: "DELETE",
-                  }
-                ),
-                {
-                  optimisticData: documents
-                    ? [
-                        ...documents.filter((document) =>
-                          isAfter(
-                            new Date(document.createdAt),
-                            new Date(
-                              getDocumentTimestampByIndex(
-                                documents,
-                                currentVersionIndex
-                              )
-                            )
-                          )
-                        ),
-                      ]
-                    : [],
-                }
+                docApiUrl,
+                await fetch(deleteUrl, { method: "DELETE" }),
+                { optimisticData }
               );
-            } finally {
-              setIsMutating(false);
+            } catch {
+              // error handled by optimistic update rollback
             }
+            setIsMutating(false);
           }}
           type="button"
         >
@@ -143,6 +132,6 @@ export const VersionFooter = ({
           Latest
         </button>
       </div>
-    </motion.div>
+    </m.div>
   );
 };

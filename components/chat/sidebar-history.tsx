@@ -1,7 +1,7 @@
 "use client";
 
 import { isToday, isYesterday, subMonths, subWeeks } from "date-fns";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import type { User } from "next-auth";
 import { useState } from "react";
@@ -332,7 +332,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
               })()}
           </SidebarMenu>
 
-          <motion.div
+          <m.div
             onViewportEnter={() => {
               if (!isValidating && !hasReachedEnd) {
                 setSize((size) => size + 1);

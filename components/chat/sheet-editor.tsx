@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { parse, unparse } from "papaparse";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import DataGrid, { textEditor } from "react-data-grid";
 import { cn } from "@/lib/utils";
 
@@ -87,10 +87,12 @@ const PureSpreadsheetEditor = ({ content, saveContent }: SheetEditorProps) => {
   }, [parseData, columns]);
 
   const [localRows, setLocalRows] = useState(initialRows);
+  const [prevInitialRows, setPrevInitialRows] = useState(initialRows);
 
-  useEffect(() => {
+  if (prevInitialRows !== initialRows) {
+    setPrevInitialRows(initialRows);
     setLocalRows(initialRows);
-  }, [initialRows]);
+  }
 
   const generateCsv = (data: string[][]) => {
     return unparse(data);

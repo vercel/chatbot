@@ -1,6 +1,6 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { memo } from "react";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
@@ -75,7 +75,7 @@ function PureArtifactMessages({
           ) && <ThinkingMessage key="thinking" />}
       </AnimatePresence>
 
-      <motion.div
+      <m.div
         className="min-h-[24px] min-w-[24px] shrink-0"
         onViewportEnter={onViewportEnter}
         onViewportLeave={onViewportLeave}

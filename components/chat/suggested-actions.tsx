@@ -1,7 +1,7 @@
 "use client";
 
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { memo } from "react";
 import { suggestions } from "@/lib/constants";
 import type { ChatMessage } from "@/lib/types";
@@ -28,7 +28,7 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
       }}
     >
       {suggestedActions.map((suggestedAction, index) => (
-        <motion.div
+        <m.div
           animate={{ opacity: 1, y: 0 }}
           className="min-w-[200px] shrink-0 sm:min-w-0 sm:shrink"
           exit={{ opacity: 0, y: 16 }}
@@ -57,7 +57,7 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
           >
             {suggestedAction}
           </Suggestion>
-        </motion.div>
+        </m.div>
       ))}
     </div>
   );

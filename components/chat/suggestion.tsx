@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 
 import type { UISuggestion } from "@/lib/editor/suggestions";
 import { Button } from "../ui/button";
@@ -29,7 +29,7 @@ export const SuggestionDialog = ({
           }}
           role="presentation"
         />
-        <motion.div
+        <m.div
           animate={{ opacity: 1, scale: 1 }}
           className="absolute left-1/2 top-1/2 z-50 flex w-[min(20rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-2xl border bg-background p-4 font-sans text-sm shadow-xl"
           exit={{ opacity: 0, scale: 0.95 }}
@@ -71,7 +71,7 @@ export const SuggestionDialog = ({
               Dismiss
             </Button>
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </AnimatePresence>
   );

@@ -1,7 +1,7 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import cx from "classnames";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { m, useMotionValue, useTransform } from "framer-motion";
 import { WrenchIcon, XIcon } from "lucide-react";
 import { nanoid } from "nanoid";
 import {
@@ -52,13 +52,7 @@ const Tool = ({
   sendMessage,
   onClick,
 }: ToolProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    if (selectedTool !== description) {
-      setIsHovered(false);
-    }
-  }, [selectedTool, description]);
+  const isSelected = selectedTool === description;
 
   const handleSelect = () => {
     if (!isToolbarVisible && setIsToolbarVisible) {
@@ -67,7 +61,6 @@ const Tool = ({
     }
 
     if (!selectedTool) {
-      setIsHovered(true);
       setSelectedTool(description);
       return;
     }
@@ -81,9 +74,9 @@ const Tool = ({
   };
 
   return (
-    <Tooltip open={isHovered && !isAnimating}>
+    <Tooltip open={isSelected && !isAnimating}>
       <TooltipTrigger asChild>
-        <motion.div
+        <m.div
           animate={{ opacity: 1, transition: { delay: 0.1 } }}
           className={cx("rounded-full p-3", {
             "bg-primary text-primary-foreground!": selectedTool === description,
@@ -97,14 +90,6 @@ const Tool = ({
           onClick={() => {
             handleSelect();
           }}
-          onHoverEnd={() => {
-            if (selectedTool !== description) {
-              setIsHovered(false);
-            }
-          }}
-          onHoverStart={() => {
-            setIsHovered(true);
-          }}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               handleSelect();
@@ -114,7 +99,7 @@ const Tool = ({
           whileTap={{ scale: 0.95 }}
         >
           {selectedTool === description ? <ArrowUpIcon /> : icon}
-        </motion.div>
+        </m.div>
       </TooltipTrigger>
       <TooltipContent
         className="rounded-2xl bg-foreground p-3 px-4 text-background"
@@ -167,7 +152,7 @@ const ReadingLevelSelector = ({
   return (
     <div className="relative flex flex-col items-center justify-end">
       {randomArr.map((id) => (
-        <motion.div
+        <m.div
           animate={{ opacity: 1 }}
           className="flex size-[40px] flex-row items-center justify-center"
           exit={{ opacity: 0 }}
@@ -176,13 +161,13 @@ const ReadingLevelSelector = ({
           transition={{ delay: 0.1 }}
         >
           <div className="size-2 rounded-full bg-muted-foreground/40" />
-        </motion.div>
+        </m.div>
       ))}
 
       <TooltipProvider>
         <Tooltip open={!isAnimating}>
           <TooltipTrigger asChild>
-            <motion.div
+            <m.div
               className={cx(
                 "absolute flex flex-row items-center rounded-full border bg-background p-3",
                 {
@@ -225,7 +210,7 @@ const ReadingLevelSelector = ({
               whileTap={{ scale: 0.95 }}
             >
               {currentLevel === 2 ? <SummarizeIcon /> : <ArrowUpIcon />}
-            </motion.div>
+            </m.div>
           </TooltipTrigger>
           <TooltipContent
             className="rounded-2xl bg-foreground p-3 px-4 text-background text-sm"
@@ -254,7 +239,7 @@ export const Tools = ({
   tools: ArtifactToolbarItem[];
 }) => {
   return (
-    <motion.div
+    <m.div
       animate={{ opacity: 1, scale: 1 }}
       className="flex flex-col gap-1.5"
       exit={{ opacity: 0, scale: 0.95 }}
@@ -272,7 +257,7 @@ export const Tools = ({
           setSelectedTool={setSelectedTool}
         />
       ))}
-    </motion.div>
+    </m.div>
   );
 };
 
@@ -383,7 +368,7 @@ const PureToolbar = ({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <motion.div
+      <m.div
         animate={{ opacity: 1, y: 0, scale: 1 }}
         className="fixed right-6 bottom-6 z-50 flex cursor-pointer flex-col items-center rounded-3xl border bg-background py-1 shadow-lg"
         exit={{ opacity: 0, y: -20, transition: { duration: 0.1 } }}
@@ -413,18 +398,18 @@ const PureToolbar = ({
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
         {onClose && (
-          <motion.div
+          <m.div
             animate={{ opacity: 1 }}
             className="p-3 text-muted-foreground transition-colors hover:text-foreground"
             initial={{ opacity: 0 }}
             onClick={onClose}
           >
             <XIcon className="size-4" />
-          </motion.div>
+          </m.div>
         )}
 
         {status === "streaming" ? (
-          <motion.div
+          <m.div
             animate={{ scale: 1.4 }}
             className="p-3"
             exit={{ scale: 1 }}
@@ -436,7 +421,7 @@ const PureToolbar = ({
             }}
           >
             <StopIcon />
-          </motion.div>
+          </m.div>
         ) : selectedTool === "adjust-reading-level" ? (
           <ReadingLevelSelector
             isAnimating={isAnimating}
@@ -457,7 +442,7 @@ const PureToolbar = ({
             />
           </>
         )}
-      </motion.div>
+      </m.div>
     </TooltipProvider>
   );
 };
