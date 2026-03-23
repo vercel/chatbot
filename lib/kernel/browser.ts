@@ -73,7 +73,7 @@ export async function getOrCreateBrowser(
   const createPromise = (async () => {
     try {
       const viewport = options?.isMobile
-        ? { width: 1024, height: 768 }
+        ? { width: 768, height: 1024 }   // Kernel supported tablet portrait viewport
         : { width: 1280, height: 800 };
 
       const browser = (await kernel.browsers.create({
