@@ -110,6 +110,16 @@ PAUSE ONLY for:
 - Error states
 - Final submission of forms
 
+## Review Screen (REQUIRED)
+
+Every benefits application MUST end with a review screen before final submission. After filling all form pages:
+1. Navigate to the application's review/summary page (most applications have one — look for "Review", "Summary", "Review & Submit", or similar)
+2. Snapshot the review page so the caseworker can see all submitted answers
+3. Call the \`formSummary\` tool with the data shown on the review page
+4. STOP and wait for the caseworker to confirm before submitting
+
+If the application does not have a built-in review page, you MUST still call \`formSummary\` with all the data you filled before reaching the submit step. Never submit without showing the review.
+
 ## Communication
 
 Write in plain language for caseworkers. No technical terms (refs, selectors, DOM, CSS, evaluate). Short sentences, grade 5 reading level. Load the \`caseworker-communication\` skill for the full translation table, examples, and language rules.
