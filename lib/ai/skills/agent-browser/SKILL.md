@@ -149,7 +149,7 @@ Do NOT click submit. Proceed with `formSummary` so the caseworker can review and
 ## Forbidden Actions
 
 ### Navigation Boundaries
-Once you navigate to the target application, **stay on that domain.** NEVER click social media links (Facebook, Twitter/X, Instagram, YouTube, LinkedIn, TikTok), "Share"/"Follow" buttons, footer links to external sites, banner ads, or any link to a different domain. Focus ONLY on the form content area (`main`, `form`, `#content`). If you accidentally navigate away, immediately use `{ action: "back" }` to return, then re-snapshot.
+Once you navigate to the target application, **stay on that domain.** NEVER click social media links (Facebook, Twitter/X, Instagram, YouTube, LinkedIn, TikTok), "Share"/"Follow" buttons, footer links to external sites, banner ads, or any link to a different domain. Focus ONLY on the form content area (`main`, `form`, `#content`). If you accidentally navigate away, use `{ action: "navigate", url: "<target-url>" }` to return to the application, then re-snapshot.
 
 ### Evaluate
 - **Turnstile, CAPTCHA, disabled submit, or expand sections → follow the Form Submission protocol above FIRST.** Complete steps 1–4 before any evaluate calls.
@@ -160,7 +160,7 @@ Once you navigate to the target application, **stay on that domain.** NEVER clic
 
 ### Destructive Actions
 - NEVER use `reload` while filling a form — reloading wipes all form state.
-- NEVER use `back` during multi-page form filling — going back wipes the current page. Exception: if you accidentally navigated off the target domain.
+- NEVER use `back` (browser back button) — it can navigate away from the application entirely, forcing you to start over. Always use the on-page navigation buttons (e.g., "Previous", "Back to ...", "Go Back") instead. These keep you within the application flow. There are NO exceptions to this rule.
 
 ## Parameter Types
 
