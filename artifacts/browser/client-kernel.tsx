@@ -329,8 +329,9 @@ export function KernelBrowserClient({
                 height: '800px',
                 maxWidth: '100%',
                 maxHeight: '100%',
+                touchAction: 'none',
               }}
-              allow="clipboard-read; clipboard-write"
+              allow="clipboard-read; clipboard-write; pointer-lock"
               title="Browser View"
             />
           </div>
@@ -409,8 +410,8 @@ export function KernelBrowserClient({
                       src={iframeUrl || undefined}
                       className="w-full h-full border-0 bg-white shadow-lg"
                       style={{
-                        width: '768px',
-                        height: '1024px',
+                        width: '1024px',
+                        height: '768px',
                         maxWidth: '100%',
                         maxHeight: '100%',
                         touchAction: 'none',

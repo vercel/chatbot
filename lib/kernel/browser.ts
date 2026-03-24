@@ -73,7 +73,7 @@ export async function getOrCreateBrowser(
   const createPromise = (async () => {
     try {
       const viewport = options?.isMobile
-        ? { width: 768, height: 1024 }   // Kernel supported tablet portrait viewport
+        ? { width: 1024, height: 768 } 
         : { width: 1280, height: 800 };
 
       const browser = (await kernel.browsers.create({
@@ -159,6 +159,20 @@ export async function getBrowser(
   }
 
   return null;
+}
+
+/**
+ * Type text into the active browser session using Kernel's computer controls API.
+ */
+export async function typeTextInBrowser(
+  sessionId: string,
+  userId: string,
+  text: string,
+): Promise<void> {
+  const key = cacheKey(userId, sessionId);
+  const session = sessions.get(key);
+  if (!session) throw new Error('Session not found');
+  await kernel.browsers.computer.typeText(session.kernelSessionId, { text });
 }
 
 /**
