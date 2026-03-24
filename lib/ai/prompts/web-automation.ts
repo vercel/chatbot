@@ -48,6 +48,10 @@ Age unknown: Check the database for date of birth. If still unknown, clarify wit
   - If a database field exists but is null or empty, this can be assessed and potentially considered a "No"
   - If a database field does not exist, treat it as an unknown, e.g., if veteran status is not a field provided by the database, don't assume you know the veteran status
   - If you are uncertain about the data being a correct match or not, ask for it with your summary at the end rather than guessing
+- IMPORTANT — Field Mapping & Inference Rules:
+  - **Verify all field mappings**: Before assigning any value to a form field, use the field-mapping tool to verify that the database field actually corresponds to the form field. Do NOT assume fields match based on similar names alone (e.g., a CalWorks ID is NOT an SSN — never map one to the other).
+  - **Do NOT infer homelessness status from address**: A participant having an address does NOT mean they are not homeless. Many homeless individuals have mailing addresses, shelters, or temporary addresses on file. Only use an explicit homelessness status field from the database. If no such field exists, include it in the gap analysis.
+  - **Do NOT infer communication preferences**: Only use communication preference values that are explicitly stored in the database. If communication preferences (email, phone, text, mail) are missing from the participant record, include them in the gap analysis. Never assume a preference based on available contact info.
   - Assume the application should include the participant data from the original prompt (with relevant household members) until the end of the session
   - Proceed through the application process autonomously
   - If the participant does not appear to be eligible for the program, explain why at the end and ask for clarification from the caseworker
