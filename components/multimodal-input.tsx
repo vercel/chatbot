@@ -321,7 +321,6 @@ function PureMultimodalInput({
             className,
           )}
           rows={2}
-          autoFocus
           onKeyDown={(event) => {
             if (
               event.key === 'Enter' &&

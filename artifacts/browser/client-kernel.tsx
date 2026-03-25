@@ -55,6 +55,14 @@ export function KernelBrowserClient({
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
 
+  // Use refs for isMobile and liveViewUrl so initBrowser doesn't need them as deps
+  // (avoids recreating the callback — and re-running the init effect — on viewport changes)
+  const isMobileRef = useRef(isMobile);
+  isMobileRef.current = isMobile;
+
+  const liveViewUrlRef = useRef(liveViewUrl);
+  liveViewUrlRef.current = liveViewUrl;
+
   // Track if we've already initialized for this session
   const initializedSessionRef = useRef<string | null>(null);
   const initInFlightRef = useRef(false);
@@ -69,7 +77,7 @@ export function KernelBrowserClient({
 
   const initBrowser = useCallback(async (force = false) => {
     // Skip if already initialized for this session (unless forced)
-    if (!force && initializedSessionRef.current === sessionId && liveViewUrl) {
+    if (!force && initializedSessionRef.current === sessionId && liveViewUrlRef.current) {
       return;
     }
     // Skip if a request is already in-flight
@@ -92,7 +100,7 @@ export function KernelBrowserClient({
         const response = await fetch('/api/kernel-browser', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, sessionId, isMobile }),
+          body: JSON.stringify({ action, sessionId, isMobile: isMobileRef.current }),
         });
 
         if (response.ok) {
@@ -126,7 +134,7 @@ export function KernelBrowserClient({
       setLoading(false);
       initInFlightRef.current = false;
     }
-  }, [sessionId, liveViewUrl, isMobile]);
+  }, [sessionId]);
 
   // Keep sessionId in a ref so the beforeunload handler always has the latest value
   const sessionIdRef = useRef(sessionId);
@@ -158,8 +166,12 @@ export function KernelBrowserClient({
     window.addEventListener('beforeunload', cleanup);
     return () => {
       window.removeEventListener('beforeunload', cleanup);
-      // Component unmounting (SPA navigation) — delete the browser immediately
-      cleanup();
+      // NOTE: Do NOT call cleanup() on unmount here.
+      // The component remounts whenever the layout switches between mobile and desktop
+      // (artifact.tsx renders KernelBrowserClient in two different tree positions).
+      // Deleting on every unmount would kill the Kernel session on every resize.
+      // The browser is cleaned up on beforeunload (tab close/refresh) and by
+      // Kernel's own 600s inactivity timeout.
     };
   }, []);
 
@@ -317,8 +329,9 @@ export function KernelBrowserClient({
                 height: '800px',
                 maxWidth: '100%',
                 maxHeight: '100%',
+                touchAction: 'none',
               }}
-              allow="clipboard-read; clipboard-write"
+              allow="clipboard-read; clipboard-write; pointer-lock"
               title="Browser View"
             />
           </div>
@@ -385,18 +398,25 @@ export function KernelBrowserClient({
               )}
 
               {/* Browser content */}
-              <div className="flex-1 overflow-hidden min-h-0 p-4">
+              <div className={`flex-1 min-h-0 p-4 ${controlMode === 'agent' ? 'overflow-hidden' : 'overflow-auto'}`}>
                 {error ? (
                   <BrowserErrorState onRetry={initBrowser} />
                 ) : !isConnected ? (
                   <BrowserLoadingState />
                 ) : (
-                  <div className={`h-full overflow-hidden bg-black rounded-lg ${controlMode === 'agent' ? 'cursor-not-allowed' : 'cursor-auto'}`}>
+                  <div className={`h-full rounded-lg bg-black ${controlMode === 'agent' ? 'overflow-hidden cursor-not-allowed' : 'overflow-auto cursor-auto'}`}>
                     <iframe
                       key={liveViewUrl}
                       src={iframeUrl || undefined}
                       className="w-full h-full border-0 bg-white shadow-lg"
-                      allow="clipboard-read; clipboard-write"
+                      style={{
+                        width: '1024px',
+                        height: '768px',
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        touchAction: 'none',
+                      }}
+                      allow="clipboard-read; clipboard-write; pointer-lock"
                       title="Browser View"
                     />
                   </div>
