@@ -242,6 +242,12 @@ export function KernelBrowserClient({
     onControlModeChange(mode);
   };
 
+  const cancelControl = () => {
+    if (!isConnectedRef.current) return;
+    onFullscreenChange?.(false);
+    onControlModeChange('agent');
+  };
+
   const disconnectBrowser = async () => {
     try {
       await fetch('/api/kernel-browser', {
@@ -307,11 +313,19 @@ export function KernelBrowserClient({
             <div className="flex items-center gap-2">
               <Button
                 type="button"
+                variant="outline"
+                size="sm"
+                onClick={cancelControl}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
                 variant="default"
                 size="sm"
                 onClick={() => switchControlMode('agent')}
               >
-                Give back control
+                Update and continue
               </Button>
             </div>
           </div>
