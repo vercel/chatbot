@@ -523,7 +523,6 @@ const PurePreviewMessage = ({
                       key={toolCallId}
                       formName={input?.formName}
                       fields={input?.fields ?? []}
-                      notes={input?.notes}
                       sendMessage={sendMessage}
                       isArtifactVisible={isArtifactVisible}
                     />

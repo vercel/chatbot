@@ -26,18 +26,21 @@ type FieldWithSource = {
   inputType?: 'text' | 'select' | 'radio' | 'checkbox';
   options?: string[];
   required?: boolean;
+  inferredFrom?: string;
 };
 
 interface FormSummaryCardProps {
   formName?: string;
   fields: FieldWithSource[];
-  notes?: string;
   sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
   isArtifactVisible?: boolean;
   className?: string;
 }
 
-function AutofilledBadge() {
+function AutofilledBadge({ inferredFrom }: { inferredFrom?: string }) {
+  const tooltip = inferredFrom
+    ? `Filled by AI; based on ${inferredFrom}.`
+    : 'Filled by AI.';
   return (
     <TooltipProvider>
       <Tooltip>
@@ -47,7 +50,7 @@ function AutofilledBadge() {
             Auto-filled
           </span>
         </TooltipTrigger>
-        <TooltipContent align="end">Filled in automatically by the AI.</TooltipContent>
+        <TooltipContent align="end">{tooltip}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -109,7 +112,6 @@ function SourceLabel({
 export function FormSummaryCard({
   formName,
   fields,
-  notes,
   sendMessage,
   isArtifactVisible = true,
   className,
@@ -273,7 +275,7 @@ export function FormSummaryCard({
   return (
     <div
       className={cn(
-        'rounded-lg border shadow-none bg-background overflow-hidden flex flex-col',
+        'rounded-lg border shadow-none bg-background overflow-hidden flex flex-col font-inter',
         uiMode === 'edit' ? 'border-[#c85aab]' : 'border-[#f5e4f0]',
         className,
       )}
@@ -300,7 +302,7 @@ export function FormSummaryCard({
                 ) : item.source === 'missing' && !item.required ? (
                   <SourceLabel label="Optional" tooltip="Not required to submit." />
                 ) : item.source === 'inferred' ? (
-                  <AutofilledBadge />
+                  <AutofilledBadge inferredFrom={item.inferredFrom} />
                 ) : (
                   <SourceLabel
                     label={item.source === 'database' ? 'Apricot 360' : 'Manual'}
@@ -327,18 +329,12 @@ export function FormSummaryCard({
         </div>
       </div>
 
-      {notes && (
-        <p className="text-sm text-muted-foreground italic px-6 py-4 border-t border-border">
-          {notes}
-        </p>
-      )}
-
       <div className="px-6 py-4 border-t border-border flex flex-col gap-2">
         {uiMode === 'edit' ? (
           <>
             <Button size="sm" className="w-full" onClick={handleConfirm} disabled={!isArtifactVisible}>
               <CheckIcon className="w-3 h-3 mr-1.5" />
-              Confirm and submit
+              Update and continue
             </Button>
             <Button variant="outline" size="sm" className="w-full" onClick={handleCancel} disabled={!isArtifactVisible}>
               Discard changes
@@ -360,7 +356,7 @@ export function FormSummaryCard({
               onClick={handleConfirm}
               disabled={uiMode === 'confirmed' || !isArtifactVisible}
             >
-              Confirm and submit
+              Confirm
             </Button>
           </>
         )}
