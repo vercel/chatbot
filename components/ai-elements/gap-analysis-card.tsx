@@ -121,8 +121,8 @@ export function GapAnalysisCard({
       const selected = (answers[name] as string[]) ?? [];
       return (
         <fieldset key={name} className="space-y-3">
-          <Label className="font-semibold text-base">{name}</Label>
-          <p className="text-sm text-muted-foreground italic">
+          <Label className="text-sm font-bold font-source-serif">{name}</Label>
+          <p className="text-sm text-neutral-900 font-source-serif">
             {condition || 'Select all that apply.'}
           </p>
           <div className="flex flex-col gap-3">
@@ -138,7 +138,7 @@ export function GapAnalysisCard({
                 />
                 <Label
                   htmlFor={`${name}-${option}`}
-                  className="font-normal cursor-pointer"
+                  className="text-sm font-normal cursor-pointer"
                 >
                   {option}
                 </Label>
@@ -153,9 +153,9 @@ export function GapAnalysisCard({
     if (inputType === 'boolean') {
       return (
         <div key={name} className="space-y-2">
-          <Label className="font-semibold">{name}</Label>
+          <Label className="text-sm font-bold font-source-serif">{name}</Label>
           {condition && (
-            <p className="text-xs text-muted-foreground italic">{condition}</p>
+            <p className="text-sm text-neutral-900 font-source-serif">{condition}</p>
           )}
           <RadioGroup
             value={(answers[name] as string) ?? ''}
@@ -164,13 +164,13 @@ export function GapAnalysisCard({
           >
             <div className="flex items-center gap-2">
               <RadioGroupItem value="Yes" id={`${name}-yes`} />
-              <Label htmlFor={`${name}-yes`} className="font-normal cursor-pointer">
+              <Label htmlFor={`${name}-yes`} className="text-sm font-normal cursor-pointer">
                 Yes
               </Label>
             </div>
             <div className="flex items-center gap-2">
               <RadioGroupItem value="No" id={`${name}-no`} />
-              <Label htmlFor={`${name}-no`} className="font-normal cursor-pointer">
+              <Label htmlFor={`${name}-no`} className="text-sm font-normal cursor-pointer">
                 No
               </Label>
             </div>
@@ -183,9 +183,9 @@ export function GapAnalysisCard({
     if (inputType === 'select' && options && options.length > 0) {
       return (
         <div key={name} className="space-y-2">
-          <Label className="font-semibold">{name}</Label>
+          <Label className="text-sm font-bold font-source-serif">{name}</Label>
           {condition && (
-            <p className="text-xs text-muted-foreground italic">{condition}</p>
+            <p className="text-sm text-neutral-900 font-source-serif">{condition}</p>
           )}
           <Select
             value={(answers[name] as string) ?? ''}
@@ -211,9 +211,9 @@ export function GapAnalysisCard({
     if (inputType === 'textarea') {
       return (
         <div key={name} className="space-y-2">
-          <Label className="font-semibold">{name}</Label>
+          <Label className="text-sm font-bold font-source-serif">{name}</Label>
           {condition && (
-            <p className="text-xs text-muted-foreground italic">{condition}</p>
+            <p className="text-sm text-neutral-900 font-source-serif">{condition}</p>
           )}
           <Textarea
             value={(answers[name] as string) ?? ''}
@@ -229,9 +229,9 @@ export function GapAnalysisCard({
     if (inputType === 'date') {
       return (
         <div key={name} className="space-y-2">
-          <Label className="font-semibold">{name}</Label>
+          <Label className="text-sm font-bold font-source-serif">{name}</Label>
           {condition && (
-            <p className="text-xs text-muted-foreground italic">{condition}</p>
+            <p className="text-sm text-neutral-900 font-source-serif">{condition}</p>
           )}
           <Input
             type="date"
@@ -246,9 +246,9 @@ export function GapAnalysisCard({
     // text / default → text input
     return (
       <div key={name} className="space-y-2">
-        <Label className="font-semibold">{name}</Label>
+        <Label className="text-sm font-bold font-source-serif">{name}</Label>
         {condition && (
-          <p className="text-xs text-muted-foreground italic">{condition}</p>
+          <p className="text-sm text-neutral-900 font-source-serif">{condition}</p>
         )}
         <Input
           type="text"
@@ -265,12 +265,12 @@ export function GapAnalysisCard({
     return (
       <Alert
         className={cn(
-          'rounded-xl border-border bg-background p-6',
+          'rounded-lg border-accent shadow-none bg-background p-6 font-inter',
           className,
         )}
       >
         <AlertDescription>
-          <p className="font-source-serif text-lg text-muted-foreground">
+          <p className="font-source-serif text-base text-muted-foreground">
             {formName || 'Gap Analysis'}
           </p>
           <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -284,14 +284,14 @@ export function GapAnalysisCard({
   return (
     <Alert
       className={cn(
-        'rounded-xl border-accent bg-background p-6',
+        'rounded-lg border-accent shadow-none bg-background p-6 font-inter',
         className,
       )}
     >
       <AlertDescription>
         <div className="font-source-serif leading-[1.5] text-foreground">
           {formName && (
-            <p className="text-lg font-bold mb-1">{formName}</p>
+            <p className="text-base font-bold mb-1 font-source-serif">{formName}</p>
           )}
 
           {missingFields.length > 0 && (

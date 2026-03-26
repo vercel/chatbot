@@ -276,7 +276,7 @@ export function FormSummaryCard({
     <div
       className={cn(
         'rounded-lg border shadow-none bg-background overflow-hidden flex flex-col font-inter',
-        uiMode === 'edit' ? 'border-[#c85aab]' : 'border-[#f5e4f0]',
+        uiMode === 'edit' ? 'border-accent' : 'border-border',
         className,
       )}
     >
