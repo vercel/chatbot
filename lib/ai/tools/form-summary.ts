@@ -26,6 +26,12 @@ const fieldSchema = z.object({
     .boolean()
     .optional()
     .describe('Whether the field is required to submit the form'),
+  inferredFrom: z
+    .string()
+    .optional()
+    .describe(
+      'For inferred fields only: a short description of what the value was based on, e.g. "the zipcode", "the client\'s date of birth", "the household size"',
+    ),
 });
 
 export const formSummary = tool({
@@ -41,10 +47,6 @@ export const formSummary = tool({
       .describe(
         'All form fields in the order they appear on the original form. Each field has a source indicating where the value came from.',
       ),
-    notes: z
-      .string()
-      .optional()
-      .describe('Any important notes, caveats, or fields that could not be filled'),
   }),
   execute: async (input) => input,
 });
