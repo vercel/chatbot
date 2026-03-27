@@ -393,21 +393,27 @@ export function KernelBrowserClient({
                     chatStatus={chatStatus}
                     controlMode={controlMode}
                   />
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
-                  >
-                    {controlMode === 'user' ? (
-                      'Give back control'
-                    ) : (
-                      <>
-                        <MousePointerClick className="w-4 h-4 mr-1" />
-                        Take control
-                      </>
+                  <div className="flex items-center gap-2">
+                    {controlMode === 'user' && (
+                      <Button variant="outline" size="sm" onClick={cancelControl}>Cancel</Button>
                     )}
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={() => switchControlMode(controlMode === 'user' ? 'agent' : 'user')}
+                    >
+                      {controlMode === 'user' ? (
+                        'Update and continue'
+                      ) : (
+                        <>
+                          <MousePointerClick className="w-4 h-4 mr-1" />
+                          Take control
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
                 </div>
               )}
 
