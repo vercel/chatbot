@@ -7,7 +7,7 @@ import { xai } from '@ai-sdk/xai';
 import { openai } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
 import { gateway } from '@ai-sdk/gateway';
-import { createVertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import { createVertex } from '@ai-sdk/google-vertex';
 import {
   artifactModel,
@@ -20,14 +20,6 @@ import { isTestEnvironment } from '../constants';
 const vertex = createVertex({
   location: process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1',
   project: process.env.GOOGLE_VERTEX_PROJECT ?? 'placeholder',
-});
-
-// Use createVertexAnthropic instead of the default singleton so
-// the SDK creates a dedicated GoogleAuth instance with explicit scopes.
-const vertexAnthropic = createVertexAnthropic({
-  googleAuthOptions: {
-    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-  },
 });
 
 // Anthropic model for web automation via Vertex AI
