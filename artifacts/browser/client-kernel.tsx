@@ -270,6 +270,8 @@ export function KernelBrowserClient({
     if (!liveViewUrl) return null;
 
     const url = new URL(liveViewUrl);
+    // Enable Kernel's embedded mode for on-screen touch controls on tablets
+    url.searchParams.set('embed', '1');
     if (controlMode === 'agent') {
       url.searchParams.set('readOnly', 'true');
     } else {
