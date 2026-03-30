@@ -7,13 +7,37 @@ import { xai } from '@ai-sdk/xai';
 import { openai } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
 import { gateway } from '@ai-sdk/gateway';
-import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
+import { createVertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import { createVertex } from '@ai-sdk/google-vertex';
+import { GoogleAuth } from 'google-auth-library';
 
 const vertex = createVertex({
   location: process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1',
   project: process.env.GOOGLE_VERTEX_PROJECT ?? 'placeholder',
 });
+
+// The SDK's default vertexAnthropic singleton can silently send null tokens
+// when google-auth-library's cached token expires mid-stream (401s after
+// many successful steps). Use our own GoogleAuth instance with retry.
+const googleAuth = new GoogleAuth({
+  scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+});
+
+async function getAccessToken(): Promise<string> {
+  const client = await googleAuth.getClient();
+  const res = await client.getAccessToken();
+  if (res?.token) return res.token;
+  const retry = await client.getAccessToken();
+  if (retry?.token) return retry.token;
+  throw new Error('Failed to obtain Google access token after retry');
+}
+
+const vertexAnthropic = createVertexAnthropic({
+  headers: async () => ({
+    Authorization: `Bearer ${await getAccessToken()}`,
+  }),
+});
+
 import {
   artifactModel,
   chatModel,
