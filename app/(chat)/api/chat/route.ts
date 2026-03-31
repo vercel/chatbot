@@ -51,9 +51,6 @@ import { loadSkill } from '@/lib/ai/tools/load-skill';
 import { readSkillFile } from '@/lib/ai/tools/read-skill-file';
 import { createMessageCompressor, preCompactMessages } from '@/lib/ai/context-compression';
 
-// Feature flag for AI SDK agent vs Mastra
-const useAiSdkAgent = process.env.USE_AI_SDK_AGENT === 'true';
-
 export const maxDuration = 300; // 5 minutes for web automation tasks
 
 let globalStreamContext: ResumableStreamContext | null = null;
@@ -186,14 +183,6 @@ export async function POST(request: Request) {
 
     // Web automation model handling
     if (selectedChatModel === 'web-automation-model') {
-      // Feature flag: if false, return error so client falls back to mastra-proxy
-      if (!useAiSdkAgent) {
-        return new ChatSDKError(
-          'bad_request:api',
-          'Web automation uses Mastra backend'
-        ).toResponse();
-      }
-
       // Create session ID for browser isolation
       // sessionId includes both chatId and userId to ensure global uniqueness
       const sessionId = `${id}-${session.user.id}`;

@@ -23,9 +23,6 @@ import { useDataStream } from './data-stream-provider';
 import { BenefitApplicationsLanding } from './benefit-applications-landing';
 import { TokenUsageProvider } from '@/hooks/use-token-usage';
 
-// Feature flag for AI SDK agent vs Mastra (client-side)
-const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
-
 export type CheckpointData = { messageId: string; stepNumber: number; summary: string };
 
 export function Chat({
@@ -92,32 +89,17 @@ export function Chat({
     experimental_throttle: 100,
     generateId: generateUUID,
     transport: new DefaultChatTransport({
-      // Route based on feature flag: when AI SDK agent is enabled, use /api/chat for web automation
-      // Otherwise, use /api/mastra-proxy for backward compatibility
-      api:
-        initialChatModel === 'web-automation-model' && !useAiSdkAgent
-          ? '/api/mastra-proxy'
-          : '/api/chat',
+      api: '/api/chat',
       fetch: fetchWithErrorHandlers,
-      prepareSendMessagesRequest:
-        initialChatModel === 'web-automation-model' && !useAiSdkAgent
-          ? ({ messages, id, body }) => ({
-              body: {
-                messages,
-                threadId: id,
-                resourceId: session?.user?.id,
-                ...body,
-              },
-            })
-          : ({ messages, id, body }) => ({
-              body: {
-                id,
-                message: messages.at(-1),
-                selectedChatModel: initialChatModel,
-                selectedVisibilityType: visibilityType,
-                ...body,
-              },
-            }),
+      prepareSendMessagesRequest: ({ messages, id, body }) => ({
+        body: {
+          id,
+          message: messages.at(-1),
+          selectedChatModel: initialChatModel,
+          selectedVisibilityType: visibilityType,
+          ...body,
+        },
+      }),
     }),
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
@@ -192,30 +174,8 @@ export function Chat({
   // Keep ref in sync so onData closure always has latest messages
   messagesRef.current = messages;
 
-  // Custom stop function that sends stopChat action for web automation
   const stop = async () => {
-    // Always call the original stop to abort the stream
     originalStop();
-
-    // For web automation model using Mastra backend, also send stopChat action
-    // When using AI SDK agent, the AbortController handles stopping
-    if (initialChatModel === 'web-automation-model' && !useAiSdkAgent) {
-      try {
-        await fetch('/api/mastra-proxy', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'stopChat',
-            threadId: id,
-            resourceId: session?.user?.id,
-          }),
-        });
-      } catch (error) {
-        console.error('Error sending stopChat action:', error);
-      }
-    }
   };
 
   const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
