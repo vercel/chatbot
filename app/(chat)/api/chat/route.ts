@@ -1,4 +1,5 @@
 import {
+  consumeStream,
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
@@ -298,8 +299,8 @@ export async function POST(request: Request) {
             },
           });
 
-          result.consumeStream();
           dataStream.merge(result.toUIMessageStream());
+          consumeStream({ stream: result.textStream });
         },
         generateId: generateUUID,
         onFinish: async ({ messages }) => {
@@ -329,6 +330,7 @@ export async function POST(request: Request) {
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: await convertToModelMessages(uiMessages),
+          abortSignal: request.signal,
           stopWhen: stepCountIs(100),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
@@ -355,13 +357,12 @@ export async function POST(request: Request) {
           },
         });
 
-        result.consumeStream();
-
         dataStream.merge(
           result.toUIMessageStream({
             sendReasoning: true,
           }),
         );
+        consumeStream({ stream: result.textStream });
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
