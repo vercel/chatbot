@@ -17,6 +17,16 @@ Create `apps/extension/.env` from `.env.example`:
 - `WXT_GOOGLE_CLIENT_ID`
 - `WXT_EXTENSION_KEY` (optional but recommended for stable extension id)
 
+## OAuth setup checklist
+
+1. Create a Google OAuth Client for Chrome Extension usage.
+2. Add required scopes in extension manifest via WXT config:
+   - `openid`
+   - `email`
+   - `profile`
+3. Set `WXT_GOOGLE_CLIENT_ID` in `.env`.
+4. Optionally set `WXT_EXTENSION_KEY` for a stable extension ID in development.
+
 ## Development
 
 From the repo root:

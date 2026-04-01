@@ -46,3 +46,28 @@ Set environment variables in `.env`:
 pnpm --filter @app/agent-api build
 pnpm --filter @app/agent-api start
 ```
+
+## Cloud Run deployment checklist
+
+1. Build and push image:
+
+   ```bash
+   docker build -t gcr.io/<project-id>/helios-agent-api:latest -f apps/agent-api/Dockerfile .
+   docker push gcr.io/<project-id>/helios-agent-api:latest
+   ```
+
+2. Deploy with required env vars:
+
+   ```bash
+   gcloud run deploy helios-agent-api \
+     --image gcr.io/<project-id>/helios-agent-api:latest \
+     --region <region> \
+     --platform managed \
+     --allow-unauthenticated \
+     --set-env-vars OPENAI_API_KEY=<value>
+   ```
+
+3. Validate health endpoints:
+
+   - `GET /v1/healthz`
+   - `GET /v1/readyz`

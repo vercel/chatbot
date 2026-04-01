@@ -24,7 +24,22 @@ export class HeliosDatabase extends Dexie {
 
   constructor() {
     super('helios-extension-db');
+
     this.version(1).stores({
+      threads: '&id,updatedAt,title',
+      messages: '&id,threadId,createdAt,role',
+      toolExecutions: '&id,threadId,messageId,createdAt,status',
+      artifacts: '&id,threadId,messageId,createdAt',
+      pageContexts: '&id,threadId,capturedAt',
+      attachments: '&id,threadId,messageId,createdAt',
+      messageBranches: '&id,threadId,messageId,parentMessageId',
+      usageStats: '&id,threadId,messageId,createdAt',
+      traceEvents: '&id,threadId,messageId,createdAt,type',
+    });
+
+    // Migration scaffold reserved for the next schema evolution.
+    // Keep as an explicit version boundary to make future upgrades deterministic.
+    this.version(2).stores({
       threads: '&id,updatedAt,title',
       messages: '&id,threadId,createdAt,role',
       toolExecutions: '&id,threadId,messageId,createdAt,status',
