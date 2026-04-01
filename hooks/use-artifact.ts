@@ -11,79 +11,48 @@ export const initialArtifactData: UIArtifact = {
   title: "",
   status: "idle",
   isVisible: false,
-  boundingBox: {
-    top: 0,
-    left: 0,
-    width: 0,
-    height: 0,
-  },
+  boundingBox: { top: 0, left: 0, width: 0, height: 0 },
 };
 
 type Selector<T> = (state: UIArtifact) => T;
 
-export function useArtifactSelector<Selected>(selector: Selector<Selected>) {
-  const { data: localArtifact } = useSWR<UIArtifact>("artifact", null, {
-    fallbackData: initialArtifactData,
-  });
-
-  const selectedValue = useMemo(() => {
-    if (!localArtifact) {
-      return selector(initialArtifactData);
-    }
-    return selector(localArtifact);
-  }, [localArtifact, selector]);
-
-  return selectedValue;
-}
+const SWR_OPTIONS = { fallbackData: initialArtifactData };
 
 export function useArtifact() {
-  const { data: localArtifact, mutate: setLocalArtifact } = useSWR<UIArtifact>(
-    "artifact",
-    null,
-    {
-      fallbackData: initialArtifactData,
-    }
-  );
+  // Main artifact SWR
+  const { data: artifact = initialArtifactData, mutate: setArtifactData } =
+    useSWR<UIArtifact>("artifact", null, SWR_OPTIONS);
 
-  const artifact = useMemo(() => {
-    if (!localArtifact) {
-      return initialArtifactData;
-    }
-    return localArtifact;
-  }, [localArtifact]);
-
+  // Setter function for artifact
   const setArtifact = useCallback(
-    (updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact)) => {
-      setLocalArtifact((currentArtifact) => {
-        const artifactToUpdate = currentArtifact || initialArtifactData;
-
-        if (typeof updaterFn === "function") {
-          return updaterFn(artifactToUpdate);
-        }
-
-        return updaterFn;
-      });
-    },
-    [setLocalArtifact]
+    (updater: UIArtifact | ((current: UIArtifact) => UIArtifact)) =>
+      setArtifactData((current = initialArtifactData) =>
+        typeof updater === "function" ? updater(current) : updater
+      ),
+    [setArtifactData]
   );
 
-  const { data: localArtifactMetadata, mutate: setLocalArtifactMetadata } =
-    useSWR<any>(
-      () =>
-        artifact.documentId ? `artifact-metadata-${artifact.documentId}` : null,
-      null,
-      {
-        fallbackData: null,
-      }
-    );
+  // Metadata per documentId
+  const { data: metadata, mutate: setMetadata } = useSWR(
+    artifact.documentId ? `artifact-metadata-${artifact.documentId}` : null,
+    null,
+    { fallbackData: null }
+  );
+
+  // Selector helper
+  const selectArtifact = useCallback(
+    <Selected>(selector: Selector<Selected>) => selector(artifact),
+    [artifact]
+  );
 
   return useMemo(
     () => ({
       artifact,
       setArtifact,
-      metadata: localArtifactMetadata,
-      setMetadata: setLocalArtifactMetadata,
+      metadata,
+      setMetadata,
+      selectArtifact, // function to select from artifact
     }),
-    [artifact, setArtifact, localArtifactMetadata, setLocalArtifactMetadata]
+    [artifact, setArtifact, metadata, setMetadata, selectArtifact]
   );
 }
