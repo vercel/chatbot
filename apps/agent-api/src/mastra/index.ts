@@ -12,7 +12,7 @@ const UserInfoSchema = z.object({
   hd: z.string().optional(),
 });
 
-const verifyGoogleAccessToken = async (token: string) => {
+export const verifyGoogleAccessToken = async (token: string) => {
   const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -27,7 +27,7 @@ const verifyGoogleAccessToken = async (token: string) => {
   return UserInfoSchema.parse(json);
 };
 
-const authMiddleware = async (
+export const authMiddleware = async (
   c: {
     req: { header: (name: string) => string | undefined };
     get: (name: string) => {
