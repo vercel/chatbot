@@ -24,7 +24,7 @@
     "react-dom": "^19.2.4",
     "safe-content-frame": "^0.0.13",
     "zod": "^4.3.6",
-    "zustand": "^4.5.2"
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.38",
