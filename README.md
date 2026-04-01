@@ -1,6 +1,6 @@
 # Helios Sidebar Platform
 
-Monorepo for a Chrome-first AI sidepanel experience and stateless Mastra backend.
+Monorepo for a Chrome-first AI sidepanel extension and stateless Mastra backend.
 
 ## Stack
 
@@ -15,10 +15,6 @@ Monorepo for a Chrome-first AI sidepanel experience and stateless Mastra backend
 apps/
   extension/
   agent-api/
-packages/
-  shared-types/
-  shared-prompts/
-  shared-ui/
 ```
 
 ## Prerequisites
@@ -30,8 +26,22 @@ packages/
 
 ```bash
 pnpm install
-pnpm dev
-pnpm build
-pnpm typecheck
-pnpm test
+pnpm -r typecheck
+pnpm -r lint
+pnpm -r test
+pnpm -r build
+```
+
+## Local Development
+
+Run extension dev server:
+
+```bash
+pnpm --filter @app/extension dev
+```
+
+Run backend dev server:
+
+```bash
+pnpm --filter @app/agent-api dev
 ```
