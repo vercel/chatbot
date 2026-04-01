@@ -1,4 +1,4 @@
-import { expect as baseExpect, test as baseTest } from "@playwright/test";
+import { test as baseTest, expect as baseExpect } from "@playwright/test";
 import { ChatPage } from "./pages/chat";
 
 type Fixtures = {
@@ -7,8 +7,7 @@ type Fixtures = {
 
 export const test = baseTest.extend<Fixtures>({
   chatPage: async ({ page }, use) => {
-    const chatPage = new ChatPage(page);
-    await use(chatPage);
+    await use(new ChatPage(page));
   },
 });
 
