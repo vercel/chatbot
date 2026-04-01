@@ -5,6 +5,7 @@ import {
 } from '@assistant-ui/react';
 import { DefaultChatTransport, readUIMessageStream, type UIMessage } from 'ai';
 import { useMemo } from 'react';
+import { fetchWithGoogleAuth } from '@/lib/auth/chrome-identity';
 import { extensionEnv } from '@/lib/config/env';
 import {
   addUsageStatFromMessage,
@@ -120,7 +121,7 @@ const createAdapter = (): ExternalStoreAdapter<LocalMessageRecord> => ({
       const transport = new DefaultChatTransport({
         api: `${extensionEnv.apiBaseUrl}/v1/chat/stream`,
         fetch: async (input, init) => {
-          const response = await fetch(input, {
+          const response = await fetchWithGoogleAuth(input, {
             ...init,
             headers: {
               ...(init?.headers ?? {}),
