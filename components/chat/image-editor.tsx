@@ -1,4 +1,5 @@
 import cn from "classnames";
+import Image from "next/image";
 import { LoaderIcon } from "./icons";
 
 type ImageEditorProps = {
@@ -33,15 +34,16 @@ export function ImageEditor({
           <div>Generating Image...</div>
         </div>
       ) : (
-        <picture>
-          <img
-            alt={title}
-            className={cn("h-fit w-full max-w-[800px]", {
-              "p-0 md:p-20": !isInline,
-            })}
-            src={`data:image/png;base64,${content}`}
-          />
-        </picture>
+        <Image
+          alt={title}
+          className={cn("h-auto w-full max-w-[800px]", {
+            "p-0 md:p-20": !isInline,
+          })}
+          height={800}
+          src={`data:image/png;base64,${content}`}
+          unoptimized
+          width={800}
+        />
       )}
     </div>
   );

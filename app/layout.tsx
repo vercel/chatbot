@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
+import { MotionProvider } from "@/components/motion-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
@@ -60,12 +62,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
-          dangerouslySetInnerHTML={{
-            __html: THEME_COLOR_SCRIPT,
-          }}
-        />
+        <Script id="theme-color" strategy="beforeInteractive">
+          {THEME_COLOR_SCRIPT}
+        </Script>
       </head>
       <body className="antialiased">
         <ThemeProvider
@@ -77,7 +76,9 @@ export default function RootLayout({
           <SessionProvider
             basePath={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/auth`}
           >
-            <TooltipProvider>{children}</TooltipProvider>
+            <MotionProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </MotionProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

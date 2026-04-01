@@ -76,9 +76,8 @@ function PureArtifactActions({
                     await Promise.resolve(action.onClick(actionContext));
                   } catch (_error) {
                     toast.error("Failed to execute action");
-                  } finally {
-                    setIsLoading(false);
                   }
+                  setIsLoading(false);
                 }}
                 type="button"
               >
