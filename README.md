@@ -15,6 +15,10 @@ Monorepo for a Chrome-first AI sidepanel extension and stateless Mastra backend.
 apps/
   extension/
   agent-api/
+packages/
+  shared-types/
+  shared-prompts/
+  shared-ui/
 ```
 
 ## Prerequisites
