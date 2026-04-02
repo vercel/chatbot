@@ -59,9 +59,9 @@
    +-----+--------+          +------+------+
    | Browser      |          | Upstash     |
    | Automation   |          | Redis       |
-   | (Kernel.sh / |          | (Shared     |
-   |  Mastra)     |          |  Links)     |
-   +--------- ----+          +-------------+
+   | (Kernel.sh)  |          | (Shared     |
+   |              |          |  Links)     |
+   +--------------+          +-------------+
 ```
 
 ## Getting Started
