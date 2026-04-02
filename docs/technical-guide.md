@@ -42,7 +42,7 @@ Next.js App (App Router)
   +-- Browser Automation (Kernel.sh)
   |     Remote Chromium, Playwright-based agent-browser
   |
-  +-- Case Management Integration (Apricot)
+  +-- Client Database Integration (via API)
   |     Participant data retrieval for form filling
   |
   +-- Database (Neon Serverless Postgres / Drizzle ORM)
@@ -82,10 +82,10 @@ client/
   components/             # React components (UI, chat, browser view)
   lib/
     ai/                   # AI model configuration and tools
-      tools/              # AI tool definitions (browser, apricot, gap analysis)
+      tools/              # AI tool definitions (browser, client data, gap analysis)
     db/                   # Database schema and queries (Drizzle)
     kernel/               # Kernel.sh browser session management
-    models/               # External API clients (Apricot)
+    models/               # External API clients (client database)
   public/                 # Static assets
   docs/                   # Documentation (you are here)
 ```
@@ -195,13 +195,13 @@ The web automation agent has access to several tools beyond browser control:
 | Tool | Purpose |
 | --- | --- |
 | `browser` | Remote browser automation (see above) |
-| `apricotTools` | Retrieve participant records, forms, and field data from Apricot CMS |
+| `clientDataTools` | Connect to API to retrieve participant records, forms, and field data from the client database |
 | `gapAnalysis` | Analyze form fields against available data to identify missing information |
 | `formSummary` | Summarize form requirements |
 | `actionLabel` | Label and categorize browser actions |
 | `loadSkill` / `readSkillFile` | Load reusable automation skills |
 
-The Apricot integration pulls participant data (names, addresses, SSNs, dates of birth, etc.) that the agent uses to fill form fields automatically.
+The client database integration pulls participant data (names, addresses, SSNs, dates of birth, etc.) via API that the agent uses to fill form fields automatically.
 
 ---
 
