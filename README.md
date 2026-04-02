@@ -1,9 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.navapbc.com/logos/nava-logo-white.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.navapbc.com/logos/nava-logo.svg">
-    <img alt="Nava PBC" src="https://www.navapbc.com/logos/nava-logo.svg" width="200">
-  </picture>
+  <img alt="Nava PBC" src="public/images/logo.png" width="200">
 </p>
 
 <h1 align="center">ASP Form-Filling Assistant</h1>
@@ -120,14 +116,6 @@ This application uses [Neon](https://neon.tech) serverless Postgres as its prima
 
 ```env
 DATABASE_URL="postgresql://<user>:<password>@<host>.neon.tech/<dbname>?sslmode=require"
-```
-
-### Using a local Postgres instance (alternative)
-
-For local development, you can use a Docker-based Postgres container instead:
-
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/labs_asp_dev"
 ```
 
 ### Running migrations
