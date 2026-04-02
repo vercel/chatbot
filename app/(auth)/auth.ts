@@ -126,7 +126,7 @@ export const {
       // Handle OAuth sign-in with domain validation
       if (account?.provider === 'google' || account?.provider === 'microsoft-entra-id') {
         const email = user.email?.toLowerCase() || '';
-        const allowedDomains = ['@navapbc.com', '@rivco.org', '@navapbc.onmicrosoft.com', '@amplifi.org'];
+        const allowedDomains = ['@navapbc.com', '@rivco.org', '@navapbc.onmicrosoft.com', '@amplifi.org', '@jfkfoundation.org'];
         const isAllowedDomain = allowedDomains.some(domain => email.endsWith(domain));
 
         if (!isAllowedDomain) {
