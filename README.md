@@ -329,7 +329,7 @@ See [`.env.example`](.env.example) for the full list of configurable variables.
 
 We welcome contributions from the community — whether you're fixing a bug, suggesting a feature, or improving documentation.
 
-Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request. All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+Please read our [Contributing Guide](docs/CONTRIBUTING.md) before submitting a pull request. All contributors are expected to follow our [Code of Conduct](docs/CODE_OF_CONDUCT.md).
 
 For security-related issues, please review our [Security Policy](SECURITY.md) before disclosing publicly.
 
