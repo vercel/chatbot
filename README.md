@@ -345,6 +345,4 @@ This project is licensed under the [Apache License 2.0](LICENSE). You are free t
 
 [Nava PBC](https://www.navapbc.com) partners with government agencies to design and build simple, effective digital services. As a public benefit corporation, we're accountable to our mission: making it easier for people to access the services they need.
 
-[Nava Labs](https://www.navapbc.com/labs) is our philanthropically-funded R&D division, focused on prototyping systems changes in government programs and advocating for their adoption. Our AI tools for public benefits are developed in partnership with caseworkers, community organizations, and the families they serve.
-
-Learn more: [navapbc.com/labs/ai-tools-public-benefits](https://www.navapbc.com/labs/ai-tools-public-benefits)
+[Nava Labs](https://www.navapbc.com/labs) uses philanthropic funding to prototype safety-net innovations that government agencies need but can’t fund directly. We build and test new approaches to delivering public services, evaluate what works, and advocate for scaling proven solutions.
