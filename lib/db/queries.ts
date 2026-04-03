@@ -264,86 +264,9 @@ export async function getChatsByUserId({
 export async function getChatById({ id }: { id: string }) {
   try {
     const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
-
-    // If not found in Chat table, check Mastra threads
-    if (!selectedChat) {
-      const mastraThread = await getMastraThreadById({ id });
-      return mastraThread;
-    }
-
     return selectedChat;
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to get chat by id');
-  }
-}
-
-async function getMastraThreadById({ id }: { id: string }) {
-  try {
-    const threads = await client.unsafe(`
-      SELECT
-        id,
-        "createdAt",
-        "updatedAt",
-        title,
-        "resourceId"
-      FROM mastra_threads
-      WHERE id = $1
-      LIMIT 1
-    `, [id]);
-
-    if (threads.length === 0) {
-      return null;
-    }
-
-    const thread = threads[0];
-    return {
-      id: thread.id,
-      createdAt: thread.createdAt,
-      title: thread.title || 'Web Automation',
-      userId: thread.resourceId,
-      visibility: 'public' as const,
-      mastraThreadId: thread.id,
-    };
-  } catch (error) {
-    console.error('Failed to get Mastra thread by id:', error);
-    return null;
-  }
-}
-
-export async function getMastraThreadsByUserId({
-  id,
-  limit = 20,
-}: {
-  id: string;
-  limit?: number;
-}) {
-  try {
-    // Query Mastra's threads table using raw SQL since we don't have a Drizzle schema for it
-    const threads = await client.unsafe(`
-      SELECT
-        id,
-        "createdAt",
-        "updatedAt",
-        title,
-        "resourceId"
-      FROM mastra_threads
-      WHERE "resourceId" = $1
-      ORDER BY "updatedAt" DESC
-      LIMIT $2
-    `, [id, limit]);
-
-    return threads.map((thread: any) => ({
-      id: thread.id,
-      createdAt: thread.createdAt,
-      updatedAt: thread.updatedAt,
-      title: thread.title || 'Web Automation',
-      userId: thread.resourceId,
-      visibility: 'public' as const, // Mastra threads don't have visibility, default to public
-    }));
-  } catch (error) {
-    console.error('Failed to get Mastra threads:', error);
-    // Don't throw, just return empty array to gracefully degrade
-    return [];
   }
 }
 
@@ -361,79 +284,16 @@ export async function saveMessages({
 
 export async function getMessagesByChatId({ id }: { id: string }) {
   try {
-    const clientMessages = await db
+    return await db
       .select()
       .from(message)
       .where(eq(message.chatId, id))
       .orderBy(asc(message.createdAt));
-
-    // If no messages found, check if this is a Mastra thread
-    if (clientMessages.length === 0) {
-      const mastraMessages = await getMastraMessagesByThreadId({ threadId: id });
-      return mastraMessages;
-    }
-
-    return clientMessages;
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get messages by chat id',
     );
-  }
-}
-
-async function getMastraMessagesByThreadId({ threadId }: { threadId: string }) {
-  try {
-    const messages = await client.unsafe(`
-      SELECT
-        id,
-        thread_id as "chatId",
-        role,
-        content,
-        "createdAt"
-      FROM mastra_messages
-      WHERE thread_id = $1
-      ORDER BY "createdAt" ASC
-    `, [threadId]);
-
-    // Convert Mastra messages to client message format
-    return messages.map((msg: any) => {
-      const content = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
-
-      // Transform Mastra's tool-invocation format to client's tool-* format
-      const transformedParts = (content.parts || []).map((part: any) => {
-        // Mastra uses: { type: "tool-invocation", toolInvocation: { state, toolName, args, result } }
-        // Client expects: { type: "tool-{toolName}", toolCallId, state: "output-available", input, output }
-        if (part.type === 'tool-invocation' && part.toolInvocation) {
-          const { toolInvocation } = part;
-          const { toolName, toolCallId, args, result, state } = toolInvocation;
-
-          return {
-            type: `tool-${toolName}`,
-            toolCallId: toolCallId,
-            // Convert Mastra's "result" state to client's "output-available"
-            state: state === 'result' ? 'output-available' : 'input-available',
-            input: args,
-            output: result,
-          };
-        }
-
-        // Pass through other part types unchanged
-        return part;
-      });
-
-      return {
-        id: msg.id,
-        chatId: msg.chatId,
-        role: msg.role,
-        parts: transformedParts,
-        attachments: content.experimental_attachments || [],
-        createdAt: msg.createdAt,
-      };
-    });
-  } catch (error) {
-    console.error('Failed to get Mastra messages:', error);
-    return [];
   }
 }
 

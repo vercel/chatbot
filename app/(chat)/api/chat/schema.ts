@@ -22,8 +22,6 @@ export const postRequestBodySchema = z.object({
     parts: z.array(partSchema),
   }),
   selectedChatModel: z.enum([
-    'chat-model',
-    'chat-model-reasoning',
     'web-automation-model',
   ]),
   // Dev-only: overrides the actual LLM used without changing the routing logic.

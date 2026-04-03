@@ -2,7 +2,7 @@
 
 import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
@@ -22,9 +22,6 @@ import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
 import { BenefitApplicationsLanding } from './benefit-applications-landing';
 import { TokenUsageProvider } from '@/hooks/use-token-usage';
-
-// Feature flag for AI SDK agent vs Mastra (client-side)
-const useAiSdkAgent = process.env.NEXT_PUBLIC_USE_AI_SDK_AGENT === 'true';
 
 export type CheckpointData = { messageId: string; stepNumber: number; summary: string };
 
@@ -92,32 +89,17 @@ export function Chat({
     experimental_throttle: 100,
     generateId: generateUUID,
     transport: new DefaultChatTransport({
-      // Route based on feature flag: when AI SDK agent is enabled, use /api/chat for web automation
-      // Otherwise, use /api/mastra-proxy for backward compatibility
-      api:
-        initialChatModel === 'web-automation-model' && !useAiSdkAgent
-          ? '/api/mastra-proxy'
-          : '/api/chat',
+      api: '/api/chat',
       fetch: fetchWithErrorHandlers,
-      prepareSendMessagesRequest:
-        initialChatModel === 'web-automation-model' && !useAiSdkAgent
-          ? ({ messages, id, body }) => ({
-              body: {
-                messages,
-                threadId: id,
-                resourceId: session?.user?.id,
-                ...body,
-              },
-            })
-          : ({ messages, id, body }) => ({
-              body: {
-                id,
-                message: messages.at(-1),
-                selectedChatModel: initialChatModel,
-                selectedVisibilityType: visibilityType,
-                ...body,
-              },
-            }),
+      prepareSendMessagesRequest: ({ messages, id, body }) => ({
+        body: {
+          id,
+          message: messages.at(-1),
+          selectedChatModel: initialChatModel,
+          selectedVisibilityType: visibilityType,
+          ...body,
+        },
+      }),
     }),
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
@@ -192,30 +174,8 @@ export function Chat({
   // Keep ref in sync so onData closure always has latest messages
   messagesRef.current = messages;
 
-  // Custom stop function that sends stopChat action for web automation
   const stop = async () => {
-    // Always call the original stop to abort the stream
     originalStop();
-
-    // For web automation model using Mastra backend, also send stopChat action
-    // When using AI SDK agent, the AbortController handles stopping
-    if (initialChatModel === 'web-automation-model' && !useAiSdkAgent) {
-      try {
-        await fetch('/api/mastra-proxy', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'stopChat',
-            threadId: id,
-            resourceId: session?.user?.id,
-          }),
-        });
-      } catch (error) {
-        console.error('Error sending stopChat action:', error);
-      }
-    }
   };
 
   const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
@@ -247,44 +207,40 @@ export function Chat({
   const { setArtifact, artifact } = useArtifact();
   const [browserArtifactDismissed, setBrowserArtifactDismissed] = useState(false);
 
-  // Monitor messages for browser tool usage - only open artifact for new messages, not when navigating to existing chats
+  // Derive once — whether any message contains a browser tool call
+  const hasBrowserToolCall = useMemo(
+    () =>
+      messages.some((message) =>
+        message.parts?.some((part) => {
+          const partType = (part as any).type;
+          const toolName = (part as any).toolName;
+
+          if (
+            partType === 'tool-call' &&
+            (toolName === 'browser' ||
+              toolName?.startsWith('browser_') ||
+              toolName?.includes('_browser_'))
+          ) {
+            return true;
+          }
+
+          if (
+            partType === 'tool-browser' ||
+            partType?.startsWith('tool-browser_')
+          ) {
+            return true;
+          }
+
+          return false;
+        }),
+      ),
+    [messages],
+  );
+
+  // Open browser artifact when streaming starts and a browser tool call appears
   useEffect(() => {
-    // Only check for browser tool calls if we're actively streaming (new message being processed)
-    // This prevents artifacts from opening when just navigating to view an existing chat
-    if (status !== 'streaming') {
-      return;
-    }
+    if (status !== 'streaming') return;
 
-    const hasBrowserToolCall = messages.some(message =>
-      message.parts?.some(part => {
-        const partType = (part as any).type;
-        const toolName = (part as any).toolName;
-
-        // Check for tool-call type with browser-related toolName
-        // Supports: browser (AI SDK), browser_navigate, playwright_browser_*, mcp_playwright_browser_*, playwright.browser_*
-        if (partType === 'tool-call' &&
-            (toolName === 'browser' || // AI SDK agent browser tool
-             toolName?.startsWith('browser_') ||
-             toolName?.startsWith('playwright_browser') ||
-             toolName?.startsWith('mcp_playwright_browser') ||
-             toolName?.startsWith('playwright.browser_') ||
-             toolName?.includes('_browser_'))) {
-          return true;
-        }
-
-        // Check for tool- prefixed types (how tools appear in message parts)
-        if (partType === 'tool-browser' || // AI SDK agent browser tool
-            partType?.startsWith('tool-browser_') ||
-            partType?.startsWith('tool-playwright_browser') ||
-            partType?.startsWith('tool-mcp_playwright_browser') ||
-            partType?.startsWith('tool-playwright.browser_')) {
-          return true;
-        }
-
-        return false;
-      })
-    );
-    
     if (hasBrowserToolCall && !isArtifactVisible && !browserArtifactDismissed) {
       const userMessage = messages.find(msg => msg.role === 'user');
       const messageText = userMessage?.parts.find(part => part.type === 'text')?.text || 'Web Automation';
@@ -305,49 +261,23 @@ export function Chat({
         },
       });
     }
-  }, [messages, isArtifactVisible, browserArtifactDismissed, status, setArtifact]);
+  }, [hasBrowserToolCall, isArtifactVisible, browserArtifactDismissed, status, messages, setArtifact]);
 
   // Track when user manually closes the browser artifact
   useEffect(() => {
-    // If artifact was visible and now it's not, and we have browser tool calls, user dismissed it
-    if (!isArtifactVisible && !browserArtifactDismissed) {
-      const hasBrowserToolCall = messages.some(message =>
-        message.parts?.some(part => {
-          const partType = (part as any).type;
-          const toolName = (part as any).toolName;
-
-          // Supports: browser (AI SDK), browser_navigate, playwright_browser_*, mcp_playwright_browser_*, playwright.browser_*
-          return (partType === 'tool-call' &&
-                  (toolName === 'browser' || // AI SDK agent browser tool
-                   toolName?.startsWith('browser_') ||
-                   toolName?.startsWith('playwright_browser') ||
-                   toolName?.startsWith('mcp_playwright_browser') ||
-                   toolName?.startsWith('playwright.browser_') ||
-                   toolName?.includes('_browser_'))) ||
-                 (partType === 'tool-browser' || // AI SDK agent browser tool
-                  partType?.startsWith('tool-browser_') ||
-                  partType?.startsWith('tool-playwright_browser') ||
-                  partType?.startsWith('tool-mcp_playwright_browser') ||
-                  partType?.startsWith('tool-playwright.browser_'));
-        })
-      );
-
-      if (hasBrowserToolCall && initialChatModel === 'web-automation-model') {
-        setBrowserArtifactDismissed(true);
-      }
+    if (!isArtifactVisible && !browserArtifactDismissed && hasBrowserToolCall && initialChatModel === 'web-automation-model') {
+      setBrowserArtifactDismissed(true);
     }
-  }, [isArtifactVisible, browserArtifactDismissed, messages, initialChatModel]);
+  }, [isArtifactVisible, browserArtifactDismissed, hasBrowserToolCall, initialChatModel]);
 
-  // Reset dismissed state when messages change significantly (new automation request)
+  // Reset dismissed state when a new user message arrives
   useEffect(() => {
-    // If we have new messages and the last message is from user, reset dismissed state
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === 'user') {
         if (browserArtifactDismissed) {
           setBrowserArtifactDismissed(false);
         }
-        // Dispatch event to dismiss any UserActionConfirmation components
         window.dispatchEvent(new CustomEvent('new-user-message'));
       }
     }
