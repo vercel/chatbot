@@ -1,34 +1,37 @@
-<p align="center">
-  <img alt="Nava PBC" src="public/images/logo.png" width="200">
-</p>
+# Form-Filling Assistant
 
-<h1 align="center">ASP Form-Filling Assistant</h1>
+**An open-source AI tool that helps caseworkers navigate benefit portals and complete applications on behalf of clients.**
 
-<p align="center">
-  An AI-powered chatbot that helps users complete forms through intelligent conversation and browser automation.
-</p>
+Built by [Nava Labs](https://www.navapbc.com/labs/ai-tools-public-benefits), a division of [Nava PBC](https://www.navapbc.com).
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#architecture"><strong>Architecture</strong></a> ·
-  <a href="#getting-started"><strong>Getting Started</strong></a> ·
-  <a href="#connecting-to-neon-database"><strong>Database Setup</strong></a> ·
-  <a href="#connecting-to-an-external-api"><strong>API Integration</strong></a> ·
-  <a href="#browser-automation-with-kernel"><strong>Kernel</strong></a>
-</p>
+**[About](#about)** · **[Features](#features)** · **[Architecture](#architecture)** · **[Getting Started](#getting-started)** · **[Contributing](#contributing)** · **[License](#license)**
+
+---
+
+## About
+
+Benefit navigators and caseworkers spend significant time manually searching multiple databases, navigating benefit portals, and filling out application forms on behalf of the families they serve. This tool uses generative AI to automate that repetitive, time-consuming work — so caseworkers can focus on the people in front of them.
+
+The [Form-Filling Assistant](https://www.navapbc.com/labs/caseworker-ai-tools/form-filling-assistant) is a  part of Nava Labs' broader [Caseworker Empowerment Toolkit](https://www.navapbc.com/labs/caseworker-ai-tools).
+
+
+**Who this is for:**
+
+- **Caseworkers and benefit navigators** who help clients enroll in public benefit programs
+- **Government agencies and social services organizations** developing AI tools for their workforce
+- **Developers** looking to build or adapt AI-assisted casework tools for their context
 
 ---
 
 ## Features
 
-- **[Next.js](https://nextjs.org) App Router** — Server components, server actions, and advanced routing
-- **[AI SDK](https://sdk.vercel.ai/docs)** — Unified API for generating text, structured objects, and tool calls with LLMs
-- **Multi-Model Support** — OpenAI, Anthropic, Google, and xAI model providers
-- **Browser Automation** — AI-driven form filling via remote browser control
-- **[shadcn/ui](https://ui.shadcn.com)** — Accessible component primitives from [Radix UI](https://radix-ui.com) styled with [Tailwind CSS](https://tailwindcss.com)
-- **[Auth.js](https://authjs.dev)** — Authentication with Google OAuth, Microsoft Entra ID, and credentials
-- **[Neon Serverless Postgres](https://neon.tech)** — Chat history, user data, and document persistence via [Drizzle ORM](https://orm.drizzle.team)
-- **Shared Links** — Share chat sessions publicly via [Upstash Redis](https://upstash.com)-backed tokens
+- **Agentic form-filling** — autonomously navigates benefit portals and populates application forms based on client information
+- **Database lookup** — searches within databases to surface relevant client information
+- **Caseworker oversight** — all actions are reviewable and editable before submission; the caseworker approves every step
+- **Conversational interface** — chat-based UI built on [Next.js](https://nextjs.org) and [shadcn/ui](https://ui.shadcn.com) with accessible components from [Radix UI](https://radix-ui.com) styled with [Tailwind CSS](https://tailwindcss.com)
+- **Flexible AI model support** — works with multiple LLM providers via Vertex AI 
+- **Secure authentication** — session-based authentication with Google OAuth, Microsoft Entra ID through [Auth.js](https://authjs.dev)
+- **Persistent chat history** — stores sessions using [Neon Serverless Postgres](https://vercel.com/marketplace/neon) via [Drizzle ORM](https://orm.drizzle.team)
 
 ## Architecture
 
@@ -321,3 +324,27 @@ KERNEL_API_KEY=your-kernel-api-key
 | `ENVIRONMENT` | Optional | `dev`, `prod`, or `preview-*` |
 
 See [`.env.example`](.env.example) for the full list of configurable variables.
+
+## Contributing
+
+We welcome contributions from the community — whether you're fixing a bug, suggesting a feature, or improving documentation.
+
+Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request. All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+For security-related issues, please review our [Security Policy](SECURITY.md) before disclosing publicly.
+
+---
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE). You are free to use, modify, and distribute this software in accordance with the license terms.
+
+---
+
+## About Nava
+
+[Nava PBC](https://www.navapbc.com) partners with government agencies to design and build simple, effective digital services. As a public benefit corporation, we're accountable to our mission: making it easier for people to access the services they need.
+
+[Nava Labs](https://www.navapbc.com/labs) is our philanthropically-funded R&D division, focused on prototyping systems changes in government programs and advocating for their adoption. Our AI tools for public benefits are developed in partnership with caseworkers, community organizations, and the families they serve.
+
+Learn more: [navapbc.com/labs/ai-tools-public-benefits](https://www.navapbc.com/labs/ai-tools-public-benefits)
