@@ -1,6 +1,11 @@
-# ASP Form-Filling Assistant — User Guide
+# Nava Form-Filling Assistant — User Guide
 
-A guide for users of the ASP Form-Filling Assistant, an AI-powered tool that helps fill out benefit application forms on the web.
+A guide for users of the Nava Form-Filling Assistant, an AI-powered tool that helps fill out benefit application forms on the web.
+
+## Why this tool? 
+Frontline caseworkers in human services help clients navigate complex, duplicative applications across fragmented benefit programs. This administrative burden contributes to burnout, slows access to services, and limits time for meaningful client engagement. To address this challenge, we developed and deployed an agentic AI-powered form-filling tool.
+
+Co-designed through iterative testing with frontline staff, the tool automates time-intensive steps in benefit enrollment. It retrieves existing case management data, identifies missing information, and completes applications across multiple programs simultaneously within a live browser. Caseworkers remain in control—able to monitor, redirect, review, and approve all outputs in real-time prior to submission—ensuring a human-in-the-loop approach that prioritizes transparency, accountability, and trust.
 
 ---
 
@@ -13,11 +18,11 @@ A guide for users of the ASP Form-Filling Assistant, an AI-powered tool that hel
 - [Gap Analysis](#gap-analysis)
 - [Reviewing and Confirming Submissions](#reviewing-and-confirming-submissions)
 - [Chat History](#chat-history)
-- [Sharing Sessions](#sharing-sessions)
-- [Message Feedback](#message-feedback)
 - [Tips & Best Practices](#tips--best-practices)
 
 ---
+
+
 
 ## Signing In
 
@@ -25,7 +30,6 @@ The application supports multiple ways to sign in:
 
 - **Google** — Use your Google account
 - **Microsoft** — Use your Microsoft organizational account (Entra ID / Azure AD)
-- **Email & Password** — Use credentials provided by your administrator
 
 Your administrator may restrict sign-ins to specific email domains. If you receive an error during login, confirm your email address is on the approved list.
 
@@ -48,11 +52,11 @@ On mobile devices, the sidebar is hidden by default. Tap the menu icon to open i
 
 There are two ways to begin:
 
-1. **Type a request** — Describe what form you need help filling out. Include the participant's name or ID, the program they're applying for, and the website URL.
+1. **Plug in your ID and select an application from the drop down** — Include the participant's name or ID and select the program they're applying for from the drop down menu.
 
-   Example: *"Help participant Elodi Thomas apply for WIC at ruhealth.org"*
+2. **Type a request** — Describe what form you need help filling out. Include the participant's ID, the program they're applying for, and the website URL.
 
-2. **Use a suggested action** — When starting a new session, you may see example prompts you can click to get started quickly. These are pre-configured with sample participants and applications.
+   Example: *"Help participant ID 123456 apply for WIC at https://www.ruhealth.org/appointments/apply-4-wic-form#"*
 
 ---
 
@@ -66,7 +70,7 @@ Once you describe the task, the AI assistant takes over the form-filling process
 
 3. **Form interaction** — The assistant can:
    - Navigate to websites and follow links
-   - Fill in text fields (names, addresses, dates, SSNs, etc.)
+   - Fill in text fields (names, addresses, dates, etc.)
    - Select options from dropdowns
    - Check and uncheck boxes
    - Click buttons to advance through multi-step forms
@@ -93,51 +97,25 @@ This ensures no required fields are left blank or filled with incorrect data.
 The assistant will **always ask for your confirmation before submitting any form**. You remain in control throughout the process:
 
 - Review the filled form in the live browser view before confirming
-- Ask the assistant to make corrections if anything looks wrong
+- Ask the assistant to make corrections if anything looks wrong or make edits directly 
 - Stop the process at any time by clicking the **Stop** button
 
-Never assume a form has been submitted without your explicit approval.
+Note: Never assume a form has been submitted, the assistant has been configured to not submit the form itself. 
 
 ---
 
 ## Chat History
 
-Your past sessions are listed in the sidebar, grouped by date:
-
-- **Today**
-- **Yesterday**
-- **Last Week**
-- **Last Month**
-- **Older**
+Your past sessions are listed in the sidebar, ordered by date
 
 Scroll down in the sidebar to load more sessions. To delete a session, hover over it and click the delete option.
 
 ---
 
-## Sharing Sessions
-
-You can share session content with colleagues using shared links:
-
-- Shared links are generated as short, encrypted URLs
-- Links expire after a set time period
-- Recipients must sign in to view the shared content
-- When someone opens a shared link, the content loads into their chat automatically
-
-This is useful for handing off an in-progress application or sharing results with a team member.
-
----
-
-## Message Feedback
-
-You can provide feedback on the assistant's responses by clicking the thumbs-up or thumbs-down icons that appear when you hover over a message. This feedback helps improve the quality of the assistant over time.
-
----
-
 ## Tips & Best Practices
 
-- **Be specific** — Include the participant's name or ID, the benefit program, and the website URL when starting a session.
+- **Be specific** — Include the participant's ID, the benefit program, and the website URL when starting a session.
 - **Watch the browser** — Follow along in the live browser view so you can catch any issues early.
 - **Respond to gap analysis** — When the assistant reports missing information, provide it promptly so the form can be completed accurately.
-- **Review before submitting** — Always check the filled form in the browser view before confirming submission.
-- **One form at a time** — Start a new session for each form or application to keep things organized.
-- **Report issues** — Use the thumbs-down button on any response that seems incorrect so the team can improve the assistant.
+- **Review before submitting** — Always check the filled form in the take control view before confirming submission.
+- **Report issues** — Send feedback to the Nava team inbox.
