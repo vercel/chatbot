@@ -1,11 +1,13 @@
 # Nava Form-Filling Assistant — User Guide
 
-A guide for users of the Nava Form-Filling Assistant, an AI-powered tool that helps fill out benefit application forms on the web.
+A guide for users of the Form-Filling Assistant, an AI-powered tool that helps fill out benefit application forms on the web.
 
-## Why this tool? 
-Frontline caseworkers in human services help clients navigate complex, duplicative applications across fragmented benefit programs. This administrative burden contributes to burnout, slows access to services, and limits time for meaningful client engagement. To address this challenge, we developed and deployed an agentic AI-powered form-filling tool.
+## Why this matters
+Many low-income families do not get access to critical public benefits, struggling to navigate and complete complex multi-portal requirements. In 2022, American families left $228 billion in unclaimed benefits across 7 major programs. Current AI tools help with eligibility discovery but stop short of the most time-intensive challenge: actually completing applications across multiple benefits programs.
 
-Co-designed through iterative testing with frontline staff, the tool automates time-intensive steps in benefit enrollment. It retrieves existing case management data, identifies missing information, and completes applications across multiple programs simultaneously within a live browser. Caseworkers remain in control—able to monitor, redirect, review, and approve all outputs in real-time prior to submission—ensuring a human-in-the-loop approach that prioritizes transparency, accountability, and trust.
+This tool supports caseworkers with this laborious task — allowing them to focus more time and energy on the human element of helping clients.
+
+[Learn more about the Form-Filling Assistant](https://www.navapbc.com/labs/caseworker-ai-tools/form-filling-assistant) and other AI products within the [Caseworker Empowerment Toolkit](https://www.navapbc.com/labs/caseworker-ai-tools) from [Nava Labs](https://www.navapbc.com/labs).   
 
 ---
 
