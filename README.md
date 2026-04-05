@@ -1,5 +1,5 @@
 <a href="https://chat.vercel.ai/">
-  <img alt="Chatbot" src="app/(chat)/opengraph-image.png">
+  <img alt="Catbot" src="app/(chat)/opengraph-image.png">
   <h1 align="center">Chatbot</h1>
 </a>
 
