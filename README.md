@@ -35,36 +35,21 @@ The [Form-Filling Assistant](https://www.navapbc.com/labs/caseworker-ai-tools/fo
 
 ## Architecture
 
-```
-+-----------------------------------------------------------+
-|                         Client                            |
-|                      (Next.js App)                        |
-|                                                           |
-|  +--------------+  +--------------+  +----------------+  |
-|  | Landing      |  | Auth         |  | Chat           |  |
-|  | Page         |  | (Login/      |  | Interface      |  |
-|  |              |  |  Register)   |  | & Documents    |  |
-|  +--------------+  +--------------+  +-------+--------+  |
-|                                              |            |
-|  +-------------------------------------------+--------+  |
-|  |              API Routes (Next.js)                   |  |
-|  |  /api/chat  /api/link  /api/browser-stream  ...     |  |
-|  +------+-----------+--------------+-------------------+  |
-|         |           |              |                      |
-+---------+-----------+--------------+----------------------+
-          |           |              |
-   +------+---+ +-----+----+ +------+------+
-   | AI       | | Neon     | | External    |
-   | Providers| | Postgres | | APIs        |
-   | (LLMs)   | | (DB)     | |             |
-   +-----+----+ +----------+ +------+------+
-         |                           |
-   +-----+--------+          +------+------+
-   | Browser      |          | Upstash     |
-   | Automation   |          | Redis       |
-   | (Kernel.sh)  |          | (Shared     |
-   |              |          |  Links)     |
-   +--------------+          +-------------+
+```mermaid
+graph LR
+    User([User]) --> UI
+
+    subgraph App["Next.js Application"]
+        UI["Chat Interface"] --> Routes["API Routes"]
+        Routes --> Agent["AI Agent"]
+    end
+
+    Agent --> LLMs["AI Providers<br/>Anthropic · OpenAI<br/>Vertex AI · xAI"]
+    Agent --> Browser["Kernel.sh<br/>Remote Browser"]
+    Agent --> ExtAPI["External API"]
+    Routes --> DB["Neon Postgres"]
+    Routes --> Redis["Upstash Redis"]
+    Browser -.->|live stream| UI
 ```
 
 ## Getting Started
@@ -267,20 +252,18 @@ export async function GET(request: Request) {
 
 ### Architecture
 
-```
-+----------------+    commands     +----------------+    CDP/WS     +----------------+
-| AI Agent       | -------------> | agent-browser  | -----------> | Kernel.sh      |
-| (LLM +        |                 | (Playwright)   |              | (Remote        |
-|  browser       | <------------- |                | <----------- |  Chromium)     |
-|  tool)         |    snapshots    +----------------+  page state  +-------+--------+
-+----------------+                                                        |
-                                                                          | stream
-                                                                          v
-                                                                 +----------------+
-                                                                 | User's         |
-                                                                 | Browser        |
-                                                                 | (Live View)    |
-                                                                 +----------------+
+```mermaid
+sequenceDiagram
+    participant User as User's Browser<br/>(Live View)
+    participant Agent as AI Agent<br/>(LLM + Browser Tool)
+    participant AB as agent-browser<br/>(Playwright)
+    participant K as Kernel.sh<br/>(Remote Chromium)
+
+    Agent->>AB: commands (navigate, click, fill)
+    AB->>K: CDP / WebSocket
+    K-->>AB: page state
+    AB-->>Agent: snapshots
+    K-->>User: live stream
 ```
 
 ### Configuration
