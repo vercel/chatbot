@@ -1,0 +1,33 @@
+{
+  "name": "form-filling-assistant",
+  "version": "1.0.0",
+  "description": "An open-source AI tool that helps caseworkers navigate benefit portals and complete applications on behalf of clients. Built by Nava Labs as part of a broader suite of AI tools for public benefits.",
+  "status": "Production",
+  "permissions": {
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "URL": "https://github.com/navapbc/ai-chatbot/blob/main/LICENSE"
+      }
+    ],
+    "usageType": ["openSource"]
+  },
+  "organization": "Nava",
+  "repositoryURL": "https://github.com/navapbc/ai-chatbot",
+  "repositoryVisibility": "public",
+  "vcs": "git",
+  "reuseFrequency": {
+    "forks": 0
+  },
+  "languages": ["Node.js", "React"],
+  "maintenance": "internal",
+  "SBOM": "https://github.com/navapbc/ai-chatbot/network/dependencies",
+  "date": {
+    "created": "",
+    "lastModified": "",
+    "metadataLastUpdated": ""
+  },
+  "tags": ["public-benefits"],
+  "contact": {
+    "email": "labs@navapbc.com"
+}
