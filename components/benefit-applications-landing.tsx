@@ -16,7 +16,7 @@ import { useModelOverride } from '@/hooks/use-model-override';
 const PROGRAMS = [
   { id: 'wic', name: 'Apply 4 WIC Form', website: 'https://www.ruhealth.org/appointments/apply-4-wic-form' },
   { id: 'ihss', name: 'In-Home Supportive Services (IHSS): Intake Application', website: 'https://riversideihss.org/IntakeApp' },
-  { id: 'benefits-cal', name: 'Benefits Cal', website: 'https://benefitscal.com/' },
+  { id: 'benefits-cal', name: 'BenefitsCal', website: 'https://benefitscal.com/' },
   { id: 'head-start', name: 'RCOE Early Head Start: 0-3; Head Start: 3-5', website: 'https://app.informedk12.com/link_campaigns/rcoe-head-start-ehs-application-english-electronic-form?token=RX3jMrVUfWLz3aQnjpiQpseu' },
   { id: 'nurse-family-partnership', name: 'Nurse-Family Partnership', website: 'https://forms.office.com/Pages/ResponsePage.aspx?id=yqoVt4-WGUe7BO0xcOCKaQVow3g6-R9Mh0F8VizNQzhUQ1hCNENFTFBMOVg4SElRSldIWk5BRUkxUi4u' },
   { id: 'pregnancy-planning', name: 'RCOE Pregnancy Planning', website: 'https://secureweb.rcoe.us/ONLINEREF/' },
