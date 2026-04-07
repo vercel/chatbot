@@ -1,5 +1,6 @@
 import { generateText, type ModelMessage } from 'ai';
 import { prepareStepModel } from '@/lib/ai/providers';
+import { WORKING_MEMORY_PREFIX } from '@/lib/ai/working-memory';
 
 const MODEL_CONTEXT_WINDOW = 200_000; // claude-sonnet-4-6
 const COMPACT_THRESHOLD_PCT = 0.75;
@@ -9,18 +10,43 @@ const SUMMARY_PREFIX = '[Session summary — earlier context compacted]';
 
 const COMPACTION_SYSTEM_PROMPT =
   'You are creating a session handoff document for a benefits form-filling agent. ' +
-  'Extract and preserve ALL of the following — be explicit and complete:\n' +
-  '- PARTICIPANT DATA: Every field-value pair from the database (Apricot record) and caseworker. Format as "Field: Value" lines.\n' +
+  'Participant field-value data is preserved separately in working memory — ' +
+  'do NOT list individual participant field values in the summary.\n\n' +
+  'Extract and preserve the following from the transcript:\n' +
   '- SESSION STATE: The current form name, URL, and which page/step we are on.\n' +
   '- COMPLETED FIELDS: Every field that has already been filled and its value.\n' +
   '- PENDING FIELDS: Every field still needing input.\n' +
   '- CASEWORKER INPUTS: Every answer or correction the caseworker provided.\n' +
   '- GAP ANALYSIS: Every field that has been identified as a gap and the reason why.\n' +
   '- GAP ANSWERS: Every answer or correction the caseworker provided to a gap analysis.\n' +
-  'Do NOT summarize participant data — list every field and value explicitly. ' +
+  '- KEY DECISIONS: Any decisions or clarifications made during the session.\n\n' +
+  'CRITICAL RULES:\n' +
+  '- Do NOT invent, infer, or fabricate any data that is not explicitly present in the transcript.\n' +
+  '- If a field value appears truncated or unclear, write [UNKNOWN] rather than guessing.\n' +
+  '- Do NOT include participant PII (names, DOB, SSN, address) — it is in working memory.\n' +
   'Do NOT include browser snapshot content or raw HTML.';
 
 const log = (...args: unknown[]) => console.log('[compressor]', ...args);
+
+/**
+ * Detect and extract a working memory message from the beginning of the
+ * message list. The working memory message is always the first message and
+ * starts with WORKING_MEMORY_PREFIX. It must be excluded from compaction
+ * so the model always has ground-truth participant data.
+ */
+function extractWorkingMemory(messages: ModelMessage[]): {
+  wmMessage: ModelMessage | null;
+  rest: ModelMessage[];
+} {
+  if (
+    messages.length > 0 &&
+    typeof messages[0].content === 'string' &&
+    messages[0].content.startsWith(WORKING_MEMORY_PREFIX)
+  ) {
+    return { wmMessage: messages[0], rest: messages.slice(1) };
+  }
+  return { wmMessage: null, rest: messages };
+}
 
 /**
  * Flatten a ModelMessage into a plain-text line for the transcript.
@@ -147,11 +173,14 @@ export async function preCompactMessages(
   messages: ModelMessage[],
   onCompacting?: () => void,
 ): Promise<{ messages: ModelMessage[]; compacted: boolean; summary?: string }> {
-  const estimatedTokens = estimateTokens(messages);
+  // Extract working memory — it must never be compacted
+  const { wmMessage, rest } = extractWorkingMemory(messages);
+
+  const estimatedTokens = estimateTokens(rest);
   const usedPct = estimatedTokens / MODEL_CONTEXT_WINDOW;
 
   log(
-    `pre-compact check — ${messages.length} msgs, ` +
+    `pre-compact check — ${rest.length} msgs (${wmMessage ? '+WM' : 'no WM'}), ` +
     `~${estimatedTokens} estimated tokens, ` +
     `${(usedPct * 100).toFixed(1)}% of ${MODEL_CONTEXT_WINDOW} context window`
   );
@@ -160,15 +189,18 @@ export async function preCompactMessages(
     return { messages, compacted: false };
   }
 
-  const result = await summarizeMessages(messages, 'pre-compact: ', onCompacting);
+  const result = await summarizeMessages(rest, 'pre-compact: ', onCompacting);
   if (!result) {
     return { messages, compacted: false };
   }
 
   const summaryMessage = buildSummaryMessage(result.summary);
-  log(`pre-compact done — returning ${1 + result.recentMessages.length} msgs`);
+  log(`pre-compact done — returning ${1 + result.recentMessages.length} msgs${wmMessage ? ' +WM' : ''}`);
+  const compactedMessages = wmMessage
+    ? [wmMessage, summaryMessage, ...result.recentMessages]
+    : [summaryMessage, ...result.recentMessages];
   return {
-    messages: [summaryMessage, ...result.recentMessages],
+    messages: compactedMessages,
     compacted: true,
     summary: result.summary,
   };
@@ -199,18 +231,25 @@ export function createMessageCompressor() {
     onCompacting?: () => void,
   ): Promise<{ messages: ModelMessage[]; compacted: boolean; summary?: string }> {
 
+    // --- Extract working memory — never compact it ---
+    const { wmMessage, rest: rawMessages } = extractWorkingMemory(stepMessages);
+
     // --- Re-apply prior compaction ---
     // The SDK gives us the full original messages every time. If we've
     // already compacted, strip the summarized prefix and prepend our summary.
-    let effectiveMessages = stepMessages;
+    let effectiveMessages = rawMessages;
     if (storedSummaryMessage && summarizedCount > 0) {
-      const newMessages = stepMessages.slice(summarizedCount);
+      const newMessages = rawMessages.slice(summarizedCount);
       effectiveMessages = [storedSummaryMessage, ...newMessages];
       log(
         `re-applied prior compaction — stripped ${summarizedCount} original msgs, ` +
         `${effectiveMessages.length} effective msgs (1 summary + ${newMessages.length} new)`
       );
     }
+
+    // Helper: prepend working memory back to final result
+    const withWm = (msgs: ModelMessage[]) =>
+      wmMessage ? [wmMessage, ...msgs] : msgs;
 
     const usedPct = (lastInputTokens ?? 0) / MODEL_CONTEXT_WINDOW;
 
@@ -223,24 +262,24 @@ export function createMessageCompressor() {
         `skip — stale inputTokens after compaction, ` +
         `${effectiveMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% (stale)`
       );
-      return { messages: effectiveMessages, compacted: false };
+      return { messages: withWm(effectiveMessages), compacted: false };
     }
 
     log(
-      `step check — ${effectiveMessages.length} msgs (raw ${stepMessages.length}), ` +
+      `step check — ${effectiveMessages.length} msgs (raw ${stepMessages.length}${wmMessage ? ', +WM' : ''}), ` +
       `inputTokens=${lastInputTokens ?? 'n/a'}, ` +
       `${(usedPct * 100).toFixed(1)}% of ${MODEL_CONTEXT_WINDOW} context window, ` +
       `threshold=${(COMPACT_THRESHOLD_PCT * 100).toFixed(0)}%`
     );
 
     if (usedPct < COMPACT_THRESHOLD_PCT) {
-      return { messages: effectiveMessages, compacted: false };
+      return { messages: withWm(effectiveMessages), compacted: false };
     }
 
     const result = await summarizeMessages(effectiveMessages, '', onCompacting);
     if (!result) {
       justCompacted = true; // skip next stale check
-      return { messages: effectiveMessages, compacted: false };
+      return { messages: withWm(effectiveMessages), compacted: false };
     }
 
     const newSummaryMessage = buildSummaryMessage(result.summary);
@@ -262,10 +301,10 @@ export function createMessageCompressor() {
 
     log(
       `compaction persisted — summarizedCount=${summarizedCount}, ` +
-      `returning ${1 + result.recentMessages.length} msgs`
+      `returning ${1 + result.recentMessages.length} msgs${wmMessage ? ' +WM' : ''}`
     );
 
     justCompacted = true;
-    return { messages: [newSummaryMessage, ...result.recentMessages], compacted: true, summary: result.summary };
+    return { messages: withWm([newSummaryMessage, ...result.recentMessages]), compacted: true, summary: result.summary };
   };
 }
