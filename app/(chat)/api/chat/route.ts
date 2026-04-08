@@ -36,7 +36,7 @@ import { actionLabel } from '@/lib/ai/tools/action-label';
 import { getWebAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
 import { loadSkill } from '@/lib/ai/tools/load-skill';
 import { readSkillFile } from '@/lib/ai/tools/read-skill-file';
-import { createMessageCompressor, preCompactMessages } from '@/lib/ai/context-compression';
+import { createMessageCompressor } from '@/lib/ai/context-compression';
 
 export const maxDuration = 300; // 5 minutes for web automation tasks
 
@@ -164,34 +164,12 @@ export async function POST(request: Request) {
 
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
-        // Pre-compact messages loaded from DB if they exceed the context
-        // window threshold. This handles the cross-request case where a
-        // previous request compacted mid-stream but saved raw messages.
         const initialModelMessages = await convertToModelMessages(uiMessages);
-        const { messages: preCompacted, compacted: wasPreCompacted, summary: preCompactSummary } =
-          await preCompactMessages(initialModelMessages, () => {
-            dataStream.write({
-              type: 'data-compacting',
-              data: { timestamp: Date.now() },
-              transient: true,
-            });
-          });
-
-        if (wasPreCompacted) {
-          dataStream.write({
-            type: 'data-checkpoint',
-            data: {
-              stepNumber: 0,
-              inputTokens: 0,
-              timestamp: Date.now(),
-              summary: preCompactSummary,
-            },
-            transient: true,
-          });
-        }
 
         // One compressor instance per request; its cache persists across all
         // prepareStep calls so generateText is not re-fired on every step.
+        // Compaction triggers on step 1+ using SDK-reported inputTokens
+        // (step 0 has no prior usage data, so it runs uncompacted).
         const compressStep = createMessageCompressor();
 
         const activeModel = resolvedModelOverride
@@ -201,7 +179,7 @@ export async function POST(request: Request) {
         const result = streamText({
           model: activeModel,
           system: getWebAutomationSystemPrompt(),
-          messages: preCompacted,
+          messages: initialModelMessages,
           tools: {
             ...apricotTools,
             gapAnalysis,

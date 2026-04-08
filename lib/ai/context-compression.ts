@@ -1,4 +1,4 @@
-import { generateText, type ModelMessage } from 'ai';
+import { generateText, pruneMessages, type ModelMessage } from 'ai';
 import { prepareStepModel } from '@/lib/ai/providers';
 import { WORKING_MEMORY_PREFIX, buildWorkingMemoryMessage } from '@/lib/ai/working-memory';
 import { updateWorkingMemory } from '@/lib/ai/tools/working-memory';
@@ -60,47 +60,21 @@ function flattenMessage(msg: ModelMessage): string {
 
   const parts = (msg.content as any[]).map((part) => {
     if (!part) return '';
-    // Prune browser snapshots/screenshots — they're huge and useless in summaries
+    // Browser tool results: keep status, strip the heavy output payload
     if (part.type === 'tool-result' && part.toolName === 'browser') {
-      const r = part.result;
-      if (r?.snapshot || r?.accessibility_tree || r?.screenshot) return '[browser output: pruned]';
+      const r = part.result ?? part.output ?? {};
+      const status = (r as any)?.success ? 'success' : `error: ${(r as any)?.error ?? 'unknown'}`;
+      return `[browser result: ${status}]`;
+    }
+    // Browser tool calls: keep action + key param for context
+    if (part.type === 'tool-call' && part.toolName === 'browser') {
+      const a = part.args ?? {};
+      return `[browser: ${a.action ?? '?'}${a.selector ? ' ' + a.selector : a.url ? ' ' + a.url : ''}]`;
     }
     const s = typeof part === 'string' ? part : (part.text ?? JSON.stringify(part) ?? '');
     return String(s);
   });
   return `[${role}]: ${parts.join('\n')}`;
-}
-
-/**
- * Estimate token count from messages using a rough chars-per-token heuristic.
- * Claude averages ~3.5-4 chars per token; we use 3.5 to be conservative.
- * Skips browser snapshots (same as flattenMessage) to avoid massive JSON.stringify allocations.
- */
-function estimateTokens(messages: ModelMessage[]): number {
-  let totalChars = 0;
-  for (const msg of messages) {
-    if (typeof msg.content === 'string') {
-      totalChars += msg.content.length;
-    } else if (Array.isArray(msg.content)) {
-      for (const part of msg.content as any[]) {
-        if (!part) continue;
-        // Skip browser snapshots — same pruning as flattenMessage
-        if (part.type === 'tool-result' && part.toolName === 'browser') {
-          const r = part.result;
-          if (r?.snapshot || r?.accessibility_tree || r?.screenshot) {
-            totalChars += 50; // fixed budget for pruned output
-            continue;
-          }
-        }
-        if (typeof part === 'string') {
-          totalChars += part.length;
-        } else {
-          totalChars += (part.text?.length ?? JSON.stringify(part)?.length ?? 0);
-        }
-      }
-    }
-  }
-  return Math.ceil(totalChars / 3.5);
 }
 
 /**
@@ -199,55 +173,6 @@ function buildSummaryMessage(summary: string): ModelMessage {
 }
 
 /**
- * Pre-compact messages loaded from the database before passing to streamText.
- *
- * When a previous request compacted messages mid-stream, the raw messages
- * still get saved to the DB. On the next request, loading them all would
- * exceed the context window. This function runs the same summarization
- * up-front so the initial streamText call stays within limits.
- */
-export async function preCompactMessages(
-  messages: ModelMessage[],
-  onCompacting?: () => void,
-): Promise<{ messages: ModelMessage[]; compacted: boolean; summary?: string }> {
-  // Extract any existing working memory — it must never be compacted
-  const { wmMessage, rest } = extractWorkingMemory(messages);
-
-  const estimatedTokens = estimateTokens(rest);
-  const usedPct = estimatedTokens / MODEL_CONTEXT_WINDOW;
-
-  log(
-    `pre-compact check — ${rest.length} msgs (${wmMessage ? '+WM' : 'no WM'}), ` +
-    `~${estimatedTokens} estimated tokens, ` +
-    `${(usedPct * 100).toFixed(1)}% of ${MODEL_CONTEXT_WINDOW} context window`
-  );
-
-  if (usedPct < COMPACT_THRESHOLD_PCT) {
-    return { messages, compacted: false };
-  }
-
-  const result = await summarizeMessages(rest, 'pre-compact: ', onCompacting);
-  if (!result) {
-    return { messages, compacted: false };
-  }
-
-  const summaryMessage = buildSummaryMessage(result.summary);
-  // Use freshly extracted working memory, or fall back to existing one
-  const effectiveWm = result.workingMemory
-    ? buildWorkingMemoryMessage(result.workingMemory)
-    : wmMessage;
-  log(`pre-compact done — returning ${1 + result.recentMessages.length} msgs${effectiveWm ? ' +WM' : ''}`);
-  const compactedMessages = effectiveWm
-    ? [effectiveWm, summaryMessage, ...result.recentMessages]
-    : [summaryMessage, ...result.recentMessages];
-  return {
-    messages: compactedMessages,
-    compacted: true,
-    summary: result.summary,
-  };
-}
-
-/**
  * Returns a stateful compression function for a single streamText request.
  *
  * IMPORTANT: The AI SDK's prepareStep does NOT persist message overrides
@@ -291,7 +216,20 @@ export function createMessageCompressor() {
     const prepend = (msgs: ModelMessage[]) =>
       wm ? [wm, ...msgs] : msgs;
 
-    const usedPct = (lastInputTokens ?? 0) / MODEL_CONTEXT_WINDOW;
+    // Step 0: no prior inputTokens available. Prune browser tool content
+    // from older messages to avoid exceeding the main model's context window
+    // on cross-request reloads with large message histories.
+    if (lastInputTokens === undefined) {
+      const pruned = pruneMessages({
+        messages: effectiveMessages,
+        toolCalls: [{ type: 'before-last-2-messages', tools: ['browser'] }],
+        emptyMessages: 'remove',
+      });
+      log(`step 0 — pruned browser tools: ${effectiveMessages.length} → ${pruned.length} msgs`);
+      return { messages: prepend(pruned), compacted: false };
+    }
+
+    const usedPct = lastInputTokens / MODEL_CONTEXT_WINDOW;
 
     if (justCompacted) {
       justCompacted = false;
