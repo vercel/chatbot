@@ -37,8 +37,6 @@ import { getWebAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
 import { loadSkill } from '@/lib/ai/tools/load-skill';
 import { readSkillFile } from '@/lib/ai/tools/read-skill-file';
 import { createMessageCompressor, preCompactMessages } from '@/lib/ai/context-compression';
-import { updateWorkingMemory } from '@/lib/ai/tools/working-memory';
-import { reconstructWorkingMemory, buildWorkingMemoryMessage } from '@/lib/ai/working-memory';
 
 export const maxDuration = 300; // 5 minutes for web automation tasks
 
@@ -170,16 +168,8 @@ export async function POST(request: Request) {
         // window threshold. This handles the cross-request case where a
         // previous request compacted mid-stream but saved raw messages.
         const initialModelMessages = await convertToModelMessages(uiMessages);
-
-        // Inject working memory as first message if available.
-        // This survives compaction so the model always has ground-truth participant data.
-        const workingMemory = reconstructWorkingMemory(uiMessages);
-        const messagesWithMemory = workingMemory
-          ? [buildWorkingMemoryMessage(workingMemory), ...initialModelMessages]
-          : initialModelMessages;
-
         const { messages: preCompacted, compacted: wasPreCompacted, summary: preCompactSummary } =
-          await preCompactMessages(messagesWithMemory, () => {
+          await preCompactMessages(initialModelMessages, () => {
             dataStream.write({
               type: 'data-compacting',
               data: { timestamp: Date.now() },
@@ -217,7 +207,6 @@ export async function POST(request: Request) {
             gapAnalysis,
             formSummary,
             actionLabel,
-            updateWorkingMemory,
             browser: createBrowserTool(sessionId, session.user.id),
             loadSkill,
             readSkillFile,

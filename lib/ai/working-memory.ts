@@ -1,35 +1,7 @@
 import type { ModelMessage } from 'ai';
-import type { ChatMessage } from '@/lib/types';
 
 export const WORKING_MEMORY_PREFIX =
   '[WORKING MEMORY — Authoritative participant data for this session]';
-
-/**
- * Reconstruct working memory from the message history by finding the last
- * updateWorkingMemory tool invocation. Each call contains the full state
- * (replace semantics), so only the most recent one matters.
- */
-export function reconstructWorkingMemory(
-  messages: ChatMessage[],
-): Record<string, unknown> | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i];
-    if (msg.role !== 'assistant') continue;
-
-    for (let j = msg.parts.length - 1; j >= 0; j--) {
-      const part = msg.parts[j] as any;
-      if (
-        part.type === 'tool-updateWorkingMemory' &&
-        (part.state === 'output-available' ||
-          part.state === 'input-available')
-      ) {
-        return part.input ?? null;
-      }
-    }
-  }
-
-  return null;
-}
 
 /**
  * Build a synthetic user message containing the working memory JSON.

@@ -1,6 +1,7 @@
 import { generateText, type ModelMessage } from 'ai';
 import { prepareStepModel } from '@/lib/ai/providers';
-import { WORKING_MEMORY_PREFIX } from '@/lib/ai/working-memory';
+import { WORKING_MEMORY_PREFIX, buildWorkingMemoryMessage } from '@/lib/ai/working-memory';
+import { updateWorkingMemory } from '@/lib/ai/tools/working-memory';
 
 const MODEL_CONTEXT_WINDOW = 200_000; // claude-sonnet-4-6
 const COMPACT_THRESHOLD_PCT = 0.75;
@@ -64,9 +65,8 @@ function flattenMessage(msg: ModelMessage): string {
       const r = part.result;
       if (r?.snapshot || r?.accessibility_tree || r?.screenshot) return '[browser output: pruned]';
     }
-    // Everything else: just stringify and truncate
     const s = typeof part === 'string' ? part : (part.text ?? JSON.stringify(part) ?? '');
-    return String(s).slice(0, 500);
+    return String(s);
   });
   return `[${role}]: ${parts.join('\n')}`;
 }
@@ -104,14 +104,23 @@ function estimateTokens(messages: ModelMessage[]): number {
 }
 
 /**
- * Shared summarization: split messages into old + recent, summarize old via Sonnet.
+ * Shared summarization: split messages into old + recent, then run two
+ * parallel Haiku calls on the same transcript:
+ *   1. Compaction summary (session state, actions, decisions)
+ *   2. Working memory extraction (structured participant data via tool call)
+ *
  * Returns null on failure (caller should fall back to original messages).
  */
 async function summarizeMessages(
   messages: ModelMessage[],
   logPrefix: string,
   onCompacting?: () => void,
-): Promise<{ summary: string; recentMessages: ModelMessage[]; splitAt: number } | null> {
+): Promise<{
+  summary: string;
+  workingMemory: Record<string, unknown> | null;
+  recentMessages: ModelMessage[];
+  splitAt: number;
+} | null> {
   if (messages.length <= KEEP_RECENT) {
     log(`${logPrefix}over threshold but only ${messages.length} msgs (≤ ${KEEP_RECENT}), skipping`);
     return null;
@@ -132,29 +141,57 @@ async function summarizeMessages(
   onCompacting?.();
 
   const t0 = Date.now();
-  let summary: string;
-  try {
-    const result = await generateText({
+
+  // Run compaction summary and working memory extraction in parallel on Haiku
+  const [compactionResult, wmResult] = await Promise.all([
+    // 1. Compaction summary
+    generateText({
       model: prepareStepModel,
       maxOutputTokens: 4096,
       system: COMPACTION_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: `Summarize this session transcript:\n\n${transcript}` }],
-    });
-    summary = result.text;
-    log(`${logPrefix}Sonnet finishReason: ${result.finishReason}`);
-  } catch (err) {
-    log(`${logPrefix}Sonnet ERROR:`, err);
-    return null;
-  }
+    }).catch((err) => {
+      log(`${logPrefix}compaction ERROR:`, err);
+      return null;
+    }),
+
+    // 2. Working memory extraction via tool call
+    generateText({
+      model: prepareStepModel,
+      maxOutputTokens: 4096,
+      tools: { updateWorkingMemory },
+      toolChoice: { type: 'tool', toolName: 'updateWorkingMemory' },
+      system:
+        'Extract all participant data from this transcript. ' +
+        'Include data from database records and caseworker answers. ' +
+        'Only include data explicitly present — never fabricate.',
+      messages: [{ role: 'user', content: transcript }],
+    }).catch((err) => {
+      log(`${logPrefix}working memory ERROR:`, err);
+      return null;
+    }),
+  ]);
+
   const elapsed = Date.now() - t0;
-  log(`${logPrefix}summary done in ${elapsed}ms — summary length: ${summary.length} chars`);
 
-  if (!summary.trim()) {
-    log(`${logPrefix}ABORT — empty summary`);
+  // Process compaction result
+  const summary = compactionResult?.text?.trim();
+  if (!summary) {
+    log(`${logPrefix}ABORT — empty or failed compaction summary`);
     return null;
   }
+  log(`${logPrefix}compaction done in ${elapsed}ms — summary: ${summary.length} chars`);
 
-  return { summary, recentMessages, splitAt };
+  // Process working memory result
+  let workingMemory: Record<string, unknown> | null = null;
+  if (wmResult?.toolResults?.length) {
+    workingMemory = wmResult.toolResults[0].output as Record<string, unknown>;
+    log(`${logPrefix}working memory extracted — ${Object.keys(workingMemory).length} keys`);
+  } else {
+    log(`${logPrefix}working memory extraction failed or empty — continuing without`);
+  }
+
+  return { summary, workingMemory, recentMessages, splitAt };
 }
 
 function buildSummaryMessage(summary: string): ModelMessage {
@@ -173,7 +210,7 @@ export async function preCompactMessages(
   messages: ModelMessage[],
   onCompacting?: () => void,
 ): Promise<{ messages: ModelMessage[]; compacted: boolean; summary?: string }> {
-  // Extract working memory — it must never be compacted
+  // Extract any existing working memory — it must never be compacted
   const { wmMessage, rest } = extractWorkingMemory(messages);
 
   const estimatedTokens = estimateTokens(rest);
@@ -195,9 +232,13 @@ export async function preCompactMessages(
   }
 
   const summaryMessage = buildSummaryMessage(result.summary);
-  log(`pre-compact done — returning ${1 + result.recentMessages.length} msgs${wmMessage ? ' +WM' : ''}`);
-  const compactedMessages = wmMessage
-    ? [wmMessage, summaryMessage, ...result.recentMessages]
+  // Use freshly extracted working memory, or fall back to existing one
+  const effectiveWm = result.workingMemory
+    ? buildWorkingMemoryMessage(result.workingMemory)
+    : wmMessage;
+  log(`pre-compact done — returning ${1 + result.recentMessages.length} msgs${effectiveWm ? ' +WM' : ''}`);
+  const compactedMessages = effectiveWm
+    ? [effectiveWm, summaryMessage, ...result.recentMessages]
     : [summaryMessage, ...result.recentMessages];
   return {
     messages: compactedMessages,
@@ -223,6 +264,7 @@ export function createMessageCompressor() {
 
   // Persisted compaction state — survives across prepareStep calls
   let storedSummaryMessage: ModelMessage | null = null;
+  let storedWmMessage: ModelMessage | null = null;
   let summarizedCount = 0; // how many original messages were folded into the summary
 
   return async function compress(
@@ -232,11 +274,10 @@ export function createMessageCompressor() {
   ): Promise<{ messages: ModelMessage[]; compacted: boolean; summary?: string }> {
 
     // --- Extract working memory — never compact it ---
-    const { wmMessage, rest: rawMessages } = extractWorkingMemory(stepMessages);
+    const { wmMessage: incomingWm, rest: rawMessages } = extractWorkingMemory(stepMessages);
+    let wm = storedWmMessage ?? incomingWm;
 
     // --- Re-apply prior compaction ---
-    // The SDK gives us the full original messages every time. If we've
-    // already compacted, strip the summarized prefix and prepend our summary.
     let effectiveMessages = rawMessages;
     if (storedSummaryMessage && summarizedCount > 0) {
       const newMessages = rawMessages.slice(summarizedCount);
@@ -247,64 +288,56 @@ export function createMessageCompressor() {
       );
     }
 
-    // Helper: prepend working memory back to final result
-    const withWm = (msgs: ModelMessage[]) =>
-      wmMessage ? [wmMessage, ...msgs] : msgs;
+    const prepend = (msgs: ModelMessage[]) =>
+      wm ? [wm, ...msgs] : msgs;
 
     const usedPct = (lastInputTokens ?? 0) / MODEL_CONTEXT_WINDOW;
 
-    // After compaction the next step's inputTokens is stale (measured before
-    // we replaced messages). Skip one threshold check so the model sees
-    // compacted context and reports accurate usage.
     if (justCompacted) {
       justCompacted = false;
       log(
         `skip — stale inputTokens after compaction, ` +
         `${effectiveMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% (stale)`
       );
-      return { messages: withWm(effectiveMessages), compacted: false };
+      return { messages: prepend(effectiveMessages), compacted: false };
     }
 
     log(
-      `step check — ${effectiveMessages.length} msgs (raw ${stepMessages.length}${wmMessage ? ', +WM' : ''}), ` +
+      `step check — ${effectiveMessages.length} msgs (raw ${stepMessages.length}${wm ? ', +WM' : ''}), ` +
       `inputTokens=${lastInputTokens ?? 'n/a'}, ` +
       `${(usedPct * 100).toFixed(1)}% of ${MODEL_CONTEXT_WINDOW} context window, ` +
       `threshold=${(COMPACT_THRESHOLD_PCT * 100).toFixed(0)}%`
     );
 
     if (usedPct < COMPACT_THRESHOLD_PCT) {
-      return { messages: withWm(effectiveMessages), compacted: false };
+      return { messages: prepend(effectiveMessages), compacted: false };
     }
 
     const result = await summarizeMessages(effectiveMessages, '', onCompacting);
     if (!result) {
-      justCompacted = true; // skip next stale check
-      return { messages: withWm(effectiveMessages), compacted: false };
+      justCompacted = true;
+      return { messages: prepend(effectiveMessages), compacted: false };
     }
 
     const newSummaryMessage = buildSummaryMessage(result.summary);
 
-    // Persist compaction state so we can re-apply on next prepareStep call.
-    // summarizedCount tracks how many of the SDK's original messages are now
-    // folded into our summary.
     storedSummaryMessage = newSummaryMessage;
+    if (result.workingMemory) {
+      storedWmMessage = buildWorkingMemoryMessage(result.workingMemory);
+      wm = storedWmMessage;
+    }
     if (summarizedCount === 0) {
-      // First compaction: splitAt messages from the raw stepMessages
       summarizedCount = result.splitAt;
     } else {
-      // Re-compaction: the old portion of effectiveMessages had
-      // (splitAt) entries. The first one was our prior summary (not an
-      // original message), the rest are (splitAt - 1) originals that
-      // accumulated after the last compaction boundary.
       summarizedCount += result.splitAt - 1;
     }
 
     log(
       `compaction persisted — summarizedCount=${summarizedCount}, ` +
-      `returning ${1 + result.recentMessages.length} msgs${wmMessage ? ' +WM' : ''}`
+      `returning ${1 + result.recentMessages.length} msgs${wm ? ' +WM' : ''}`
     );
 
     justCompacted = true;
-    return { messages: withWm([newSummaryMessage, ...result.recentMessages]), compacted: true, summary: result.summary };
+    return { messages: prepend([newSummaryMessage, ...result.recentMessages]), compacted: true, summary: result.summary };
   };
 }
