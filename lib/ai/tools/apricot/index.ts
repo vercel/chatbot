@@ -7,59 +7,9 @@ import {
   authenticate,
 } from '@/lib/apricot-api';
 
-// System-level attribute keys that exist on every record and should not be
-// relabeled via form-field lookup.
-const SYSTEM_ATTRIBUTE_KEYS = new Set([
-  'form_id',
-  'parent_id',
-  'active',
-  'name',
-  'creation_time',
-  'creation_user',
-  'mod_time',
-  'mod_user',
-  'owner',
-  'additionalProp1',
-  'additionalProp2',
-  'additionalProp3',
-]);
-
-/**
- * Resolve dynamic record attribute keys to their human-readable form-field
- * labels.  Returns a new object where every key that matches a field
- * `reference_tag` is replaced with the field's `label`.  Keys that don't
- * match (system keys, unknown keys) are kept as-is.
- */
-async function labelRecordAttributes(
-  attributes: Record<string, unknown>,
-  formId: number,
-): Promise<Record<string, unknown>> {
-  try {
-    const fieldsDef = await getFormFields(formId);
-    const tagToLabel = new Map(
-      fieldsDef.data.map((f) => [f.reference_tag, f.label]),
-    );
-
-    const labeled: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(attributes)) {
-      if (SYSTEM_ATTRIBUTE_KEYS.has(key)) {
-        labeled[key] = value;
-      } else {
-        const label = tagToLabel.get(key) ?? key;
-        labeled[label] = value;
-      }
-    }
-    return labeled;
-  } catch {
-    // If field lookup fails, return the original attributes so the tool
-    // still returns useful data.
-    return attributes;
-  }
-}
-
 export const getApricotRecord = tool({
   description:
-    'Get a participant/client record from Apricot360 by record ID. Use this to fetch participant data for form filling. Returns field values with human-readable labels resolved from the form definition.',
+    'Get a participant/client record from Apricot360 by record ID. Use this to fetch participant data for form filling.',
   inputSchema: z.object({
     recordId: z.number().describe('The unique record ID of the participant'),
   }),
@@ -69,15 +19,7 @@ export const getApricotRecord = tool({
       if (response.data.length === 0) {
         return { record: null, found: false };
       }
-      const raw = response.data[0];
-      const labeledAttributes = await labelRecordAttributes(
-        raw.attributes as Record<string, unknown>,
-        raw.attributes.form_id,
-      );
-      return {
-        record: { ...raw, attributes: labeledAttributes },
-        found: true,
-      };
+      return { record: response.data[0], found: true };
     } catch (error) {
       return {
         record: null,
