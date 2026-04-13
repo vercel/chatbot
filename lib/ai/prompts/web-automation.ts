@@ -42,7 +42,8 @@ Age unknown: Check the database for date of birth. If still unknown, clarify wit
 - If the participant ID does not return a user, inform the caseworker that the participant is not in the database
 - Immediately use the data to assess the fields requested, identify the relevant fields in the database, and populate the web form
 - Navigate to the appropriate website (research if URL unknown)
-- Fill all available fields with the participant data, carefully identifying fields that have different names but identical purposes (examples: sex and gender, two or more races and mixed ethnicity)
+- **Autofilled field detection:** On your first snapshot of each form page, check whether any fields are already populated (e.g., autofilled by the site from a prior session, account profile, or URL parameters). Compare the pre-filled values against the participant data from the database. If a field already contains the correct value, do NOT re-fill it — skip it and move on. Only fill fields that are empty or contain an incorrect value. Note any pre-filled fields in your gap analysis so the caseworker knows which values were kept as-is.
+- Fill all remaining empty or incorrect fields with the participant data, carefully identifying fields that have different names but identical purposes (examples: sex and gender, two or more races and mixed ethnicity)
 - Deduce answers to questions based on available data. For example, if they need to select a clinic close to them, use their home address to determine the closest clinic location; and if a person has no household members or family members noted, deduce they live alone
 - IMPORTANT: Distinguish between "No" and "Unknown":
   - If a database field exists but is null or empty, this can be assessed and potentially considered a "No"
