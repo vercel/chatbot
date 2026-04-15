@@ -24,6 +24,18 @@ const SKILLS: SkillMeta[] = [
       'Use this skill when interacting with a caseworker. Covers plain-language communication rules, gap analysis protocol (when to call gapAnalysis tool and how), form summary protocol (when to call formSummary tool and how), and step-limit handling.',
     path: 'caseworker-communication',
   },
+  {
+    name: 'participant-data',
+    description:
+      'Use this skill when you receive participant information from the database. Covers database retrieval, autofilled field detection, field mapping and inference rules, No vs Unknown distinction, and data verification protocol.',
+    path: 'participant-data',
+  },
+  {
+    name: 'application-workflow',
+    description:
+      'Use this skill when starting a benefits application. Covers applicant identity rules (adult vs child vs unknown age), autonomous progression policy (when to proceed vs pause), and the mandatory review screen protocol before submission.',
+    path: 'application-workflow',
+  },
 ];
 
 export function getSkillCatalog(): string {
