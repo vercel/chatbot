@@ -204,10 +204,7 @@ export async function POST(request: Request) {
           // passed as abortSignal. Mid-tool abort would leave a
           // tool-call with no matching tool-result, triggering
           // AI_MissingToolResultsError on the next turn.
-          stopWhen: [
-            stepCountIs(500),
-            () => chatAbort.signal.aborted || request.signal.aborted,
-          ],
+          stopWhen: [stepCountIs(500), () => chatAbort.signal.aborted],
           // Compress message history when token usage approaches the context
           // window limit (75% of 200K). First step has no prior usage data so
           // compression is skipped (correct — first step is always small).
