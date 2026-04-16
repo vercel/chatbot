@@ -36,9 +36,10 @@ const nextConfig: NextConfig = {
       {
         hostname: "avatar.vercel.sh",
       },
+    ],
+    localPatterns: [
       {
-        protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
+        pathname: "/api/files/serve",
       },
     ],
   },
