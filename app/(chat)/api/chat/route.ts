@@ -62,6 +62,12 @@ export function getStreamContext() {
 }
 
 export async function POST(request: Request) {
+  const t0 = Date.now();
+  console.log('[abort-diag] request started, aborted=', request.signal.aborted);
+  request.signal.addEventListener('abort', () => {
+    console.log('[abort-diag] request.signal FIRED after', Date.now() - t0, 'ms');
+  });
+
   let requestBody: PostRequestBody;
 
   try {
