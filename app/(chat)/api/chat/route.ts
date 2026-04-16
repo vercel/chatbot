@@ -194,7 +194,12 @@ export async function POST(request: Request) {
             loadSkill,
             readSkillFile,
           },
-          stopWhen: stepCountIs(500),
+          // request.signal.aborted is checked at each step boundary so the
+          // tool loop halts even before Node's write-failure-based abort
+          // detection fires. Without this, streamText keeps running until
+          // a write to the closed socket fails — which can be seconds of
+          // extra tool calls after the user hits stop.
+          stopWhen: [stepCountIs(500), () => request.signal.aborted],
           abortSignal: request.signal,
           // Compress message history when token usage approaches the context
           // window limit (75% of 200K). First step has no prior usage data so
