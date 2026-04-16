@@ -184,6 +184,15 @@ export function Chat({
 
   const stop = async () => {
     stoppedRef.current = true;
+    // Explicit server-side cancel. Cloud Run over HTTP/1.1 does not
+    // propagate the fetch abort, so we POST to /api/chat/stop to trigger
+    // the server's AbortController directly. Fire-and-forget — errors
+    // here shouldn't block the local stop().
+    fetch('/api/chat/stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chatId: id }),
+    }).catch((err) => console.error('[stop] server cancel failed', err));
     originalStop();
   };
 
