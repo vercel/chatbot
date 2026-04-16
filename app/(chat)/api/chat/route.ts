@@ -63,12 +63,6 @@ export function getStreamContext() {
 }
 
 export async function POST(request: Request) {
-  const t0 = Date.now();
-  console.log('[abort-diag] request started, aborted=', request.signal.aborted);
-  request.signal.addEventListener('abort', () => {
-    console.log('[abort-diag] request.signal FIRED after', Date.now() - t0, 'ms');
-  });
-
   let requestBody: PostRequestBody;
 
   try {
@@ -206,13 +200,10 @@ export async function POST(request: Request) {
           // detection fires. Without this, streamText keeps running until
           // a write to the closed socket fails — which can be seconds of
           // extra tool calls after the user hits stop.
-          // Only check aborted at step boundaries — do NOT pass the
-          // signal to abortSignal. If we killed in-flight tool calls
-          // mid-execution, streamText would finalize the message with
-          // a tool-call part but no matching tool-result, and the next
-          // turn would throw AI_MissingToolResultsError. Letting the
-          // current tool call drain guarantees paired call+result
-          // before the loop exits.
+          // Abort is checked at step boundaries via stopWhen — not
+          // passed as abortSignal. Mid-tool abort would leave a
+          // tool-call with no matching tool-result, triggering
+          // AI_MissingToolResultsError on the next turn.
           stopWhen: [
             stepCountIs(500),
             () => chatAbort.signal.aborted || request.signal.aborted,
@@ -268,11 +259,6 @@ export async function POST(request: Request) {
         });
 
         dataStream.merge(result.toUIMessageStream());
-        // Do NOT eager-drain textStream here. An extra consumer decouples
-        // streamText from back-pressure, so when the client aborts the
-        // fetch, streamText keeps running (tool loop included) because
-        // this consumer is still pulling. The merged UI stream above is
-        // the only consumer we want.
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
