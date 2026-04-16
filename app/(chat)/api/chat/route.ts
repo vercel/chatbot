@@ -1,5 +1,4 @@
 import {
-  consumeStream,
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
@@ -242,7 +241,11 @@ export async function POST(request: Request) {
         });
 
         dataStream.merge(result.toUIMessageStream());
-        consumeStream({ stream: result.textStream });
+        // Do NOT eager-drain textStream here. An extra consumer decouples
+        // streamText from back-pressure, so when the client aborts the
+        // fetch, streamText keeps running (tool loop included) because
+        // this consumer is still pulling. The merged UI stream above is
+        // the only consumer we want.
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
