@@ -206,11 +206,17 @@ export async function POST(request: Request) {
           // detection fires. Without this, streamText keeps running until
           // a write to the closed socket fails — which can be seconds of
           // extra tool calls after the user hits stop.
+          // Only check aborted at step boundaries — do NOT pass the
+          // signal to abortSignal. If we killed in-flight tool calls
+          // mid-execution, streamText would finalize the message with
+          // a tool-call part but no matching tool-result, and the next
+          // turn would throw AI_MissingToolResultsError. Letting the
+          // current tool call drain guarantees paired call+result
+          // before the loop exits.
           stopWhen: [
             stepCountIs(500),
             () => chatAbort.signal.aborted || request.signal.aborted,
           ],
-          abortSignal: chatAbort.signal,
           // Compress message history when token usage approaches the context
           // window limit (75% of 200K). First step has no prior usage data so
           // compression is skipped (correct — first step is always small).
