@@ -27,6 +27,7 @@ export const postRequestBodySchema = z.object({
   // Dev-only: overrides the actual LLM used without changing the routing logic.
   // Ignored in production environments.
   modelOverride: z.enum([
+    'claude-opus-4-7',
     'claude-sonnet-4-6',
     'claude-haiku-4-5',
     'gpt-5.4',
