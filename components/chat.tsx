@@ -1,6 +1,6 @@
 'use client';
 
-import { DefaultChatTransport } from 'ai';
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
@@ -74,11 +74,17 @@ export function Chat({
   // Ref to always have the latest messages in the onData closure
   const messagesRef = useRef<ChatMessage[]>([]);
 
+  // When the user presses Stop, useChat aborts the in-flight fetch but
+  // auto-continues the tool loop on the next render (because the last
+  // assistant message ends with a completed tool call). We guard the
+  // auto-send with this flag so Stop actually halts the loop. Reset
+  // on the next user-initiated send.
+  const stoppedRef = useRef(false);
 
   const {
     messages,
     setMessages,
-    sendMessage,
+    sendMessage: rawSendMessage,
     status,
     stop: originalStop,
     regenerate,
@@ -88,6 +94,8 @@ export function Chat({
     messages: initialMessages,
     experimental_throttle: 100,
     generateId: generateUUID,
+    sendAutomaticallyWhen: ({ messages }) =>
+      !stoppedRef.current && lastAssistantMessageIsCompleteWithToolCalls({ messages }),
     transport: new DefaultChatTransport({
       api: '/api/chat',
       fetch: fetchWithErrorHandlers,
@@ -175,7 +183,22 @@ export function Chat({
   messagesRef.current = messages;
 
   const stop = async () => {
+    stoppedRef.current = true;
+    // Explicit server-side cancel. Cloud Run over HTTP/1.1 does not
+    // propagate the fetch abort, so we POST to /api/chat/stop to trigger
+    // the server's AbortController directly. Fire-and-forget — errors
+    // here shouldn't block the local stop().
+    fetch('/api/chat/stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chatId: id }),
+    }).catch((err) => console.error('[stop] server cancel failed', err));
     originalStop();
+  };
+
+  const sendMessage: typeof rawSendMessage = (...args) => {
+    stoppedRef.current = false;
+    return rawSendMessage(...args);
   };
 
   const [hasAppendedQuery, setHasAppendedQuery] = useState(false);

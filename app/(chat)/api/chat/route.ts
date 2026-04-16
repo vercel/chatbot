@@ -1,5 +1,4 @@
 import {
-  consumeStream,
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
@@ -37,6 +36,7 @@ import { getWebAutomationSystemPrompt } from '@/lib/ai/prompts/web-automation';
 import { loadSkill } from '@/lib/ai/tools/load-skill';
 import { readSkillFile } from '@/lib/ai/tools/read-skill-file';
 import { createMessageCompressor } from '@/lib/ai/context-compression';
+import { registerChatAbort, clearChatAbort } from '@/lib/chat-abort-registry';
 
 export const maxDuration = 300; // 5 minutes for web automation tasks
 
@@ -162,6 +162,12 @@ export async function POST(request: Request) {
     // sessionId includes both chatId and userId to ensure global uniqueness
     const sessionId = `${id}-${session.user.id}`;
 
+    // Register an AbortController the client can trigger via
+    // POST /api/chat/stop. Cloud Run HTTP/1.1 does not propagate client
+    // disconnects to request.signal, so this explicit channel is the
+    // only reliable way to abort an in-flight run from the browser.
+    const chatAbort = registerChatAbort(id);
+
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
         const initialModelMessages = await convertToModelMessages(uiMessages);
@@ -189,8 +195,16 @@ export async function POST(request: Request) {
             loadSkill,
             readSkillFile,
           },
-          stopWhen: stepCountIs(500),
-          abortSignal: request.signal,
+          // request.signal.aborted is checked at each step boundary so the
+          // tool loop halts even before Node's write-failure-based abort
+          // detection fires. Without this, streamText keeps running until
+          // a write to the closed socket fails — which can be seconds of
+          // extra tool calls after the user hits stop.
+          // Abort is checked at step boundaries via stopWhen — not
+          // passed as abortSignal. Mid-tool abort would leave a
+          // tool-call with no matching tool-result, triggering
+          // AI_MissingToolResultsError on the next turn.
+          stopWhen: [stepCountIs(500), () => chatAbort.signal.aborted],
           // Compress message history when token usage approaches the context
           // window limit (75% of 200K). First step has no prior usage data so
           // compression is skipped (correct — first step is always small).
@@ -242,10 +256,10 @@ export async function POST(request: Request) {
         });
 
         dataStream.merge(result.toUIMessageStream());
-        consumeStream({ stream: result.textStream });
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
+        clearChatAbort(id, chatAbort);
         await saveNewMessages(messages);
       },
       onError: () => {
