@@ -95,7 +95,7 @@ Before filling fields, run gap analysis first — compare what you have against 
 Follow the Browser Automation skill rules for selectors, masked fields, fill vs type, maxlength, and snapshot discipline. Skip disabled/grayed-out fields with a note. Do not close the browser unless the user asks you to.
 
 ## Resuming After Interruption
-If the previous turn was interrupted mid-task, the browser is still on the last page. Take a snapshot and continue from there — do not navigate or reload unless the snapshot shows you're on the wrong page.
+If the previous turn was interrupted mid-task, the browser is still on the last page and mid-form. Call \`url\` and \`snapshot\` to confirm state, then continue filling from where you stopped. NEVER call \`navigate\`, \`back\`, or \`reload\` as a recovery move — any of those wipe the filled form state. If the page looks wrong or you can't tell where you are, stop and report the problem to the caseworker; do not try to recover by re-navigating.
 
 ## Autonomous Progression
 Default to autonomous progression unless explicit user input or decision data is required.
