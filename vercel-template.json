@@ -13,7 +13,8 @@
       "integrationSlug": "upstash"
     },
     {
-      "type": "blob"
+      "type": "blob",
+      "access": "private"
     }
   ]
 }

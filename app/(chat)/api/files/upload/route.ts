@@ -50,10 +50,15 @@ export async function POST(request: Request) {
 
     try {
       const data = await put(`${safeName}`, fileBuffer, {
-        access: "public",
+        access: "private",
+        addRandomSuffix: true,
       });
 
-      return NextResponse.json(data);
+      return NextResponse.json({
+        url: `/api/files/serve?pathname=${encodeURIComponent(data.pathname)}`,
+        pathname: data.pathname,
+        contentType: data.contentType,
+      });
     } catch (_error) {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
