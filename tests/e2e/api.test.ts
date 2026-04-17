@@ -76,6 +76,22 @@ test.describe("Chat Error Handling", () => {
   });
 });
 
+test.describe("Resumable Streams", () => {
+  test("GET /api/chat returns 400 when chatId is missing", async ({
+    request,
+  }) => {
+    const response = await request.get("/api/chat");
+    expect(response.status()).toBe(400);
+  });
+
+  test("GET /api/chat returns 401 when not authenticated", async ({
+    request,
+  }) => {
+    const response = await request.get("/api/chat?chatId=nonexistent");
+    expect(response.status()).toBe(401);
+  });
+});
+
 test.describe("Suggested Actions", () => {
   test("suggested actions are clickable", async ({ page }) => {
     await page.goto("/");
