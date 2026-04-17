@@ -100,7 +100,14 @@ async function summarizeMessages(
     return null;
   }
 
-  const splitAt = messages.length - KEEP_RECENT;
+  // Never split between a tool-call assistant message and its following
+  // tool-result message — Anthropic requires each tool_result to have a
+  // tool_use in the previous message, so an orphan tool-role message in
+  // recentMessages fails validation. Walk back past tool-role messages.
+  let splitAt = messages.length - KEEP_RECENT;
+  while (splitAt > 0 && messages[splitAt]?.role === 'tool') {
+    splitAt -= 1;
+  }
   const oldMessages = messages.slice(0, splitAt);
   const recentMessages = messages.slice(splitAt);
 
