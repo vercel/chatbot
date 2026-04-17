@@ -60,16 +60,20 @@ function flattenMessage(msg: ModelMessage): string {
 
   const parts = (msg.content as any[]).map((part) => {
     if (!part) return '';
-    // Browser tool results: keep status, strip the heavy output payload
+    // Browser tool results: keep status, strip the heavy output payload.
+    // AI SDK v5 puts the tool return value on `output`; older shape used
+    // `result`. Support both for safety.
     if (part.type === 'tool-result' && part.toolName === 'browser') {
-      const r = part.result ?? part.output ?? {};
-      const status = (r as any)?.success ? 'success' : `error: ${(r as any)?.error ?? 'unknown'}`;
+      const raw = part.output ?? part.result ?? {};
+      const r = (raw && typeof raw === 'object' && 'value' in raw ? (raw as any).value : raw) as any;
+      const status = r?.success ? 'success' : `error: ${r?.error ?? 'unknown'}`;
       return `[browser result: ${status}]`;
     }
-    // Browser tool calls: keep action + key param for context
+    // Browser tool calls: keep action + key param for context.
+    // AI SDK v5 uses `input`; older shape used `args`. Support both.
     if (part.type === 'tool-call' && part.toolName === 'browser') {
-      const a = part.args ?? {};
-      return `[browser: ${a.action ?? '?'}${a.selector ? ' ' + a.selector : a.url ? ' ' + a.url : ''}]`;
+      const a = (part.input ?? part.args ?? {}) as Record<string, any>;
+      return `[browser: ${a.action ?? '?'}${a.selector ? ` ${a.selector}` : a.url ? ` ${a.url}` : ''}]`;
     }
     const s = typeof part === 'string' ? part : (part.text ?? JSON.stringify(part) ?? '');
     return String(s);
