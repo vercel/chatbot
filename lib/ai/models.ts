@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL = "moonshotai/kimi-k2-0905";
+export const DEFAULT_CHAT_MODEL = "moonshotai/kimi-k2.5";
 
 export const titleModel = {
   id: "mistral/mistral-small",
@@ -44,13 +44,6 @@ export const chatModels: ChatModel[] = [
     provider: "mistral",
     description: "Fast vision model with tool use",
     gatewayOrder: ["mistral"],
-  },
-  {
-    id: "moonshotai/kimi-k2-0905",
-    name: "Kimi K2 0905",
-    provider: "moonshotai",
-    description: "Fast model with tool use",
-    gatewayOrder: ["baseten", "fireworks"],
   },
   {
     id: "moonshotai/kimi-k2.5",
