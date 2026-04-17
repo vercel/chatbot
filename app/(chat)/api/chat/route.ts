@@ -32,6 +32,7 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
+  getStreamIdsByChatId,
   saveChat,
   saveMessages,
   updateChatTitleById,
@@ -56,6 +57,63 @@ function getStreamContext() {
 }
 
 export { getStreamContext };
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const chatId = searchParams.get("chatId");
+
+  if (!chatId) {
+    return new ChatbotError("bad_request:api").toResponse();
+  }
+
+  const session = await auth();
+
+  if (!session?.user) {
+    return new ChatbotError("unauthorized:chat").toResponse();
+  }
+
+  const chat = await getChatById({ id: chatId });
+
+  if (!chat) {
+    return new Response(null, { status: 204 });
+  }
+
+  if (chat.userId !== session.user.id) {
+    return new ChatbotError("forbidden:chat").toResponse();
+  }
+
+  const streamContext = getStreamContext();
+
+  if (!streamContext) {
+    return new Response(null, { status: 204 });
+  }
+
+  const streamIds = await getStreamIdsByChatId({ chatId });
+
+  if (!streamIds.length) {
+    return new Response(null, { status: 204 });
+  }
+
+  const recentStreamId = streamIds.at(-1);
+
+  if (!recentStreamId) {
+    return new Response(null, { status: 204 });
+  }
+
+  const emptyStream = new ReadableStream({
+    start(controller) {
+      controller.close();
+    },
+  });
+
+  return new Response(
+    await streamContext.resumeExistingStream(recentStreamId, emptyStream),
+    {
+      status: 200,
+      headers: { "Content-Type": "text/event-stream" },
+    }
+  );
+}
 
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
