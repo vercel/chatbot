@@ -221,10 +221,4 @@ browser({ action: "fill", selector: "#specificFieldId", value: "..." })
 
 ### Page Navigation Mid-Form
 
-**WARNING**: `back`, `forward`, and `reload` can wipe form state — all the values you've already filled will be lost. If a page appears blank or a snapshot returns very little content, wait and re-snapshot first. Only use `back` as a last resort if you've truly navigated away, and expect to re-fill the form.
-
-```
-// LAST RESORT — only if truly navigated away. Expect form values to be wiped.
-browser({ action: "back" })
-browser({ action: "snapshot" })  // Check what survived — likely need to re-fill
-```
+**WARNING**: `back`, `forward`, `reload`, and `navigate` all wipe filled form state. If a page appears blank or a snapshot returns very little content, wait and re-snapshot first — do NOT try to recover by navigating. If you truly can't tell where you are, stop and report to the caseworker.

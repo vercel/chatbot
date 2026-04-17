@@ -149,7 +149,7 @@ Do NOT click submit. Proceed with `formSummary` so the caseworker can review and
 ## Forbidden Actions
 
 ### Navigation Boundaries
-Once you navigate to the target application, **stay on that domain.** NEVER click social media links (Facebook, Twitter/X, Instagram, YouTube, LinkedIn, TikTok), "Share"/"Follow" buttons, footer links to external sites, banner ads, or any link to a different domain. Focus ONLY on the form content area (`main`, `form`, `#content`). If you accidentally navigate away, use `{ action: "navigate", url: "<target-url>" }` to return to the application, then re-snapshot.
+Once you navigate to the target application, **stay on that domain.** NEVER click social media links (Facebook, Twitter/X, Instagram, YouTube, LinkedIn, TikTok), "Share"/"Follow" buttons, footer links to external sites, banner ads, or any link to a different domain. Focus ONLY on the form content area (`main`, `form`, `#content`). After `navigate` is used to reach the application initially, treat navigation as one-way: do NOT call `navigate` again to "return" or "recover." Re-navigating wipes filled form state. If you accidentally click a wrong link, stop and report to the caseworker.
 
 ### Evaluate
 - **Turnstile, CAPTCHA, disabled submit, or expand sections → follow the Form Submission protocol above FIRST.** Complete steps 1–4 before any evaluate calls.
