@@ -73,6 +73,16 @@ browser({ action: "type", selector: ":focus", text: "Doe" })
 
 If `select` fails, the dropdown is a custom widget. Click the trigger → wait → snapshot → click the option → re-snapshot. Use `readSkillFile` to load `references/form-automation.md` for detailed patterns including Select2 search boxes.
 
+## Native <select> with indexed/coded values
+
+Some native `<select>` elements use numeric or coded values that don't match the visible label (e.g. BenefitsCal county picker: "Riverside" is value `"33"`, an alphabetical index). If `select` with the human-readable label fails, do NOT guess — run ONE evaluate to read the real option values, then retry with the correct value:
+
+```
+{ action: "evaluate", script: "JSON.stringify(Array.from(document.querySelector('#county').options).map(o => ({value: o.value, text: o.text})))" }
+// then, e.g.:
+{ action: "select", selector: "#county", values: ["33"] }
+```
+
 ## Commands
 
 The browser tool accepts `{ action, selector, value, ... }` objects. Common actions: `navigate`, `snapshot`, `click`, `fill`, `type`, `select`, `check`, `press`, `wait`, `gettext`, `inputvalue`, `scrollintoview`, `evaluate`. For the full command reference with all options, use `readSkillFile` to load `references/commands.md`.
@@ -95,22 +105,38 @@ Many form fields (SSN, birthdate, phone, state, zip) have JavaScript input masks
 
 ## Modals, Dialogs & Popups
 
-Empty/minimal snapshots mean a modal is blocking — NOT that snapshots are broken. Do NOT use `evaluate` to probe when snapshots are empty. Follow these steps:
+When a modal appears (address validation, county selection, confirmations), scope-snapshot it first to get refs, then interact. Multiple modals may chain (address validation → county selection), so loop until the page is clear.
 
-1. **Try scoped snapshots** in this order:
+1. **Scope-snapshot the modal.** Try these selectors in order — stop at the first one that returns content:
+   - `{ action: "snapshot", selector: ".ReactModal__Content" }` (BenefitsCal, most React apps)
    - `{ action: "snapshot", selector: "[role=dialog]" }`
-   - `{ action: "snapshot", selector: ".ReactModal__Overlay" }`
    - `{ action: "snapshot", selector: "[aria-modal=true]" }`
    - `{ action: "snapshot", selector: ".modal" }`
-2. **If a scoped snapshot returns content** — use refs to interact (select, click, dismiss)
-3. **If ALL scoped snapshots are empty** — the modal lacks ARIA attributes (common on React apps like BenefitsCal). Use ONE evaluate to find it:
+2. **Interact with refs from that snapshot** — `select`, `click`, `fill`.
+3. **If a native `<select>` rejects the human-readable label** (e.g. BenefitsCal county picker rejects `"Riverside"`), the options use numeric/coded values. Read the real option values with one evaluate, then retry `select` with the correct value:
    ```
-   { action: "evaluate", script: "document.querySelector('[aria-modal=true], .modal, [role=dialog]')?.outerHTML?.substring(0, 2000) || document.querySelector('body > div:not([aria-hidden])').outerHTML.substring(0, 2000)" }
+   { action: "evaluate", script: "JSON.stringify(Array.from(document.querySelector('#county').options).map(o => ({value: o.value, text: o.text})))" }
+   // then, e.g.: { action: "select", selector: "#county", values: ["33"] }
    ```
-   Then interact using CSS selectors from the HTML you found.
-4. **After dismissing** — re-snapshot. Another modal may have appeared (address validation → county selection is common). Loop until the full page is visible.
+4. **If ALL scoped snapshots are empty**, the modal lacks standard attributes. One evaluate to read the modal's HTML:
+   ```
+   { action: "evaluate", script: "document.querySelector('.ReactModal__Content, [aria-modal=true], [role=dialog], .modal')?.outerHTML?.substring(0, 2000) || 'none'" }
+   ```
+   Then interact using CSS selectors from what you found.
+5. **After dismissing, re-snapshot.** Another modal may have appeared. Loop until the main page is visible again.
 
-**If select/click doesn't register on a React modal** (button stays disabled, click ignored), use `readSkillFile` to load `references/modals.md` for the React event workaround.
+### React event workarounds (only when plain click/select silently fails)
+
+If `click` on a modal button leaves it disabled, or `select` updates the DOM but the page's state doesn't change (rare — try the indexed-value fix in step 3 first):
+
+- **Button stays disabled / click ignored** — dispatch full mouse sequence:
+  ```
+  { action: "evaluate", script: "var btn = document.querySelector('button[name=\"common_continue\"]'); ['mousedown','mouseup','click'].forEach(t => btn.dispatchEvent(new MouseEvent(t, {bubbles:true, cancelable:true, view:window})));" }
+  ```
+- **`<select>` DOM value set but state didn't update** — clear React's internal value tracker:
+  ```
+  { action: "evaluate", script: "var s = document.querySelector('#county'); var tr = s._valueTracker; if (tr) tr.setValue(''); s.value = '33'; s.dispatchEvent(new Event('change', {bubbles:true}));" }
+  ```
 
 **Google Translate bar** blocking clicks: `{ action: "evaluate", script: "document.querySelector('.VIpgJd-yAWNEb-hvhgNd')?.remove()" }`
 
@@ -134,13 +160,12 @@ Then wait for animation: `{ action: "wait", timeout: 700 }`
 
 ### When the submit button is disabled
 
-Follow these steps IN ORDER. Do NOT use `evaluate` to probe or debug before completing steps 1–3.
-
-1. **Check for missing fields**: Take a snapshot and verify ALL required fields are filled.
-2. **Check for expand/acknowledge sections**: Look in the snapshot for collapsible sections. Click them using refs (see above).
-3. **Wait for the auto-solver**: `{ action: "wait", timeout: 5000 }` then re-snapshot.
-4. **Verification checklist (observation-only)**: After the wait, take a fresh snapshot and simply confirm whether ALL of these are true: (a) all required fields are filled, (b) any expand/acknowledge sections are open, (c) no error messages on the page. Do **not** attempt new corrective actions here — just note which items are/aren't satisfied.
-5. **Still disabled?** Immediately load the Advanced Debugging skill by running `readSkillFile` on `references/form-submission.md`. That skill handles the fix (finding page scripts, gating variables, minimal evaluate) using the verification notes — do not retry steps 1–3.
+1. **Snapshot once.** Verify ALL required fields are filled and any expand/acknowledge sections are open (click them using refs if not). Do NOT loop on waits or extra snapshots.
+2. **Still disabled? Force-enable in one evaluate.** The caseworker reviews before submitting — we don't actually click submit, so any re-disable by the page's JS doesn't matter:
+   ```
+   { action: "evaluate", script: "document.querySelector('#btnSubmit').removeAttribute('disabled')" }
+   ```
+   Adjust the selector to match the actual submit button.
 
 ### After unlocking submit
 
@@ -171,8 +196,6 @@ Always use correct JSON types — the browser will error on wrong types:
 ## Reference Files
 
 For detailed guidance on specific topics, use `readSkillFile` to load:
-- `references/form-submission.md` — Advanced JS debugging for stuck submit buttons (steps 5-6: finding gating variables, minimal evaluate fix)
-- `references/modals.md` — Modal workflow, county selection modals, Google Translate bar
 - `references/form-automation.md` — Custom dropdowns (Select2/Chosen/Drupal), multi-page forms, error recovery
 - `references/commands.md` — Full command reference with all options and parameters
 - `references/snapshot-refs.md` — Ref lifecycle, snapshot modes, troubleshooting
