@@ -13,28 +13,28 @@ interface SkillMeta {
 
 const SKILLS: SkillMeta[] = [
   {
-    name: 'agent-browser',
+    name: 'browser-and-forms',
     description:
-      'Use this skill before your first browser action. Covers snapshot workflow, selectors, masked fields, modals, Cloudflare Turnstile, form submission protocol, and forbidden actions. Has reference files for specific situations like disabled submit buttons, custom dropdowns, and CAPTCHA handling.',
-    path: 'agent-browser',
+      'Use this skill before your first browser action. Covers snapshot workflow, selectors, masked fields, field type patterns, multi-page forms, form submission protocol, forbidden actions, and error recovery. Has reference files for the full command reference and advanced submit-button debugging.',
+    path: 'browser-and-forms',
   },
   {
-    name: 'caseworker-communication',
+    name: 'custom-dropdowns',
     description:
-      'Use this skill when interacting with a caseworker. Covers plain-language communication rules, gap analysis protocol (when to call gapAnalysis tool and how), form summary protocol (when to call formSummary tool and how), and step-limit handling.',
-    path: 'caseworker-communication',
+      'Use this skill when a native select action fails or has no effect, or when the snapshot shows select2-container or chosen-container classes. Covers Select2, Chosen, and Drupal custom dropdown patterns.',
+    path: 'custom-dropdowns',
   },
   {
-    name: 'participant-data',
+    name: 'modal-handling',
     description:
-      'Use this skill when you receive participant information from the database. Covers database retrieval, autofilled field detection, field mapping and inference rules, No vs Unknown distinction, and data verification protocol.',
-    path: 'participant-data',
+      'Use this skill when you encounter empty/minimal snapshots or elements blocked by overlays. Covers modal detection, React event workarounds, county/location selection modals, and Google Translate bar removal.',
+    path: 'modal-handling',
   },
   {
-    name: 'application-workflow',
+    name: 'application-protocol',
     description:
-      'Use this skill when starting a benefits application. Covers applicant identity rules (adult vs child vs unknown age), autonomous progression policy (when to proceed vs pause), and the mandatory review screen protocol before submission.',
-    path: 'application-workflow',
+      'Use this skill when starting a benefits application with participant data. Covers participant data retrieval, field mapping rules, applicant identity, autonomous progression, review screen protocol, caseworker communication, gap analysis, and form summary.',
+    path: 'application-protocol',
   },
 ];
 
