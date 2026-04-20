@@ -44,3 +44,5 @@ yarn-error.log*
 /playwright/*
 .mastra/
 vertex-ai-credentials.json
+
+.claude/

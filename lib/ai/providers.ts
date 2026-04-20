@@ -15,7 +15,7 @@ import {
 import { isTestEnvironment } from '../constants';
 
 // Anthropic model for web automation via Vertex AI
-export const webAutomationModel = vertexAnthropic('claude-sonnet-4-6');
+export const webAutomationModel = vertexAnthropic('claude-opus-4-7');
 export const prepareStepModel = vertexAnthropic('claude-haiku-4-5');
 
 export const myProvider = isTestEnvironment
