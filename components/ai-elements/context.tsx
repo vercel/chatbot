@@ -30,7 +30,7 @@ function getUsage({ modelId, usage }: {
   usage: { input?: number; output?: number; cacheReads?: number; reasoningTokens?: number };
 }): { costUSD?: { totalUSD: number } } {
   // Strip provider prefix (e.g. "anthropic:claude-sonnet-4-6" → "claude-sonnet-4-6")
-  const model = modelId.includes(':') ? modelId.split(':').pop()! : modelId;
+  const model = modelId.includes(':') ? (modelId.split(':').pop() ?? modelId) : modelId;
   const pricing = MODEL_PRICING[model];
   if (!pricing) return {};
 

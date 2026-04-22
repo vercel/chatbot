@@ -245,8 +245,7 @@ export function createMessageCompressor() {
     if (justCompacted) {
       justCompacted = false;
       log(
-        `skip — stale inputTokens after compaction, ` +
-        `${effectiveMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% (stale)`
+        `skip — stale inputTokens after compaction, ${effectiveMessages.length} msgs, ${(usedPct * 100).toFixed(1)}% (stale)`
       );
       return { messages: prepend(effectiveMessages), compacted: false };
     }

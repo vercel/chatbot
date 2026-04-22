@@ -2,14 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
-
-import { ModelSelector } from '@/components/model-selector';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from './icons';
 import { useSidebar } from './ui/sidebar';
 import { memo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { type VisibilityType, VisibilitySelector } from './visibility-selector';
+import type { VisibilityType, } from './visibility-selector';
 import type { Session } from 'next-auth';
 
 function PureChatHeader({

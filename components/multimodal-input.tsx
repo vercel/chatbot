@@ -464,7 +464,7 @@ function PureSendButton({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span tabIndex={0}>{button}</span>
+          <span >{button}</span>
         </TooltipTrigger>
         <TooltipContent>Log in to submit</TooltipContent>
       </Tooltip>
@@ -475,7 +475,7 @@ function PureSendButton({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span tabIndex={0}>{button}</span>
+          <span >{button}</span>
         </TooltipTrigger>
         <TooltipContent>AI is still working</TooltipContent>
       </Tooltip>

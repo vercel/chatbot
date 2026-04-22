@@ -4,7 +4,6 @@ import {
   wrapLanguageModel,
 } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { gateway } from '@ai-sdk/gateway';
 import { vertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import {
   artifactModel,

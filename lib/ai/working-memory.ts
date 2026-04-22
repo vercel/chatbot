@@ -14,10 +14,6 @@ export function buildWorkingMemoryMessage(
   return {
     role: 'user' as const,
     content:
-      `${WORKING_MEMORY_PREFIX}\n\n` +
-      `${JSON.stringify(memory, null, 2)}\n\n` +
-      'This is the authoritative participant data for this session. ' +
-      'Always prefer this data over anything in conversation history or compaction summaries. ' +
-      'Do NOT modify or re-interpret these values.',
+      `${WORKING_MEMORY_PREFIX}\n\n${JSON.stringify(memory, null, 2)}\n\nThis is the authoritative participant data for this session. Always prefer this data over anything in conversation history or compaction summaries. Do NOT modify or re-interpret these values.`,
   };
 }

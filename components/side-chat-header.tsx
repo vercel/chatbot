@@ -1,8 +1,6 @@
 'use client';
 
 import { initialArtifactData, useArtifact } from '@/hooks/use-artifact';
-
-import { Globe } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import { memo } from 'react';
 import { useRouter } from 'next/navigation';

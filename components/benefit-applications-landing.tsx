@@ -251,6 +251,7 @@ export function BenefitApplicationsLanding({
 
           {/* Start auto-filling */}
           <button
+            type="button"
             onClick={handleStartAutoFilling}
             disabled={!isLoggedIn || !clientId || (!program && !isUrl(query))}
             className="rounded-lg bg-primary px-4 py-2 font-inter text-base font-semibold tracking-[0.08px] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"

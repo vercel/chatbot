@@ -19,7 +19,6 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { useBrowserSessionExit } from '@/hooks/use-browser-session-exit';
 import { ExitWarningModal } from '@/components/exit-warning-modal';
 

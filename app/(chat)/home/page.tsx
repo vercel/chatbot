@@ -44,6 +44,7 @@ export default function LandingPage() {
               {/* Start Application Button */}
               <div className="mt-4 md:mt-6">
                 <button
+                  type="button"
                   onClick={() => router.push('/')}
                   className="bg-primary text-primary-foreground font-inter font-medium text-sm leading-6 px-6 sm:px-7 py-2 sm:py-2.5 rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
                 >

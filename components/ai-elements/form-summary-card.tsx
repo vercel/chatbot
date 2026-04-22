@@ -288,8 +288,8 @@ export function FormSummaryCard({
 
       <div>
         <div className="px-6">
-          {allFields.map((item, i) => (
-            <div key={i} className="py-4 border-b border-border last:border-b-0">
+          {allFields.map((item) => (
+            <div key={item.field} className="py-4 border-b border-border last:border-b-0">
               <div className="flex items-center justify-between gap-4 mb-1">
                 <span className="text-sm font-bold text-card-foreground leading-snug font-source-serif">
                   {item.field}

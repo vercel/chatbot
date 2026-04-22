@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
-import { createDecipheriv } from 'crypto';
+import { createDecipheriv } from 'node:crypto';
 import { auth } from '@/app/(auth)/auth';
 
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url: process.env.UPSTASH_REDIS_REST_URL ?? '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN ?? '',
 });
 
 // AES-256-GCM decryption using AUTH_SECRET
 function decrypt(encryptedData: string): string {
-  const key = Buffer.from(process.env.AUTH_SECRET!).subarray(0, 32);
+  const key = Buffer.from(process.env.AUTH_SECRET ?? '').subarray(0, 32);
   const data = Buffer.from(encryptedData, 'base64url');
   const iv = data.subarray(0, 12);
   const tag = data.subarray(12, 28);
