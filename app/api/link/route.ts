@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { createCipheriv, randomBytes } from 'crypto';
+import { createCipheriv, randomBytes } from 'node:crypto';
 import { createLinkRequestSchema, type CreateLinkRequest, type CreateLinkResponse } from './schema';
 
 const redis = new Redis({

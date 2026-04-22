@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import nodeCrypto from 'crypto';
+import { type NextRequest, NextResponse } from 'next/server';
+import nodeCrypto from 'node:crypto';
 import { directoryResponseHeaders, helpers, MediaType } from 'web-bot-auth';
 import { signerFromJWK } from 'web-bot-auth/crypto';
 

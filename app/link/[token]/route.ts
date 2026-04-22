@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
-import { createDecipheriv } from 'crypto';
+import { createDecipheriv } from 'node:crypto';
 import { auth } from '@/app/(auth)/auth';
 
 const redis = new Redis({
