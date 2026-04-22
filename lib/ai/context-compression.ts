@@ -27,7 +27,7 @@ const COMPACTION_SYSTEM_PROMPT =
   '- Do NOT include participant PII (names, DOB, SSN, address) — it is in working memory.\n' +
   'Do NOT include browser snapshot content or raw HTML.';
 
-const log = (...args: unknown[]) => console.log('[compressor]', ...args);
+const log = (..._args: unknown[]) => {};
 
 /**
  * Detect and extract a working memory message from the beginning of the

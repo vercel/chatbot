@@ -1,4 +1,4 @@
-import { Artifact, type ChatContext } from '@/components/create-artifact';
+import { Artifact } from '@/components/create-artifact';
 import { useState } from 'react';
 import { BrowserLoadingState } from './browser-states';
 import { closeArtifact, useArtifact } from '@/hooks/use-artifact';
@@ -24,7 +24,6 @@ export const browserArtifact = new Artifact<'browser', BrowserArtifactMetadata>(
 
     if (chatContext?.chatId && chatContext?.resourceId) {
       sessionId = `${chatContext.chatId}-${chatContext.resourceId}`;
-      console.log(`[Browser Artifact] Using chat session ID: ${sessionId}`);
     } else {
       sessionId = `browser-${documentId}-${Date.now()}`;
       console.warn(`[Browser Artifact] No chat context available, using document-based session ID: ${sessionId}`);

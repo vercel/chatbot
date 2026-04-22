@@ -246,7 +246,7 @@ export async function GET(request: Request) {
 
 1. **Session creation** — When a user starts a web automation chat, the app requests a remote browser from Kernel via the `@onkernel/sdk`
 2. **Browser control** — The AI agent sends commands (navigate, click, fill, type, screenshot, etc.) through the [`agent-browser`](https://www.npmjs.com/package/agent-browser) library, which uses Playwright under the hood
-3. **Live streaming** — Users can watch the browser in real-time via a WebSocket stream proxied through the `/api/browser-stream-proxy` route
+3. **Live streaming** — Users can watch the browser in real-time via Kernel's embedded live view
 4. **Session replay** — Kernel records browser sessions for debugging and auditing
 5. **Cleanup** — Sessions are automatically destroyed when no longer needed, with a 10-minute idle timeout as a safety net
 
@@ -271,10 +271,6 @@ sequenceDiagram
 Set the following in your `.env.local`:
 
 ```env
-# Enable AI SDK agent mode (required for Kernel)
-USE_AI_SDK_AGENT=true
-NEXT_PUBLIC_USE_AI_SDK_AGENT=true
-
 # Kernel.sh API key — get one at https://onkernel.com
 KERNEL_API_KEY=your-kernel-api-key
 ```
@@ -286,7 +282,6 @@ KERNEL_API_KEY=your-kernel-api-key
 | `lib/kernel/browser.ts` | Session management — create, cache, and destroy remote browsers |
 | `lib/ai/tools/browser.ts` | AI tool definition — exposes browser commands to the LLM |
 | `app/api/kernel-browser/route.ts` | API route for browser CRUD operations |
-| `app/api/browser-stream-proxy/route.ts` | WebSocket proxy for live browser streaming |
 
 
 ---
@@ -312,7 +307,7 @@ See [`.env.example`](.env.example) for the full list of configurable variables.
 
 We welcome contributions from the community — whether you're fixing a bug, suggesting a feature, or improving documentation.
 
-Please read our [Contributing Guide](docs/CONTRIBUTING.md) before submitting a pull request. All contributors are expected to follow our [Code of Conduct](docs/CODE_OF_CONDUCT.md).
+Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request. All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 For security-related issues, please review our [Security Policy](SECURITY.md) before disclosing publicly.
 

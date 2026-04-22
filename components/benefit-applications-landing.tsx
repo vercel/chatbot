@@ -122,28 +122,27 @@ export function BenefitApplicationsLanding({
   return (
     <div className="flex flex-1 flex-col bg-chat-background md:flex-row md:pl-28 md:pr-20 lg:pl-40 lg:pr-32 xl:pl-52 xl:pr-44">
       {/* Left panel — desktop only */}
-      <div className="hidden md:flex md:w-[38%] md:flex-col md:justify-start md:pr-8 md:pt-24 xl:w-[40%]">
+      <div className="hidden md:flex md:w-[38%] md:flex-col md:justify-start md:pr-8 md:pt-10 xl:w-[40%]">
         <h1 className="font-source-serif text-4xl leading-[1.15] text-foreground">
-          Let&apos;s start a<br />
-          new application.
+          Let&apos;s start a new application.
         </h1>
         {!isLoggedIn && <div className="mt-6">{loginAlert}</div>}
       </div>
 
       {/* Right panel */}
-      <div className="flex flex-1 flex-col items-center justify-start gap-6 overflow-y-auto px-4 pt-14 pb-8 sm:px-6 md:items-end md:px-0 md:pb-10 md:pt-20">
+      <div className="flex flex-1 flex-col items-center justify-start gap-4 overflow-y-auto px-4 pt-14 pb-4 sm:px-6 md:items-end md:px-0 md:pb-6 md:pt-10">
         {/* Mobile: title + alert */}
         <div className="flex w-full max-w-[648px] flex-col gap-4 md:hidden">
-          <h1 className="font-source-serif text-3xl leading-[1.15] text-foreground">
+          <h1 className="font-source-serif text-3xl leading-[1.15] text-foreground text-center sm:text-left">
             Let&apos;s start a new application.
           </h1>
           {!isLoggedIn && loginAlert}
         </div>
 
         {/* Form card */}
-        <div className="w-full max-w-[648px] rounded-lg bg-white px-8 py-10 shadow-sm">
+        <div className="w-full max-w-[648px] rounded-lg bg-white px-8 py-6 shadow-sm">
           {/* Client ID */}
-          <div className="mb-10">
+          <div className="mb-6">
             <p className="font-source-serif text-xl font-bold text-foreground">Client ID</p>
             <p className="font-source-serif text-xl text-[#787878]">
               Enter the client&apos;s Apricot 360 ID.
@@ -159,7 +158,7 @@ export function BenefitApplicationsLanding({
           </div>
 
           {/* Program */}
-          <div className="mb-12">
+          <div className="mb-8">
             <p className="font-source-serif text-xl font-bold text-foreground">Program</p>
             <p className="font-source-serif text-xl text-[#787878]">
               Select the program or paste an application URL.

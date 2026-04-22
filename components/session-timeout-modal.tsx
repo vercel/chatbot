@@ -163,12 +163,10 @@ export function SessionTimeoutModalDemo() {
         onEndSession={() => {
           setOpen(false);
           // Replace with your real end-session logic.
-          console.log('Session ended');
         }}
         onContinueSession={() => {
           setOpen(false);
           // Replace with your real continue-session logic.
-          console.log('Session continued');
         }}
       />
     </div>

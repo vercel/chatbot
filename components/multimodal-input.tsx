@@ -31,7 +31,6 @@ import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
-import { Alert, AlertDescription } from './ui/alert';
 import { isProductionEnvironment } from '@/lib/constants';
 import { ModelSelectorButton } from './model-selector-button';
 
@@ -126,7 +125,6 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
-    console.log(`[multimodal-input] selectedModelId="${selectedModelId}" isProduction=${isProductionEnvironment}`);
     const messageBody = !isProductionEnvironment && selectedModelId
       ? { modelOverride: selectedModelId }
       : undefined;

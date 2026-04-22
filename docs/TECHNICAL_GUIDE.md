@@ -174,15 +174,11 @@ The browser tool exposes these actions to the AI:
 
 ### Live Streaming
 
-Browser activity streams to the user in real time through a WebSocket proxy:
-
-**Key file:** `app/api/browser-stream-proxy/route.ts`
+Browser activity streams to the user in real time via Kernel's embedded live view.
 
 ### Configuration
 
 ```env
-USE_AI_SDK_AGENT=true
-NEXT_PUBLIC_USE_AI_SDK_AGENT=true
 KERNEL_API_KEY=your-kernel-api-key
 ```
 
@@ -195,7 +191,8 @@ The web automation agent has access to several tools beyond browser control:
 | Tool | Purpose |
 | --- | --- |
 | `browser` | Remote browser automation (see above) |
-| `clientDataTools` | Connect to API to retrieve participant records, forms, and field data from the client database |
+| `getUser` | Get a user record from the external database by user ID |
+| `listUsers` | Fetch all users from the external database |
 | `gapAnalysis` | Analyze form fields against available data to identify missing information |
 | `formSummary` | Summarize form requirements |
 | `actionLabel` | Label and categorize browser actions |
@@ -253,7 +250,7 @@ UPSTASH_REDIS_REST_TOKEN=your-token
 
 **Key files:**
 - `app/api/link/route.ts` — Link creation endpoint
-- `app/(link)/link/[token]/page.tsx` — Link resolution page
+- `app/link/[token]/route.ts` — Link resolution route
 
 ---
 
@@ -261,8 +258,6 @@ UPSTASH_REDIS_REST_TOKEN=your-token
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `USE_AI_SDK_AGENT` | `false` | Enables AI SDK agent mode for browser automation |
-| `NEXT_PUBLIC_USE_AI_SDK_AGENT` | `false` | Client-side counterpart of the above flag |
 | `USE_GUEST_LOGIN` | `false` | Enables guest login for preview environments |
 | `ENVIRONMENT` | — | Set to `dev`, `prod`, or `preview-*` to control feature visibility |
 
@@ -348,8 +343,6 @@ To adjust limits, modify the entitlement configuration in `lib/ai/entitlements.t
 | `GOOGLE_VERTEX_LOCATION` | GCP region for Vertex AI |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to GCP service account JSON |
 | `KERNEL_API_KEY` | Kernel.sh API key for browser automation |
-| `USE_AI_SDK_AGENT` | Enable AI SDK agent mode |
-| `NEXT_PUBLIC_USE_AI_SDK_AGENT` | Client-side agent mode flag |
 
 ### Storage & Services
 
@@ -379,8 +372,7 @@ The user has exceeded their daily message limit (default 100). This resets daily
 
 ### Browser automation not working
 
-1. Verify `USE_AI_SDK_AGENT=true` and `NEXT_PUBLIC_USE_AI_SDK_AGENT=true` are set
-2. Verify `KERNEL_API_KEY` is set and valid
+1. Verify `KERNEL_API_KEY` is set and valid
 3. Check server logs for Kernel session creation errors
 
 ### Authentication failures

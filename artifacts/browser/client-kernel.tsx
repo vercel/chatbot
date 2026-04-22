@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MousePointerClick, RefreshCw, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentStatusIndicator } from '@/components/agent-status-indicator';
-import { BrowserLoadingState, BrowserErrorState, BrowserTimeoutState } from './browser-states';
+import { BrowserLoadingState, BrowserErrorState } from './browser-states';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sheet,
@@ -67,13 +67,6 @@ export function KernelBrowserClient({
   const initializedSessionRef = useRef<string | null>(null);
   const initInFlightRef = useRef(false);
 
-  // Diagnostic: track mount/unmount to find stale iframe root cause
-  useEffect(() => {
-    console.log('[KernelBrowserClient] MOUNTED, sessionId:', sessionId);
-    return () => {
-      console.log('[KernelBrowserClient] UNMOUNTED, sessionId:', sessionId);
-    };
-  }, [sessionId]);
 
   const initBrowser = useCallback(async (force = false) => {
     // Skip if already initialized for this session (unless forced)
@@ -152,7 +145,6 @@ export function KernelBrowserClient({
   useEffect(() => {
     const cleanup = () => {
       try {
-        console.log('[KernelBrowserClient] CLEANUP firing — sending delete for session:', sessionIdRef.current);
         const payload = JSON.stringify({ action: 'delete', sessionId: sessionIdRef.current });
         navigator.sendBeacon(
           '/api/kernel-browser',
@@ -211,8 +203,6 @@ export function KernelBrowserClient({
       toast.error('Not connected to browser session');
       return;
     }
-
-    console.log(`[Kernel] Switching control mode to: ${mode}`);
 
     if (mode === 'user') {
       // Stop the AI when user takes control

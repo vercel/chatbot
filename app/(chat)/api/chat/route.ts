@@ -49,11 +49,7 @@ export function getStreamContext() {
         waitUntil: after,
       });
     } catch (error: any) {
-      if (error.message.includes('REDIS_URL')) {
-        console.log(
-          ' > Resumable streams are disabled due to missing REDIS_URL',
-        );
-      } else {
+      if (!error.message.includes('REDIS_URL')) {
         console.error(error);
       }
     }
@@ -82,8 +78,6 @@ export async function POST(request: Request) {
 
     // Only honour modelOverride in non-production environments.
     const resolvedModelOverride = !isProductionEnvironment ? modelOverride : undefined;
-
-    console.log(`[chat] rawModelOverride=${modelOverride ?? 'none'} isProduction=${isProductionEnvironment} resolvedOverride=${resolvedModelOverride ?? 'none'}`);
 
     const session = await auth();
 
@@ -224,9 +218,6 @@ export async function POST(request: Request) {
               },
             );
             if (compacted) {
-              console.log(
-                `[compressor] emitting data-checkpoint — step=${steps.length}, inputTokens=${lastInputTokens}`
-              );
               dataStream.write({
                 type: 'data-checkpoint',
                 data: {
