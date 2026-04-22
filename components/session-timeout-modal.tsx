@@ -64,7 +64,7 @@ export function SessionTimeoutModal({
     intervalRef.current = setInterval(() => {
       setRemaining((prev) => {
         if (prev <= 1) {
-          clearInterval(intervalRef.current!);
+          if (intervalRef.current) clearInterval(intervalRef.current);
           onEndSession();
           return 0;
         }
@@ -163,12 +163,10 @@ export function SessionTimeoutModalDemo() {
         onEndSession={() => {
           setOpen(false);
           // Replace with your real end-session logic.
-          console.log('Session ended');
         }}
         onContinueSession={() => {
           setOpen(false);
           // Replace with your real continue-session logic.
-          console.log('Session continued');
         }}
       />
     </div>

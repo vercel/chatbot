@@ -52,8 +52,8 @@ function PostHogPageView() {
   useEffect(() => {
     if (pathname && posthog) {
       let url = window.origin + pathname
-      if (searchParams && searchParams.toString()) {
-        url = url + `?${searchParams.toString()}`
+      if (searchParams?.toString()) {
+        url = `${url}?${searchParams.toString()}`
       }
       posthog.capture('$pageview', {
         $current_url: url,

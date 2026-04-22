@@ -2,7 +2,7 @@ import { tool, type ToolExecutionOptions } from 'ai';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { executeCommand } from 'agent-browser/dist/actions.js';
-import type { Command, Response } from 'agent-browser/dist/types.js';
+import type { Command } from 'agent-browser/dist/types.js';
 import { getOrCreateBrowser } from '@/lib/kernel/browser';
 
 const COMMAND_TIMEOUT_MS = 120_000; // 2 minutes
@@ -109,9 +109,6 @@ NEVER navigate away from the target application domain. Do NOT click social medi
             ...params,
           } as Command;
 
-          console.log('[browser-tool] Session:', sessionId);
-          console.log('[browser-tool] Executing:', command.action, JSON.stringify(params));
-
           const response = await Promise.race([
             executeCommand(command, session.browserManager),
             new Promise<never>((_, reject) => {
@@ -131,7 +128,6 @@ NEVER navigate away from the target application domain. Do NOT click social medi
               typeof response.data === 'string'
                 ? response.data
                 : JSON.stringify(response.data);
-            console.log('[browser-tool] Success. Output length:', output?.length);
             return { success: true, output, error: null };
           }
 
@@ -142,7 +138,6 @@ NEVER navigate away from the target application domain. Do NOT click social medi
             error instanceof Error ? error.message : String(error);
 
           if (abortSignal?.aborted || message.includes('stopped by user')) {
-            console.log('[browser-tool] Command aborted by user');
             return {
               success: false,
               output: null,

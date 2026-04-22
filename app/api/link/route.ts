@@ -1,15 +1,15 @@
 import { Redis } from '@upstash/redis';
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
-import { createLinkRequestSchema, type CreateLinkResponse } from './schema';
+import { createCipheriv, randomBytes } from 'node:crypto';
+import { createLinkRequestSchema, type CreateLinkRequest, type CreateLinkResponse } from './schema';
 
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url: process.env.UPSTASH_REDIS_REST_URL ?? '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN ?? '',
 });
 
 // AES-256-GCM encryption using AUTH_SECRET
 function encrypt(text: string): string {
-  const key = Buffer.from(process.env.AUTH_SECRET!).subarray(0, 32);
+  const key = Buffer.from(process.env.AUTH_SECRET ?? '').subarray(0, 32);
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
   const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
@@ -29,7 +29,7 @@ function generateId(length = 8): string {
 export async function POST(request: Request) {
   try {
     // Parse and validate request body
-    let requestBody;
+    let requestBody: CreateLinkRequest;
     try {
       const json = await request.json();
       requestBody = createLinkRequestSchema.parse(json);

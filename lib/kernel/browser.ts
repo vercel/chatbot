@@ -56,16 +56,12 @@ export async function getOrCreateBrowser(
   // 1. Check in-memory cache
   const cached = sessions.get(key);
   if (cached) {
-    console.log(
-      `[Kernel] Reusing browser ${cached.kernelSessionId} for session ${sessionId}`,
-    );
     return cached;
   }
 
   // 2. If a create is already in-flight, await it
   const pending = pendingCreations.get(key);
   if (pending) {
-    console.log(`[Kernel] Awaiting in-flight create for session ${sessionId}`);
     return pending;
   }
 
@@ -99,9 +95,6 @@ export async function getOrCreateBrowser(
       try {
         const replay = await kernel.browsers.replays.start(browser.session_id);
         replayId = replay.replay_id;
-        console.log(
-          `[Kernel] Started replay ${replayId} for browser ${browser.session_id}`,
-        );
       } catch (err) {
         console.error('[Kernel] Failed to start replay recording:', err);
       }
@@ -116,9 +109,6 @@ export async function getOrCreateBrowser(
       };
 
       sessions.set(key, session);
-      console.log(
-        `[Kernel] Created browser ${browser.session_id} for session ${sessionId}`,
-      );
 
       return session;
     } finally {
@@ -152,9 +142,6 @@ export async function getBrowser(
   // Await in-flight creation from another code path (e.g. tool execution)
   const pending = pendingCreations.get(key);
   if (pending) {
-    console.log(
-      `[Kernel] getBrowser awaiting in-flight create for session ${sessionId}`,
-    );
     return pending;
   }
 
@@ -183,19 +170,9 @@ export async function deleteBrowser(
       await kernel.browsers.replays.stop(session.replayId, {
         id: session.kernelSessionId,
       });
-      console.log(
-        `[Kernel] Stopped replay ${session.replayId} for browser ${session.kernelSessionId}`,
-      );
-
-      // List replays to get view URLs for Cloud Run logs
-      const replays = await kernel.browsers.replays.list(
+      await kernel.browsers.replays.list(
         session.kernelSessionId,
       );
-      for (const r of replays) {
-        console.log(
-          `[Kernel] Replay available — id: ${r.replay_id}, view: ${r.replay_view_url}`,
-        );
-      }
     } catch (err) {
       console.error('[Kernel] Failed to stop/list replays:', err);
     }
@@ -211,14 +188,9 @@ export async function deleteBrowser(
   // Delete from Kernel
   try {
     await kernel.browsers.deleteByID(session.kernelSessionId);
-    console.log(`[Kernel] Deleted browser ${session.kernelSessionId}`);
   } catch (err: unknown) {
     const error = err as { status?: number };
-    if (error.status === 404) {
-      console.log(
-        `[Kernel] Browser ${session.kernelSessionId} already deleted (404)`,
-      );
-    } else {
+    if (error.status !== 404) {
       console.error('[Kernel] Failed to delete browser:', err);
     }
   }

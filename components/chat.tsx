@@ -3,9 +3,8 @@
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
-import type { Vote } from '@/lib/db/schema';
-import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
+import { useSWRConfig } from 'swr';
+import { fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
@@ -120,13 +119,6 @@ export function Chat({
         setIsCompacting(false);
         const currentMessages = messagesRef.current;
         const lastMsg = currentMessages[currentMessages.length - 1];
-        console.log(
-          '[checkpoint] received data-checkpoint event',
-          'messagesCount:', currentMessages.length,
-          'lastMsgId:', lastMsg?.id,
-          'lastMsgRole:', lastMsg?.role,
-          'lastMsgParts:', lastMsg?.parts?.length,
-        );
         if (lastMsg) {
           const data = part.data as any;
           const summary = data?.summary ?? '';

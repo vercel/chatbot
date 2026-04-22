@@ -153,21 +153,21 @@ const parseBrowserAction = (input?: Record<string, any>): { text: string; icon: 
   // Navigate — show URL
   if (action === 'navigate' && input.url) {
     const url = String(input.url);
-    const displayUrl = url.length > 40 ? url.substring(0, 40) + '...' : url;
+    const displayUrl = url.length > 40 ? `${url.substring(0, 40)}...` : url;
     return { text: `${mapping.verb} ${displayUrl}`, icon: mapping.icon };
   }
 
   // Fill — show value
   if (action === 'fill' && input.value) {
     const value = String(input.value);
-    const display = value.length > 35 ? value.substring(0, 35) + '...' : value;
+    const display = value.length > 35 ? `${value.substring(0, 35)}...` : value;
     return { text: `${mapping.verb} "${display}"`, icon: mapping.icon };
   }
 
   // Type — show text
   if (action === 'type' && input.text) {
     const text = String(input.text);
-    const display = text.length > 35 ? text.substring(0, 35) + '...' : text;
+    const display = text.length > 35 ? `${text.substring(0, 35)}...` : text;
     return { text: `${mapping.verb} "${display}"`, icon: mapping.icon };
   }
 
@@ -179,7 +179,7 @@ const parseBrowserAction = (input?: Record<string, any>): { text: string; icon: 
   // Select — show values
   if (action === 'select' && input.values) {
     const vals = Array.isArray(input.values) ? input.values.join(', ') : String(input.values);
-    const display = vals.length > 35 ? vals.substring(0, 35) + '...' : vals;
+    const display = vals.length > 35 ? `${vals.substring(0, 35)}...` : vals;
     return { text: `${mapping.verb} "${display}"`, icon: mapping.icon };
   }
 
@@ -193,7 +193,7 @@ const parseBrowserAction = (input?: Record<string, any>): { text: string; icon: 
   // getbylabel — show label and subaction
   if (action === 'getbylabel' && input.label) {
     const label = String(input.label);
-    const display = label.length > 30 ? label.substring(0, 30) + '...' : label;
+    const display = label.length > 30 ? `${label.substring(0, 30)}...` : label;
     const subVerb = input.subaction === 'fill' ? 'Filling' : input.subaction === 'click' ? 'Clicking' : 'Using';
     return { text: `${subVerb} "${display}"`, icon: input.subaction === 'fill' ? Type : MousePointer };
   }

@@ -1,4 +1,4 @@
-import { formatDistance } from 'date-fns';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   type Dispatch,
@@ -8,15 +8,13 @@ import {
   useEffect,
   useState,
 } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import { useSWRConfig } from 'swr';
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts';
 import type { Document, Vote } from '@/lib/db/schema';
-import { fetcher } from '@/lib/utils';
 import { MultimodalInput } from './multimodal-input';
 import { Toolbar } from './toolbar';
 import { VersionFooter } from './version-footer';
 import { ArtifactActions } from './artifact-actions';
-import { ArtifactCloseButton } from './artifact-close-button';
 import { ArtifactMessages } from './artifact-messages';
 import type { CheckpointData } from './chat';
 import { useSidebar } from './ui/sidebar';

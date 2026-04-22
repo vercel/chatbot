@@ -8,8 +8,8 @@ import {
   ConfirmationRejected,
   ConfirmationActions,
   ConfirmationAction,
-  ConfirmationState,
-  ApprovalState,
+  type ConfirmationState,
+  type ApprovalState,
 } from './confirmation';
 
 interface UserActionConfirmationProps {

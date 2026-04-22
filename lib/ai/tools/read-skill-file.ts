@@ -1,7 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { readFile } from 'fs/promises';
-import { resolve, normalize, join } from 'path';
+import { readFile } from 'node:fs/promises';
+import { resolve, normalize, join } from 'node:path';
 
 const SKILLS_DIR = normalize(join(process.cwd(), 'lib/ai/skills'));
 

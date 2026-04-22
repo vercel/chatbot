@@ -47,8 +47,8 @@ export const {
   trustHost: true,
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
     }),
     MicrosoftEntraID({
       clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
@@ -137,7 +137,7 @@ export const {
         }
 
         const dbUser = await upsertOAuthUser({
-          email: user.email!,
+          email: user.email ?? '',
           name: user.name,
           image: user.image,
         });

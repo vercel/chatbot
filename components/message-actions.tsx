@@ -3,7 +3,7 @@ import { useCopyToClipboard } from 'usehooks-ts';
 
 import type { Vote } from '@/lib/db/schema';
 
-import { CopyIcon, ThumbDownIcon, ThumbUpIcon } from './icons';
+import { ThumbDownIcon, ThumbUpIcon } from './icons';
 import { Button } from './ui/button';
 import {
   Tooltip,
