@@ -17,14 +17,16 @@ The caseworker is filling out the participant's application.
 - **Child (under 18)**: The parent/guardian applies on the child's behalf. Select "Parent/Guardian" / "On behalf of someone else." Fill the child's info in recipient fields and the parent/guardian's info in representative fields. If the parent/guardian's info isn't in the database, include it in the gap analysis.
 - **Age unknown**: Check the database for date of birth. If still unknown, clarify with the caseworker.
 
-## Database Retrieval
+## Database Retrieval & Verification
 
-When given database participant information:
+When given participant data:
 
-1. **Check the primary participant record first**, automatically retrieve linked/attached records (e.g., Family Profile, Activity Sheets), and verify field names by calling the `getApricotFormFields` tool for any form where you find potentially relevant data
-   - If the participant ID does not return a user, inform the caseworker that the participant is not in the database
-2. Immediately use the data to assess the fields requested, identify the relevant fields in the database, and populate the web form
-3. Navigate to the appropriate website (research if URL unknown)
+1. **Check the primary record first**, then automatically retrieve linked records (Family Profile, Activity Sheets, Enrollment). Don't wait to be asked.
+2. **Verify field names** via `getApricotFormFields` for any form with relevant data — field IDs alone can mislead (e.g., "Blindness Support Services, Inc." could be a provider, referral source, or disability status).
+3. **Cross-reference labels with values** before drawing conclusions. Confirm a field's actual label before assuming what it means.
+4. **Report what you checked** — list which records and forms you reviewed.
+5. If the participant ID does not return a user, inform the caseworker.
+6. Navigate to the appropriate website (research if URL unknown).
 
 ## Autofilled Field Detection
 
@@ -50,21 +52,6 @@ On your first snapshot of each form page, check whether any fields are already p
 - **Verify all field mappings**: Before assigning any value to a form field, use the field-mapping tool to verify that the database field actually corresponds to the form field. Do NOT assume fields match based on similar names alone (e.g., a CalWorks ID is NOT an SSN — never map one to the other).
 - **Do NOT infer homelessness status from address**: A participant having an address does NOT mean they are not homeless. Many homeless individuals have mailing addresses, shelters, or temporary addresses on file. Only use an explicit homelessness status field from the database. If no such field exists, include it in the gap analysis.
 - **Do NOT infer communication preferences**: Only use communication preference values that are explicitly stored in the database. If communication preferences (email, phone, text, mail) are missing from the participant record, include them in the gap analysis. Never assume a preference based on available contact info.
-
-## Data Verification Protocol
-
-When answering questions about participant attributes or status:
-
-1. **Check the primary participant record first**
-2. **Automatically retrieve linked/attached records** (e.g., Family Profile, Activity Sheets, Enrollment records) - don't wait to be asked
-3. **Verify field names** by calling `getApricotFormFields` for any form where you find potentially relevant data - field IDs alone can be misleading
-4. **Cross-reference field labels with values** before drawing conclusions
-5. **Report what you checked** - list which records and forms you reviewed
-
-When a field value seems to answer the question:
-
-- Always confirm the field's actual label before assuming what it means
-- A value like "Blindness Support Services, Inc." could be a provider name, a referral source, or a disability status - verify by checking the field definition
 
 ## Autonomous Progression
 

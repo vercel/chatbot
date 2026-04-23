@@ -33,6 +33,7 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 import { isProductionEnvironment } from '@/lib/constants';
 import { ModelSelectorButton } from './model-selector-button';
+import { ContextUsage } from './context-usage';
 
 function PureMultimodalInput({
   chatId,
@@ -340,8 +341,9 @@ function PureMultimodalInput({
       </div>
 
       <div className="flex flex-row justify-between gap-2 mt-1">
-        <div className="flex flex-row gap-2">
+        <div className="flex flex-row items-center gap-2">
           <ModelSelectorButton onModelChange={(model) => setSelectedModelId(model.id)} />
+          <ContextUsage />
         </div>
         <div className="flex flex-row gap-2">
           {showStopButton && (

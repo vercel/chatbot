@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { readFile } from 'node:fs/promises';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, normalize } from 'node:path';
 
 const SKILLS_DIR = normalize(join(process.cwd(), 'lib/ai/skills'));
@@ -11,40 +12,52 @@ interface SkillMeta {
   path: string;
 }
 
-const SKILLS: SkillMeta[] = [
-  {
-    name: 'browser-and-forms',
-    description:
-      'Use this skill before your first browser action. Covers snapshot workflow, selectors, masked fields, field type patterns, multi-page forms, form submission protocol, forbidden actions, and error recovery. Has reference files for the full command reference and advanced submit-button debugging.',
-    path: 'browser-and-forms',
-  },
-  {
-    name: 'custom-dropdowns',
-    description:
-      'Use this skill when a native select action fails or has no effect, or when the snapshot shows select2-container or chosen-container classes. Covers Select2, Chosen, and Drupal custom dropdown patterns.',
-    path: 'custom-dropdowns',
-  },
-  {
-    name: 'modal-handling',
-    description:
-      'Use this skill when you encounter empty/minimal snapshots or elements blocked by overlays. Covers modal detection, React event workarounds, county/location selection modals, and Google Translate bar removal.',
-    path: 'modal-handling',
-  },
-  {
-    name: 'application-protocol',
-    description:
-      'Use this skill when starting a benefits application with participant data. Covers participant data retrieval, field mapping rules, applicant identity, autonomous progression, review screen protocol, caseworker communication, gap analysis, and form summary.',
-    path: 'application-protocol',
-  },
-];
+function parseFrontmatter(content: string): Record<string, string> {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return {};
+  const result: Record<string, string> = {};
+  let currentKey: string | null = null;
+  let currentVal = '';
+  for (const line of match[1].split(/\r?\n/)) {
+    const keyMatch = line.match(/^([a-zA-Z_-]+):\s*(.*)$/);
+    if (keyMatch) {
+      if (currentKey) result[currentKey] = currentVal.trim();
+      currentKey = keyMatch[1];
+      currentVal = keyMatch[2] === '>' ? '' : keyMatch[2];
+    } else if (currentKey && line.trim()) {
+      currentVal += ` ${line.trim()}`;
+    }
+  }
+  if (currentKey) result[currentKey] = currentVal.trim();
+  return result;
+}
+
+function discoverSkills(): SkillMeta[] {
+  const entries = readdirSync(SKILLS_DIR, { withFileTypes: true });
+  const skills: SkillMeta[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    try {
+      const content = readFileSync(join(SKILLS_DIR, entry.name, 'SKILL.md'), 'utf-8');
+      const fm = parseFrontmatter(content);
+      if (fm.name && fm.description) {
+        skills.push({ name: fm.name, description: fm.description, path: entry.name });
+      }
+    } catch {
+      // no SKILL.md in this directory — not a skill
+    }
+  }
+  return skills.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const SKILLS = discoverSkills();
 
 export function getSkillCatalog(): string {
   const list = SKILLS.map((s) => `- **${s.name}**: ${s.description}`).join('\n');
   return `## Skills
 
-Use the \`loadSkill\` tool when starting a task that matches a skill. Use \`readSkillFile\` to load detailed reference files from a skill's directory when you need guidance on a specific topic.
+Use \`loadSkill\` when starting a task that matches a skill. Use \`readSkillFile\` for detailed reference files from a skill's directory.
 
-Available skills:
 ${list}`;
 }
 
@@ -59,12 +72,10 @@ export const loadSkill = tool({
   description:
     'Load a skill to get specialized instructions. Returns the skill content and its directory path for use with readSkillFile.',
   inputSchema: z.object({
-    name: z.string().describe('Skill name (e.g. "agent-browser")'),
+    name: z.string().describe('Skill name (e.g. "browser-and-forms")'),
   }),
   execute: async ({ name }) => {
-    const skill = SKILLS.find(
-      (s) => s.name.toLowerCase() === name.toLowerCase(),
-    );
+    const skill = SKILLS.find((s) => s.name.toLowerCase() === name.toLowerCase());
     if (!skill) {
       return {
         error: `Skill '${name}' not found. Available: ${SKILLS.map((s) => s.name).join(', ')}`,
@@ -76,10 +87,9 @@ export const loadSkill = tool({
     const skillPath = join(SKILLS_DIR, skill.path, 'SKILL.md');
     try {
       const content = await readFile(skillPath, 'utf-8');
-      const body = stripFrontmatter(content);
       const result = {
         skillDirectory: join(SKILLS_DIR, skill.path),
-        content: body,
+        content: stripFrontmatter(content),
       };
       skillCache.set(skill.name, result);
       return result;

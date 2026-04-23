@@ -53,8 +53,8 @@ export function Chat({
 
   const [input, setInput] = useState<string>('');
 
-  // Local state; passed to TokenUsageProvider so SideChatHeader can read it
-  // without prop threading through the Artifact memo boundary.
+  // Local state; exposed via TokenUsageProvider so ContextUsage (and any
+  // other consumer) can read it without prop threading through memo boundaries.
   const [tokenUsage, setTokenUsage] = useState<{
     inputTokens: number;
     outputTokens: number;

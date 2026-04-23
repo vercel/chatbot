@@ -2,6 +2,8 @@
 
 Complete reference for all agent-browser commands. Load this when you need details beyond the core workflow.
 
+> **Note on syntax:** This reference lists the underlying CLI form (e.g. `snapshot -i`, `click <sel>`). From the agent, invoke them as JSON objects — e.g. `{ action: "snapshot", interactive: true }`, `{ action: "click", selector: "@e3" }`. Flags map to named fields; positional args map to `selector`, `value`, `text`, `url`, etc.
+
 ## Navigation
 
 | Command | Description |
