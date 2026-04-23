@@ -1,0 +1,215 @@
+---
+name: browser-and-forms
+description: >
+  Use this skill before your first browser action. Covers the core snapshot-interact
+  cycle, selector rules, masked field rules, form submission protocol, forbidden
+  actions, field type patterns, custom dropdowns, multi-page forms, and error recovery.
+---
+
+# Browser & Form Filling Skill
+
+## Core Workflow
+
+1. **Navigate**: `{ action: "navigate", url: "<url>" }` — already waits for load, do NOT add a separate `waitforloadstate`
+2. **Snapshot**: `{ action: "snapshot" }` — then `{ action: "snapshot", selector: "form" }` on complex pages (Drupal, WordPress, heavy nav/sidebar)
+3. **Read the refs**: Snapshots give refs like `@e3` and may show `[id="fieldId"]`. Use either for interactions — both are first-class.
+4. **Interact**: `{ action: "fill", selector: "@e3", value: "John" }` or `{ action: "fill", selector: "#firstNameTxt", value: "John" }`
+5. **Re-snapshot after every DOM change**: Click, select, fill-that-triggers-dynamic-fields, or navigation — ALWAYS snapshot again. Refs go stale after DOM changes.
+
+**NEVER use `waitforloadstate` after clicks, fills, types, or other in-page interactions.** Only use it after navigating to a completely new URL with heavy async content.
+
+## Ref Format
+
+Snapshots return refs in this format:
+
+```text
+@e1 [button] "Submit"
+@e2 [textbox name="email" id="emailTxt"] "Enter email"
+@e3 [checkbox checked] "Remember me"
+```
+
+## Snapshot Modes
+
+- `{ action: "snapshot" }` — Full page tree with labels and structure
+- `{ action: "snapshot", interactive: true }` — Interactive elements only (compact). Use sparingly.
+- `{ action: "snapshot", selector: "form" }` — Scoped to a container. Use on complex pages.
+
+## Selector Rules
+
+1. **Refs (`@e3`) or CSS IDs (`#fieldId`)** — always preferred. Use whichever the snapshot shows. CSS IDs are more stable across DOM changes.
+2. **`getbylabel`** — almost never. Only when the label is globally unique AND the element has no ID. **NEVER** use for "Yes", "No", "First Name", "Last Name", "State", "Zip Code", "Birthdate", "Phone". **NEVER** include asterisks (`*`) or colons (`:`) in the label.
+3. **Tab navigation** — last resort when refs and IDs aren't working.
+
+## Masked Fields Rule
+
+- **`fill`** = plain text only (name, address, city, email). Sets value programmatically.
+- **`type` with `clear: true`** = masked/formatted fields (SSN, date, phone, state, zip). Simulates keystrokes so JS formatters fire.
+- **Respect `maxlength`**: Strip dashes/slashes/spaces. SSN → 9 digits, date → 8 digits, phone → 10 digits, state → 2 chars.
+- **Always verify**: After typing into masked fields, use `inputvalue` to confirm. If wrong, click → wait → re-type.
+
+## Field Type Patterns
+
+### Text Fields (use `fill`)
+
+```json
+{ "action": "fill", "selector": "@e3", "value": "John Doe" }
+{ "action": "fill", "selector": "#firstNameTxt", "value": "John Doe" }
+```
+
+### Date Fields (use `type`)
+
+Check `maxlength`. If `maxlength="8"`, use digits only (MMDDYYYY). Click first, then type:
+
+```json
+{ "action": "click", "selector": "@e1" }
+{ "action": "type", "selector": "@e1", "text": "01152000", "clear": true }
+{ "action": "inputvalue", "selector": "@e1" }
+```
+
+Or if using a date picker:
+
+```json
+{ "action": "click", "selector": "@e1" }
+{ "action": "snapshot", "interactive": true }
+{ "action": "click", "selector": "@e5" }
+```
+
+### SSN Fields (use `type`)
+
+Check `maxlength`. If `maxlength="9"`, digits only:
+
+```json
+{ "action": "click", "selector": "@e1" }
+{ "action": "type", "selector": "@e1", "text": "123456789", "clear": true }
+{ "action": "inputvalue", "selector": "@e1" }
+```
+
+### Phone Number Fields (use `type`)
+
+Check `maxlength`. If `maxlength="10"`, digits only:
+
+```json
+{ "action": "click", "selector": "@e1" }
+{ "action": "type", "selector": "@e1", "text": "5551234567", "clear": true }
+{ "action": "inputvalue", "selector": "@e1" }
+```
+
+### State Fields (use `type`)
+
+Check `maxlength`. If `maxlength="2"`, use abbreviation:
+
+```json
+{ "action": "click", "selector": "@e1" }
+{ "action": "type", "selector": "@e1", "text": "CA", "clear": true }
+{ "action": "inputvalue", "selector": "@e1" }
+```
+
+### Native Dropdowns (select)
+
+```json
+{ "action": "select", "selector": "@e1", "values": ["Option Value"] }
+{ "action": "select", "selector": "#genderIdentityDrpDwn", "values": ["57"] }
+```
+
+### Checkboxes
+
+```json
+{ "action": "check", "selector": "@e1" }
+{ "action": "uncheck", "selector": "@e1" }
+{ "action": "check", "selector": "#chkBxApplyYourselfYes" }
+```
+
+### Radio Buttons
+
+```json
+{ "action": "click", "selector": "@e1" }
+// ALWAYS re-snapshot — radio selections often reveal conditional fields
+{ "action": "snapshot", "selector": "form" }
+```
+
+## Custom Dropdowns
+
+If `select` fails or has no effect (the dropdown is a custom widget like Select2, Chosen, or Drupal), load the `custom-dropdowns` skill for the full patterns.
+
+## Multi-Page Forms
+
+After clicking Next/Continue/Submit on a page, ALWAYS take a fresh snapshot. Refs from the previous page are gone — `@e1` now refers to a different element.
+
+```json
+// Page 1 — fill and advance
+{ "action": "snapshot", "selector": "form" }
+{ "action": "fill", "selector": "@e1", "value": "..." }
+{ "action": "click", "selector": "@e10" }
+
+// Page 2 — fresh snapshot required
+{ "action": "snapshot", "selector": "form" }
+{ "action": "fill", "selector": "@e1", "value": "..." }
+```
+
+## Dynamic / Conditional Fields
+
+When selecting an option reveals new fields, re-snapshot to discover them:
+
+```json
+{ "action": "click", "selector": "@e1" }
+{ "action": "snapshot", "selector": "form" }
+{ "action": "fill", "selector": "@e5", "value": "..." }
+```
+
+### AJAX Validation
+
+Some fields trigger validation on blur. If you need to check for errors after filling:
+
+```json
+{ "action": "fill", "selector": "@e1", "value": "user@email.com" }
+{ "action": "press", "key": "Tab" }
+{ "action": "snapshot", "selector": "form" }
+```
+
+## Error Recovery
+
+### Field Not Found or Interaction Fails
+
+Re-snapshot to get fresh refs. If the snapshot shows `[id="..."]` on the target field, use the CSS ID directly:
+
+```json
+{ "action": "snapshot", "selector": "form" }
+{ "action": "fill", "selector": "#specificFieldId", "value": "..." }
+```
+
+### Page Navigation Mid-Form
+
+**WARNING**: `back`, `forward`, and `reload` wipe form state — all values you filled will be lost. If a page appears blank or a snapshot returns minimal content, wait and re-snapshot first. Only use `back` as a last resort, and expect to re-fill the form.
+
+## Form Submission Protocol
+
+When the submit button is disabled, follow these steps IN ORDER. Do NOT use `evaluate` before completing steps 1–3.
+
+1. **Check for missing fields**: Snapshot and verify all required fields are filled.
+2. **Check for expand/acknowledge sections**: Look for collapsible sections ("+ Expand", "Please expand and read"). Click them using refs. If no ref available, use ONE evaluate: `{ action: "evaluate", script: "document.querySelector('.header').click();" }` then wait 700ms.
+3. **Wait for the auto-solver**: `{ action: "wait", timeout: 5000 }` then re-snapshot. The browser has a Turnstile/reCAPTCHA auto-solver — do NOT click challenge widgets.
+4. **Verification checklist**: Fresh snapshot. Confirm: (a) all required fields filled, (b) expand sections open, (c) no error messages. Just observe — no corrective actions.
+5. **Still disabled?** Load `readSkillFile` on `references/form-submission.md` for advanced JS debugging.
+
+After unlocking submit, do NOT click it. Proceed with `formSummary` so the caseworker can review.
+
+## Forbidden Actions
+
+- **Stay on the target domain.** Never click social media links, share buttons, footer links to external sites, or banner ads. Focus on `main`, `form`, `#content`. If you navigate away, use `navigate` to return.
+- **`evaluate` restrictions**: Never use to find, click, fill, select, or check elements. Never use when snapshots return empty (that means a modal is blocking — load the `modal-handling` skill). Acceptable uses: reading values (maxLength), removing overlays (Google Translate bar), the stuck-button JS fix after steps 1–4.
+- **Never `reload` during form filling** — it wipes all form state.
+- **Never use `back`** — use on-page navigation buttons ("Previous", "Go Back") instead. No exceptions.
+
+## Parameter Types
+
+Always use correct JSON types — the browser errors on wrong types:
+
+- `timeout` must be a number: `{ action: "wait", timeout: 1000 }` NOT `"1000"`
+- `interactive` must be a boolean: `{ action: "snapshot", interactive: true }` NOT `"true"`
+
+## Reference Files
+
+Use `readSkillFile` to load:
+
+- `references/commands.md` — Full command reference with all actions, flags, and options
+- `references/form-submission.md` — Advanced JS debugging for stuck submit buttons (steps 5-6: finding gating variables, minimal evaluate fix)
