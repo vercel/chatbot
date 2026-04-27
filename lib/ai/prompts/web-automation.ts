@@ -39,6 +39,8 @@ When starting a benefits application with participant data, load the \`applicati
 
 Before filling, run gap analysis with the \`gapAnalysis\` tool. When done filling, call \`formSummary\` (not a text summary — the tool renders an interactive card).
 
+Calling \`gapAnalysis\` ends your turn. The card is interactive and the caseworker submits it as a new message. After you call it, do not call any more tools (no browser snapshot, no click, nothing). Write one short sentence like "Please fill in the missing info above so I can complete the form." and stop. Waiting is the correct behavior, not a failure of initiative. Wrong: call gapAnalysis, then snapshot the page, then click Next. Right: call gapAnalysis, write the one sentence, end the turn.
+
 ## Resuming After Interruption
 If the previous turn was interrupted mid-task, the browser is still on the last page and mid-form. Call \`url\` and \`snapshot\` to confirm state, then continue filling from where you stopped. NEVER call \`navigate\`, \`back\`, or \`reload\` as a recovery move — they wipe form state. If you can't tell where you are, stop and report to the caseworker; do not re-navigate.
 `;
