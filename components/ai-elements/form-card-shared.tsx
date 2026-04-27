@@ -7,20 +7,31 @@ import { cn } from '@/lib/utils';
 
 type CardShellProps = {
   children: ReactNode;
-  expanded: boolean;
-  onCollapse?: () => void;
   variant: 'cta' | 'detail';
 };
 
-// CardShell renders the outer container in two visual variants.
-// `cta` = pink/accent summary used on the chat thread.
-// `detail` = white card used inside the modal overlay.
-// When `expanded` is true, the card is portaled to document.body and mounted
-// inside a fixed full-page overlay with a backdrop; clicking the backdrop or
-// pressing ESC calls onCollapse. The portal is required because the chat
-// layout has transformed/filtered ancestors that would otherwise trap a
-// `fixed` element inside the chat panel.
-export function CardShell({ children, expanded, onCollapse, variant }: CardShellProps) {
+// Inline shell used in the chat thread. Two visual variants:
+// `cta` = pink/accent summary card. `detail` = white card (used as the
+// content inside the modal). Modal expansion is handled separately by the
+// `Modal` component below.
+export function CardShell({ children, variant }: CardShellProps) {
+  const shellCls =
+    variant === 'cta'
+      ? 'relative rounded-2xl border overflow-hidden bg-[hsl(318_50%_97%)] border-[hsl(320_47%_85%)]'
+      : 'relative bg-white rounded-2xl border border-border overflow-hidden';
+  return <div className={shellCls}>{children}</div>;
+}
+
+type ModalProps = {
+  children: ReactNode;
+  onCollapse: () => void;
+};
+
+// Full-screen modal portaled to document.body (so it escapes the chat
+// panel's containing block and covers the artifact pane too). Backdrop
+// click and ESC both call onCollapse. The white detail card sits centered
+// inside, with rounded corners.
+export function Modal({ children, onCollapse }: ModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -28,24 +39,16 @@ export function CardShell({ children, expanded, onCollapse, variant }: CardShell
   }, []);
 
   useEffect(() => {
-    if (!expanded) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCollapse?.();
+      if (e.key === 'Escape') onCollapse();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [expanded, onCollapse]);
+  }, [onCollapse]);
 
-  const shellCls =
-    variant === 'cta'
-      ? 'relative rounded-2xl border overflow-hidden bg-[hsl(318_50%_97%)] border-[hsl(320_47%_85%)]'
-      : 'relative bg-white rounded-2xl border border-border overflow-hidden';
+  if (!mounted) return null;
 
-  const shell = <div className={shellCls}>{children}</div>;
-
-  if (!expanded) return shell;
-
-  const overlay = (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -54,21 +57,15 @@ export function CardShell({ children, expanded, onCollapse, variant }: CardShell
     >
       {/* biome-ignore lint/nursery/noStaticElementInteractions: stopPropagation keeps clicks inside the content wrapper from closing the modal */}
       <div
-        className="w-full max-w-[640px] max-h-full overflow-y-auto"
+        className="w-full max-w-[820px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {shell}
+        <div className="relative bg-white rounded-2xl border border-border overflow-hidden shadow-2xl">
+          {children}
+        </div>
       </div>
-    </div>
-  );
-
-  return (
-    <>
-      <div aria-hidden="true" className="opacity-0 pointer-events-none">
-        {shell}
-      </div>
-      {mounted ? createPortal(overlay, document.body) : null}
-    </>
+    </div>,
+    document.body,
   );
 }
 

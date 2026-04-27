@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Check, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,9 +21,41 @@ import type { ChatMessage } from '@/lib/types';
 import type { GapField, GapSection } from '@/lib/types/form-cards';
 import {
   CardShell,
+  Modal,
   ModalNavBar,
   SectionHeader,
 } from './form-card-shared';
+
+const PAGE_FIELD_LIMIT = 5;
+
+type GapPage = {
+  key: string;
+  sectionTitle: string;
+  fields: GapField[];
+};
+
+function paginate(sections: GapSection[]): GapPage[] {
+  const pages: GapPage[] = [];
+  for (const section of sections) {
+    if (section.fields.length <= PAGE_FIELD_LIMIT) {
+      pages.push({
+        key: `${section.id}-1`,
+        sectionTitle: section.title,
+        fields: section.fields,
+      });
+      continue;
+    }
+    const total = Math.ceil(section.fields.length / PAGE_FIELD_LIMIT);
+    for (let p = 0; p < total; p++) {
+      pages.push({
+        key: `${section.id}-${p + 1}`,
+        sectionTitle: section.title,
+        fields: section.fields.slice(p * PAGE_FIELD_LIMIT, (p + 1) * PAGE_FIELD_LIMIT),
+      });
+    }
+  }
+  return pages;
+}
 
 interface GapAnalysisCardProps {
   formName?: string;
@@ -52,6 +84,7 @@ export function GapAnalysisCard({
   const [expanded, setExpanded] = useState(false);
   const [current, setCurrent] = useState(0);
 
+  const pages = useMemo(() => paginate(sections), [sections]);
   const totalFields = sections.reduce((n, s) => n + s.fields.length, 0);
   const disabled = skipped || !isArtifactVisible;
   const firstName = clientName?.split(' ')[0];
@@ -233,104 +266,58 @@ export function GapAnalysisCard({
     );
   }
 
-  // ---------- Submitted summary state ----------
-  if (submitted && !expanded) {
+  // The CTA card stays mounted in the chat thread regardless of modal state.
+  // Buttons get disabled while the modal is open so the user can only close
+  // via the modal itself.
+  let ctaContent: ReactNode;
+  if (submitted) {
     const filledCount = Object.values(answers).filter(
       (v) => v != null && (Array.isArray(v) ? v.length > 0 : String(v).trim() !== ''),
     ).length;
-    return (
-      <CardShell expanded={false} variant="cta">
-        <div className={cn('p-5', className)}>
-          <div className="font-source-serif text-[14px]">
-            <div className="flex items-center gap-1.5 mb-3 text-[hsl(142_55%_28%)]">
-              <Check className="w-3.5 h-3.5" />
-              <p className="font-bold">Information submitted</p>
-            </div>
-            <p className="mb-4 text-foreground">
-              {filledCount > 0
-                ? <>You filled in {filledCount} of {totalFields} field{totalFields === 1 ? '' : 's'}.{clientName ? <> I&rsquo;ll apply these to {clientName}&rsquo;s application.</> : null}</>
-                : <>Your responses have been applied{clientName ? <> to {clientName}&rsquo;s application</> : null}.</>}
-            </p>
+    ctaContent = (
+      <div className={cn('p-5', className)}>
+        <div className="font-source-serif text-[14px]">
+          <div className="flex items-center gap-1.5 mb-3 text-[hsl(142_55%_28%)]">
+            <Check className="w-3.5 h-3.5" />
+            <p className="font-bold">Information submitted</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { setSubmitted(false); openModal(0); }}
-            disabled={disabled}
-            className="gap-1.5"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            Edit responses
-          </Button>
+          <p className="mb-4 text-foreground">
+            {filledCount > 0
+              ? <>You filled in {filledCount} of {totalFields} field{totalFields === 1 ? '' : 's'}.{clientName ? <> I&rsquo;ll apply these to {clientName}&rsquo;s application.</> : null}</>
+              : <>Your responses have been applied{clientName ? <> to {clientName}&rsquo;s application</> : null}.</>}
+          </p>
         </div>
-      </CardShell>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => { setSubmitted(false); openModal(0); }}
+          disabled={disabled || expanded}
+          className="gap-1.5"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          Edit responses
+        </Button>
+      </div>
     );
-  }
-
-  // ---------- Skipped summary state ----------
-  if (skipped && !expanded) {
-    return (
-      <CardShell expanded={false} variant="cta">
-        <div className={cn('p-5', className)}>
-          <div className="font-source-serif text-[14px]">
-            <p className="font-bold mb-3 text-muted-foreground">Skipped for now</p>
-            <p className="mb-4 text-foreground">
-              {firstName
-                ? <>You can come back to fill in {firstName}&rsquo;s {totalFields} missing field{totalFields === 1 ? '' : 's'} anytime.</>
-                : <>You can come back to fill in the missing fields anytime.</>}
-            </p>
-          </div>
-          <Button size="sm" disabled className="gap-1.5">
-            <Pencil className="w-3.5 h-3.5" />
-            Provide info
-          </Button>
+  } else if (skipped) {
+    ctaContent = (
+      <div className={cn('p-5', className)}>
+        <div className="font-source-serif text-[14px]">
+          <p className="font-bold mb-3 text-muted-foreground">Skipped for now</p>
+          <p className="mb-4 text-foreground">
+            {firstName
+              ? <>You can come back to fill in {firstName}&rsquo;s {totalFields} missing field{totalFields === 1 ? '' : 's'} anytime.</>
+              : <>You can come back to fill in the missing fields anytime.</>}
+          </p>
         </div>
-      </CardShell>
+        <Button size="sm" disabled className="gap-1.5">
+          <Pencil className="w-3.5 h-3.5" />
+          Provide info
+        </Button>
+      </div>
     );
-  }
-
-  // ---------- Detail modal (expanded) ----------
-  if (expanded) {
-    const section = sections[current];
-    const isLast = current === sections.length - 1;
-    return (
-      <CardShell expanded variant="detail" onCollapse={collapse}>
-        <SectionHeader
-          title={section.title || formName || 'Missing information'}
-          eyebrow={sections.length > 1 ? `Section ${current + 1} of ${sections.length}` : undefined}
-          onClose={collapse}
-        />
-        <div className="py-3">
-          {section.fields.map((f) => (
-            <div key={f.field} className="px-5 py-2">
-              {renderField(f)}
-            </div>
-          ))}
-        </div>
-        <ModalNavBar
-          current={current}
-          sectionIds={sections.map((s) => s.id)}
-          onPrev={() => (current === 0 ? collapse() : setCurrent((c) => Math.max(0, c - 1)))}
-          onNext={() => setCurrent((c) => Math.min(sections.length - 1, c + 1))}
-          onJump={setCurrent}
-          isLast={isLast}
-          rightSlot={
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="text-[14px] font-semibold px-5 py-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Submit updates
-            </button>
-          }
-        />
-      </CardShell>
-    );
-  }
-
-  // ---------- Default summary CTA ----------
-  return (
-    <CardShell expanded={false} variant="cta">
+  } else {
+    ctaContent = (
       <div className={cn('p-5', className)}>
         <div className="font-source-serif text-[14px]">
           <p className="font-bold mb-3">Missing information</p>
@@ -342,7 +329,7 @@ export function GapAnalysisCard({
           <Button
             size="sm"
             onClick={() => openModal(0)}
-            disabled={disabled || !sendMessage || sections.length === 0}
+            disabled={disabled || expanded || !sendMessage || pages.length === 0}
             className="gap-1.5"
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -352,12 +339,54 @@ export function GapAnalysisCard({
             variant="outline"
             size="sm"
             onClick={handleSkip}
-            disabled={disabled || !sendMessage}
+            disabled={disabled || expanded || !sendMessage}
           >
             Skip for now
           </Button>
         </div>
       </div>
-    </CardShell>
+    );
+  }
+
+  const page = expanded ? pages[current] : undefined;
+  const isLast = page ? current === pages.length - 1 : false;
+
+  return (
+    <>
+      <CardShell variant="cta">{ctaContent}</CardShell>
+      {expanded && page && (
+        <Modal onCollapse={collapse}>
+          <SectionHeader
+            title={page.sectionTitle || formName || 'Missing information'}
+            eyebrow={pages.length > 1 ? `Step ${current + 1} of ${pages.length}` : undefined}
+            onClose={collapse}
+          />
+          <div className="py-3">
+            {page.fields.map((f) => (
+              <div key={f.field} className="px-5 py-2">
+                {renderField(f)}
+              </div>
+            ))}
+          </div>
+          <ModalNavBar
+            current={current}
+            sectionIds={pages.map((p) => p.key)}
+            onPrev={() => (current === 0 ? collapse() : setCurrent((c) => Math.max(0, c - 1)))}
+            onNext={() => setCurrent((c) => Math.min(pages.length - 1, c + 1))}
+            onJump={setCurrent}
+            isLast={isLast}
+            rightSlot={
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="text-[14px] font-semibold px-5 py-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Submit updates
+              </button>
+            }
+          />
+        </Modal>
+      )}
+    </>
   );
 }

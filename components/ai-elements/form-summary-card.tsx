@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Check, ClipboardCheck, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +21,42 @@ import type { ReviewField, ReviewSection } from '@/lib/types/form-cards';
 import {
   CardShell,
   FieldSourceBadge,
+  Modal,
   ModalNavBar,
   SectionHeader,
 } from './form-card-shared';
+
+const PAGE_FIELD_LIMIT = 5;
+
+type ReviewPage = {
+  key: string;
+  sectionTitle: string;
+  fields: ReviewField[];
+  hasMissingRequired: boolean;
+};
+
+function paginate(sections: ReviewSection[]): ReviewPage[] {
+  const pages: ReviewPage[] = [];
+  for (const section of sections) {
+    const chunkInto = (chunk: ReviewField[], pageIndex: number) => {
+      pages.push({
+        key: `${section.id}-${pageIndex + 1}`,
+        sectionTitle: section.title,
+        fields: chunk,
+        hasMissingRequired: chunk.some((f) => f.source === 'missing' && f.required),
+      });
+    };
+    if (section.fields.length <= PAGE_FIELD_LIMIT) {
+      chunkInto(section.fields, 0);
+      continue;
+    }
+    const total = Math.ceil(section.fields.length / PAGE_FIELD_LIMIT);
+    for (let p = 0; p < total; p++) {
+      chunkInto(section.fields.slice(p * PAGE_FIELD_LIMIT, (p + 1) * PAGE_FIELD_LIMIT), p);
+    }
+  }
+  return pages;
+}
 
 interface FormSummaryCardProps {
   formName?: string;
@@ -49,19 +82,17 @@ export function FormSummaryCard({
   const [readOnly, setReadOnly] = useState(false);
   const [current, setCurrent] = useState(0);
 
-  const issueIndexes = useMemo(
-    () =>
-      sections
-        .map((s, i) => (s.fields.some((f) => f.source === 'missing' && f.required) ? i : -1))
-        .filter((i) => i >= 0),
-    [sections],
+  const pages = useMemo(() => paginate(sections), [sections]);
+  const firstIssuePageIndex = useMemo(
+    () => pages.findIndex((p) => p.hasMissingRequired),
+    [pages],
   );
   const totalFields = sections.reduce((n, s) => n + s.fields.length, 0);
   const missingRequiredCount = sections.reduce(
     (n, s) => n + s.fields.filter((f) => f.source === 'missing' && f.required).length,
     0,
   );
-  const hasIssues = issueIndexes.length > 0;
+  const hasIssues = firstIssuePageIndex >= 0;
   const hasData = sections.some((s) => s.fields.some((f) => f.value));
   const disabled = skipped || !isArtifactVisible;
 
@@ -75,13 +106,13 @@ export function FormSummaryCard({
 
   function openEditable(at: number) {
     setReadOnly(false);
-    setCurrent(at);
+    setCurrent(Math.max(0, at));
     setExpanded(true);
   }
 
   function openReadOnly(at = 0) {
     setReadOnly(true);
-    setCurrent(at);
+    setCurrent(Math.max(0, at));
     setExpanded(true);
   }
 
@@ -217,122 +248,87 @@ export function FormSummaryCard({
     );
   }
 
-  // ---------- Confirmed summary ----------
-  if (confirmed && !expanded) {
-    return (
-      <CardShell expanded={false} variant="cta">
-        <div className={cn('p-5', className)}>
-          <div className="font-source-serif text-[14px]">
-            <div className="flex items-center gap-1.5 mb-3 text-[hsl(142_55%_28%)]">
-              <Check className="w-3.5 h-3.5" />
-              <p className="font-bold">Application submitted</p>
-            </div>
-            <p className="mb-4 text-foreground">
-              {clientName ? <>{clientName}&rsquo;s</> : <>The</>} {formName ? `${formName} ` : ''}application has been submitted.
-            </p>
+  // CTA stays mounted in the chat thread regardless of modal state.
+  let ctaContent: ReactNode;
+  if (confirmed) {
+    ctaContent = (
+      <div className={cn('p-5', className)}>
+        <div className="font-source-serif text-[14px]">
+          <div className="flex items-center gap-1.5 mb-3 text-[hsl(142_55%_28%)]">
+            <Check className="w-3.5 h-3.5" />
+            <p className="font-bold">Application submitted</p>
           </div>
-          {hasData && (
-            <Button variant="outline" size="sm" onClick={() => openReadOnly(0)} className="gap-1.5">
-              <Eye className="w-3.5 h-3.5" />
-              View submitted
-            </Button>
-          )}
+          <p className="mb-4 text-foreground">
+            {clientName ? <>{clientName}&rsquo;s</> : <>The</>} {formName ? `${formName} ` : ''}application has been submitted.
+          </p>
         </div>
-      </CardShell>
-    );
-  }
-
-  // ---------- Skipped summary ----------
-  if (skipped && !expanded) {
-    return (
-      <CardShell expanded={false} variant="cta">
-        <div className={cn('p-5', className)}>
-          <div className="font-source-serif text-[14px]">
-            <p className="font-bold mb-3 text-muted-foreground">Review skipped</p>
-            <p className="mb-4 text-foreground">
-              You can come back to review {clientName ? `${clientName}'s ` : ''}application before submitting.
-            </p>
-          </div>
-          {hasData ? (
-            <Button variant="outline" size="sm" onClick={() => openReadOnly(0)} className="gap-1.5">
-              <Eye className="w-3.5 h-3.5" />
-              View submitted
-            </Button>
-          ) : (
-            <Button size="sm" disabled className="gap-1.5">
-              <ClipboardCheck className="w-3.5 h-3.5" />
-              Start review
-            </Button>
-          )}
-        </div>
-      </CardShell>
-    );
-  }
-
-  // ---------- Detail modal ----------
-  if (expanded) {
-    const section = sections[current];
-    const isLast = current === sections.length - 1;
-    const submitButton =
-      readOnly || disabled ? null : (
-        <button
-          type="button"
-          onClick={handleConfirm}
-          className="text-[14px] font-semibold px-5 py-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          Submit updates
-        </button>
-      );
-    return (
-      <CardShell expanded variant="detail" onCollapse={collapse}>
-        <SectionHeader
-          title={section.title || formName || 'Review'}
-          eyebrow={sections.length > 1 ? `Section ${current + 1} of ${sections.length}` : undefined}
-          onClose={collapse}
-        />
-        <div>
-          {section.fields.map((f) => renderRow(f))}
-          {section.fields.length === 0 && (
-            <p className="px-5 py-6 text-sm text-muted-foreground">No fields in this section.</p>
-          )}
-        </div>
-        <ModalNavBar
-          current={current}
-          sectionIds={sections.map((s) => s.id)}
-          onPrev={() => (current === 0 ? collapse() : setCurrent((c) => Math.max(0, c - 1)))}
-          onNext={() => setCurrent((c) => Math.min(sections.length - 1, c + 1))}
-          onJump={setCurrent}
-          isLast={isLast}
-          rightSlot={submitButton}
-        />
-      </CardShell>
-    );
-  }
-
-  // ---------- Default summary CTA ----------
-  if (disabled && hasData) {
-    return (
-      <CardShell expanded={false} variant="cta">
-        <div className={cn('p-5', className)}>
-          <div className="font-source-serif text-[14px]">
-            <p className="font-bold mb-3">Application ready for review</p>
-            <p className="mb-4 text-foreground">
-              {hasIssues
-                ? <>I filled in {totalFields - missingRequiredCount} of {totalFields} fields{clientName ? <> for {clientName}</> : null}. {missingRequiredCount} required field{missingRequiredCount === 1 ? ' is' : 's are'} still missing.</>
-                : <>I filled in all {totalFields} fields{clientName ? <> for {clientName}</> : null}.</>}
-            </p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => openReadOnly(issueIndexes[0] ?? 0)} className="gap-1.5">
+        {hasData && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openReadOnly(0)}
+            disabled={expanded}
+            className="gap-1.5"
+          >
             <Eye className="w-3.5 h-3.5" />
             View submitted
           </Button>
-        </div>
-      </CardShell>
+        )}
+      </div>
     );
-  }
-
-  return (
-    <CardShell expanded={false} variant="cta">
+  } else if (skipped) {
+    ctaContent = (
+      <div className={cn('p-5', className)}>
+        <div className="font-source-serif text-[14px]">
+          <p className="font-bold mb-3 text-muted-foreground">Review skipped</p>
+          <p className="mb-4 text-foreground">
+            You can come back to review {clientName ? `${clientName}'s ` : ''}application before submitting.
+          </p>
+        </div>
+        {hasData ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openReadOnly(0)}
+            disabled={expanded}
+            className="gap-1.5"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            View submitted
+          </Button>
+        ) : (
+          <Button size="sm" disabled className="gap-1.5">
+            <ClipboardCheck className="w-3.5 h-3.5" />
+            Start review
+          </Button>
+        )}
+      </div>
+    );
+  } else if (disabled && hasData) {
+    ctaContent = (
+      <div className={cn('p-5', className)}>
+        <div className="font-source-serif text-[14px]">
+          <p className="font-bold mb-3">Application ready for review</p>
+          <p className="mb-4 text-foreground">
+            {hasIssues
+              ? <>I filled in {totalFields - missingRequiredCount} of {totalFields} fields{clientName ? <> for {clientName}</> : null}. {missingRequiredCount} required field{missingRequiredCount === 1 ? ' is' : 's are'} still missing.</>
+              : <>I filled in all {totalFields} fields{clientName ? <> for {clientName}</> : null}.</>}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => openReadOnly(firstIssuePageIndex >= 0 ? firstIssuePageIndex : 0)}
+          disabled={expanded}
+          className="gap-1.5"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          View submitted
+        </Button>
+      </div>
+    );
+  } else {
+    ctaContent = (
       <div className={cn('p-5', className)}>
         <div className="font-source-serif text-[14px]">
           <p className="font-bold mb-3">Application ready for review</p>
@@ -345,18 +341,66 @@ export function FormSummaryCard({
         <div className="flex gap-2">
           <Button
             size="sm"
-            onClick={() => openEditable(hasIssues ? issueIndexes[0] : 0)}
-            disabled={disabled || sections.length === 0}
+            onClick={() => openEditable(hasIssues ? firstIssuePageIndex : 0)}
+            disabled={disabled || expanded || pages.length === 0}
             className="gap-1.5"
           >
             <ClipboardCheck className="w-3.5 h-3.5" />
             {hasIssues ? 'Start review' : 'Review & submit'}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleSkip} disabled={disabled}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSkip}
+            disabled={disabled || expanded}
+          >
             Skip for now
           </Button>
         </div>
       </div>
-    </CardShell>
+    );
+  }
+
+  const page = expanded ? pages[current] : undefined;
+  const isLast = page ? current === pages.length - 1 : false;
+  const submitButton =
+    readOnly || disabled ? null : (
+      <button
+        type="button"
+        onClick={handleConfirm}
+        className="text-[14px] font-semibold px-5 py-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+      >
+        Submit updates
+      </button>
+    );
+
+  return (
+    <>
+      <CardShell variant="cta">{ctaContent}</CardShell>
+      {expanded && page && (
+        <Modal onCollapse={collapse}>
+          <SectionHeader
+            title={page.sectionTitle || formName || 'Review'}
+            eyebrow={pages.length > 1 ? `Step ${current + 1} of ${pages.length}` : undefined}
+            onClose={collapse}
+          />
+          <div>
+            {page.fields.map((f) => renderRow(f))}
+            {page.fields.length === 0 && (
+              <p className="px-5 py-6 text-sm text-muted-foreground">No fields in this section.</p>
+            )}
+          </div>
+          <ModalNavBar
+            current={current}
+            sectionIds={pages.map((p) => p.key)}
+            onPrev={() => (current === 0 ? collapse() : setCurrent((c) => Math.max(0, c - 1)))}
+            onNext={() => setCurrent((c) => Math.min(pages.length - 1, c + 1))}
+            onJump={setCurrent}
+            isLast={isLast}
+            rightSlot={submitButton}
+          />
+        </Modal>
+      )}
+    </>
   );
 }
