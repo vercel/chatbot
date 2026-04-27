@@ -33,7 +33,7 @@ test('Skip for now sends a message and locks the buttons', async () => {
 
 test('Provide info opens the modal and Submit updates posts the answers', async () => {
   const sendMessage = vi.fn();
-  const { getByRole, getByPlaceholderText } = render(
+  const { getByRole } = render(
     <GapAnalysisCard
       formName="CalFresh"
       sections={SECTIONS}
@@ -41,7 +41,7 @@ test('Provide info opens the modal and Submit updates posts the answers', async 
     />
   );
   await getByRole('button', { name: /provide info/i }).click();
-  await getByPlaceholderText(/social security number/i).fill('123-45-6789');
+  await getByRole('textbox').fill('123-45-6789');
   await getByRole('button', { name: /submit updates/i }).click();
   expect(sendMessage).toHaveBeenCalledTimes(1);
   const args = sendMessage.mock.calls[0][0];
