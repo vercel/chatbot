@@ -19,6 +19,7 @@ import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
 import { UserActionConfirmation, GapAnalysisCard, FormSummaryCard, CheckpointCard } from './ai-elements';
+import { adaptGapSections, adaptReviewSections } from '@/lib/types/form-cards';
 import type { CheckpointData } from './chat';
 import { groupMessageParts, ToolCallGroup } from './tool-call-group';
 
@@ -497,8 +498,10 @@ const PurePreviewMessage = ({
                     <GapAnalysisCard
                       key={toolCallId}
                       formName={input?.formName}
-                      missingFields={input?.missingFields ?? []}
+                      clientName={input?.clientName}
+                      sections={adaptGapSections(input)}
                       sendMessage={sendMessage}
+                      isArtifactVisible={isArtifactVisible}
                     />
                   );
                 }
@@ -512,7 +515,8 @@ const PurePreviewMessage = ({
                     <FormSummaryCard
                       key={toolCallId}
                       formName={input?.formName}
-                      fields={input?.fields ?? []}
+                      clientName={input?.clientName}
+                      sections={adaptReviewSections(input)}
                       sendMessage={sendMessage}
                       isArtifactVisible={isArtifactVisible}
                     />
