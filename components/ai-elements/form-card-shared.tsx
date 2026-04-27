@@ -46,6 +46,7 @@ export function CardShell({ children, expanded, onCollapse, variant }: CardShell
         className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-[rgba(16,24,40,0.45)]"
         onClick={onCollapse}
       >
+        {/* biome-ignore lint/nursery/noStaticElementInteractions: stopPropagation keeps clicks inside the content wrapper from closing the modal */}
         <div
           className="w-full max-w-[640px] max-h-full overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
@@ -93,17 +94,17 @@ export function SectionHeader({ title, eyebrow, onClose }: SectionHeaderProps) {
 }
 
 type ProgressDotsProps = {
-  count: number;
+  ids: string[];
   current: number;
   onJump: (i: number) => void;
 };
 
-export function ProgressDots({ count, current, onJump }: ProgressDotsProps) {
+export function ProgressDots({ ids, current, onJump }: ProgressDotsProps) {
   return (
     <div className="flex items-center justify-center gap-1.5">
-      {Array.from({ length: count }).map((_, i) => (
+      {ids.map((id, i) => (
         <button
-          key={i}
+          key={id}
           type="button"
           onClick={() => onJump(i)}
           aria-label={`Go to section ${i + 1}`}
@@ -166,7 +167,7 @@ export function FieldSourceBadge({ source, required }: FieldSourceBadgeProps) {
 
 type ModalNavBarProps = {
   current: number;
-  count: number;
+  sectionIds: string[];
   onPrev: () => void;
   onNext: () => void;
   onJump: (i: number) => void;
@@ -177,7 +178,7 @@ type ModalNavBarProps = {
 // Sticky bottom bar inside the detail modal: Back | dots | Next/right slot.
 // `rightSlot` lets the caller render the Submit button on the last section
 // (or render nothing in read-only mode).
-export function ModalNavBar({ current, count, onPrev, onNext, onJump, isLast, rightSlot }: ModalNavBarProps) {
+export function ModalNavBar({ current, sectionIds, onPrev, onNext, onJump, isLast, rightSlot }: ModalNavBarProps) {
   return (
     <div className="px-5 py-4 border-t border-border grid grid-cols-3 items-center gap-3 bg-white sticky bottom-0">
       <button
@@ -187,7 +188,7 @@ export function ModalNavBar({ current, count, onPrev, onNext, onJump, isLast, ri
       >
         <ChevronLeft size={14} /> Back
       </button>
-      <ProgressDots count={count} current={current} onJump={onJump} />
+      <ProgressDots ids={sectionIds} current={current} onJump={onJump} />
       <div className="justify-self-end flex items-center gap-2">
         {isLast ? (
           rightSlot

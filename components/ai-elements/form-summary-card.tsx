@@ -298,7 +298,7 @@ export function FormSummaryCard({
         </div>
         <ModalNavBar
           current={current}
-          count={sections.length}
+          sectionIds={sections.map((s) => s.id)}
           onPrev={() => (current === 0 ? collapse() : setCurrent((c) => Math.max(0, c - 1)))}
           onNext={() => setCurrent((c) => Math.min(sections.length - 1, c + 1))}
           onJump={setCurrent}
