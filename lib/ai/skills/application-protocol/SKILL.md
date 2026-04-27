@@ -121,7 +121,8 @@ Before filling any fields, do this:
 4. Identify the gap: which required fields have NO matching data in the database (do not say anything to the caseworker about this)
 5. Call the `gapAnalysis` tool with:
    - `formName`: the name of the form (e.g. "WIC Application")
-   - `missingFields`: array of `{ field, options?, inputType?, condition? }` for data you need from the caseworker
+   - `clientName` (optional): the participant's full name, so the card can address them by name
+   - `sections`: an array of `{ id, title, fields }` grouping the missing fields. Use the form's natural sections (e.g. "Identity & eligibility", "Household composition", "Income", "Expenses & assets", "Preferences & legal"). For each field include `{ field, options?, inputType?, multiSelect?, condition?, required?, placeholder?, note? }`. If only a few fields are missing, a single section titled after the form area is fine.
    - Do NOT include fields you already have data for. The caseworker only needs to see what's missing.
 6. **CRITICAL: The gapAnalysis tool renders an interactive card. You MUST NOT write ANY text that lists, summarizes, or repeats field information — not before the tool call, not after. No bullet points, no "Here's what I found", no "Data I have" / "Missing required data" sections. Zero duplication.**
 7. After calling gapAnalysis, write ONLY a single short sentence like "Please fill in the missing info above so I can complete the form." Nothing else.
@@ -135,14 +136,14 @@ This prevents back-and-forth where the agent fills some fields, discovers gaps, 
 
 When you have finished filling a form, call the `formSummary` tool **instead of** writing a summary message. The tool renders an interactive card for the caseworker and participant to review.
 
-Pass a single `fields` array in the order fields appear on the original form. For each field, set `source` to one of:
+Pass a `sections` array grouping fields by the form's natural sections. Within each section, list fields in the order they appear on the original form. Optionally pass `clientName` so the card can name the participant. For each field, set `source` to one of:
 
 - **`database`**: value pulled directly from Apricot records
 - **`caseworker`**: value provided by the caseworker this session (e.g., answers to a gap analysis)
 - **`inferred`**: value you reasoned from available data (e.g., "Lives alone — no household members listed")
 - **`missing`**: field could not be filled — omit `value` or leave it empty
 
-**Field order**: Always list fields in the order they appear on the original form. Do NOT group by source.
+**Field order**: Within each section, list fields in the order they appear on the original form. Group fields into the same logical sections you would see on the form (e.g. "Identity & eligibility", "Household composition", "Income"). Do NOT group by source.
 
 **Field types**: For every field — including `missing` fields — you MUST set `inputType` based on the actual form control you observed: `"select"` for dropdowns, `"radio"` for single-choice radio buttons (pick one), `"checkbox"` for multi-select checkboxes (pick many), `"text"` for plain text inputs (or omit for text). For `"select"`, `"radio"`, and `"checkbox"` fields you MUST also include the `options` array with all available choices you observed on the form. Set `required: true` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
 
