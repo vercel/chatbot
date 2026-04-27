@@ -34,18 +34,36 @@ const fieldSchema = z.object({
     ),
 });
 
+const sectionSchema = z.object({
+  id: z.string().describe('Stable id for the section, e.g. "identity", "household"'),
+  title: z
+    .string()
+    .describe(
+      'Human-readable section title shown to the caseworker, e.g. "Identity & eligibility"',
+    ),
+  fields: z
+    .array(fieldSchema)
+    .describe(
+      'Fields belonging to this section, in the order they appear on the original form.',
+    ),
+});
+
 export const formSummary = tool({
   description:
-    'Display a form summary card showing what was filled in and where each value came from. Call this INSTEAD of writing a summary message at the end of form completion. The card already displays all information — do NOT write any text listing the fields before or after calling this tool. Just call the tool, then follow with one short sentence like "Please review and submit when ready."',
+    'Display a form summary card showing what was filled in and where each value came from. Group fields into the same logical sections you would see on the form (e.g., "Identity & eligibility", "Household composition", "Income"). Call this INSTEAD of writing a summary message at the end of form completion. The card already displays all information — do NOT write any text listing the fields before or after calling this tool. Just call the tool, then follow with one short sentence like "Please review and submit when ready."',
   inputSchema: z.object({
     formName: z
       .string()
       .optional()
       .describe('Name of the form that was filled, e.g. "WIC Application"'),
-    fields: z
-      .array(fieldSchema)
+    clientName: z
+      .string()
+      .optional()
+      .describe('Full name of the participant the form was filled for'),
+    sections: z
+      .array(sectionSchema)
       .describe(
-        'All form fields in the order they appear on the original form. Each field has a source indicating where the value came from.',
+        'All form fields grouped into sections, in the order sections appear on the original form.',
       ),
   }),
   execute: async (input) => input,
