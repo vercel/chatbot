@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,9 +15,18 @@ type CardShellProps = {
 // CardShell renders the outer container in two visual variants.
 // `cta` = pink/accent summary used on the chat thread.
 // `detail` = white card used inside the modal overlay.
-// When `expanded` is true, the card mounts inside a fixed full-page overlay
-// with a backdrop; clicking the backdrop or pressing ESC calls onCollapse.
+// When `expanded` is true, the card is portaled to document.body and mounted
+// inside a fixed full-page overlay with a backdrop; clicking the backdrop or
+// pressing ESC calls onCollapse. The portal is required because the chat
+// layout has transformed/filtered ancestors that would otherwise trap a
+// `fixed` element inside the chat panel.
 export function CardShell({ children, expanded, onCollapse, variant }: CardShellProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!expanded) return;
     const onKey = (e: KeyboardEvent) => {
@@ -35,25 +45,29 @@ export function CardShell({ children, expanded, onCollapse, variant }: CardShell
 
   if (!expanded) return shell;
 
+  const overlay = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-[rgba(16,24,40,0.45)]"
+      onClick={onCollapse}
+    >
+      {/* biome-ignore lint/nursery/noStaticElementInteractions: stopPropagation keeps clicks inside the content wrapper from closing the modal */}
+      <div
+        className="w-full max-w-[640px] max-h-full overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {shell}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div aria-hidden="true" className="opacity-0 pointer-events-none">
         {shell}
       </div>
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-[rgba(16,24,40,0.45)]"
-        onClick={onCollapse}
-      >
-        {/* biome-ignore lint/nursery/noStaticElementInteractions: stopPropagation keeps clicks inside the content wrapper from closing the modal */}
-        <div
-          className="w-full max-w-[640px] max-h-full overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {shell}
-        </div>
-      </div>
+      {mounted ? createPortal(overlay, document.body) : null}
     </>
   );
 }
