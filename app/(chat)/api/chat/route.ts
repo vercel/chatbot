@@ -273,7 +273,10 @@ export async function POST(request: Request) {
       return error.toResponse();
     }
     
-    console.error('Unexpected error in chat API:', error);
+    console.error('Unexpected error in chat API:', {
+      chatId: requestBody?.id,
+      error,
+    });
     return new ChatSDKError('internal_server_error:api').toResponse();
   }
 }

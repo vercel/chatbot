@@ -204,6 +204,15 @@ export function KernelBrowserClient({
       return;
     }
 
+    console.log('[Kernel] switchControlMode', {
+      from: controlMode,
+      to: mode,
+      sessionId,
+      chatStatus,
+      willStop: mode === 'user' && Boolean(stop),
+      willResume: mode === 'agent' && Boolean(sendMessage),
+    });
+
     if (mode === 'user') {
       // Stop the AI when user takes control
       if (stop) {
