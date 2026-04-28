@@ -8,18 +8,19 @@ import { cn } from '@/lib/utils';
 type CardShellProps = {
   children: ReactNode;
   variant: 'cta' | 'detail';
+  className?: string;
 };
 
-// Inline shell used in the chat thread. Two visual variants:
-// `cta` = pink/accent summary card. `detail` = white card (used as the
-// content inside the modal). Modal expansion is handled separately by the
-// `Modal` component below.
-export function CardShell({ children, variant }: CardShellProps) {
-  const shellCls =
+// Inline shell used in the chat thread. `cta` = pink/accent summary card,
+// `detail` = white card (used inside the modal or for non-CTA chat states
+// like "Information submitted" / "Skipped for now"). Modal expansion is
+// handled by the `Modal` component below.
+export function CardShell({ children, variant, className }: CardShellProps) {
+  const baseCls =
     variant === 'cta'
       ? 'relative rounded-2xl border overflow-hidden bg-[hsl(318_50%_97%)] border-[hsl(320_47%_85%)]'
-      : 'relative bg-white rounded-2xl border border-border overflow-hidden';
-  return <div className={shellCls}>{children}</div>;
+      : 'relative bg-white rounded-2xl border border-border overflow-hidden shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.04)]';
+  return <div className={cn(baseCls, className)}>{children}</div>;
 }
 
 type ModalProps = {
@@ -27,10 +28,11 @@ type ModalProps = {
   onCollapse: () => void;
 };
 
-// Full-screen modal portaled to document.body (so it escapes the chat
-// panel's containing block and covers the artifact pane too). Backdrop
-// click and ESC both call onCollapse. The white detail card sits centered
-// inside, with rounded corners.
+// Full-screen modal portaled to document.body so the overlay covers the
+// chat panel + the artifact pane. Backdrop click and ESC both call
+// onCollapse. The wrapper allows up to 90vh; children are typically a
+// CardShell sized to a fixed height (e.g. 70vh) with their own internal
+// scroll between a sticky header and footer.
 export function Modal({ children, onCollapse }: ModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -57,12 +59,10 @@ export function Modal({ children, onCollapse }: ModalProps) {
     >
       {/* biome-ignore lint/nursery/noStaticElementInteractions: stopPropagation keeps clicks inside the content wrapper from closing the modal */}
       <div
-        className="w-full max-w-[820px]"
+        className="w-full max-w-[640px] max-h-[90vh] overflow-y-auto rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative bg-white rounded-2xl border border-border overflow-hidden shadow-2xl">
-          {children}
-        </div>
+        {children}
       </div>
     </div>,
     document.body,
@@ -80,9 +80,7 @@ export function SectionHeader({ title, eyebrow, onClose }: SectionHeaderProps) {
     <div className="px-5 pt-5 pb-3 border-b border-border flex items-start justify-between gap-4">
       <div className="min-w-0">
         {eyebrow && (
-          <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
-            {eyebrow}
-          </div>
+          <div className="text-[12px] font-inter text-muted-foreground mb-1">{eyebrow}</div>
         )}
         {title && (
           <h3 className="font-source-serif text-[22px] font-semibold text-foreground">
@@ -107,24 +105,20 @@ export function SectionHeader({ title, eyebrow, onClose }: SectionHeaderProps) {
 type ProgressDotsProps = {
   ids: string[];
   current: number;
-  onJump: (i: number) => void;
 };
 
-export function ProgressDots({ ids, current, onJump }: ProgressDotsProps) {
+// Pill-shaped active dot (w-6) and round inactive dots (w-2). Dots are
+// non-interactive in the modal footer; navigation happens via Back/Next.
+export function ProgressDots({ ids, current }: ProgressDotsProps) {
   return (
     <div className="flex items-center justify-center gap-1.5">
       {ids.map((id, i) => (
-        <button
+        <div
           key={id}
-          type="button"
-          onClick={() => onJump(i)}
-          aria-label={`Go to section ${i + 1}`}
-          aria-current={i === current ? 'step' : undefined}
+          aria-hidden="true"
           className={cn(
-            'w-2 h-2 rounded-full transition-colors',
-            i === current
-              ? 'bg-primary'
-              : 'bg-[hsl(220_13%_86%)] hover:bg-[hsl(220_13%_72%)]',
+            'h-2 rounded-full transition-all',
+            i === current ? 'w-6 bg-primary' : 'w-2 bg-[hsl(220_13%_86%)]',
           )}
         />
       ))}
@@ -138,58 +132,48 @@ type FieldSourceBadgeProps = {
 };
 
 // Maps the existing four-value source enum to the design's pill variants.
-// Database keeps the Nava-specific "Apricot 360" label.
+// The `database` label keeps the Nava-specific "Apricot 360" wording.
 export function FieldSourceBadge({ source, required }: FieldSourceBadgeProps) {
+  const baseCls =
+    'text-[10px] font-normal uppercase font-mono tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap';
+
   if (source === 'missing') {
     if (required) {
       return (
-        <span className="text-[10px] font-medium uppercase tracking-wider font-mono whitespace-nowrap px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200">
+        <span className={cn(baseCls, 'bg-red-50 text-red-700 border border-red-200')}>
           Required
         </span>
       );
     }
-    return (
-      <span className="text-[10px] font-medium uppercase tracking-wider font-mono whitespace-nowrap px-2.5 py-1 rounded-full bg-stone-100 text-zinc-700">
-        Optional
-      </span>
-    );
+    return <span className={cn(baseCls, 'bg-stone-100 text-zinc-600')}>Optional</span>;
   }
   if (source === 'inferred') {
     return (
-      <span className="text-[10px] font-medium uppercase tracking-wider font-mono whitespace-nowrap px-2.5 py-1 rounded-full bg-[hsl(318_50%_93%)] text-primary">
-        Auto-filled
+      <span className={cn(baseCls, 'bg-[hsl(318_50%_93%)] text-[hsl(320_47%_47%)]')}>
+        Autofilled
       </span>
     );
   }
   if (source === 'database') {
-    return (
-      <span className="text-[10px] font-medium uppercase tracking-wider font-mono whitespace-nowrap px-2.5 py-1 rounded-full bg-stone-100 text-zinc-700">
-        Apricot 360
-      </span>
-    );
+    return <span className={cn(baseCls, 'bg-stone-100 text-zinc-600')}>Apricot 360</span>;
   }
   // caseworker
-  return (
-    <span className="text-[10px] font-medium uppercase tracking-wider font-mono whitespace-nowrap px-2.5 py-1 rounded-full bg-stone-100 text-zinc-700">
-      Manual
-    </span>
-  );
+  return <span className={cn(baseCls, 'bg-stone-100 text-zinc-600')}>Manual</span>;
 }
 
-type ModalNavBarProps = {
+type SectionFooterProps = {
   current: number;
   sectionIds: string[];
   onPrev: () => void;
   onNext: () => void;
-  onJump: (i: number) => void;
   isLast: boolean;
   rightSlot?: ReactNode;
 };
 
 // Sticky bottom bar inside the detail modal: Back | dots | Next/right slot.
-// `rightSlot` lets the caller render the Submit button on the last section
-// (or render nothing in read-only mode).
-export function ModalNavBar({ current, sectionIds, onPrev, onNext, onJump, isLast, rightSlot }: ModalNavBarProps) {
+// `rightSlot` renders on the last section (typically a Submit or Done
+// button). On non-last sections, Next is shown automatically.
+export function SectionFooter({ current, sectionIds, onPrev, onNext, isLast, rightSlot }: SectionFooterProps) {
   return (
     <div className="px-5 py-4 border-t border-border grid grid-cols-3 items-center gap-3 bg-white sticky bottom-0">
       <button
@@ -199,7 +183,7 @@ export function ModalNavBar({ current, sectionIds, onPrev, onNext, onJump, isLas
       >
         <ChevronLeft size={14} /> Back
       </button>
-      <ProgressDots ids={sectionIds} current={current} onJump={onJump} />
+      <ProgressDots ids={sectionIds} current={current} />
       <div className="justify-self-end flex items-center gap-2">
         {isLast ? (
           rightSlot
@@ -214,5 +198,29 @@ export function ModalNavBar({ current, sectionIds, onPrev, onNext, onJump, isLas
         )}
       </div>
     </div>
+  );
+}
+
+// Filled circle with a white check inside, matching the design mockup.
+// Used in success-state CTAs alongside primary-colored copy.
+export function CheckCircleFilled({ size = 16, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" fill="currentColor" />
+      <path
+        d="m9 12 2 2 4-4"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
   );
 }

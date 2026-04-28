@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
-import { Check, Pencil } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { AlertTriangle, MinusCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,47 +14,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import type { GapField, GapSection } from '@/lib/types/form-cards';
 import {
   CardShell,
+  CheckCircleFilled,
   Modal,
-  ModalNavBar,
+  SectionFooter,
   SectionHeader,
 } from './form-card-shared';
-
-const PAGE_FIELD_LIMIT = 5;
-
-type GapPage = {
-  key: string;
-  sectionTitle: string;
-  fields: GapField[];
-};
-
-function paginate(sections: GapSection[]): GapPage[] {
-  const pages: GapPage[] = [];
-  for (const section of sections) {
-    if (section.fields.length <= PAGE_FIELD_LIMIT) {
-      pages.push({
-        key: `${section.id}-1`,
-        sectionTitle: section.title,
-        fields: section.fields,
-      });
-      continue;
-    }
-    const total = Math.ceil(section.fields.length / PAGE_FIELD_LIMIT);
-    for (let p = 0; p < total; p++) {
-      pages.push({
-        key: `${section.id}-${p + 1}`,
-        sectionTitle: section.title,
-        fields: section.fields.slice(p * PAGE_FIELD_LIMIT, (p + 1) * PAGE_FIELD_LIMIT),
-      });
-    }
-  }
-  return pages;
-}
 
 interface GapAnalysisCardProps {
   formName?: string;
@@ -67,6 +35,8 @@ interface GapAnalysisCardProps {
   isArtifactVisible?: boolean;
   className?: string;
 }
+
+type ModalView = null | 'detail' | 'readonly';
 
 export function GapAnalysisCard({
   formName,
@@ -81,13 +51,14 @@ export function GapAnalysisCard({
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [submitted, setSubmitted] = useState(isSubmitted);
   const [skipped, setSkipped] = useState(isSkipped);
-  const [expanded, setExpanded] = useState(false);
+  const [modalView, setModalView] = useState<ModalView>(null);
   const [current, setCurrent] = useState(0);
 
-  const pages = useMemo(() => paginate(sections), [sections]);
-  const totalFields = sections.reduce((n, s) => n + s.fields.length, 0);
-  const disabled = skipped || !isArtifactVisible;
   const firstName = clientName?.split(' ')[0];
+
+  // Old chats / artifact closed lock the inline buttons. Submitted state
+  // still allows opening the read-only "View responses" modal.
+  const interactionDisabled = !isArtifactVisible;
 
   function updateAnswer(field: string, value: string | string[]) {
     setAnswers((prev) => ({ ...prev, [field]: value }));
@@ -103,13 +74,18 @@ export function GapAnalysisCard({
     });
   }
 
-  function openModal(at = 0) {
+  function openDetail(at = 0) {
     setCurrent(at);
-    setExpanded(true);
+    setModalView('detail');
   }
 
-  function collapse() {
-    setExpanded(false);
+  function openReadonly(at = 0) {
+    setCurrent(at);
+    setModalView('readonly');
+  }
+
+  function closeModal() {
+    setModalView(null);
   }
 
   function handleSkip() {
@@ -143,10 +119,10 @@ export function GapAnalysisCard({
     if (lines.length <= 1) return;
     sendMessage({ role: 'user', parts: [{ type: 'text', text: lines.join('\n') }] });
     setSubmitted(true);
-    collapse();
+    closeModal();
   }
 
-  function renderField(field: GapField) {
+  function renderEditableField(field: GapField) {
     const { field: name, options, inputType, multiSelect, condition, note, placeholder, required } = field;
     const helperText = note ?? condition;
 
@@ -266,127 +242,161 @@ export function GapAnalysisCard({
     );
   }
 
-  // The CTA card stays mounted in the chat thread regardless of modal state.
-  // Buttons get disabled while the modal is open so the user can only close
-  // via the modal itself.
-  let ctaContent: ReactNode;
-  if (submitted) {
-    const filledCount = Object.values(answers).filter(
-      (v) => v != null && (Array.isArray(v) ? v.length > 0 : String(v).trim() !== ''),
-    ).length;
-    ctaContent = (
-      <div className={cn('p-5', className)}>
-        <div className="font-source-serif text-[14px]">
-          <div className="flex items-center gap-1.5 mb-3 text-[hsl(142_55%_28%)]">
-            <Check className="w-3.5 h-3.5" />
-            <p className="font-bold">Information submitted</p>
-          </div>
-          <p className="mb-4 text-foreground">
-            {filledCount > 0
-              ? <>You filled in {filledCount} of {totalFields} field{totalFields === 1 ? '' : 's'}.{clientName ? <> I&rsquo;ll apply these to {clientName}&rsquo;s application.</> : null}</>
-              : <>Your responses have been applied{clientName ? <> to {clientName}&rsquo;s application</> : null}.</>}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => { setSubmitted(false); openModal(0); }}
-          disabled={disabled || expanded}
-          className="gap-1.5"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-          Edit responses
-        </Button>
-      </div>
-    );
-  } else if (skipped) {
-    ctaContent = (
-      <div className={cn('p-5', className)}>
-        <div className="font-source-serif text-[14px]">
-          <p className="font-bold mb-3 text-muted-foreground">Skipped for now</p>
-          <p className="mb-4 text-foreground">
-            {firstName
-              ? <>You can come back to fill in {firstName}&rsquo;s {totalFields} missing field{totalFields === 1 ? '' : 's'} anytime.</>
-              : <>You can come back to fill in the missing fields anytime.</>}
-          </p>
-        </div>
-        <Button size="sm" disabled className="gap-1.5">
-          <Pencil className="w-3.5 h-3.5" />
-          Provide info
-        </Button>
-      </div>
-    );
-  } else {
-    ctaContent = (
-      <div className={cn('p-5', className)}>
-        <div className="font-source-serif text-[14px]">
-          <p className="font-bold mb-3">Missing information</p>
-          <p className="mb-4 text-foreground">
-            {firstName ? <>{firstName} has</> : <>You have</>} {totalFields} field{totalFields === 1 ? '' : 's'} I couldn&rsquo;t fill automatically. Add what you know — you can skip sections and come back.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={() => openModal(0)}
-            disabled={disabled || expanded || !sendMessage || pages.length === 0}
-            className="gap-1.5"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            Provide info
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSkip}
-            disabled={disabled || expanded || !sendMessage}
-          >
-            Skip for now
-          </Button>
+  function renderReadonlyAnswer(field: GapField) {
+    const value = answers[field.field];
+    const display = Array.isArray(value) ? value.join(', ') : value;
+    return (
+      <div key={field.field} className="px-5 py-2">
+        <div className="font-source-serif text-[15px] font-semibold mb-1">{field.field}</div>
+        <div className="text-[14px] text-muted-foreground font-inter">
+          {display ? display : <span className="italic">Not provided</span>}
         </div>
       </div>
     );
   }
 
-  const page = expanded ? pages[current] : undefined;
-  const isLast = page ? current === pages.length - 1 : false;
-
-  return (
-    <>
-      <CardShell variant="cta">{ctaContent}</CardShell>
-      {expanded && page && (
-        <Modal onCollapse={collapse}>
-          <SectionHeader
-            title={page.sectionTitle || formName || 'Missing information'}
-            eyebrow={pages.length > 1 ? `Step ${current + 1} of ${pages.length}` : undefined}
-            onClose={collapse}
-          />
-          <div className="py-3">
-            {page.fields.map((f) => (
-              <div key={f.field} className="px-5 py-2">
-                {renderField(f)}
-              </div>
-            ))}
+  // ── Inline chat card ──────────────────────────────────────────────────────
+  let chatCard: JSX.Element;
+  if (submitted) {
+    chatCard = (
+      <CardShell variant="detail" className={className}>
+        <div className="p-5">
+          <div className="font-source-serif text-[14px]">
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircleFilled size={16} className="text-primary flex-shrink-0" />
+              <p className="font-bold">Information submitted</p>
+            </div>
+            <p className="mb-4">
+              Your responses have been submitted and will be applied to {clientName ?? 'the'}&rsquo;s application as it&rsquo;s filled out.
+            </p>
           </div>
-          <ModalNavBar
-            current={current}
-            sectionIds={pages.map((p) => p.key)}
-            onPrev={() => (current === 0 ? collapse() : setCurrent((c) => Math.max(0, c - 1)))}
-            onNext={() => setCurrent((c) => Math.min(pages.length - 1, c + 1))}
-            onJump={setCurrent}
-            isLast={isLast}
-            rightSlot={
+          <button
+            type="button"
+            onClick={() => openReadonly(0)}
+            className="border border-border text-sm font-medium px-4 py-2 rounded-md hover:bg-muted"
+          >
+            View responses
+          </button>
+        </div>
+      </CardShell>
+    );
+  } else if (skipped) {
+    chatCard = (
+      <CardShell variant="detail" className={className}>
+        <div className="p-5">
+          <div className="font-source-serif text-[14px]">
+            <div className="flex items-center gap-2 mb-3">
+              <MinusCircle size={14} className="text-muted-foreground flex-shrink-0" />
+              <p className="font-bold">Skipped for now</p>
+            </div>
+            <p className="mb-4">
+              You can come back to fill in {firstName ? `${firstName}'s ` : ''}missing fields anytime.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setSkipped(false); openDetail(0); }}
+            disabled={interactionDisabled}
+            className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Provide answers
+          </button>
+        </div>
+      </CardShell>
+    );
+  } else {
+    chatCard = (
+      <CardShell variant="cta" className={className}>
+        <div className="p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle size={14} className="text-primary flex-shrink-0" />
+            <p className="font-source-serif text-[14px] font-bold">
+              Some fields couldn&rsquo;t be auto-filled
+            </p>
+          </div>
+          <p className="font-source-serif text-[14px] mb-4">
+            Answering these now means the AI won&rsquo;t need to pause and check in later.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => openDetail(0)}
+              disabled={interactionDisabled || !sendMessage || sections.length === 0}
+              className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Provide answers
+            </button>
+            <button
+              type="button"
+              onClick={handleSkip}
+              disabled={interactionDisabled || !sendMessage}
+              className="bg-white text-sm font-medium px-4 py-2 rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      </CardShell>
+    );
+  }
+
+  // ── Modal content ─────────────────────────────────────────────────────────
+  let modalContent: JSX.Element | null = null;
+  if (modalView && sections.length > 0) {
+    const section = sections[current];
+    const isLast = current === sections.length - 1;
+    const sectionIds = sections.map((s) => s.id);
+    const baseEyebrow = `Section ${current + 1} of ${sections.length}`;
+    const eyebrow = modalView === 'readonly' ? `${baseEyebrow} · Read only` : baseEyebrow;
+
+    modalContent = (
+      <CardShell variant="detail" className="h-[70vh] flex flex-col">
+        <SectionHeader title={section.title || formName || 'Missing information'} eyebrow={eyebrow} onClose={closeModal} />
+        <div className="flex-1 overflow-y-auto py-3">
+          {section.fields.map((f) =>
+            modalView === 'readonly' ? (
+              renderReadonlyAnswer(f)
+            ) : (
+              <div key={f.field} className="px-5 py-2">
+                {renderEditableField(f)}
+              </div>
+            ),
+          )}
+        </div>
+        <SectionFooter
+          current={current}
+          sectionIds={sectionIds}
+          onPrev={() => (current === 0 ? closeModal() : setCurrent((c) => Math.max(0, c - 1)))}
+          onNext={() => setCurrent((c) => Math.min(sections.length - 1, c + 1))}
+          isLast={isLast}
+          rightSlot={
+            modalView === 'readonly' ? (
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-[14px] font-semibold px-5 py-2.5 rounded-full border border-border hover:bg-muted"
+              >
+                Done
+              </button>
+            ) : (
               <button
                 type="button"
                 onClick={handleSubmit}
                 className="text-[14px] font-semibold px-5 py-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Submit updates
+                Submit
               </button>
-            }
-          />
-        </Modal>
-      )}
+            )
+          }
+        />
+      </CardShell>
+    );
+  }
+
+  return (
+    <>
+      {chatCard}
+      {modalView && modalContent && <Modal onCollapse={closeModal}>{modalContent}</Modal>}
     </>
   );
 }

@@ -27,10 +27,10 @@ test('Start review opens the editable modal at the first missing-required sectio
   );
   await getByRole('button', { name: /start review/i }).click();
   await expect.element(getByText('Identity & eligibility')).toBeInTheDocument();
-  await expect.element(getByRole('button', { name: /submit updates/i })).toBeInTheDocument();
+  await expect.element(getByRole('button', { name: /^submit$/i })).toBeInTheDocument();
 });
 
-test('artifact closed with data shows View submitted', async () => {
+test('artifact closed with data shows View responses', async () => {
   const { getByRole } = render(
     <FormSummaryCard
       formName="CalFresh"
@@ -39,10 +39,10 @@ test('artifact closed with data shows View submitted', async () => {
       isArtifactVisible={false}
     />
   );
-  await expect.element(getByRole('button', { name: /view submitted/i })).toBeInTheDocument();
+  await expect.element(getByRole('button', { name: /view responses/i })).toBeInTheDocument();
 });
 
-test('View submitted opens a read-only modal (no Submit updates button)', async () => {
+test('View responses opens a read-only modal (no Submit button)', async () => {
   const { getByRole } = render(
     <FormSummaryCard
       formName="CalFresh"
@@ -51,20 +51,21 @@ test('View submitted opens a read-only modal (no Submit updates button)', async 
       isArtifactVisible={false}
     />
   );
-  await getByRole('button', { name: /view submitted/i }).click();
-  // Submit button must not be present in read-only mode
-  await expect.element(getByRole('button', { name: /submit updates/i })).not.toBeInTheDocument();
+  await getByRole('button', { name: /view responses/i }).click();
+  // Submit button must not be present in read-only mode; Done is shown instead.
+  await expect.element(getByRole('button', { name: /^submit$/i })).not.toBeInTheDocument();
+  await expect.element(getByRole('button', { name: /^done$/i })).toBeInTheDocument();
 });
 
-test('Submit updates posts changed values back to sendMessage', async () => {
+test('Submit posts changed values back to sendMessage', async () => {
   const sendMessage = vi.fn();
   const { getByRole } = render(
     <FormSummaryCard formName="CalFresh" sections={SECTIONS} sendMessage={sendMessage} />
   );
   await getByRole('button', { name: /start review/i }).click();
-  // The required-but-empty SSN row renders a text input; only one textbox in the modal
+  // The required-but-empty SSN row renders a text input; only one textbox in the modal.
   await getByRole('textbox').fill('123-45-6789');
-  await getByRole('button', { name: /submit updates/i }).click();
+  await getByRole('button', { name: /^submit$/i }).click();
   expect(sendMessage).toHaveBeenCalledTimes(1);
   const text = sendMessage.mock.calls[0][0].parts[0].text;
   expect(text).toContain('Please update the following form fields for CalFresh');
