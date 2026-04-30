@@ -4,7 +4,9 @@ import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } fro
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSWRConfig } from 'swr';
+import { useLocalStorage } from 'usehooks-ts';
 import { fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
+import { isProductionEnvironment } from '@/lib/constants';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
@@ -80,6 +82,8 @@ export function Chat({
   // on the next user-initiated send.
   const stoppedRef = useRef(false);
 
+  const [selectedModelId] = useLocalStorage<string>('selected-chat-model-id', '');
+
   const {
     messages,
     setMessages,
@@ -104,6 +108,9 @@ export function Chat({
           message: messages.at(-1),
           selectedChatModel: initialChatModel,
           selectedVisibilityType: visibilityType,
+          ...(!isProductionEnvironment && selectedModelId
+            ? { modelOverride: selectedModelId }
+            : {}),
           ...body,
         },
       }),

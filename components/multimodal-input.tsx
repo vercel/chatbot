@@ -72,7 +72,7 @@ function PureMultimodalInput({
   const { width } = useWindowSize();
   const router = useRouter();
   const isLoggedIn = !!session;
-  const [selectedModelId, setSelectedModelId] = useLocalStorage<string>('selected-chat-model-id', '');
+  const [, setSelectedModelId] = useLocalStorage<string>('selected-chat-model-id', '');
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -126,28 +126,21 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
-    const messageBody = !isProductionEnvironment && selectedModelId
-      ? { modelOverride: selectedModelId }
-      : undefined;
-
-    sendMessage(
-      {
-        role: 'user',
-        parts: [
-          ...attachments.map((attachment) => ({
-            type: 'file' as const,
-            url: attachment.url,
-            name: attachment.name,
-            mediaType: attachment.contentType,
-          })),
-          {
-            type: 'text',
-            text: input,
-          },
-        ],
-      },
-      messageBody ? { body: messageBody } : undefined,
-    );
+    sendMessage({
+      role: 'user',
+      parts: [
+        ...attachments.map((attachment) => ({
+          type: 'file' as const,
+          url: attachment.url,
+          name: attachment.name,
+          mediaType: attachment.contentType,
+        })),
+        {
+          type: 'text',
+          text: input,
+        },
+      ],
+    });
 
     setAttachments([]);
     setLocalStorageInput('');
@@ -166,7 +159,6 @@ function PureMultimodalInput({
     setLocalStorageInput,
     width,
     chatId,
-    selectedModelId,
   ]);
 
   const uploadFile = async (file: File) => {
