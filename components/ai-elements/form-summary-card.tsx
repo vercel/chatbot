@@ -196,7 +196,11 @@ export function FormSummaryCard({
             {field.field}
             {field.required && <span className="text-red-700 ml-0.5">*</span>}
           </span>
-          <FieldSourceBadge source={field.source} required={field.required} />
+          <FieldSourceBadge
+            source={field.source}
+            required={field.required}
+            inferredFrom={field.inferredFrom}
+          />
         </div>
         {readOnly ? (
           <div className="text-[14px] font-inter text-muted-foreground">

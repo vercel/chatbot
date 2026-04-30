@@ -4,6 +4,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type CardShellProps = {
   children: ReactNode;
@@ -129,36 +135,54 @@ export function ProgressDots({ ids, current }: ProgressDotsProps) {
 type FieldSourceBadgeProps = {
   source: 'database' | 'caseworker' | 'inferred' | 'missing';
   required?: boolean;
+  inferredFrom?: string;
 };
 
-// Maps the existing four-value source enum to the design's pill variants.
-// The `database` label keeps the Nava-specific "Apricot 360" wording.
-export function FieldSourceBadge({ source, required }: FieldSourceBadgeProps) {
+// Maps the four-value source enum to a design pill variant + a tooltip
+// explaining what the source means. The `database` label keeps the
+// Nava-specific "Apricot 360" wording.
+export function FieldSourceBadge({ source, required, inferredFrom }: FieldSourceBadgeProps) {
   const baseCls =
-    'text-[10px] font-normal uppercase font-mono tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap';
+    'text-[10px] font-normal uppercase font-mono tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap cursor-default';
+
+  let label: string;
+  let toneCls: string;
+  let tooltip: string;
 
   if (source === 'missing') {
     if (required) {
-      return (
-        <span className={cn(baseCls, 'bg-red-50 text-red-700 border border-red-200')}>
-          Required
-        </span>
-      );
+      label = 'Required';
+      toneCls = 'bg-red-50 text-red-700 border border-red-200';
+      tooltip = 'Required to submit.';
+    } else {
+      label = 'Optional';
+      toneCls = 'bg-stone-100 text-zinc-600';
+      tooltip = 'Not required to submit.';
     }
-    return <span className={cn(baseCls, 'bg-stone-100 text-zinc-600')}>Optional</span>;
+  } else if (source === 'inferred') {
+    label = 'Autofilled';
+    toneCls = 'bg-[hsl(318_50%_93%)] text-[hsl(320_47%_47%)]';
+    tooltip = inferredFrom ? `Filled by AI; based on ${inferredFrom}.` : 'Filled by AI.';
+  } else if (source === 'database') {
+    label = 'Apricot 360';
+    toneCls = 'bg-stone-100 text-zinc-600';
+    tooltip = 'Filled in automatically from Apricot 360.';
+  } else {
+    label = 'Manual';
+    toneCls = 'bg-stone-100 text-zinc-600';
+    tooltip = 'Entered by you.';
   }
-  if (source === 'inferred') {
-    return (
-      <span className={cn(baseCls, 'bg-[hsl(318_50%_93%)] text-[hsl(320_47%_47%)]')}>
-        Autofilled
-      </span>
-    );
-  }
-  if (source === 'database') {
-    return <span className={cn(baseCls, 'bg-stone-100 text-zinc-600')}>Apricot 360</span>;
-  }
-  // caseworker
-  return <span className={cn(baseCls, 'bg-stone-100 text-zinc-600')}>Manual</span>;
+
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={cn(baseCls, toneCls)}>{label}</span>
+        </TooltipTrigger>
+        <TooltipContent align="end">{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 type SectionFooterProps = {
