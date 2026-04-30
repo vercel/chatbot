@@ -18,19 +18,9 @@ const gapFieldSchema = z.object({
   note: z.string().optional().describe('Short helper text shown under the field label'),
 });
 
-const gapSectionSchema = z.object({
-  id: z.string().describe('Stable id for the section, e.g. "identity", "household"'),
-  title: z
-    .string()
-    .describe(
-      'Human-readable section title shown to the caseworker, e.g. "Identity & eligibility"',
-    ),
-  fields: z.array(gapFieldSchema).describe('Missing fields belonging to this section'),
-});
-
 export const gapAnalysis = tool({
   description:
-    'Shows the caseworker a card listing ONLY the missing fields, grouped into sections (e.g., "Identity & eligibility", "Household composition", "Income"). Calling this tool ends your turn — do not call any other tools after it; wait for the caseworker\'s reply. Include only missing fields, no fields you already have. After calling, write one short sentence like "Please provide the missing info above." and stop. If nothing is missing, do not call this tool.',
+    'Shows the caseworker a card listing ONLY the missing fields, in the order they appear on the original form. Calling this tool ends your turn — do not call any other tools after it; wait for the caseworker\'s reply. Include only missing fields, no fields you already have. After calling, write one short sentence like "Please provide the missing info above." and stop. If nothing is missing, do not call this tool.',
   inputSchema: z.object({
     formName: z
       .string()
@@ -40,11 +30,9 @@ export const gapAnalysis = tool({
       .string()
       .optional()
       .describe('Full name of the participant the form is being filled for'),
-    sections: z
-      .array(gapSectionSchema)
-      .describe(
-        'Missing fields grouped by section. If a form has very few missing fields a single section is fine.',
-      ),
+    missingFields: z
+      .array(gapFieldSchema)
+      .describe('Missing fields in the order they appear on the original form.'),
   }),
   execute: async (input) => input,
 });
