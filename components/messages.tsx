@@ -76,6 +76,7 @@ function PureMessages({
             sendMessage={sendMessage}
             isReadonly={isReadonly}
             isArtifactVisible={isArtifactVisible}
+            isLastMessage={index === messages.length - 1}
             requiresScrollPadding={
               hasSentMessage && index === messages.length - 1
             }

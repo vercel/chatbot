@@ -78,6 +78,7 @@ const PurePreviewMessage = ({
   sendMessage,
   isReadonly,
   isArtifactVisible,
+  isLastMessage,
   requiresScrollPadding,
 }: {
   chatId: string;
@@ -91,6 +92,7 @@ const PurePreviewMessage = ({
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
+  isLastMessage: boolean;
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -502,6 +504,7 @@ const PurePreviewMessage = ({
                       sections={adaptGapSections(input)}
                       sendMessage={sendMessage}
                       isReadonly={isReadonly}
+                      isLastMessage={isLastMessage}
                     />
                   );
                 }
