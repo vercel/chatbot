@@ -346,7 +346,7 @@ export function GapAnalysisCard({
     const section = sections[current];
     const isLast = current === sections.length - 1;
     const sectionIds = sections.map((s) => s.id);
-    const baseEyebrow = `Section ${current + 1} of ${sections.length}`;
+    const baseEyebrow = `Page ${current + 1} of ${sections.length}`;
     const eyebrow = modalView === 'readonly' ? `${baseEyebrow} · Read only` : baseEyebrow;
 
     modalContent = (
