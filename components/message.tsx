@@ -501,7 +501,7 @@ const PurePreviewMessage = ({
                       clientName={input?.clientName}
                       sections={adaptGapSections(input)}
                       sendMessage={sendMessage}
-                      isArtifactVisible={isArtifactVisible}
+                      isReadonly={isReadonly}
                     />
                   );
                 }
@@ -518,7 +518,7 @@ const PurePreviewMessage = ({
                       clientName={input?.clientName}
                       sections={adaptReviewSections(input)}
                       sendMessage={sendMessage}
-                      isArtifactVisible={isArtifactVisible}
+                      isReadonly={isReadonly}
                     />
                   );
                 }

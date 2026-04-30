@@ -50,9 +50,9 @@ test('Provide answers opens the modal and Submit posts the answers', async () =>
   expect(args.parts[0].text).toContain('123-45-6789');
 });
 
-test('artifact closed disables the CTA buttons', async () => {
+test('readonly disables the CTA buttons', async () => {
   const { getByRole } = render(
-    <GapAnalysisCard sections={SECTIONS} sendMessage={vi.fn()} isArtifactVisible={false} />
+    <GapAnalysisCard sections={SECTIONS} sendMessage={vi.fn()} isReadonly />
   );
   await expect.element(getByRole('button', { name: /provide answers/i })).toBeDisabled();
   await expect.element(getByRole('button', { name: /skip for now/i })).toBeDisabled();

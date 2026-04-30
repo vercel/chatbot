@@ -30,13 +30,13 @@ test('Start review opens the editable modal at the first missing-required sectio
   await expect.element(getByRole('button', { name: /^submit$/i })).toBeInTheDocument();
 });
 
-test('artifact closed with data shows View responses', async () => {
+test('readonly with data shows View responses', async () => {
   const { getByRole } = render(
     <FormSummaryCard
       formName="CalFresh"
       sections={SECTIONS}
       sendMessage={vi.fn()}
-      isArtifactVisible={false}
+      isReadonly
     />
   );
   await expect.element(getByRole('button', { name: /view responses/i })).toBeInTheDocument();
@@ -48,7 +48,7 @@ test('View responses opens a read-only modal (no Submit button)', async () => {
       formName="CalFresh"
       sections={SECTIONS}
       sendMessage={vi.fn()}
-      isArtifactVisible={false}
+      isReadonly
     />
   );
   await getByRole('button', { name: /view responses/i }).click();

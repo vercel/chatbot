@@ -32,7 +32,7 @@ interface GapAnalysisCardProps {
   sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
   isSubmitted?: boolean;
   isSkipped?: boolean;
-  isArtifactVisible?: boolean;
+  isReadonly?: boolean;
   className?: string;
 }
 
@@ -45,7 +45,7 @@ export function GapAnalysisCard({
   sendMessage,
   isSubmitted = false,
   isSkipped = false,
-  isArtifactVisible = true,
+  isReadonly = false,
   className,
 }: GapAnalysisCardProps) {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
@@ -56,9 +56,9 @@ export function GapAnalysisCard({
 
   const firstName = clientName?.split(' ')[0];
 
-  // Old chats / artifact closed lock the inline buttons. Submitted state
+  // Replays / read-only chats lock the inline buttons. Submitted state
   // still allows opening the read-only "View responses" modal.
-  const interactionDisabled = !isArtifactVisible;
+  const interactionDisabled = isReadonly;
 
   function updateAnswer(field: string, value: string | string[]) {
     setAnswers((prev) => ({ ...prev, [field]: value }));

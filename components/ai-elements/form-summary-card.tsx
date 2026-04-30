@@ -31,7 +31,7 @@ interface FormSummaryCardProps {
   clientName?: string;
   sections: ReviewSection[];
   sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
-  isArtifactVisible?: boolean;
+  isReadonly?: boolean;
   className?: string;
 }
 
@@ -42,7 +42,7 @@ export function FormSummaryCard({
   clientName,
   sections,
   sendMessage,
-  isArtifactVisible = true,
+  isReadonly = false,
   className,
 }: FormSummaryCardProps) {
   const [editValues, setEditValues] = useState<Record<string, string>>({});
@@ -61,7 +61,7 @@ export function FormSummaryCard({
   const firstIssueIndex = issueIndexes[0] ?? 0;
   const hasIssues = issueIndexes.length > 0;
   const hasData = sections.some((s) => s.fields.some((f) => f.value));
-  const interactionDisabled = !isArtifactVisible;
+  const interactionDisabled = isReadonly;
 
   function setEdit(name: string, value: string) {
     setEditValues((prev) => ({ ...prev, [name]: value }));
@@ -265,7 +265,7 @@ export function FormSummaryCard({
       </CardShell>
     );
   } else if (interactionDisabled && hasData) {
-    // Old chat / artifact closed but data exists → read-only access only.
+    // Read-only chat (replay) but data exists → read-only access only.
     chatCard = (
       <CardShell variant="detail" className={className}>
         <div className="p-5">
