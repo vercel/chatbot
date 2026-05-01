@@ -51,6 +51,14 @@ function PureMessages({
 
   useDataStream();
 
+  let lastUserIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'user') {
+      lastUserIndex = i;
+      break;
+    }
+  }
+
   return (
     <div
       ref={messagesContainerRef}
@@ -76,7 +84,7 @@ function PureMessages({
             sendMessage={sendMessage}
             isReadonly={isReadonly}
             isArtifactVisible={isArtifactVisible}
-            isLastMessage={index === messages.length - 1}
+            hasUserReplyAfter={index < lastUserIndex}
             requiresScrollPadding={
               hasSentMessage && index === messages.length - 1
             }

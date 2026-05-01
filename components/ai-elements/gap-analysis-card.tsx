@@ -33,12 +33,7 @@ interface GapAnalysisCardProps {
   isSubmitted?: boolean;
   isSkipped?: boolean;
   isReadonly?: boolean;
-  // True only when this message is the last in the chat. In a read-only
-  // replay, a non-last assistant message containing a gap analysis
-  // implies the user already answered (or skipped) — we render the
-  // "Information submitted" recap. If it IS the last message, the user
-  // never answered and we keep the disabled CTA.
-  isLastMessage?: boolean;
+  hasUserReplyAfter?: boolean;
   className?: string;
 }
 
@@ -52,10 +47,10 @@ export function GapAnalysisCard({
   isSubmitted = false,
   isSkipped = false,
   isReadonly = false,
-  isLastMessage = false,
+  hasUserReplyAfter = false,
   className,
 }: GapAnalysisCardProps) {
-  const assumeSubmitted = isReadonly && !isLastMessage;
+  const assumeSubmitted = hasUserReplyAfter;
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [submitted, setSubmitted] = useState(isSubmitted || assumeSubmitted);
   const [skipped, setSkipped] = useState(isSkipped);

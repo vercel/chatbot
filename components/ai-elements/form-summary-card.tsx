@@ -32,6 +32,7 @@ interface FormSummaryCardProps {
   sections: ReviewSection[];
   sendMessage?: UseChatHelpers<ChatMessage>['sendMessage'];
   isReadonly?: boolean;
+  hasUserReplyAfter?: boolean;
   className?: string;
 }
 
@@ -43,10 +44,11 @@ export function FormSummaryCard({
   sections,
   sendMessage,
   isReadonly = false,
+  hasUserReplyAfter = false,
   className,
 }: FormSummaryCardProps) {
   const [editValues, setEditValues] = useState<Record<string, string>>({});
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(hasUserReplyAfter);
   const [skipped, setSkipped] = useState(false);
   const [modalView, setModalView] = useState<ModalView>(null);
   const [current, setCurrent] = useState(0);
