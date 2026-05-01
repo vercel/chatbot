@@ -70,6 +70,9 @@ function PureArtifactMessages({
             sendMessage={sendMessage}
             isReadonly={isReadonly}
             isArtifactVisible={true}
+            hasUserReplyAfter={
+              messages.slice(index + 1).some((m) => m.role === 'user')
+            }
             requiresScrollPadding={
               hasSentMessage && index === messages.length - 1
             }

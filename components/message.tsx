@@ -19,6 +19,7 @@ import { CollapsibleWrapper } from './ui/collapsible-wrapper';
 import { getToolDisplayInfo } from './tool-icon';
 import { Spinner } from './ui/spinner';
 import { UserActionConfirmation, GapAnalysisCard, FormSummaryCard, CheckpointCard } from './ai-elements';
+import { adaptGapSections, adaptReviewSections } from '@/lib/types/form-cards';
 import type { CheckpointData } from './chat';
 import { groupMessageParts, ToolCallGroup } from './tool-call-group';
 
@@ -77,6 +78,7 @@ const PurePreviewMessage = ({
   sendMessage,
   isReadonly,
   isArtifactVisible,
+  hasUserReplyAfter,
   requiresScrollPadding,
 }: {
   chatId: string;
@@ -90,6 +92,7 @@ const PurePreviewMessage = ({
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
+  hasUserReplyAfter: boolean;
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -497,8 +500,11 @@ const PurePreviewMessage = ({
                     <GapAnalysisCard
                       key={toolCallId}
                       formName={input?.formName}
-                      missingFields={input?.missingFields ?? []}
+                      clientName={input?.clientName}
+                      sections={adaptGapSections(input)}
                       sendMessage={sendMessage}
+                      isReadonly={isReadonly}
+                      hasUserReplyAfter={hasUserReplyAfter}
                     />
                   );
                 }
@@ -512,9 +518,11 @@ const PurePreviewMessage = ({
                     <FormSummaryCard
                       key={toolCallId}
                       formName={input?.formName}
-                      fields={input?.fields ?? []}
+                      clientName={input?.clientName}
+                      sections={adaptReviewSections(input)}
                       sendMessage={sendMessage}
-                      isArtifactVisible={isArtifactVisible}
+                      isReadonly={isReadonly}
+                      hasUserReplyAfter={hasUserReplyAfter}
                     />
                   );
                 }

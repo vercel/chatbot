@@ -36,12 +36,16 @@ const fieldSchema = z.object({
 
 export const formSummary = tool({
   description:
-    'Display a form summary card showing what was filled in and where each value came from. Call this INSTEAD of writing a summary message at the end of form completion. The card already displays all information — do NOT write any text listing the fields before or after calling this tool. Just call the tool, then follow with one short sentence like "Please review and submit when ready."',
+    'Display a form summary card showing what was filled in and where each value came from. Call this INSTEAD of writing a summary message at the end of form completion. List fields in the order they appear on the original form. The card already displays all information — do NOT write any text listing the fields before or after calling this tool. Just call the tool, then follow with one short sentence like "Please review and submit when ready."',
   inputSchema: z.object({
     formName: z
       .string()
       .optional()
       .describe('Name of the form that was filled, e.g. "WIC Application"'),
+    clientName: z
+      .string()
+      .optional()
+      .describe('Full name of the participant the form was filled for'),
     fields: z
       .array(fieldSchema)
       .describe(
