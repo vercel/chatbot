@@ -305,10 +305,10 @@ export function KernelBrowserClient({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <div className="size-2 bg-red-500 rounded-full animate-pulse status-indicator" />
-                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">You're editing manually</span>
+                <span className="text-xs sm:text-sm font-medium font-ibm-plex-mono browser-fullscreen-text">You're in control</span>
               </div>
               <span className="text-xs sm:text-sm browser-fullscreen-text font-inter hidden sm:block">
-                The AI will continue with your changes when you give back control.
+                Make any edits you need, then choose how the AI should continue.
               </span>
             </div>
             <div className="flex items-center gap-2">
