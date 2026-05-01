@@ -54,3 +54,4 @@ yarn-error.log*
 vertex-ai-credentials.json
 
 .claude/
+docs/superpowers/
