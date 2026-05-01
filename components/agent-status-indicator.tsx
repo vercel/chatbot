@@ -33,7 +33,7 @@ const PureAgentStatusIndicator = ({
   // Determine status text
   const getStatusText = () => {
     if (isUserMode) {
-      return "You're editing manually";
+      return "You're in control";
     }
     if (isAgentWorking) {
       return 'AI is working';
