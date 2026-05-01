@@ -51,15 +51,10 @@ export function FormSummaryCard({
   const [modalView, setModalView] = useState<ModalView>(null);
   const [current, setCurrent] = useState(0);
 
-  const issueIndexes = useMemo(
-    () =>
-      sections
-        .map((s, i) => (s.fields.some((f) => f.source === 'missing' && f.required) ? i : -1))
-        .filter((i) => i >= 0),
+  const hasIssues = useMemo(
+    () => sections.some((s) => s.fields.some((f) => f.source === 'missing' && f.required)),
     [sections],
   );
-  const firstIssueIndex = issueIndexes[0] ?? 0;
-  const hasIssues = issueIndexes.length > 0;
   const hasData = sections.some((s) => s.fields.some((f) => f.value));
   const interactionDisabled = isReadonly;
 
@@ -71,13 +66,13 @@ export function FormSummaryCard({
     return editValues[field.field] ?? field.value ?? '';
   }
 
-  function openDetail(at: number) {
-    setCurrent(Math.max(0, at));
+  function openDetail() {
+    setCurrent(0);
     setModalView('detail');
   }
 
-  function openReadonly(at = 0) {
-    setCurrent(Math.max(0, at));
+  function openReadonly() {
+    setCurrent(0);
     setModalView('readonly');
   }
 
@@ -231,7 +226,7 @@ export function FormSummaryCard({
           {hasData && (
             <button
               type="button"
-              onClick={() => openReadonly(0)}
+              onClick={() => openReadonly()}
               className="border border-border text-sm font-medium px-4 py-2 rounded-md hover:bg-muted"
             >
               View responses
@@ -255,7 +250,7 @@ export function FormSummaryCard({
           </div>
           <button
             type="button"
-            onClick={() => { setSkipped(false); openDetail(firstIssueIndex); }}
+            onClick={() => { setSkipped(false); openDetail(); }}
             disabled={interactionDisabled || sections.length === 0}
             className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -280,7 +275,7 @@ export function FormSummaryCard({
           </div>
           <button
             type="button"
-            onClick={() => openReadonly(firstIssueIndex)}
+            onClick={() => openReadonly()}
             className="border border-border text-sm font-medium px-4 py-2 rounded-md hover:bg-muted"
           >
             View responses
@@ -304,7 +299,7 @@ export function FormSummaryCard({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => openDetail(hasIssues ? firstIssueIndex : 0)}
+              onClick={() => openDetail()}
               disabled={interactionDisabled || sections.length === 0}
               className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >

@@ -203,7 +203,8 @@ export function SectionFooter({ current, sectionIds, onPrev, onNext, isLast, rig
       <button
         type="button"
         onClick={onPrev}
-        className="justify-self-start flex items-center gap-1.5 text-[14px] font-semibold px-4 py-2.5 rounded-full border border-border hover:bg-muted"
+        disabled={current === 0}
+        className="justify-self-start flex items-center gap-1.5 text-[14px] font-semibold px-4 py-2.5 rounded-full border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
         <ChevronLeft size={14} /> Back
       </button>
