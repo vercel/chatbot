@@ -166,6 +166,67 @@ Some fields trigger validation on blur. If you need to check for errors after fi
 { "action": "snapshot", "selector": "form" }
 ```
 
+## Modal Handling
+
+Empty or minimal snapshots mean a modal is blocking the page — NOT that snapshots are broken. Modals often set `aria-hidden="true"` on the page root, hiding everything from the accessibility tree. Multiple modals can appear in sequence. Always loop until the page is clear.
+
+### Standard Modal Workflow
+
+1. Snapshot the page.
+2. If minimal/empty content, a modal is present. Try scoped snapshots in this order:
+   - `{ action: "snapshot", selector: "[role=dialog]" }`
+   - `{ action: "snapshot", selector: ".ReactModal__Overlay" }`
+   - `{ action: "snapshot", selector: "[aria-modal=true]" }`
+   - `{ action: "snapshot", selector: ".modal" }`
+3. Use refs from that snapshot to interact — native `<select>` → `select`; custom dropdown → click to open, snapshot again, click the option.
+4. After dismissing, go back to step 1 — another modal may have appeared.
+5. When the full page is visible again, resume normal workflow.
+
+### When Scoped Snapshots Also Return Empty
+
+Some modals (especially on React apps like BenefitsCal) set `aria-hidden="true"` on the root div AND lack standard ARIA attributes. Use ONE evaluate to discover the modal structure:
+
+```js
+{ action: "evaluate", script: "document.querySelector('[aria-modal=true], .modal, [role=dialog]')?.outerHTML?.substring(0, 2000) || 'No modal found'" }
+```
+
+If that returns nothing, try:
+
+```js
+{ action: "evaluate", script: "document.querySelector('body > div:not([aria-hidden])').outerHTML.substring(0, 2000)" }
+```
+
+Once you see the modal HTML, interact using CSS selectors (not evaluate):
+
+```json
+{ "action": "select", "selector": "#county", "value": "33" }
+{ "action": "click", "selector": "#continueBtn" }
+```
+
+### React Modals — When Select/Click Doesn't Register
+
+React apps track form values internally. Setting `select.value` programmatically may not trigger React's state update, so the button stays disabled.
+
+For selects — clear React's value tracker and fire change events:
+
+```js
+{ action: "evaluate", script: "var s = document.querySelector('#county'); var tracker = s._valueTracker; if (tracker) tracker.setValue(''); s.value = '33'; s.dispatchEvent(new Event('change', { bubbles: true }));" }
+```
+
+For buttons — dispatch the full mouse event sequence (not just `.click()`):
+
+```js
+{ action: "evaluate", script: "var btn = document.querySelector('button'); btn.dispatchEvent(new MouseEvent('mousedown', {bubbles:true, cancelable:true, view:window})); btn.dispatchEvent(new MouseEvent('mouseup', {bubbles:true, cancelable:true, view:window})); btn.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));" }
+```
+
+### Google Translate Bar
+
+Government and health sites often inject a Google Translate bar that blocks clicks. Always keep the form in English — dismiss the bar if it interferes:
+
+```js
+{ action: "evaluate", script: "document.querySelector('.VIpgJd-yAWNEb-hvhgNd') && document.querySelector('.VIpgJd-yAWNEb-hvhgNd').remove()" }
+```
+
 ## Error Recovery
 
 ### Field Not Found or Interaction Fails
@@ -196,7 +257,7 @@ After unlocking submit, do NOT click it. Proceed with `formSummary` so the casew
 ## Forbidden Actions
 
 - **Stay on the target domain.** Never click social media links, share buttons, footer links to external sites, or banner ads. Focus on `main`, `form`, `#content`. If you navigate away, use `navigate` to return.
-- **`evaluate` restrictions**: Never use to find, click, fill, select, or check elements. Never use when snapshots return empty (that means a modal is blocking — load the `modal-handling` skill). Acceptable uses: reading values (maxLength), removing overlays (Google Translate bar), the stuck-button JS fix after steps 1–4.
+- **`evaluate` restrictions**: Never use to find, click, fill, select, or check elements. Never use when snapshots return empty (that means a modal is blocking — follow the Modal Handling section above). Acceptable uses: reading values (maxLength), removing overlays (Google Translate bar), React modal workarounds, the stuck-button JS fix after steps 1–4.
 - **Never `reload` during form filling** — it wipes all form state.
 - **Never use `back`** — use on-page navigation buttons ("Previous", "Go Back") instead. No exceptions.
 
