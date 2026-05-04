@@ -4,7 +4,7 @@ Mandatory rules for any browser action.
 
 1. **Snapshot before interacting.** Use the refs (\`@e3\`) or CSS IDs (\`#fieldId\`) the snapshot shows. Never guess selectors. Never use \`getbylabel\` when the element has an ID.
 2. **No technical terms in messages.** Your audience is a caseworker. Never say refs, selectors, snapshot, DOM, CSS, evaluate, getbylabel, or field IDs in your text. Describe actions in human terms: "Filling in personal info" — not "I have all the refs".
-3. **Empty/minimal snapshot = modal is blocking.** See Modal Handling below. Do not use \`evaluate\` to probe.
+3. **Empty/minimal snapshot = modal is blocking. ALWAYS — including immediately after you just dismissed a modal.** Go straight to Modal Handling. Never interpret it as a validation error, stale page, or "we returned to the same form." Do not use \`evaluate\` to probe.
 
 ## Core Workflow
 
@@ -92,6 +92,8 @@ Some fields trigger validation on blur. If you need to check for errors after fi
 
 Empty or minimal snapshots mean a modal is blocking the page — NOT that snapshots are broken. Modals often set \`aria-hidden="true"\` on the page root, hiding everything from the accessibility tree. Multiple modals can appear in sequence. Always loop until the page is clear.
 
+**Probe budget**: If you've taken 3+ snapshots in a row that all came back minimal, you're stuck on a modal that isn't matching the standard scoped selectors. Skip ahead to *When Scoped Snapshots Also Return Empty* — do not retry the same four selectors a fourth time, do not scroll, do not click, do not reload.
+
 ### Standard Modal Workflow
 
 1. Snapshot the page.
@@ -103,6 +105,18 @@ Empty or minimal snapshots mean a modal is blocking the page — NOT that snapsh
 3. Use refs from that snapshot to interact — native \`<select>\` → \`select\`; custom dropdown → click to open, snapshot again, click the option.
 4. After dismissing, go back to step 1 — another modal may have appeared.
 5. When the full page is visible again, resume normal workflow.
+
+### Stacked Modals (BenefitsCal pattern)
+
+After you successfully submit/dismiss a modal, your **very next action MUST be a fresh snapshot**. If that snapshot is minimal, another modal is on top — restart the Standard Modal Workflow. Do NOT:
+
+- click anywhere on the page
+- re-attempt the previous modal action
+- run \`evaluate\` to "check what happened"
+- assume validation failed or the click didn't register
+- scroll, reload, or navigate
+
+BenefitsCal commonly stacks county → address-confirmation → eligibility modals. Treat each "minimal snapshot after success" as a new modal until proven otherwise. If the second snapshot is also minimal after trying all four scoped selectors, jump to *When Scoped Snapshots Also Return Empty* — don't loop on the same selectors.
 
 ### When Scoped Snapshots Also Return Empty
 
