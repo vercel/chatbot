@@ -18,7 +18,7 @@ test('UserActionConfirmation renders with proper content in approval-requested s
   await expect.element(getByText('Action required')).toBeInTheDocument();
   await expect.element(getByText('Complete the CAPTCHA and submit the application.')).toBeInTheDocument();
   await expect.element(getByText('Take control')).toBeInTheDocument();
-  await expect.element(getByText('Reject')).toBeInTheDocument();
+  await expect.element(getByText('Skip for now')).toBeInTheDocument();
 });
 
 test('UserActionConfirmation calls onApprove when Take control button is clicked', async () => {
@@ -41,7 +41,7 @@ test('UserActionConfirmation calls onApprove when Take control button is clicked
   expect(mockOnApprove).toHaveBeenCalledWith('test-2');
 });
 
-test('UserActionConfirmation calls onReject when Reject button is clicked', async () => {
+test('UserActionConfirmation calls onReject when Skip for now button is clicked', async () => {
   const mockOnApprove = vi.fn();
   const mockOnReject = vi.fn();
   const { getByRole } = render(
@@ -54,7 +54,7 @@ test('UserActionConfirmation calls onReject when Reject button is clicked', asyn
     />
   );
 
-  const rejectButton = getByRole('button', { name: /reject/i });
+  const rejectButton = getByRole('button', { name: /skip for now/i });
   await rejectButton.click();
 
   expect(mockOnReject).toHaveBeenCalledTimes(1);
@@ -79,7 +79,7 @@ test('UserActionConfirmation supports custom messages', async () => {
   await expect.element(getByText('Custom action required message.')).toBeInTheDocument();
 });
 
-test('UserActionConfirmation does not show Reject button when onReject is not provided', async () => {
+test('UserActionConfirmation does not show Skip for now button when onReject is not provided', async () => {
   const mockOnApprove = vi.fn();
   const { getByRole, getByText } = render(
     <UserActionConfirmation
@@ -90,15 +90,13 @@ test('UserActionConfirmation does not show Reject button when onReject is not pr
     />
   );
 
-  // Verify Take control button is present
   const approveButton = getByRole('button', { name: /take control/i });
   await expect.element(approveButton).toBeInTheDocument();
-  
-  // Verify Reject text is not present (since button shouldn't exist)
-  expect(() => getByText('Reject')).toThrow();
+
+  await expect.element(getByText('Skip for now')).not.toBeInTheDocument();
 });
 
-test('UserActionConfirmation shows Reject button when onReject is provided', async () => {
+test('UserActionConfirmation shows Skip for now button when onReject is provided', async () => {
   const mockOnApprove = vi.fn();
   const mockOnReject = vi.fn();
   const { getByRole } = render(
@@ -111,9 +109,9 @@ test('UserActionConfirmation shows Reject button when onReject is provided', asy
     />
   );
 
-  const rejectButton = getByRole('button', { name: /reject/i });
+  const rejectButton = getByRole('button', { name: /skip for now/i });
   await expect.element(rejectButton).toBeInTheDocument();
-  
+
   const approveButton = getByRole('button', { name: /take control/i });
   await expect.element(approveButton).toBeInTheDocument();
 });

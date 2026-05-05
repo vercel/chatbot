@@ -22,15 +22,15 @@ test('ConsentModal renders with proper content when open', async () => {
 test('ConsentModal does not render when closed', async () => {
   const mockOnOpenChange = vi.fn();
   const mockOnContinue = vi.fn();
-  const { queryByText } = render(
-    <ConsentModal 
-      open={false} 
-      onOpenChange={mockOnOpenChange} 
-      onContinue={mockOnContinue} 
+  const { getByText } = render(
+    <ConsentModal
+      open={false}
+      onOpenChange={mockOnOpenChange}
+      onContinue={mockOnContinue}
     />
   );
 
-  await expect.element(queryByText('You will be redirected to the home screen')).not.toBeInTheDocument();
+  await expect.element(getByText('You will be redirected to the home screen')).not.toBeInTheDocument();
 });
 
 test('ConsentModal cancel button calls onOpenChange with false', async () => {

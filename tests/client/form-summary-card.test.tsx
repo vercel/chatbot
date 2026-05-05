@@ -63,8 +63,9 @@ test('Submit posts changed values back to sendMessage', async () => {
     <FormSummaryCard formName="CalFresh" sections={SECTIONS} sendMessage={sendMessage} />
   );
   await getByRole('button', { name: /start review/i }).click();
-  // The required-but-empty SSN row renders a text input; only one textbox in the modal.
-  await getByRole('textbox').fill('123-45-6789');
+  // Target the SSN input by its required-empty placeholder; the populated
+  // Full name row also renders an editable input in the modal.
+  await getByRole('textbox', { name: /required — enter a value/i }).fill('123-45-6789');
   await getByRole('button', { name: /^submit$/i }).click();
   expect(sendMessage).toHaveBeenCalledTimes(1);
   const text = sendMessage.mock.calls[0][0].parts[0].text;
