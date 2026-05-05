@@ -86,8 +86,7 @@ const getToolIcon = (toolName: string) => {
     'get-participant-with-household': Database,
     'gapAnalysis': FileText,
     'actionLabel': Layers,
-    'loadSkill': Download,
-    'readSkillFile': FileText,
+    'readReference': FileText,
   };
 
   return iconMap[cleanToolName] || FileText; // Default icon
@@ -259,8 +258,7 @@ export const getToolDisplayInfo = (toolName: string, input?: any): { text: strin
     'search-participants-by-name': (input) => input?.name ? `Searched for participant "${input.name}"` : 'Searched for participant',
     'get-participant-with-household': () => 'Retrieved participant data',
     'gapAnalysis': () => 'Gap analysis',
-    'loadSkill': (input) => input?.name ? `Loaded ${input.name} skill` : 'Loaded skill',
-    'readSkillFile': () => 'Loaded reference file',
+    'readReference': (input) => input?.path ? `Loaded ${input.path}` : 'Loaded reference file',
   };
 
   const mapper = toolMappings[cleanToolName];

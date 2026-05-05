@@ -1,12 +1,6 @@
----
-name: custom-dropdowns
-description: >
-  Use this skill when a native select action fails or has no effect, or when the
-  snapshot shows select2-container or chosen-container classes. Covers Select2,
-  Chosen, and Drupal custom dropdown patterns.
----
+# Custom Dropdowns
 
-# Custom Dropdowns Skill
+Load this reference when a native `select` action fails or has no effect, or when the snapshot shows `select2-container` or `chosen-container` classes.
 
 The `select` action ONLY works on native `<select>` elements. Custom dropdown widgets (Select2, Chosen) render styled HTML instead.
 

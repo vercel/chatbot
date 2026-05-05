@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CircleHelp, TriangleAlert, WandSparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -143,33 +143,37 @@ type FieldSourceBadgeProps = {
 // Nava-specific "Apricot 360" wording.
 export function FieldSourceBadge({ source, required, inferredFrom }: FieldSourceBadgeProps) {
   const baseCls =
-    'text-[10px] font-normal uppercase font-mono tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap cursor-default';
+    'inline-flex items-center gap-1.5 text-[10px] font-medium uppercase font-mono leading-[1.5] px-1.5 py-1 rounded-[4px] border whitespace-nowrap cursor-default';
 
   let label: string;
   let toneCls: string;
   let tooltip: string;
+  let Icon: typeof WandSparkles | null = null;
 
   if (source === 'missing') {
     if (required) {
       label = 'Required';
-      toneCls = 'bg-red-50 text-red-700 border border-red-200';
+      toneCls = 'bg-red-50 text-red-700 border-red-100';
       tooltip = 'Required to submit.';
+      Icon = TriangleAlert;
     } else {
       label = 'Optional';
-      toneCls = 'bg-stone-100 text-zinc-600';
+      toneCls = 'bg-stone-50 text-zinc-700 border-stone-200';
       tooltip = 'Not required to submit.';
+      Icon = CircleHelp;
     }
   } else if (source === 'inferred') {
-    label = 'Autofilled';
-    toneCls = 'bg-[hsl(318_50%_93%)] text-[hsl(320_47%_47%)]';
+    label = 'Auto-filled';
+    toneCls = 'bg-[#fff2fb] text-[#a11e83] border-[#f5e4f0]';
     tooltip = inferredFrom ? `Filled by AI; based on ${inferredFrom}.` : 'Filled by AI.';
+    Icon = WandSparkles;
   } else if (source === 'database') {
     label = 'Apricot 360';
-    toneCls = 'bg-stone-100 text-zinc-600';
+    toneCls = 'bg-stone-50 text-stone-700 border-stone-200';
     tooltip = 'Filled in automatically from Apricot 360.';
   } else {
     label = 'Manual';
-    toneCls = 'bg-stone-100 text-zinc-600';
+    toneCls = 'bg-stone-50 text-stone-700 border-stone-200';
     tooltip = 'Entered by you.';
   }
 
@@ -177,7 +181,10 @@ export function FieldSourceBadge({ source, required, inferredFrom }: FieldSource
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className={cn(baseCls, toneCls)}>{label}</span>
+          <span className={cn(baseCls, toneCls)}>
+            {Icon && <Icon size={12} aria-hidden="true" />}
+            {label}
+          </span>
         </TooltipTrigger>
         <TooltipContent align="end">{tooltip}</TooltipContent>
       </Tooltip>

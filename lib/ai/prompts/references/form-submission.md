@@ -1,6 +1,6 @@
 # Form Submission — Advanced JS Debugging
 
-Load this reference only after completing steps 1–4 from the Form Submission section in SKILL.md and submit is STILL disabled.
+Load this reference only after completing steps 1–4 from the Form Submission Protocol section in the system prompt and submit is STILL disabled.
 
 ## Step 5: Find the page's JavaScript source
 

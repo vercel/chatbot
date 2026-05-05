@@ -33,8 +33,7 @@ import { gapAnalysis } from '@/lib/ai/tools/gap-analysis';
 import { formSummary } from '@/lib/ai/tools/form-summary';
 import { actionLabel } from '@/lib/ai/tools/action-label';
 import { getWebAutomationSystemPrompt, getCurrentDateString } from '@/lib/ai/prompts/web-automation';
-import { loadSkill } from '@/lib/ai/tools/load-skill';
-import { readSkillFile } from '@/lib/ai/tools/read-skill-file';
+import { readReference } from '@/lib/ai/tools/read-reference';
 import { createMessageCompressor } from '@/lib/ai/context-compression';
 import { registerChatAbort, clearChatAbort } from '@/lib/chat-abort-registry';
 
@@ -198,8 +197,7 @@ export async function POST(request: Request) {
             formSummary,
             actionLabel,
             browser: createBrowserTool(sessionId, session.user.id),
-            loadSkill,
-            readSkillFile,
+            readReference,
           },
           // request.signal.aborted is checked at each step boundary so the
           // tool loop halts even before Node's write-failure-based abort

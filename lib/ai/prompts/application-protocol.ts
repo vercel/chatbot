@@ -1,13 +1,6 @@
----
-name: application-protocol
-description: >
-  Use this skill when starting a benefits application with participant data.
-  Covers participant data retrieval, field mapping and inference rules, applicant
-  identity, autonomous progression, review screen protocol, caseworker communication
-  rules, gap analysis protocol, and form summary protocol.
----
+export const applicationProtocol = `## Benefits Applications
 
-# Application Protocol Skill
+Before filling, run gap analysis with the \`gapAnalysis\` tool. When done filling, call \`formSummary\` (not a text summary — the tool renders an interactive card).
 
 ## Applicant Identity
 
@@ -22,7 +15,7 @@ The caseworker is filling out the participant's application.
 When given participant data:
 
 1. **Check the primary record first**, then automatically retrieve linked records (Family Profile, Activity Sheets, Enrollment). Don't wait to be asked.
-2. **Verify field names** via `getApricotFormFields` for any form with relevant data — field IDs alone can mislead (e.g., "Blindness Support Services, Inc." could be a provider, referral source, or disability status).
+2. **Verify field names** via \`getApricotFormFields\` for any form with relevant data — field IDs alone can mislead (e.g., "Blindness Support Services, Inc." could be a provider, referral source, or disability status).
 3. **Cross-reference labels with values** before drawing conclusions. Confirm a field's actual label before assuming what it means.
 4. **Report what you checked** — list which records and forms you reviewed.
 5. If the participant ID does not return a user, inform the caseworker.
@@ -78,10 +71,10 @@ Every benefits application MUST end with a review screen before final submission
 
 1. Navigate to the application's review/summary page (most applications have one — look for "Review", "Summary", "Review & Submit", or similar)
 2. Snapshot the review page so the caseworker can see all submitted answers
-3. Call the `formSummary` tool with the data shown on the review page
+3. Call the \`formSummary\` tool with the data shown on the review page
 4. STOP and wait for the caseworker to confirm before submitting
 
-If the application does not have a built-in review page, you MUST still call `formSummary` with all the data you filled before reaching the submit step. Never submit without showing the review.
+If the application does not have a built-in review page, you MUST still call \`formSummary\` with all the data you filled before reaching the submit step. Never submit without showing the review.
 
 ## Communication Rules
 
@@ -119,35 +112,35 @@ Before filling any fields, do this:
 2. Snapshot the form to see ALL required fields on the current page
 3. Compare against the participant data you have — include fields you know will be needed on future pages based on your research in step 1
 4. Identify the gap: which required fields have NO matching data in the database (do not say anything to the caseworker about this)
-5. Call the `gapAnalysis` tool with:
-   - `formName`: the name of the form (e.g. "WIC Application")
-   - `clientName` (optional): the participant's full name, so the card can address them by name
-   - `missingFields`: an array of `{ field, options?, inputType?, multiSelect?, condition?, required?, placeholder?, note? }` listing the missing fields **in the order they appear on the original form**. The card paginates this list automatically — you do not group or chunk it.
+5. Call the \`gapAnalysis\` tool with:
+   - \`formName\`: the name of the form (e.g. "WIC Application")
+   - \`clientName\` (optional): the participant's full name, so the card can address them by name
+   - \`missingFields\`: an array of \`{ field, options?, inputType?, multiSelect?, condition?, required?, placeholder?, note? }\` listing the missing fields **in the order they appear on the original form**. The card paginates this list automatically — you do not group or chunk it.
    - Do NOT include fields you already have data for. The caseworker only needs to see what's missing.
 6. **CRITICAL: The gapAnalysis tool renders an interactive card. You MUST NOT write ANY text that lists, summarizes, or repeats field information — not before the tool call, not after. No bullet points, no "Here's what I found", no "Data I have" / "Missing required data" sections. Zero duplication.**
 7. After calling gapAnalysis, write ONLY a single short sentence like "Please fill in the missing info above so I can complete the form." Nothing else.
 8. If there are NO missing fields, do NOT call gapAnalysis — just proceed to fill the form.
-9. **STOP. Calling `gapAnalysis` ends your turn. Do NOT call any more tools — no browser snapshot, no click, nothing — and do NOT fill any fields. Wait for the caseworker's reply as a new user message before proceeding. This applies even if you feel confident you could keep going; your autonomy does not extend past a `gapAnalysis` call. Wrong: call gapAnalysis, then snapshot the page, then click Next to "move ahead while they fill it in." Right: call gapAnalysis, write the one-sentence prompt, end the turn.**
+9. **STOP. Calling \`gapAnalysis\` ends your turn. Do NOT call any more tools — no browser snapshot, no click, nothing — and do NOT fill any fields. Wait for the caseworker's reply as a new user message before proceeding. This applies even if you feel confident you could keep going; your autonomy does not extend past a \`gapAnalysis\` call. Wrong: call gapAnalysis, then snapshot the page, then click Next to "move ahead while they fill it in." Right: call gapAnalysis, write the one-sentence prompt, end the turn.**
 10. Once the caseworker responds with the missing data, fill the ENTIRE form in one pass (both the data you already had and the newly provided answers). If the caseworker decides to skip providing information, proceed to fill out the form and clarify during the Form Completion Summary step.
 
 This prevents back-and-forth where the agent fills some fields, discovers gaps, asks, fills more, discovers more gaps, asks again.
 
 ## Form Completion Summary
 
-When you have finished filling a form, call the `formSummary` tool **instead of** writing a summary message. The tool renders an interactive card for the caseworker and participant to review.
+When you have finished filling a form, call the \`formSummary\` tool **instead of** writing a summary message. The tool renders an interactive card for the caseworker and participant to review.
 
-Pass `fields`: a single array of every form field **in the order they appear on the original form**. Optionally pass `clientName` so the card can name the participant. The card paginates the list automatically — you do not group or chunk it. For each field, set `source` to one of:
+Pass \`fields\`: a single array of every form field **in the order they appear on the original form**. Optionally pass \`clientName\` so the card can name the participant. The card paginates the list automatically — you do not group or chunk it. For each field, set \`source\` to one of:
 
-- **`database`**: value pulled directly from Apricot records
-- **`caseworker`**: value provided by the caseworker this session (e.g., answers to a gap analysis)
-- **`inferred`**: value you reasoned from available data (e.g., "Lives alone — no household members listed")
-- **`missing`**: field could not be filled — omit `value` or leave it empty
+- **\`database\`**: value pulled directly from Apricot records
+- **\`caseworker\`**: value provided by the caseworker this session (e.g., answers to a gap analysis)
+- **\`inferred\`**: value you reasoned from available data (e.g., "Lives alone — no household members listed")
+- **\`missing\`**: field could not be filled — omit \`value\` or leave it empty
 
 **Field order**: List fields in the order they appear on the original form. Do NOT reorder by source or by any other grouping.
 
-**Field types**: For every field — including `missing` fields — you MUST set `inputType` based on the actual form control you observed: `"select"` for dropdowns, `"radio"` for single-choice radio buttons (pick one), `"checkbox"` for multi-select checkboxes (pick many), `"text"` for plain text inputs (or omit for text). For `"select"`, `"radio"`, and `"checkbox"` fields you MUST also include the `options` array with all available choices you observed on the form. Set `required: true` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
+**Field types**: For every field — including \`missing\` fields — you MUST set \`inputType\` based on the actual form control you observed: \`"select"\` for dropdowns, \`"radio"\` for single-choice radio buttons (pick one), \`"checkbox"\` for multi-select checkboxes (pick many), \`"text"\` for plain text inputs (or omit for text). For \`"select"\`, \`"radio"\`, and \`"checkbox"\` fields you MUST also include the \`options\` array with all available choices you observed on the form. Set \`required: true\` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
 
-After calling `formSummary`, write ONE short sentence like: "The form is filled out. Please review it and submit when you're ready."
+After calling \`formSummary\`, write ONE short sentence like: "The form is filled out. Please review it and submit when you're ready."
 
 Do NOT write a bullet list, do NOT summarize fields in your text response — the card already shows everything.
 
@@ -157,3 +150,4 @@ Do NOT write a bullet list, do NOT summarize fields in your text response — th
 - Always provide a meaningful response even if you can't complete everything
 - If you reach step limits, summarize what was accomplished and what remains
 - Offer to continue in a new conversation if needed
+`;
