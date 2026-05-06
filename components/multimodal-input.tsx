@@ -236,18 +236,17 @@ function PureMultimodalInput({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="absolute left-1/2 bottom-48 -translate-x-1/2 z-50"
+            className="absolute inset-x-0 bottom-48 z-50 flex justify-center pointer-events-none"
           >
             <Button
               data-testid="scroll-to-bottom-button"
-              className="rounded-full"
-              size="icon"
-              variant="outline"
+              className="rounded-md px-4 shadow-md items-center pointer-events-auto"
               onClick={(event) => {
                 event.preventDefault();
                 scrollToBottom();
               }}
             >
+              Jump to latest updates
               <ArrowDown />
             </Button>
           </motion.div>
