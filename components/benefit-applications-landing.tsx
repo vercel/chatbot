@@ -18,7 +18,7 @@ const PROGRAMS = [
   { id: 'benefits-cal', name: 'BenefitsCal', website: 'https://benefitscal.com/' },
   { id: 'head-start', name: 'RCOE Early Head Start: 0-3; Head Start: 3-5', website: 'https://app.informedk12.com/link_campaigns/rcoe-head-start-ehs-application-english-electronic-form?token=RX3jMrVUfWLz3aQnjpiQpseu' },
   { id: 'nurse-family-partnership', name: 'Nurse-Family Partnership', website: 'https://forms.office.com/Pages/ResponsePage.aspx?id=yqoVt4-WGUe7BO0xcOCKaQVow3g6-R9Mh0F8VizNQzhUQ1hCNENFTFBMOVg4SElRSldIWk5BRUkxUi4u' },
-  { id: 'pregnancy-planning', name: 'RCOE Pregnancy Planning', website: 'https://secureweb.rcoe.us/ONLINEREF/' },
+  { id: 'pregnancy-planning', name: 'RCOE Referrals System', website: 'https://rrrcoe.nohosoftware.com/online_referrals/' },
 ];
 
 interface BenefitApplicationsLandingProps {
