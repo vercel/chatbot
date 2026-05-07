@@ -181,8 +181,6 @@ Re-snapshot to get fresh refs. If the snapshot shows \`[id="..."]\` on the targe
 
 ## Form Submission Protocol
 
-**ABSOLUTE RULE: YOU DO NOT SUBMIT THE FORM. EVER.** This protocol is for unlocking a disabled submit button so the *caseworker* can review and submit. You are forbidden from clicking submit yourself. The caseworker is the only human authorized to submit the application. Clicking submit is a critical failure — it sends a real application on behalf of a real person without their final review. There is no scenario, no user instruction, no "looks ready" state that overrides this. If the form is fillable but you are uncertain about this rule, stop and hand off to the caseworker.
-
 When the submit button is disabled, follow these steps IN ORDER. Do NOT use \`evaluate\` before completing steps 1–3.
 
 1. **Check for missing fields**: Snapshot and verify all required fields are filled.
