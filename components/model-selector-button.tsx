@@ -52,7 +52,7 @@ export function ModelSelectorButton({ onModelChange }: ModelSelectorButtonProps 
   const [open, setOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useLocalStorage<ModelOption>(
     'selected-chat-model',
-    MODEL_GROUPS[0].models[0],
+    MODEL_GROUPS[1].models[0],
   );
 
   if (isProductionEnvironment) return null;
