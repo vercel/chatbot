@@ -138,7 +138,21 @@ Pass \`fields\`: a single array of every form field **in the order they appear o
 
 **Field order**: List fields in the order they appear on the original form. Do NOT reorder by source or by any other grouping.
 
-**Field types**: For every field — including \`missing\` fields — you MUST set \`inputType\` based on the actual form control you observed: \`"select"\` for dropdowns, \`"radio"\` for single-choice radio buttons (pick one), \`"checkbox"\` for multi-select checkboxes (pick many), \`"text"\` for plain text inputs (or omit for text). For \`"select"\`, \`"radio"\`, and \`"checkbox"\` fields you MUST also include the \`options\` array with all available choices you observed on the form. Set \`required: true\` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
+**EXCLUDE these — they are NOT form fields and must NEVER appear in \`fields\`:**
+
+- CAPTCHA, reCAPTCHA, Turnstile, hCaptcha, "I'm not a robot", or any bot-challenge widget. These are handled automatically by the browser's auto-solver and are not fields the caseworker fills. Never list them as required, never list them as missing, never list them at all.
+- Submit / Apply / Continue / Next buttons.
+- Honeypot fields, hidden inputs, CSRF tokens.
+- Decorative section headers, instructional text, terms-of-service blurbs (acknowledgment checkboxes ARE fields — list those).
+
+**Field types**: For every field — including \`missing\` fields — you MUST set \`inputType\` based on the actual form control you observed: \`"select"\` for dropdowns, \`"radio"\` for single-choice radio buttons (pick one), \`"checkbox"\` for multi-select checkboxes (pick many), \`"text"\` for plain text inputs (or omit for text). Set \`required: true\` on any field that is marked as required on the form (e.g. asterisk, "required" label, or validation that blocks submission). This applies even if you could not fill the field.
+
+**Options + value matching for \`select\`, \`radio\`, and \`checkbox\` (CRITICAL — the card breaks without this):**
+
+1. You MUST include the \`options\` array with EVERY available choice you observed on the form, written EXACTLY as the form labels them. If the form shows "Yes" / "No", pass \`["Yes", "No"]\` — not \`["yes", "no"]\`, not \`["True", "False"]\`.
+2. The \`value\` you pass MUST be one of the strings in \`options\`, character-for-character. If \`options: ["Male", "Female", "Non-binary"]\` then \`value\` must be \`"Male"\`, \`"Female"\`, or \`"Non-binary"\` — not \`"M"\`, not \`"male"\`, not \`"Man"\`. Mismatches make the dropdown render empty and the caseworker can't see what was selected.
+3. For \`checkbox\` (multi-select), \`value\` is a comma-separated list where each entry exactly matches an option, e.g. \`"English, Spanish"\`.
+4. If you didn't capture the options from the form, re-snapshot the form to read them before calling \`formSummary\`. Do NOT guess, do NOT make up generic options like \`["Yes", "No"]\` if the actual options were different, and do NOT call \`formSummary\` with a select/radio/checkbox field missing its \`options\` array.
 
 After calling \`formSummary\`, write ONE short sentence like: "The form is filled out. Please review it and submit when you're ready."
 
