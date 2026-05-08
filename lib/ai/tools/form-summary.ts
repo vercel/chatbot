@@ -21,7 +21,9 @@ const fieldSchema = z.object({
   options: z
     .array(z.string())
     .optional()
-    .describe('Available choices for select, radio, or checkbox fields'),
+    .describe(
+      'REQUIRED for select/radio/checkbox fields. Every available choice exactly as the form labels it (e.g. ["Yes", "No"], ["Male", "Female", "Non-binary"]). The `value` you pass MUST match one of these strings character-for-character or the dropdown will render empty. Re-snapshot the form to read the real options — never guess.',
+    ),
   required: z
     .boolean()
     .optional()
@@ -36,7 +38,7 @@ const fieldSchema = z.object({
 
 export const formSummary = tool({
   description:
-    'Display a form summary card showing what was filled in and where each value came from. Call this INSTEAD of writing a summary message at the end of form completion. List fields in the order they appear on the original form. The card already displays all information — do NOT write any text listing the fields before or after calling this tool. Just call the tool, then follow with one short sentence like "Please review and submit when ready."',
+    'Display a form summary card showing what was filled in and where each value came from. Call this INSTEAD of writing a summary message at the end of form completion. List fields in the order they appear on the original form. NEVER include CAPTCHA, reCAPTCHA, Turnstile, "I\'m not a robot", or any bot-challenge widget — they are not form fields. Also exclude submit buttons, hidden inputs, and decorative text. The card already displays all information — do NOT write any text listing the fields before or after calling this tool. Just call the tool, then follow with one short sentence like "Please review and submit when ready."',
   inputSchema: z.object({
     formName: z
       .string()

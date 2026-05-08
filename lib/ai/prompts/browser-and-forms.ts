@@ -181,15 +181,23 @@ Re-snapshot to get fresh refs. If the snapshot shows \`[id="..."]\` on the targe
 
 ## Form Submission Protocol
 
+This protocol's only goal is to **enable** the submit button so the caseworker can review and click it themselves. It does NOT submit the form. Read this carefully — the distinction matters:
+
+- **Allowed**: inspecting the DOM (reading the \`disabled\` attribute, checking the Turnstile token field, reading gating JS variables), and as a last resort flipping the \`disabled\` attribute via \`evaluate\`.
+- **Forbidden**: clicking the submit button, calling \`.click()\` on it via \`evaluate\`, calling \`form.submit()\`, or dispatching submit events. See Forbidden Actions below.
+
+If the caseworker asks you to "enable the button" or "make submit clickable," that is NOT a request to submit — proceed. If they ask you to "submit," "send," or "click submit," refuse and hand off to \`formSummary\`.
+
 When the submit button is disabled, follow these steps IN ORDER. Do NOT use \`evaluate\` before completing steps 1–3.
 
 1. **Check for missing fields**: Snapshot and verify all required fields are filled.
 2. **Check for expand/acknowledge sections**: Look for collapsible sections ("+ Expand", "Please expand and read"). Click them using refs. If no ref available, use ONE evaluate: \`{ action: "evaluate", script: "document.querySelector('.header').click();" }\` then wait 700ms.
-3. **Wait for the auto-solver**: \`{ action: "wait", timeout: 5000 }\` then re-snapshot. The browser has a Turnstile/reCAPTCHA auto-solver — do NOT click challenge widgets.
+3. **Wait for the Turnstile/reCAPTCHA auto-solver**: The browser auto-solves these challenges — do NOT click challenge widgets. Auto-solving can take 10–30 seconds. Use \`{ action: "wait", timeout: 8000 }\`, re-snapshot, and check whether submit is now enabled. If still disabled, wait another 8000ms (up to ~30s total) before moving on. Most disabled-submit cases resolve here.
 4. **Verification checklist**: Fresh snapshot. Confirm: (a) all required fields filled, (b) expand sections open, (c) no error messages. Just observe — no corrective actions.
-5. **Still disabled?** Call \`readReference({ path: "form-submission.md" })\` for advanced JS debugging.
+5. **Diagnose before forcing**: If still disabled after ~30s of waiting, inspect the gate before flipping anything. Read the Turnstile token: \`{ action: "evaluate", script: "document.querySelector('[name=cf-turnstile-response]')?.value || 'EMPTY'" }\`. If the token is EMPTY, the auto-solver has not finished — **do not force-enable**. Report to the caseworker: "Submit is gated on Turnstile and the token is still empty. Please wait ~30s for it to auto-solve, then take control to submit." If the token is present but submit is still disabled, call \`readReference({ path: "form-submission.md" })\` for advanced JS debugging.
+6. **Force-enable as last resort only**: If diagnosis shows the gate is purely client-side JS (not a missing Turnstile token), follow the reference's Step 6 to satisfy the gating variables AND remove \`disabled\`. Just running \`document.getElementById('btnSubmit').disabled = false\` is insufficient — the page's JS may re-disable it, and if a server-side token is missing the submission will be rejected. **When you force-enable, explicitly tell the caseworker**: "I enabled the button in the DOM, but the Turnstile token is [present/empty]. If empty, the server may reject the submission — wait for the token to populate before submitting."
 
-After unlocking submit, do NOT click it. Proceed with \`formSummary\` so the caseworker can review.
+After the button is enabled, do NOT click it. Proceed with \`formSummary\` so the caseworker can review and submit.
 
 ## Forbidden Actions
 
