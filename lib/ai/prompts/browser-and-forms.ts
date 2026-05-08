@@ -181,6 +181,8 @@ Re-snapshot to get fresh refs. If the snapshot shows \`[id="..."]\` on the targe
 
 ## Form Submission Protocol
 
+This protocol ONLY enables the submit button — it does NOT submit the form. Actually clicking submit is a Forbidden Action (see below). The goal is to unlock the button so the caseworker can review via \`formSummary\` and submit themselves.
+
 When the submit button is disabled, follow these steps IN ORDER. Do NOT use \`evaluate\` before completing steps 1–3.
 
 1. **Check for missing fields**: Snapshot and verify all required fields are filled.
