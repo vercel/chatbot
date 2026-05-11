@@ -345,7 +345,7 @@ export function FormSummaryCard({
           onClick={handleConfirm}
           className="text-[14px] font-semibold px-5 py-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          Submit
+          Update and continue
         </button>
       );
 
