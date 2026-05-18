@@ -1,11 +1,11 @@
 export const DEFAULT_CHAT_MODEL = "moonshotai/kimi-k2.5";
 
 export const titleModel = {
-  id: "mistral/mistral-small",
-  name: "Mistral Small",
-  provider: "mistral",
+  id: "moonshotai/kimi-k2.5",
+  name: "Kimi K2.5",
+  provider: "moonshotai",
   description: "Fast model for title generation",
-  gatewayOrder: ["mistral"],
+  gatewayOrder: ["fireworks", "bedrock"],
 };
 
 export type ModelCapabilities = {
@@ -30,20 +30,6 @@ export const chatModels: ChatModel[] = [
     provider: "deepseek",
     description: "Fast and capable model with tool use",
     gatewayOrder: ["bedrock", "deepinfra"],
-  },
-  {
-    id: "mistral/codestral",
-    name: "Codestral",
-    provider: "mistral",
-    description: "Code-focused model with tool use",
-    gatewayOrder: ["mistral"],
-  },
-  {
-    id: "mistral/mistral-small",
-    name: "Mistral Small",
-    provider: "mistral",
-    description: "Fast vision model with tool use",
-    gatewayOrder: ["mistral"],
   },
   {
     id: "moonshotai/kimi-k2.5",
