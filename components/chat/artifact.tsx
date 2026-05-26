@@ -1,5 +1,4 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { formatDistance } from "date-fns";
 import equal from "fast-deep-equal";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -11,16 +10,14 @@ import {
   useRef,
   useState,
 } from "react";
-import useSWR, { useSWRConfig } from "swr";
 import { useWindowSize } from "usehooks-ts";
 import { codeArtifact } from "@/artifacts/code/client";
 import { imageArtifact } from "@/artifacts/image/client";
 import { sheetArtifact } from "@/artifacts/sheet/client";
 import { textArtifact } from "@/artifacts/text/client";
 import { useArtifact } from "@/hooks/use-artifact";
-import type { Document, Vote } from "@/lib/db/schema";
+import type { Vote } from "@/lib/chat/types";
 import type { Attachment, ChatMessage } from "@/lib/types";
-import { fetcher } from "@/lib/utils";
 import { useSidebar } from "../ui/sidebar";
 import { ArtifactActions } from "./artifact-actions";
 import { ArtifactCloseButton } from "./artifact-close-button";
@@ -89,20 +86,8 @@ function PureArtifact({
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
 
-  const {
-    data: documents,
-    isLoading: isDocumentsFetching,
-    mutate: mutateDocuments,
-  } = useSWR<Document[]>(
-    artifact.documentId !== "init" && artifact.status !== "streaming"
-      ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}`
-      : null,
-    fetcher
-  );
-
   const [mode, setMode] = useState<"edit" | "diff">("edit");
-  const [document, setDocument] = useState<Document | null>(null);
-  const [currentVersionIndex, setCurrentVersionIndex] = useState(-1);
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
 
   const { state: sidebarState } = useSidebar();
   const artifactContentRef = useRef<HTMLDivElement>(null);
@@ -124,81 +109,6 @@ function PureArtifact({
     el.scrollTo({ top: el.scrollHeight });
   }, [artifact.status]);
 
-  useEffect(() => {
-    if (documents && documents.length > 0) {
-      const mostRecentDocument = documents.at(-1);
-
-      if (mostRecentDocument) {
-        setDocument(mostRecentDocument);
-        setCurrentVersionIndex(documents.length - 1);
-        if (artifact.status === "streaming" || !isContentDirty) {
-          setArtifact((currentArtifact) => ({
-            ...currentArtifact,
-            content: mostRecentDocument.content ?? "",
-          }));
-        }
-      }
-    }
-  }, [documents, setArtifact, artifact.status, isContentDirty]);
-
-  useEffect(() => {
-    mutateDocuments();
-  }, [mutateDocuments]);
-
-  const { mutate } = useSWRConfig();
-
-  const handleContentChange = useCallback(
-    (updatedContent: string) => {
-      if (!artifact) {
-        return;
-      }
-
-      mutate<Document[]>(
-        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}`,
-        async (currentDocuments) => {
-          if (!currentDocuments) {
-            return [];
-          }
-
-          const currentDocument = currentDocuments.at(-1);
-
-          if (!currentDocument?.content) {
-            setIsContentDirty(false);
-            return currentDocuments;
-          }
-
-          if (currentDocument.content === updatedContent) {
-            setIsContentDirty(false);
-            return currentDocuments;
-          }
-
-          await fetch(
-            `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                title: artifact.title,
-                content: updatedContent,
-                kind: artifact.kind,
-                isManualEdit: true,
-              }),
-            }
-          );
-
-          setIsContentDirty(false);
-
-          return currentDocuments.map((doc, i) =>
-            i === currentDocuments.length - 1
-              ? { ...doc, content: updatedContent }
-              : doc
-          );
-        },
-        { revalidate: false }
-      );
-    },
-    [artifact, mutate]
-  );
-
   const latestContentRef = useRef<string>("");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -212,57 +122,53 @@ function PureArtifact({
         saveTimerRef.current = null;
       }
 
+      const commitContent = () => {
+        setArtifact((currentArtifact) => ({
+          ...currentArtifact,
+          content: latestContentRef.current,
+        }));
+        setIsContentDirty(false);
+      };
+
       if (debounce) {
         saveTimerRef.current = setTimeout(() => {
-          handleContentChange(latestContentRef.current);
+          commitContent();
           saveTimerRef.current = null;
         }, 2000);
       } else {
-        handleContentChange(updatedContent);
+        commitContent();
       }
     },
-    [handleContentChange]
+    [setArtifact]
+  );
+
+  useEffect(
+    () => () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    },
+    []
   );
 
   function getDocumentContentById(index: number) {
-    if (!documents) {
-      return "";
-    }
-    if (!documents[index]) {
-      return "";
-    }
-    return documents[index].content ?? "";
+    return index === 0 ? artifact.content : "";
   }
 
   const handleVersionChange = (type: "next" | "prev" | "toggle" | "latest") => {
-    if (!documents) {
-      return;
-    }
-
     if (type === "latest") {
-      setCurrentVersionIndex(documents.length - 1);
+      setCurrentVersionIndex(0);
       setMode("edit");
     }
 
     if (type === "toggle") {
       setMode((currentMode) => (currentMode === "edit" ? "diff" : "edit"));
     }
-
-    if (type === "prev") {
-      if (currentVersionIndex > 0) {
-        setCurrentVersionIndex((index) => index - 1);
-      }
-    } else if (type === "next" && currentVersionIndex < documents.length - 1) {
-      setCurrentVersionIndex((index) => index + 1);
-    }
   };
 
   const [isToolbarVisible, setIsToolbarVisible] = useState(true);
 
-  const isCurrentVersion =
-    documents && documents.length > 0
-      ? currentVersionIndex === documents.length - 1
-      : true;
+  const isCurrentVersion = true;
 
   const { width: windowWidth, height: windowHeight } = useWindowSize();
   const isMobile = windowWidth ? windowWidth < 768 : false;
@@ -321,10 +227,6 @@ function PureArtifact({
                     <div className="size-1.5 animate-pulse rounded-full bg-amber-500" />
                     Saving...
                   </div>
-                ) : document ? (
-                  <div className="text-xs text-muted-foreground">
-                    {`Updated ${formatDistance(new Date(document.createdAt), new Date(), { addSuffix: true })}`}
-                  </div>
                 ) : artifact.status === "streaming" ? (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="animate-spin">
@@ -333,11 +235,8 @@ function PureArtifact({
                     Generating...
                   </div>
                 ) : (
-                  <div className="h-3 w-24 animate-pulse rounded bg-muted-foreground/10" />
-                )}
-                {documents && documents.length > 1 && (
-                  <div className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-                    v{currentVersionIndex + 1}/{documents.length}
+                  <div className="text-xs text-muted-foreground">
+                    Local draft
                   </div>
                 )}
               </div>
@@ -369,7 +268,7 @@ function PureArtifact({
           getDocumentContentById={getDocumentContentById}
           isCurrentVersion={isCurrentVersion}
           isInline={false}
-          isLoading={isDocumentsFetching && !artifact.content}
+          isLoading={false}
           metadata={metadata}
           mode={mode}
           onSaveContent={saveContent}
@@ -412,7 +311,7 @@ function PureArtifact({
         {!isCurrentVersion && (
           <VersionFooter
             currentVersionIndex={currentVersionIndex}
-            documents={documents}
+            documents={undefined}
             handleVersionChange={handleVersionChange}
             mode={mode}
             setMode={setMode}

@@ -23,7 +23,6 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import useSWR from "swr";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import {
   ModelSelector,
@@ -40,6 +39,7 @@ import {
   type ChatModel,
   chatModels,
   DEFAULT_CHAT_MODEL,
+  getCapabilities,
   type ModelCapabilities,
 } from "@/lib/ai/models";
 import type { Attachment, ChatMessage } from "@/lib/types";
@@ -180,10 +180,7 @@ function PureMultimodalInput({
           action: {
             label: "Delete",
             onClick: () => {
-              fetch(
-                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat?id=${chatId}`,
-                { method: "DELETE" }
-              );
+              setMessages(() => []);
               router.push("/");
               toast.success("Chat deleted");
             },
@@ -195,9 +192,7 @@ function PureMultimodalInput({
           action: {
             label: "Delete all",
             onClick: () => {
-              fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, {
-                method: "DELETE",
-              });
+              setMessages(() => []);
               router.push("/");
               toast.success("All chats deleted");
             },
@@ -210,7 +205,7 @@ function PureMultimodalInput({
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+  const [uploadQueue] = useState<string[]>([]);
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
   const [slashIndex, setSlashIndex] = useState(0);
@@ -256,64 +251,24 @@ function PureMultimodalInput({
     chatId,
   ]);
 
-  const uploadFile = useCallback(async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/files/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const { url, pathname, contentType } = data;
-
-        return {
-          url,
-          name: pathname,
-          contentType,
-        };
-      }
-      const { error } = await response.json();
-      toast.error(error);
-    } catch (_error) {
-      toast.error("Failed to upload file, please try again!");
-    }
+  const showUploadsDisabled = useCallback(() => {
+    toast.error("File uploads are disabled until your backend is connected.");
   }, []);
 
   const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
 
-      setUploadQueue(files.map((file) => file.name));
-
-      try {
-        const uploadPromises = files.map((file) => uploadFile(file));
-        const uploadedAttachments = await Promise.all(uploadPromises);
-        const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined
-        );
-
-        setAttachments((currentAttachments) => [
-          ...currentAttachments,
-          ...successfullyUploadedAttachments,
-        ]);
-      } catch (_error) {
-        toast.error("Failed to upload files");
-      } finally {
-        setUploadQueue([]);
+      if (files.length > 0) {
+        showUploadsDisabled();
+        event.target.value = "";
       }
     },
-    [setAttachments, uploadFile]
+    [showUploadsDisabled]
   );
 
   const handlePaste = useCallback(
-    async (event: ClipboardEvent) => {
+    (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
       if (!items) {
         return;
@@ -328,34 +283,9 @@ function PureMultimodalInput({
       }
 
       event.preventDefault();
-
-      setUploadQueue((prev) => [...prev, "Pasted image"]);
-
-      try {
-        const uploadPromises = imageItems
-          .map((item) => item.getAsFile())
-          .filter((file): file is File => file !== null)
-          .map((file) => uploadFile(file));
-
-        const uploadedAttachments = await Promise.all(uploadPromises);
-        const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) =>
-            attachment !== undefined &&
-            attachment.url !== undefined &&
-            attachment.contentType !== undefined
-        );
-
-        setAttachments((curr) => [
-          ...curr,
-          ...(successfullyUploadedAttachments as Attachment[]),
-        ]);
-      } catch (_error) {
-        toast.error("Failed to upload pasted image(s)");
-      } finally {
-        setUploadQueue([]);
-      }
+      showUploadsDisabled();
     },
-    [setAttachments, uploadFile]
+    [showUploadsDisabled]
   );
 
   useEffect(() => {
@@ -404,6 +334,7 @@ function PureMultimodalInput({
         onChange={handleFileChange}
         ref={fileInputRef}
         tabIndex={-1}
+        accept="image/png,image/jpeg"
         type="file"
       />
 
@@ -593,14 +524,7 @@ function PureAttachmentsButton({
   status: UseChatHelpers<ChatMessage>["status"];
   selectedModelId: string;
 }) {
-  const { data: modelsResponse } = useSWR(
-    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
-    (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
-  );
-
-  const caps: Record<string, ModelCapabilities> | undefined =
-    modelsResponse?.capabilities ?? modelsResponse;
+  const caps: Record<string, ModelCapabilities> = getCapabilities();
   const hasVision = caps?.[selectedModelId]?.vision ?? false;
 
   return (
@@ -634,16 +558,9 @@ function PureModelSelectorCompact({
   onModelChange?: (modelId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { data: modelsData } = useSWR(
-    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
-    (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
-  );
 
-  const capabilities: Record<string, ModelCapabilities> | undefined =
-    modelsData?.capabilities ?? modelsData;
-  const dynamicModels: ChatModel[] | undefined = modelsData?.models;
-  const activeModels = dynamicModels ?? chatModels;
+  const capabilities: Record<string, ModelCapabilities> = getCapabilities();
+  const activeModels = chatModels;
 
   const selectedModel =
     activeModels.find((m: ChatModel) => m.id === selectedModelId) ??
@@ -668,12 +585,7 @@ function PureModelSelectorCompact({
         <ModelSelectorList>
           {(() => {
             const curatedIds = new Set(chatModels.map((m) => m.id));
-            const allModels = dynamicModels
-              ? [
-                  ...chatModels,
-                  ...dynamicModels.filter((m) => !curatedIds.has(m.id)),
-                ]
-              : chatModels;
+            const allModels = chatModels;
 
             const grouped: Record<
               string,

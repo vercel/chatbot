@@ -1,8 +1,6 @@
 import { tool, type UIMessageStreamWriter } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
-import { documentHandlersByArtifactKind } from "@/lib/artifacts/server";
-import { getDocumentById } from "@/lib/db/queries";
 import type { ChatMessage } from "@/lib/types";
 
 type UpdateDocumentProps = {
@@ -12,9 +10,9 @@ type UpdateDocumentProps = {
 };
 
 export const updateDocument = ({
-  session,
+  session: _session,
   dataStream,
-  modelId,
+  modelId: _modelId,
 }: UpdateDocumentProps) =>
   tool({
     description:
@@ -27,17 +25,7 @@ export const updateDocument = ({
         .describe("The description of changes that need to be made"),
     }),
     execute: async ({ id, description }) => {
-      const document = await getDocumentById({ id });
-
-      if (!document) {
-        return {
-          error: "Document not found",
-        };
-      }
-
-      if (document.userId !== session.user?.id) {
-        return { error: "Forbidden" };
-      }
+      void description;
 
       dataStream.write({
         type: "data-clear",
@@ -45,33 +33,13 @@ export const updateDocument = ({
         transient: true,
       });
 
-      const documentHandler = documentHandlersByArtifactKind.find(
-        (documentHandlerByArtifactKind) =>
-          documentHandlerByArtifactKind.kind === document.kind
-      );
-
-      if (!documentHandler) {
-        throw new Error(`No document handler found for kind: ${document.kind}`);
-      }
-
-      await documentHandler.onUpdateDocument({
-        document,
-        description,
-        dataStream,
-        session,
-        modelId,
-      });
-
       dataStream.write({ type: "data-finish", data: null, transient: true });
 
       return {
         id,
-        title: document.title,
-        kind: document.kind,
-        content:
-          document.kind === "code"
-            ? "The script has been updated successfully."
-            : "The document has been updated successfully.",
+        title: "Document",
+        kind: "text" as const,
+        content: "Document tools are disabled in UI-only mode.",
       };
     },
   });

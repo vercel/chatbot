@@ -9,10 +9,9 @@ import {
   useMemo,
   useRef,
 } from "react";
-import useSWR from "swr";
 import { useArtifact } from "@/hooks/use-artifact";
-import type { Document } from "@/lib/db/schema";
-import { cn, fetcher } from "@/lib/utils";
+import type { Document } from "@/lib/chat/types";
+import { cn } from "@/lib/utils";
 import type { ArtifactKind, UIArtifact } from "./artifact";
 import { CodeEditor } from "./code-editor";
 import { InlineDocumentSkeleton } from "./document-skeleton";
@@ -46,17 +45,6 @@ export function DocumentPreview({
   args,
 }: DocumentPreviewProps) {
   const { artifact, setArtifact } = useArtifact();
-
-  const { data: documents, isLoading: isDocumentsFetching } = useSWR<
-    Document[]
-  >(
-    result
-      ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${result.id}`
-      : null,
-    fetcher
-  );
-
-  const previewDocument = useMemo(() => documents?.[0], [documents]);
   const hitboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,42 +63,40 @@ export function DocumentPreview({
     }
   }, [artifact.documentId, setArtifact]);
 
-  if (isDocumentsFetching) {
-    const kind = result?.kind ?? args?.kind ?? artifact.kind;
-    const title = result?.title ?? args?.title ?? artifact.title;
+  const document = useMemo<Document | null>(() => {
+    if (result?.id && result.title && result.kind) {
+      return {
+        title: result.title,
+        kind: result.kind,
+        content: result.content ?? "",
+        id: result.id,
+        createdAt: new Date(),
+        userId: "ui-only",
+      };
+    }
 
-    return (
-      <div className="w-full max-w-[450px]">
-        {title ? (
-          <DocumentHeader isStreaming={true} kind={kind} title={title} />
-        ) : (
-          <div className="flex flex-row items-center justify-between gap-2 rounded-t-2xl border border-b-0 border-border/50 px-4 py-3 dark:bg-muted">
-            <div className="flex flex-row items-center gap-2.5">
-              <div className="size-3.5 animate-pulse rounded bg-muted-foreground/15" />
-              <div className="h-3.5 w-24 animate-pulse rounded bg-muted-foreground/15" />
-            </div>
-            <div className="w-8" />
-          </div>
-        )}
-        <div className="h-[257px] overflow-hidden rounded-b-2xl border border-t-0 border-border/50 bg-muted p-6">
-          <InlineDocumentSkeleton />
-        </div>
-      </div>
-    );
-  }
+    if (args?.id && args.title && args.kind) {
+      return {
+        title: args.title,
+        kind: args.kind,
+        content: args.content ?? "",
+        id: args.id,
+        createdAt: new Date(),
+        userId: "ui-only",
+      };
+    }
 
-  const document: Document | null = previewDocument
-    ? previewDocument
-    : artifact.status === "streaming"
+    return artifact.status === "streaming"
       ? {
           title: artifact.title,
           kind: artifact.kind,
           content: artifact.content,
           id: artifact.documentId,
           createdAt: new Date(),
-          userId: "noop",
+          userId: "ui-only",
         }
       : null;
+  }, [result, args, artifact]);
 
   if (!document) {
     return <LoadingSkeleton artifactKind={artifact.kind} />;
@@ -119,8 +105,8 @@ export function DocumentPreview({
   return (
     <div className="relative w-full max-w-[450px] cursor-pointer">
       <HitboxLayer
+        document={document}
         hitboxRef={hitboxRef}
-        result={result}
         setArtifact={setArtifact}
       />
       <DocumentHeader
@@ -155,12 +141,12 @@ const LoadingSkeleton = ({ artifactKind }: { artifactKind: ArtifactKind }) => (
 );
 
 const PureHitboxLayer = ({
+  document,
   hitboxRef,
-  result,
   setArtifact,
 }: {
+  document: Document;
   hitboxRef: React.RefObject<HTMLDivElement>;
-  result?: Partial<DocumentToolOutput>;
   setArtifact: (
     updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact)
   ) => void;
@@ -171,9 +157,11 @@ const PureHitboxLayer = ({
 
       setArtifact((artifact) => ({
         ...artifact,
-        ...(result?.id && { documentId: result.id }),
-        ...(result?.title && { title: result.title }),
-        ...(result?.kind && { kind: result.kind }),
+        documentId: document.id,
+        title: document.title,
+        kind: document.kind,
+        content: document.content ?? "",
+        status: artifact.status === "streaming" ? "streaming" : "idle",
         isVisible: true,
         boundingBox: {
           left: boundingBox.x,
@@ -183,7 +171,7 @@ const PureHitboxLayer = ({
         },
       }));
     },
-    [setArtifact, result]
+    [setArtifact, document]
   );
 
   return (
@@ -204,7 +192,7 @@ const PureHitboxLayer = ({
 };
 
 const HitboxLayer = memo(PureHitboxLayer, (prevProps, nextProps) => {
-  if (!equal(prevProps.result, nextProps.result)) {
+  if (!equal(prevProps.document, nextProps.document)) {
     return false;
   }
   return true;

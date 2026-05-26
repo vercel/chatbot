@@ -11,8 +11,7 @@ import {
   UndoIcon,
 } from "@/components/chat/icons";
 import { Editor } from "@/components/chat/text-editor";
-import type { Suggestion } from "@/lib/db/schema";
-import { getSuggestions } from "../actions";
+import type { Suggestion } from "@/lib/chat/types";
 
 type TextArtifactMetadata = {
   suggestions: Suggestion[];
@@ -22,10 +21,10 @@ export const textArtifact = new Artifact<"text", TextArtifactMetadata>({
   kind: "text",
   description: "Useful for text content, like drafting essays and emails.",
   initialize: async ({ documentId, setMetadata }) => {
-    const suggestions = await getSuggestions({ documentId });
+    void documentId;
 
     setMetadata({
-      suggestions,
+      suggestions: [],
     });
   },
   onStreamPart: ({ streamPart, setMetadata, setArtifact }) => {
