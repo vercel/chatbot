@@ -1,0 +1,33 @@
+{
+  "name": "chatbot",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "remoteUser": "node",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js dev server",
+      "onAutoForward": "notify"
+    }
+  },
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+  ],
+  "containerEnv": {
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@10.32.1 --activate && pnpm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright"
+      ],
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib"
+      }
+    }
+  }
+}
