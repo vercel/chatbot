@@ -31,7 +31,7 @@ const INTENT_PATTERNS: Array<{ mode: IntentMode; confidence: 'high' | 'medium'; 
     confidence: 'high',
     patterns: [
       /\b(build|create|make|generate|write)\s+(me\s+)?(a|an|the)\s+(app|application|component|page|site|website|feature|function|api|endpoint|route|landing\s*page|dashboard|form|widget)\b/i,
-      /\b(refactor|rewrite|restructure|clean\s*up|organize)\s+(the|this|my|our)\s+(code|component|file|function|module|app)\b/i,
+      /\b(refactor|rewrite|restructure|clean\s*up|organize)\s+(the|this|my|our)\s+(code|component|file|function|module|app|middleware|hook|route|endpoint|service|class|type|interface)\b/i,
       /\b(fix|debug|resolve|patch)\s+(the|this|a|an)\s+(bug|issue|error|problem|crash|type\s*error|lint)\b/i,
       /\b(add|implement|integrate|wire\s*up)\s+(a|an|the)\s+(feature|endpoint|route|component|page|api|middleware|hook|test)\b/i,
     ],
@@ -40,6 +40,8 @@ const INTENT_PATTERNS: Array<{ mode: IntentMode; confidence: 'high' | 'medium'; 
     mode: 'code_handoff',
     confidence: 'medium',
     patterns: [
+      // Broad code-action pattern (catches "refactor the auth middleware" etc.)
+      /\b(refactor|rewrite|restructure|add|implement)\s+(the|this|my|our|a|an)\s+\w+/i,
       /\b(deploy|ship|push)\s+(to|this|the)\s+(vercel|production|prod|staging)\b/i,
       /\b(optimize|improve|speed\s*up)\s+(the|this)\s+(performance|build|bundle|load\s*time)\b/i,
       /\b(run|execute|start)\s+(the|a)\s+(test|test\s*suite|build|type\s*check|lint)\b/i,
