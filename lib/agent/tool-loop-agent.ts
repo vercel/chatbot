@@ -5,7 +5,7 @@
  * Uses DeepSeek V4 Pro as default model via AI Gateway.
  */
 import { ToolLoopAgent, stepCountIs } from 'ai';
-import { gateway } from '@/lib/ai/providers';
+import { getLanguageModel } from '@/lib/ai/providers';
 import { getAvailableTools } from './inline-tools';
 import { sandboxTools } from '@/lib/sandbox/tools';
 
@@ -16,7 +16,7 @@ export function createToolLoopAgent(modelId?: string) {
   };
 
   return new ToolLoopAgent({
-    model: gateway(modelId || 'deepseek/deepseek-v4-pro'),
+    model: getLanguageModel(modelId || 'deepseek/deepseek-v4-pro'),
     tools: allTools,
     stopWhen: stepCountIs(20),
     instructions: `

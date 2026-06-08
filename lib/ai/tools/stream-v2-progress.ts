@@ -7,7 +7,7 @@ import { getV2StreamUrl } from '@/lib/v2/bridge';
 
 export const streamV2ProgressTool = tool({
   description: 'Get the SSE stream URL for a neptune-v2 coding session to track live progress.',
-  parameters: z.object({
+  inputSchema: z.object({
     sessionId: z.string().describe('The v2 session ID to stream progress for'),
   }),
   execute: async ({ sessionId }) => {

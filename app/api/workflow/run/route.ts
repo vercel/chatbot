@@ -64,7 +64,6 @@ Complete the task thoroughly. If you encounter an error, try an alternative appr
 Report your final result at the end.`,
           messages: [{ role: 'user' as const, content: task }],
           tools: allTools,
-          maxSteps: 30,
         });
 
         let fullText = '';

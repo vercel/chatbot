@@ -23,7 +23,7 @@ export const spawnCodingAgent = tool({
     'Hand off a complex multi-step coding task to the neptune-v2 coding agent. ' +
     'The v2 agent has full sandbox access, file system, git, and browser tools. ' +
     'Use this for tasks that require multiple sandbox runs, git operations, or browser automation.',
-  parameters: z.object({
+  inputSchema: z.object({
     code: z.string().describe('The code or instructions to execute in v2 sandbox'),
     runtime: z.enum(['node', 'python']).default('node').describe('Runtime to use'),
     context: z.record(z.unknown()).optional().describe('Additional context for the coding agent'),
