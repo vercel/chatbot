@@ -301,6 +301,67 @@ const PurePreviewMessage = ({
       );
     }
 
+    // Generic tool-* handler — catches all inline tools (pullSlackMessages,
+    // queryDatabase, fetchURL, readSkill, readPRD, listSkills, searchKnowledge,
+    // runWorkflow, listV2Sessions, getV2Session, postV2Session, streamV2Progress,
+    // controlV2Session, runScript, sandbox tools, MCP tools, etc.)
+    if (type.startsWith("tool-")) {
+      const toolPart = part as unknown as {
+        toolCallId: string;
+        state: string;
+        input?: unknown;
+        output?: unknown;
+        errorText?: string;
+      };
+      const { toolCallId, state } = toolPart;
+      const toolName = type.replace("tool-", "");
+      const isError = state === "output-error";
+      const isComplete = state === "output-available" || isError;
+      const isStreaming = state === "input-streaming";
+      const isRunning = state === "input-available";
+
+      // For user-facing display, convert camelCase to Title Case with spaces
+      const displayName = toolName
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (s) => s.toUpperCase())
+        .replace(/V 2/g, "V2")
+        .replace(/Prd/g, "PRD")
+        .replace(/Url/g, "URL")
+        .replace(/Mcp/g, "MCP")
+        .trim();
+
+      return (
+        <Tool
+          className="w-[min(100%,550px)]"
+          defaultOpen={!isComplete}
+          key={toolCallId}
+        >
+          <ToolHeader
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            state={state as any}
+            title={displayName}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            type={type as any}
+          />
+          <ToolContent>
+            {(isStreaming || isRunning || isComplete) && toolPart.input != null
+              ? (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <ToolInput input={toolPart.input as any} />
+              )
+              : null}
+            {isComplete && (
+              <ToolOutput
+                errorText={toolPart.errorText}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                output={toolPart.output as any}
+              />
+            )}
+          </ToolContent>
+        </Tool>
+      );
+    }
+
     return null;
   });
 

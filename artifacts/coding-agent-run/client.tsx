@@ -2,20 +2,20 @@
  * Coding Agent Run Artifact — Client Component
  * FileTree + Terminal + CodeBlock + WebPreview + Commit + TestResults + Task + Confirmation.
  */
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
 import {
-  Terminal,
+  CheckCircle,
+  Clock,
+  ExternalLink,
   FileCode,
   GitCommit,
   Globe,
+  Terminal,
   TestTube,
-  CheckCircle,
   XCircle,
-  Clock,
-  ExternalLink,
-} from 'lucide-react';
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface CodingAgentRunClientProps {
   sandboxId: string;
@@ -38,7 +38,9 @@ export function CodingAgentRunClient({
   status: initialStatus,
   task,
 }: CodingAgentRunClientProps) {
-  const [activeTab, setActiveTab] = useState<'terminal' | 'files' | 'preview' | 'results'>('terminal');
+  const [activeTab, setActiveTab] = useState<
+    "terminal" | "files" | "preview" | "results"
+  >("terminal");
   const [output, setOutput] = useState<string[]>([]);
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [runStatus, setRunStatus] = useState(initialStatus);
@@ -55,33 +57,36 @@ export function CodingAgentRunClient({
       try {
         const data = JSON.parse(event.data);
         switch (data.type) {
-          case 'stdout':
+          case "stdout":
             setOutput((prev) => [...prev, data.data]);
             break;
-          case 'stderr':
+          case "stderr":
             setOutput((prev) => [...prev, `[err] ${data.data}`]);
             break;
-          case 'files':
+          case "files":
             setFiles(data.files || []);
             break;
-          case 'preview':
+          case "preview":
             setPreviewUrl(data.url);
             break;
-          case 'tests':
+          case "tests":
             setTestResults(data.results);
             break;
-          case 'status':
+          case "status":
             setRunStatus(data.status);
             break;
-          case 'commit':
-            setOutput((prev) => [...prev, `[commit] ${data.message} (${data.sha?.slice(0, 7)})`]);
+          case "commit":
+            setOutput((prev) => [
+              ...prev,
+              `[commit] ${data.message} (${data.sha?.slice(0, 7)})`,
+            ]);
             break;
-          case 'done':
-            setRunStatus('completed');
+          case "done":
+            setRunStatus("completed");
             es.close();
             break;
-          case 'error':
-            setRunStatus('error');
+          case "error":
+            setRunStatus("error");
             es.close();
             break;
         }
@@ -101,10 +106,10 @@ export function CodingAgentRunClient({
   }, [output, activeTab]);
 
   const tabs = [
-    { id: 'terminal' as const, icon: Terminal, label: 'Terminal' },
-    { id: 'files' as const, icon: FileCode, label: `Files (${files.length})` },
-    { id: 'preview' as const, icon: Globe, label: 'Preview' },
-    { id: 'results' as const, icon: TestTube, label: 'Results' },
+    { id: "terminal" as const, icon: Terminal, label: "Terminal" },
+    { id: "files" as const, icon: FileCode, label: `Files (${files.length})` },
+    { id: "preview" as const, icon: Globe, label: "Preview" },
+    { id: "results" as const, icon: TestTube, label: "Results" },
   ];
 
   const statusIcon = {
@@ -127,13 +132,13 @@ export function CodingAgentRunClient({
       <div className="flex border-b border-gray-800 bg-gray-900">
         {tabs.map(({ id, icon: Icon, label }) => (
           <button
-            key={id}
-            onClick={() => setActiveTab(id)}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs transition-colors ${
               activeTab === id
-                ? 'text-indigo-300 border-b-2 border-indigo-500 bg-gray-800/50'
-                : 'text-gray-500 hover:text-gray-300'
+                ? "text-indigo-300 border-b-2 border-indigo-500 bg-gray-800/50"
+                : "text-gray-500 hover:text-gray-300"
             }`}
+            key={id}
+            onClick={() => setActiveTab(id)}
           >
             <Icon className="w-3.5 h-3.5" />
             {label}
@@ -144,16 +149,18 @@ export function CodingAgentRunClient({
       {/* Content area */}
       <div className="h-80 overflow-auto">
         {/* Terminal */}
-        {activeTab === 'terminal' && (
+        {activeTab === "terminal" && (
           <div
-            ref={terminalRef}
             className="h-full bg-black text-green-400 font-mono text-sm p-4 overflow-auto"
+            ref={terminalRef}
           >
             {output.length === 0 && (
-              <span className="text-gray-600 animate-pulse">Waiting for agent output...</span>
+              <span className="text-gray-600 animate-pulse">
+                Waiting for agent output...
+              </span>
             )}
             {output.map((line, i) => (
-              <div key={i} className="whitespace-pre-wrap break-all">
+              <div className="whitespace-pre-wrap break-all" key={i}>
                 {line}
               </div>
             ))}
@@ -161,17 +168,22 @@ export function CodingAgentRunClient({
         )}
 
         {/* File Tree */}
-        {activeTab === 'files' && (
+        {activeTab === "files" && (
           <div className="h-full bg-gray-950 p-4 overflow-auto">
             {files.length === 0 ? (
               <span className="text-gray-600 text-sm">No files yet...</span>
             ) : (
               <div className="space-y-1 font-mono text-xs">
                 {files.map((f) => (
-                  <div key={f.path} className="flex items-center gap-2 text-gray-300 hover:bg-gray-800/50 px-1 py-0.5 rounded">
+                  <div
+                    className="flex items-center gap-2 text-gray-300 hover:bg-gray-800/50 px-1 py-0.5 rounded"
+                    key={f.path}
+                  >
                     <FileCode className="w-3 h-3 text-gray-500" />
                     <span>{f.path}</span>
-                    {f.size && <span className="text-gray-600 ml-auto">{f.size}B</span>}
+                    {f.size && (
+                      <span className="text-gray-600 ml-auto">{f.size}B</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -180,21 +192,25 @@ export function CodingAgentRunClient({
         )}
 
         {/* Preview */}
-        {activeTab === 'preview' && (
+        {activeTab === "preview" && (
           <div className="h-full bg-white">
             {previewUrl ? (
-              <iframe src={previewUrl} className="w-full h-full border-0" title="Preview" />
+              <iframe
+                className="w-full h-full border-0"
+                src={previewUrl}
+                title="Preview"
+              />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500 text-sm">
                 <div className="text-center">
                   <Globe className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p>No preview available yet</p>
-                  {runStatus === 'completed' && (
+                  {runStatus === "completed" && (
                     <a
-                      href={`https://${sandboxId}.vercel-sandbox.dev`}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="text-indigo-400 hover:underline inline-flex items-center gap-1 mt-2"
+                      href={`https://${sandboxId}.vercel-sandbox.dev`}
+                      rel="noopener noreferrer"
+                      target="_blank"
                     >
                       <ExternalLink className="w-3 h-3" /> Open sandbox
                     </a>
@@ -206,10 +222,12 @@ export function CodingAgentRunClient({
         )}
 
         {/* Test Results */}
-        {activeTab === 'results' && (
+        {activeTab === "results" && (
           <div className="h-full bg-gray-950 p-4 overflow-auto">
             {testResults ? (
-              <pre className="text-sm font-mono text-gray-300 whitespace-pre-wrap">{testResults}</pre>
+              <pre className="text-sm font-mono text-gray-300 whitespace-pre-wrap">
+                {testResults}
+              </pre>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500 text-sm">
                 <div className="text-center">

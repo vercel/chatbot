@@ -11,7 +11,13 @@
         "knowledge": ["readSkill", "readPRD", "listSkills", "searchKnowledge"],
         "data": ["queryDatabase", "pullSlackMessages", "fetchURL"],
         "workflow": ["runWorkflow"],
-        "v2Bridge": ["listV2Sessions", "getV2Session", "postV2Session", "streamV2Progress", "controlV2Session"]
+        "v2Bridge": [
+          "listV2Sessions",
+          "getV2Session",
+          "postV2Session",
+          "streamV2Progress",
+          "controlV2Session"
+        ]
       },
       "gracefulDegradation": "5 tools unavailable (VPS_FS_BRIDGE_URL + POSTGRES_URL not set) — expected, tools return helpful error messages"
     },

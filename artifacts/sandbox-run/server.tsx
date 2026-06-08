@@ -5,7 +5,7 @@
  * Mission ref: mega-unified-sprint Phase 3, item 6
  * AI Elements: Terminal, FileTree, CodeBlock, Live status badges
  */
-import { SandboxRunClient } from './client';
+import { SandboxRunClient } from "./client";
 
 export interface SandboxFile {
   name: string;
@@ -22,7 +22,7 @@ interface SandboxRunServerProps {
   /** Files created in the sandbox (for FileTree + CodeBlock display) */
   files?: SandboxFile[];
   /** Initial status badge color */
-  statusColor?: 'green' | 'yellow' | 'red' | 'gray';
+  statusColor?: "green" | "yellow" | "red" | "gray";
 }
 
 export { SandboxRunClient };
@@ -34,13 +34,13 @@ export async function SandboxRunServer({
   userId,
   streamUrl,
   files = [],
-  statusColor = 'green',
+  statusColor = "green",
 }: SandboxRunServerProps) {
   const statusColorMap = {
-    green: 'bg-green-500',
-    yellow: 'bg-yellow-500',
-    red: 'bg-red-500',
-    gray: 'bg-gray-500',
+    green: "bg-green-500",
+    yellow: "bg-yellow-500",
+    red: "bg-red-500",
+    gray: "bg-gray-500",
   };
 
   return (
@@ -50,18 +50,20 @@ export async function SandboxRunServer({
         <div className="flex items-center gap-3">
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              statusColor === 'green'
-                ? 'bg-green-950 text-green-400 ring-1 ring-green-800'
-                : statusColor === 'yellow'
-                  ? 'bg-yellow-950 text-yellow-400 ring-1 ring-yellow-800'
-                  : statusColor === 'red'
-                    ? 'bg-red-950 text-red-400 ring-1 ring-red-800'
-                    : 'bg-gray-800 text-gray-400 ring-1 ring-gray-700'
+              statusColor === "green"
+                ? "bg-green-950 text-green-400 ring-1 ring-green-800"
+                : statusColor === "yellow"
+                  ? "bg-yellow-950 text-yellow-400 ring-1 ring-yellow-800"
+                  : statusColor === "red"
+                    ? "bg-red-950 text-red-400 ring-1 ring-red-800"
+                    : "bg-gray-800 text-gray-400 ring-1 ring-gray-700"
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${statusColorMap[statusColor]} ${
-              statusColor === 'green' ? 'animate-pulse' : ''
-            }`} />
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${statusColorMap[statusColor]} ${
+                statusColor === "green" ? "animate-pulse" : ""
+              }`}
+            />
             Sandbox
           </span>
           <span className="text-sm font-mono text-gray-300">{toolName}</span>
@@ -77,11 +79,11 @@ export async function SandboxRunServer({
       </div>
 
       <SandboxRunClient
-        runId={runId}
-        toolName={toolName}
-        streamUrl={streamUrl}
-        userId={userId}
         files={files}
+        runId={runId}
+        streamUrl={streamUrl}
+        toolName={toolName}
+        userId={userId}
       />
     </div>
   );

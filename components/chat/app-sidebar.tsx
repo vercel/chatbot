@@ -34,6 +34,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConnectorsPanel } from "../sidebar/connectors-panel";
+import { FileSystemBrowser } from "../sidebar/file-system-browser";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,8 +47,6 @@ import {
   AlertDialogTitle,
 } from "../ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { ConnectorsPanel } from "../sidebar/connectors-panel";
-import { FileSystemBrowser } from "../sidebar/file-system-browser";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -141,8 +141,8 @@ export function AppSidebar({ user }: { user: User | undefined }) {
           <SidebarSeparator />
 
           <div className="px-2 pt-1">
-            <Tabs defaultValue="browse" className="w-full">
-              <TabsList variant="line" className="w-full justify-start px-1">
+            <Tabs className="w-full" defaultValue="browse">
+              <TabsList className="w-full justify-start px-1" variant="line">
                 <TabsTrigger
                   className="text-xs data-active:text-foreground"
                   value="browse"
@@ -156,10 +156,10 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   Connectors
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="browse" className="mt-0">
+              <TabsContent className="mt-0" value="browse">
                 <FileSystemBrowser />
               </TabsContent>
-              <TabsContent value="connectors" className="mt-0">
+              <TabsContent className="mt-0" value="connectors">
                 <ConnectorsPanel />
               </TabsContent>
             </Tabs>

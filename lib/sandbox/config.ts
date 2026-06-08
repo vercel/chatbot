@@ -16,7 +16,7 @@ export const SANDBOX_LIMITS = {
 } as const;
 
 export const SANDBOX_CONFIG = {
-  RUNTIME: 'node24' as const,
+  RUNTIME: "node24" as const,
   PERSIST: {
     ENABLED: false, // Default ephemeral for tools
     KEEP_LAST: { count: 1, deleteEvicted: true },

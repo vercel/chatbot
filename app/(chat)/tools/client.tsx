@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Wrench, Search, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { ChevronDown, Search, Wrench } from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface ToolDef {
   name: string;
@@ -16,9 +16,9 @@ interface Category {
 }
 
 export function ToolsClient({ categories }: { categories: Category[] }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>(
-    Object.fromEntries(categories.map((c) => [c.name, true])),
+    Object.fromEntries(categories.map((c) => [c.name, true]))
   );
 
   const filtered = categories
@@ -28,7 +28,7 @@ export function ToolsClient({ categories }: { categories: Category[] }) {
         (t) =>
           !search ||
           t.name.toLowerCase().includes(search.toLowerCase()) ||
-          t.description.toLowerCase().includes(search.toLowerCase()),
+          t.description.toLowerCase().includes(search.toLowerCase())
       ),
     }))
     .filter((cat) => cat.tools.length > 0);
@@ -38,26 +38,26 @@ export function ToolsClient({ categories }: { categories: Category[] }) {
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
-          type="text"
-          placeholder="Search tools..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search tools..."
+          type="text"
+          value={search}
         />
       </div>
 
       {filtered.map((cat) => (
         <div key={cat.name}>
           <button
+            className="flex items-center gap-2 w-full text-left py-1 mb-2"
             onClick={() =>
               setExpanded((prev) => ({ ...prev, [cat.name]: !prev[cat.name] }))
             }
-            className="flex items-center gap-2 w-full text-left py-1 mb-2"
           >
             <ChevronDown
               className={cn(
-                'w-4 h-4 text-muted-foreground transition-transform',
-                !expanded[cat.name] && '-rotate-90',
+                "w-4 h-4 text-muted-foreground transition-transform",
+                !expanded[cat.name] && "-rotate-90"
               )}
             />
             <span className="text-sm font-medium">{cat.name}</span>
@@ -70,8 +70,8 @@ export function ToolsClient({ categories }: { categories: Category[] }) {
             <div className="grid gap-2 ml-6">
               {cat.tools.map((tool) => (
                 <div
-                  key={tool.name}
                   className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                  key={tool.name}
                 >
                   <Wrench className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">

@@ -1,12 +1,14 @@
 /**
  * Skills Page — Cortex skill browser.
  */
-import { auth } from '@/app/(auth)/auth';
+import { auth } from "@/app/(auth)/auth";
 
 export default async function SkillsPage() {
   const session = await auth();
   if (!session?.user) {
-    return <div className="p-8 text-muted-foreground">Sign in to browse skills.</div>;
+    return (
+      <div className="p-8 text-muted-foreground">Sign in to browse skills.</div>
+    );
   }
 
   return (
@@ -21,10 +23,14 @@ export default async function SkillsPage() {
         <div className="text-sm text-muted-foreground p-8 text-center border rounded-lg bg-card">
           <p className="font-medium mb-2">Skill browser</p>
           <p>Skills are loaded dynamically from the VPS file system bridge.</p>
-          <p className="mt-1">Use the file system browser in the sidebar or send a chat message to explore skills.</p>
+          <p className="mt-1">
+            Use the file system browser in the sidebar or send a chat message to
+            explore skills.
+          </p>
           <p className="mt-2 text-xs">
-            Available via: <code className="bg-muted px-1 rounded">readSkill</code>,{' '}
-            <code className="bg-muted px-1 rounded">listSkills</code>,{' '}
+            Available via:{" "}
+            <code className="bg-muted px-1 rounded">readSkill</code>,{" "}
+            <code className="bg-muted px-1 rounded">listSkills</code>,{" "}
             <code className="bg-muted px-1 rounded">searchKnowledge</code> tools
           </p>
         </div>

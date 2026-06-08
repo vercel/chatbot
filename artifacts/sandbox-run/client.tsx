@@ -8,12 +8,9 @@
  *  - CodeBlock: syntax-highlighted code view
  *  - Live status badges: connecting/running/completed/error/destroyed
  */
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
 import {
-  Terminal,
-  XCircle,
   CheckCircle,
   Clock,
   Copy,
@@ -22,8 +19,11 @@ import {
   FolderTree,
   Play,
   Square,
-} from 'lucide-react';
-import type { SandboxFile } from './server';
+  Terminal,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import type { SandboxFile } from "./server";
 
 interface SandboxRunClientProps {
   runId: string;
@@ -35,7 +35,7 @@ interface SandboxRunClientProps {
 }
 
 interface StreamEvent {
-  type: 'status' | 'stdout' | 'stderr' | 'done' | 'error' | 'destroyed';
+  type: "status" | "stdout" | "stderr" | "done" | "error" | "destroyed";
   data?: string;
   runId?: string;
   status?: string;
@@ -43,7 +43,7 @@ interface StreamEvent {
   stderr?: string;
 }
 
-type Tab = 'terminal' | 'files' | 'code';
+type Tab = "terminal" | "files" | "code";
 
 export function SandboxRunClient({
   runId,
@@ -53,12 +53,12 @@ export function SandboxRunClient({
   files = [],
 }: SandboxRunClientProps) {
   const [output, setOutput] = useState<string[]>([]);
-  const [status, setStatus] = useState<string>('connecting');
+  const [status, setStatus] = useState<string>("connecting");
   const [duration, setDuration] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('terminal');
+  const [activeTab, setActiveTab] = useState<Tab>("terminal");
   const [selectedFile, setSelectedFile] = useState<string | null>(
-    files[0]?.name ?? null,
+    files[0]?.name ?? null
   );
   const terminalRef = useRef<HTMLDivElement>(null);
   const startTime = useRef<number>(Date.now());
@@ -72,27 +72,30 @@ export function SandboxRunClient({
         const evt: StreamEvent = JSON.parse(event.data);
 
         switch (evt.type) {
-          case 'status':
-            setStatus(evt.status || 'running');
+          case "status":
+            setStatus(evt.status || "running");
             break;
-          case 'stdout':
-            setOutput((prev) => [...prev, evt.data || '']);
+          case "stdout":
+            setOutput((prev) => [...prev, evt.data || ""]);
             break;
-          case 'stderr':
-            setOutput((prev) => [...prev, `\x1b[31m[stderr]\x1b[0m ${evt.data}`]);
+          case "stderr":
+            setOutput((prev) => [
+              ...prev,
+              `\x1b[31m[stderr]\x1b[0m ${evt.data}`,
+            ]);
             break;
-          case 'done':
-            setStatus('completed');
+          case "done":
+            setStatus("completed");
             setDuration(evt.durationMs || Date.now() - startTime.current);
             es.close();
             break;
-          case 'error':
-            setStatus('error');
-            setError(evt.stderr || evt.data || 'Unknown error');
+          case "error":
+            setStatus("error");
+            setError(evt.stderr || evt.data || "Unknown error");
             es.close();
             break;
-          case 'destroyed':
-            setStatus('destroyed');
+          case "destroyed":
+            setStatus("destroyed");
             es.close();
             break;
         }
@@ -102,7 +105,7 @@ export function SandboxRunClient({
     };
 
     es.onerror = () => {
-      setStatus('disconnected');
+      setStatus("disconnected");
       es.close();
     };
 
@@ -117,13 +120,13 @@ export function SandboxRunClient({
   }, [output]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(output.join('\n'));
+    navigator.clipboard.writeText(output.join("\n"));
   };
 
   const handleDownload = () => {
-    const blob = new Blob([output.join('\n')], { type: 'text/plain' });
+    const blob = new Blob([output.join("\n")], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `sandbox-${runId}.log`;
     a.click();
@@ -134,60 +137,65 @@ export function SandboxRunClient({
   const statusConfig = {
     connecting: {
       icon: <Clock className="w-3.5 h-3.5 text-yellow-400 animate-spin" />,
-      badge: 'bg-yellow-950 text-yellow-400 ring-yellow-800',
-      label: 'Connecting',
+      badge: "bg-yellow-950 text-yellow-400 ring-yellow-800",
+      label: "Connecting",
     },
     running: {
       icon: <Play className="w-3.5 h-3.5 text-green-400 animate-pulse" />,
-      badge: 'bg-green-950 text-green-400 ring-green-800',
-      label: 'Running',
+      badge: "bg-green-950 text-green-400 ring-green-800",
+      label: "Running",
     },
     completed: {
       icon: <CheckCircle className="w-3.5 h-3.5 text-green-400" />,
-      badge: 'bg-green-950 text-green-400 ring-green-800',
-      label: 'Done',
+      badge: "bg-green-950 text-green-400 ring-green-800",
+      label: "Done",
     },
     error: {
       icon: <XCircle className="w-3.5 h-3.5 text-red-400" />,
-      badge: 'bg-red-950 text-red-400 ring-red-800',
-      label: 'Error',
+      badge: "bg-red-950 text-red-400 ring-red-800",
+      label: "Error",
     },
     destroyed: {
       icon: <Square className="w-3.5 h-3.5 text-gray-400" />,
-      badge: 'bg-gray-800 text-gray-400 ring-gray-700',
-      label: 'Destroyed',
+      badge: "bg-gray-800 text-gray-400 ring-gray-700",
+      label: "Destroyed",
     },
     disconnected: {
       icon: <XCircle className="w-3.5 h-3.5 text-yellow-400" />,
-      badge: 'bg-yellow-950 text-yellow-400 ring-yellow-800',
-      label: 'Disconnected',
+      badge: "bg-yellow-950 text-yellow-400 ring-yellow-800",
+      label: "Disconnected",
     },
   }[status] ?? {
     icon: <Clock className="w-3.5 h-3.5" />,
-    badge: 'bg-gray-800 text-gray-400 ring-gray-700',
+    badge: "bg-gray-800 text-gray-400 ring-gray-700",
     label: status,
   };
 
   const selectedFileData = files.find((f) => f.name === selectedFile);
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: string }[] = [
+  const tabs: {
+    id: Tab;
+    label: string;
+    icon: React.ReactNode;
+    badge?: string;
+  }[] = [
     {
-      id: 'terminal',
-      label: 'Terminal',
+      id: "terminal",
+      label: "Terminal",
       icon: <Terminal className="w-3.5 h-3.5" />,
       badge: output.length > 0 ? String(output.length) : undefined,
     },
     ...(files.length > 0
       ? [
           {
-            id: 'files' as Tab,
-            label: 'Files',
+            id: "files" as Tab,
+            label: "Files",
             icon: <FolderTree className="w-3.5 h-3.5" />,
             badge: String(files.length),
           },
           {
-            id: 'code' as Tab,
-            label: 'Code',
+            id: "code" as Tab,
+            label: "Code",
             icon: <FileCode className="w-3.5 h-3.5" />,
           },
         ]
@@ -200,13 +208,13 @@ export function SandboxRunClient({
       <div className="flex items-center border-b border-gray-800 bg-gray-900/50">
         {tabs.map((tab) => (
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors border-b-2 -mb-px ${
               activeTab === tab.id
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-950/20'
-                : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-700'
+                ? "border-cyan-400 text-cyan-300 bg-cyan-950/20"
+                : "border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-700"
             }`}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
           >
             {tab.icon}
             <span>{tab.label}</span>
@@ -220,22 +228,22 @@ export function SandboxRunClient({
       </div>
 
       {/* Tab: Terminal */}
-      {activeTab === 'terminal' && (
+      {activeTab === "terminal" && (
         <div className="flex flex-col">
           <div
-            ref={terminalRef}
             className="h-64 overflow-auto bg-black text-green-400 font-mono text-sm p-4"
+            ref={terminalRef}
           >
-            {output.length === 0 && status === 'connecting' && (
+            {output.length === 0 && status === "connecting" && (
               <span className="text-gray-600 animate-pulse">
                 Connecting to sandbox...
               </span>
             )}
-            {output.length === 0 && status === 'running' && (
+            {output.length === 0 && status === "running" && (
               <span className="text-gray-500">Waiting for output...</span>
             )}
             {output.map((line, i) => (
-              <div key={i} className="whitespace-pre-wrap break-all">
+              <div className="whitespace-pre-wrap break-all" key={i}>
                 {line}
               </div>
             ))}
@@ -249,21 +257,21 @@ export function SandboxRunClient({
       )}
 
       {/* Tab: Files (FileTree) */}
-      {activeTab === 'files' && (
+      {activeTab === "files" && (
         <div className="h-64 overflow-auto bg-gray-950 p-3">
           <div className="space-y-1">
             {files.map((file) => (
               <button
+                className={`w-full flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono transition-colors text-left ${
+                  selectedFile === file.name
+                    ? "bg-cyan-950/30 text-cyan-300 ring-1 ring-cyan-800/50"
+                    : "text-gray-400 hover:bg-gray-900 hover:text-gray-200"
+                }`}
                 key={file.name}
                 onClick={() => {
                   setSelectedFile(file.name);
-                  setActiveTab('code');
+                  setActiveTab("code");
                 }}
-                className={`w-full flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono transition-colors text-left ${
-                  selectedFile === file.name
-                    ? 'bg-cyan-950/30 text-cyan-300 ring-1 ring-cyan-800/50'
-                    : 'text-gray-400 hover:bg-gray-900 hover:text-gray-200'
-                }`}
               >
                 <FileCode className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate">{file.name}</span>
@@ -283,7 +291,7 @@ export function SandboxRunClient({
       )}
 
       {/* Tab: Code (CodeBlock) */}
-      {activeTab === 'code' && selectedFileData && (
+      {activeTab === "code" && selectedFileData && (
         <div className="h-64 overflow-auto bg-gray-950">
           <div className="flex items-center justify-between px-3 py-1.5 bg-gray-900/50 border-b border-gray-800">
             <span className="text-xs font-mono text-gray-400">
@@ -298,12 +306,12 @@ export function SandboxRunClient({
           </pre>
         </div>
       )}
-      {activeTab === 'code' && !selectedFileData && (
+      {activeTab === "code" && !selectedFileData && (
         <div className="h-64 overflow-auto bg-gray-950 flex items-center justify-center">
           <p className="text-gray-600 text-xs">
             {files.length === 0
-              ? 'No code files in this sandbox run.'
-              : 'Select a file from the Files tab to view its code.'}
+              ? "No code files in this sandbox run."
+              : "Select a file from the Files tab to view its code."}
           </p>
         </div>
       )}
@@ -326,15 +334,15 @@ export function SandboxRunClient({
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={handleCopy}
             className="p-1.5 rounded hover:bg-gray-800 text-gray-500 hover:text-gray-200 transition-colors"
+            onClick={handleCopy}
             title="Copy output"
           >
             <Copy className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={handleDownload}
             className="p-1.5 rounded hover:bg-gray-800 text-gray-500 hover:text-gray-200 transition-colors"
+            onClick={handleDownload}
             title="Download log"
           >
             <Download className="w-3.5 h-3.5" />

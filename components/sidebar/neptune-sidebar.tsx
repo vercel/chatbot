@@ -1,22 +1,36 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import {
-  MessageSquare, Key, Wrench, Plug, Target, BookOpen, Zap, BarChart3, ChevronLeft, ChevronRight
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+  BarChart3,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Key,
+  MessageSquare,
+  Plug,
+  Target,
+  Wrench,
+  Zap,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import React from "react";
+import { cn } from "@/lib/utils";
 
 const TABS = [
-  { id: 'chats', label: 'Chats', icon: MessageSquare, href: '/chat' },
-  { id: 'vault', label: 'Vault', icon: Key, href: '/vault' },
-  { id: 'tools', label: 'Tools', icon: Wrench, href: '/tools' },
-  { id: 'integrations', label: 'Integrations', icon: Plug, href: '/integrations' },
-  { id: 'skills', label: 'Skills', icon: Target, href: '/skills' },
-  { id: 'knowledge', label: 'Knowledge', icon: BookOpen, href: '/knowledge' },
-  { id: 'workflows', label: 'Workflows', icon: Zap, href: '/workflows' },
-  { id: 'reports', label: 'Reports', icon: BarChart3, href: '/reports' },
+  { id: "chats", label: "Chats", icon: MessageSquare, href: "/chat" },
+  { id: "vault", label: "Vault", icon: Key, href: "/vault" },
+  { id: "tools", label: "Tools", icon: Wrench, href: "/tools" },
+  {
+    id: "integrations",
+    label: "Integrations",
+    icon: Plug,
+    href: "/integrations",
+  },
+  { id: "skills", label: "Skills", icon: Target, href: "/skills" },
+  { id: "knowledge", label: "Knowledge", icon: BookOpen, href: "/knowledge" },
+  { id: "workflows", label: "Workflows", icon: Zap, href: "/workflows" },
+  { id: "reports", label: "Reports", icon: BarChart3, href: "/reports" },
 ] as const;
 
 export function NeptuneSidebar() {
@@ -24,17 +38,19 @@ export function NeptuneSidebar() {
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (
-    <div className={cn(
-      'h-full border-r bg-background flex flex-col transition-all duration-200',
-      collapsed ? 'w-14' : 'w-56'
-    )}>
+    <div
+      className={cn(
+        "h-full border-r bg-background flex flex-col transition-all duration-200",
+        collapsed ? "w-14" : "w-56"
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b">
         {!collapsed && <span className="font-semibold text-sm">Neptune</span>}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="p-1 rounded hover:bg-muted"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
@@ -42,19 +58,19 @@ export function NeptuneSidebar() {
 
       {/* Tabs */}
       <nav className="flex-1 overflow-y-auto py-2">
-        {TABS.map(tab => {
+        {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = pathname?.startsWith(tab.href);
           return (
             <Link
-              key={tab.id}
-              href={tab.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 mx-1 rounded-md text-sm transition-colors',
+                "flex items-center gap-3 px-3 py-2 mx-1 rounded-md text-sm transition-colors",
                 isActive
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
+              href={tab.href}
+              key={tab.id}
             >
               <Icon size={18} />
               {!collapsed && <span>{tab.label}</span>}

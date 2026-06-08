@@ -2,18 +2,21 @@
  * MCP Hub — Multi-server MCP client aggregator.
  * Manages connections to multiple MCP servers and surfaces unified tool set.
  */
-import { experimental_createMCPClient } from '@ai-sdk/mcp';
+import { experimental_createMCPClient } from "@ai-sdk/mcp";
 
 interface MCPServerConfig {
   id: string;
   name: string;
   url: string;
-  transport: 'http' | 'sse';
+  transport: "http" | "sse";
   enabled: boolean;
 }
 
 interface MCPHubState {
-  servers: Map<string, { config: MCPServerConfig; tools: string[]; connected: boolean }>;
+  servers: Map<
+    string,
+    { config: MCPServerConfig; tools: string[]; connected: boolean }
+  >;
 }
 
 class MCPHub {
@@ -34,7 +37,7 @@ class MCPHub {
           url: entry.config.url,
         },
         clientName: `neptune-hub-${serverId}`,
-        version: '3.1.0',
+        version: "3.1.0",
       });
 
       const result = await client.listTools();
@@ -56,7 +59,13 @@ class MCPHub {
     return results;
   }
 
-  getServerList(): Array<{ id: string; name: string; url: string; connected: boolean; tools: string[] }> {
+  getServerList(): Array<{
+    id: string;
+    name: string;
+    url: string;
+    connected: boolean;
+    tools: string[];
+  }> {
     return [...this.state.servers.entries()].map(([id, entry]) => ({
       id,
       name: entry.config.name,
@@ -68,8 +77,8 @@ class MCPHub {
 
   getAllTools(): string[] {
     return [...this.state.servers.values()]
-      .filter(s => s.connected)
-      .flatMap(s => s.tools);
+      .filter((s) => s.connected)
+      .flatMap((s) => s.tools);
   }
 
   isConnected(serverId: string): boolean {
@@ -80,6 +89,24 @@ class MCPHub {
 export const mcpHub = new MCPHub();
 
 // Pre-register known MCP servers
-mcpHub.register({ id: 'github', name: 'GitHub MCP', url: 'https://api.github.com/mcp', transport: 'http', enabled: false });
-mcpHub.register({ id: 'filesystem', name: 'Filesystem MCP', url: 'http://localhost:5173/mcp', transport: 'http', enabled: false });
-mcpHub.register({ id: 'brave-search', name: 'Brave Search MCP', url: 'https://api.search.brave.com/mcp', transport: 'http', enabled: false });
+mcpHub.register({
+  id: "github",
+  name: "GitHub MCP",
+  url: "https://api.github.com/mcp",
+  transport: "http",
+  enabled: false,
+});
+mcpHub.register({
+  id: "filesystem",
+  name: "Filesystem MCP",
+  url: "http://localhost:5173/mcp",
+  transport: "http",
+  enabled: false,
+});
+mcpHub.register({
+  id: "brave-search",
+  name: "Brave Search MCP",
+  url: "https://api.search.brave.com/mcp",
+  transport: "http",
+  enabled: false,
+});

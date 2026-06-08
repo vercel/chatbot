@@ -1,8 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { Key, CheckCircle, XCircle, AlertTriangle, Loader2, EyeOffIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {
+  AlertTriangle,
+  CheckCircle,
+  EyeOffIcon,
+  Key,
+  Loader2,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface VaultKey {
   name: string;
@@ -10,7 +17,13 @@ interface VaultKey {
   description: string;
 }
 
-type KeyStatus = 'idle' | 'testing' | 'connected' | 'configured' | 'missing' | 'error';
+type KeyStatus =
+  | "idle"
+  | "testing"
+  | "connected"
+  | "configured"
+  | "missing"
+  | "error";
 
 interface KeyState {
   status: KeyStatus;
@@ -24,19 +37,19 @@ export function VaultClient({ keys }: { keys: VaultKey[] }) {
   const testKey = useCallback(async (keyName: string) => {
     setKeyStates((prev) => ({
       ...prev,
-      [keyName]: { status: 'testing' },
+      [keyName]: { status: "testing" },
     }));
 
     try {
       const res = await fetch(`/api/vault/test/${keyName}`, {
-        method: 'POST',
+        method: "POST",
       });
 
       const data = await res.json();
       setKeyStates((prev) => ({
         ...prev,
         [keyName]: {
-          status: data.status || 'error',
+          status: data.status || "error",
           message: data.message,
           latency: data.latency,
         },
@@ -44,7 +57,7 @@ export function VaultClient({ keys }: { keys: VaultKey[] }) {
     } catch {
       setKeyStates((prev) => ({
         ...prev,
-        [keyName]: { status: 'error', message: 'Test request failed' },
+        [keyName]: { status: "error", message: "Test request failed" },
       }));
     }
   }, []);
@@ -55,20 +68,20 @@ export function VaultClient({ keys }: { keys: VaultKey[] }) {
       acc[key.category].push(key);
       return acc;
     },
-    {} as Record<string, VaultKey[]>,
+    {} as Record<string, VaultKey[]>
   );
 
   const statusIcon = (status: KeyStatus) => {
     switch (status) {
-      case 'testing':
+      case "testing":
         return <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />;
-      case 'connected':
+      case "connected":
         return <CheckCircle className="w-4 h-4 text-green-400" />;
-      case 'configured':
+      case "configured":
         return <CheckCircle className="w-4 h-4 text-yellow-400" />;
-      case 'missing':
+      case "missing":
         return <XCircle className="w-4 h-4 text-red-400" />;
-      case 'error':
+      case "error":
         return <AlertTriangle className="w-4 h-4 text-red-400" />;
       default:
         return <EyeOffIcon className="w-4 h-4 text-gray-500" />;
@@ -77,16 +90,16 @@ export function VaultClient({ keys }: { keys: VaultKey[] }) {
 
   const statusBadge = (status: KeyStatus) => {
     const styles: Record<KeyStatus, string> = {
-      idle: 'bg-gray-800 text-gray-400 ring-gray-700',
-      testing: 'bg-blue-950 text-blue-400 ring-blue-800',
-      connected: 'bg-green-950 text-green-400 ring-green-800',
-      configured: 'bg-yellow-950 text-yellow-400 ring-yellow-800',
-      missing: 'bg-red-950 text-red-400 ring-red-800',
-      error: 'bg-red-950 text-red-400 ring-red-800',
+      idle: "bg-gray-800 text-gray-400 ring-gray-700",
+      testing: "bg-blue-950 text-blue-400 ring-blue-800",
+      connected: "bg-green-950 text-green-400 ring-green-800",
+      configured: "bg-yellow-950 text-yellow-400 ring-yellow-800",
+      missing: "bg-red-950 text-red-400 ring-red-800",
+      error: "bg-red-950 text-red-400 ring-red-800",
     };
     return cn(
-      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1',
-      styles[status],
+      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1",
+      styles[status]
     );
   };
 
@@ -100,16 +113,18 @@ export function VaultClient({ keys }: { keys: VaultKey[] }) {
           <div className="grid gap-3">
             {categoryKeys.map((key) => {
               const state = keyStates[key.name];
-              const status = state?.status || 'idle';
+              const status = state?.status || "idle";
               return (
                 <div
-                  key={key.name}
                   className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                  key={key.name}
                 >
                   <Key className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <code className="text-sm font-mono truncate">{key.name}</code>
+                      <code className="text-sm font-mono truncate">
+                        {key.name}
+                      </code>
                       <span className={statusBadge(status)}>
                         {statusIcon(status)}
                         <span className="capitalize">{status}</span>
@@ -125,11 +140,11 @@ export function VaultClient({ keys }: { keys: VaultKey[] }) {
                     )}
                   </div>
                   <button
-                    onClick={() => testKey(key.name)}
-                    disabled={status === 'testing'}
                     className="px-3 py-1.5 text-xs rounded-md bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                    disabled={status === "testing"}
+                    onClick={() => testKey(key.name)}
                   >
-                    {status === 'testing' ? 'Testing...' : 'Test'}
+                    {status === "testing" ? "Testing..." : "Test"}
                   </button>
                 </div>
               );

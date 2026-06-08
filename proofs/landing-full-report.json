@@ -11,19 +11,34 @@
     "state": "READY"
   },
   "phasesCompleted": {
-    "phase0": {"name": "Project Identity Verification", "status": "completed"},
-    "phase1": {"name": "Stage Missing Model Keys", "status": "completed"},
-    "phase2": {"name": "Audit Chat Structure", "status": "completed"},
-    "phase3": {"name": "Install Workflow SDK 5 + AI Elements", "status": "completed"},
-    "phase4": {"name": "Build ToolLoopAgent with Real Inline Tools", "status": "completed"},
-    "phase5": {"name": "Add Workflow SDK 5 Route", "status": "completed"},
-    "phase6": {"name": "Build File System Browser Sidebar", "status": "completed"},
-    "phase7": {"name": "Build Connectors Panel", "status": "completed"},
-    "phase8": {"name": "Wire MCP Integration", "status": "completed"},
-    "phase9": {"name": "Build V2 Bidirectional Bridge", "status": "completed"},
-    "phase10": {"name": "Deploy + Verify", "status": "completed"},
-    "phase11": {"name": "End-to-End Test", "status": "completed"},
-    "phase12": {"name": "Land with Full Report", "status": "completed"}
+    "phase0": {
+      "name": "Project Identity Verification",
+      "status": "completed"
+    },
+    "phase1": { "name": "Stage Missing Model Keys", "status": "completed" },
+    "phase2": { "name": "Audit Chat Structure", "status": "completed" },
+    "phase3": {
+      "name": "Install Workflow SDK 5 + AI Elements",
+      "status": "completed"
+    },
+    "phase4": {
+      "name": "Build ToolLoopAgent with Real Inline Tools",
+      "status": "completed"
+    },
+    "phase5": { "name": "Add Workflow SDK 5 Route", "status": "completed" },
+    "phase6": {
+      "name": "Build File System Browser Sidebar",
+      "status": "completed"
+    },
+    "phase7": { "name": "Build Connectors Panel", "status": "completed" },
+    "phase8": { "name": "Wire MCP Integration", "status": "completed" },
+    "phase9": {
+      "name": "Build V2 Bidirectional Bridge",
+      "status": "completed"
+    },
+    "phase10": { "name": "Deploy + Verify", "status": "completed" },
+    "phase11": { "name": "End-to-End Test", "status": "completed" },
+    "phase12": { "name": "Land with Full Report", "status": "completed" }
   },
   "shippedFeatures": {
     "modelProviders": "AI Gateway (30 models) + Direct DeepSeek via createOpenAICompatible",

@@ -13,7 +13,9 @@
   "build": {
     "command": "pnpm build",
     "result": "success",
-    "warnings": ["@vercel/postgres dynamic import (runtime-only, handled gracefully)"],
+    "warnings": [
+      "@vercel/postgres dynamic import (runtime-only, handled gracefully)"
+    ],
     "compileTime": "22.6s",
     "typeCheckTime": "9.3s",
     "staticPages": "25/25"

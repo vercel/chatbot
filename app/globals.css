@@ -95,37 +95,37 @@
 }
 
 .dark {
-  --background: oklch(0.195 0 0);
-  --foreground: oklch(0.94 0 0);
-  --card: oklch(0.225 0 0);
-  --card-foreground: oklch(0.94 0 0);
-  --popover: oklch(0.225 0 0);
-  --popover-foreground: oklch(0.94 0 0);
-  --primary: oklch(0.94 0 0);
-  --primary-foreground: oklch(0.195 0 0);
-  --secondary: oklch(0.26 0 0);
-  --secondary-foreground: oklch(0.75 0 0);
-  --muted: oklch(0.165 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.26 0 0);
-  --accent-foreground: oklch(0.94 0 0);
-  --destructive: oklch(0.7 0.15 25);
-  --border: oklch(0.27 0 0);
-  --input: oklch(0.27 0 0);
-  --ring: oklch(0.45 0 0);
+  --background: oklch(0.141 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.18 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.18 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.141 0 0);
+  --secondary: oklch(0.22 0 0);
+  --secondary-foreground: oklch(0.8 0 0);
+  --muted: oklch(0.15 0 0);
+  --muted-foreground: oklch(0.55 0 0);
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.65 0.15 25);
+  --border: oklch(0.24 0 0);
+  --input: oklch(0.24 0 0);
+  --ring: oklch(0.4 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.175 0 0);
-  --sidebar-foreground: oklch(0.78 0 0);
-  --sidebar-primary: oklch(0.94 0 0);
-  --sidebar-primary-foreground: oklch(0.195 0 0);
-  --sidebar-accent: oklch(0.94 0 0 / 0.06);
-  --sidebar-accent-foreground: oklch(0.94 0 0);
-  --sidebar-border: oklch(0.25 0 0);
-  --sidebar-ring: oklch(0.45 0 0);
+  --sidebar: oklch(0.12 0 0);
+  --sidebar-foreground: oklch(0.8 0 0);
+  --sidebar-primary: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.141 0 0);
+  --sidebar-accent: oklch(0.985 0 0 / 0.06);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.22 0 0);
+  --sidebar-ring: oklch(0.4 0 0);
 
   --shadow-card:
     inset 0 1px 0 oklch(1 0 0 / 0.04), 0 1px 2px oklch(0 0 0 / 0.2),
@@ -300,12 +300,94 @@ textarea:focus-visible {
 @keyframes message-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
+}
+
+/* Glass/blur utility */
+@utility glass {
+  background: oklch(1 0 0 / 0.04);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid oklch(1 0 0 / 0.06);
+}
+
+.dark .glass {
+  background: oklch(0.15 0 0 / 0.6);
+  border-color: oklch(1 0 0 / 0.08);
+}
+
+/* Glass tool card */
+@utility glass-card {
+  background: oklch(0.15 0 0 / 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(1 0 0 / 0.06);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.15);
+}
+
+/* Subtle gradient border for cards */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    oklch(1 0 0 / 0.08),
+    oklch(1 0 0 / 0.02),
+    oklch(1 0 0 / 0.06)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+/* Stagger animation for message list — applied to children */
+.stagger-children > * {
+  animation: message-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+.stagger-children > *:nth-child(9) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(10) { animation-delay: 450ms; }
+.stagger-children > *:nth-child(n+11) { animation-delay: 500ms; }
+
+/* Sticky bottom safe area for mobile */
+@utility sticky-bottom-safe {
+  position: sticky;
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Refined dark zinc palette for chat background */
+.dark .chat-bg {
+  background: oklch(0.145 0 0);
+}
+
+/* Smooth scrollbar for dark mode */
+@utility scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Tool state transition — smooth open/close */
+@utility tool-transition {
+  transition: all 0.2s var(--ease-smooth);
 }
 
 @keyframes thinking-dot {

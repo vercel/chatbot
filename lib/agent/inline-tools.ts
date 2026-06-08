@@ -9,6 +9,7 @@
  *   V2 Bridge: listV2Sessions, getV2Session, postV2Session, streamV2Progress, controlV2Session
  */
 
+import { WebClient } from "@slack/web-api";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -21,6 +22,13 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || "";
 const NEPTUNE_V2_URL =
   process.env.NEPTUNE_V2_CHAT_URL || "https://neptune-v2.vercel.app";
 const NEPTUNE_V2_HANDOFF_SECRET = process.env.NEPTUNE_V2_HANDOFF_SECRET || "";
+
+// ── Slack Channel Shortcuts ──────────────────────────────────────────────
+
+const SLACK_CHANNEL_SHORTCUTS: Record<string, string | undefined> = {
+  "newleaf-admin": process.env.NEWLEAF_ADMIN_CHANNEL_ID || "C096PSS45Q9",
+  "jarvis-admin": process.env.JARVIS_ADMIN_CHANNEL_ID,
+};
 
 // ── Shared Helpers ───────────────────────────────────────────────────────
 
@@ -335,28 +343,73 @@ export const queryDatabase = tool({
   },
 });
 
+/**
+ * Parse a "since" string into a Unix timestamp.
+ * Supports ISO 8601 timestamps and relative strings like "7 days ago", "1 hour ago".
+ */
+function parseSince(since: string): number | undefined {
+  if (!since) return undefined;
+
+  // Already a Unix timestamp (numeric)
+  if (/^\d{10,}$/.test(since)) {
+    return Number.parseInt(since, 10);
+  }
+
+  // ISO 8601 timestamp
+  const iso = Date.parse(since);
+  if (!Number.isNaN(iso)) {
+    return Math.floor(iso / 1000);
+  }
+
+  // Relative strings like "7 days ago", "1 hour ago"
+  const relativeMatch = since.match(
+    /^(\d+)\s*(second|minute|hour|day|week|month)s?\s*ago$/i
+  );
+  if (relativeMatch) {
+    const amount = Number.parseInt(relativeMatch[1], 10);
+    const unit = relativeMatch[2].toLowerCase();
+    const multipliers: Record<string, number> = {
+      second: 1,
+      minute: 60,
+      hour: 3600,
+      day: 86_400,
+      week: 604_800,
+      month: 2_592_000,
+    };
+    const multiplier = multipliers[unit];
+    if (multiplier) {
+      return Math.floor(Date.now() / 1000) - amount * multiplier;
+    }
+  }
+
+  return undefined;
+}
+
 export const pullSlackMessages = tool({
   description:
-    "Pull recent messages from a Slack channel. Requires SLACK_BOT_TOKEN to be configured. Returns messages with user, text, and timestamp.",
+    "Pull recent messages from a Slack channel. Accepts channel name OR ID. Knows about newleaf-admin and jarvis-admin shortcuts. Requires SLACK_BOT_TOKEN to be configured.",
   inputSchema: z.object({
     channel: z
       .string()
       .describe(
-        "Slack channel ID (e.g., 'C0AQDDC3HAB') or name (e.g., 'jarvis-admin')"
+        "Channel name (e.g., 'newleaf-admin', 'jarvis-admin') or ID (e.g., 'C096PSS45Q9')"
       ),
     limit: z
       .number()
+      .int()
+      .min(1)
+      .max(200)
       .optional()
-      .default(10)
-      .describe("Number of messages to pull (default 10, max 50)"),
-    oldest: z
+      .default(50)
+      .describe("Number of messages to pull (default 50, max 200)"),
+    since: z
       .string()
       .optional()
       .describe(
-        "Oldest timestamp to include (Unix seconds, e.g., for last hour)"
+        "Only return messages after this time. Accepts ISO timestamps (e.g., '2026-06-01T00:00:00Z') or relative strings like '7 days ago', '1 hour ago'."
       ),
   }),
-  execute: async ({ channel, limit, oldest }) => {
+  execute: async ({ channel, limit, since }) => {
     if (!SLACK_BOT_TOKEN) {
       return {
         error:
@@ -364,57 +417,74 @@ export const pullSlackMessages = tool({
       };
     }
 
-    const safeLimit = Math.min(limit ?? 10, 50);
+    const slack = new WebClient(SLACK_BOT_TOKEN);
 
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10_000);
+      // Resolve channel ID via shortcuts, env vars, or channel name lookup
+      let channelId = channel;
 
-      const params = new URLSearchParams({
-        channel,
-        limit: String(safeLimit),
+      // Check shortcuts first
+      if (SLACK_CHANNEL_SHORTCUTS[channel]) {
+        const resolved = SLACK_CHANNEL_SHORTCUTS[channel];
+        if (resolved) channelId = resolved;
+      }
+      // If not a channel ID (doesn't start with C or G), resolve by name
+      else if (!channel.startsWith("C") && !channel.startsWith("G")) {
+        const list = await slack.conversations.list({
+          types: "public_channel,private_channel",
+          limit: 200,
+        });
+
+        if (!list.ok || !list.channels) {
+          return {
+            error: `Failed to list Slack channels: ${list.error || "Unknown error"}`,
+          };
+        }
+
+        const match = list.channels.find(
+          (c) => c.name === channel.replace(/^#/, "")
+        );
+
+        if (match?.id) {
+          channelId = match.id;
+        } else {
+          return {
+            error: `Channel "${channel}" not found or bot lacks access. Make sure the bot is invited to the channel.`,
+            availableChannels: list.channels
+              .slice(0, 20)
+              .map((c) => ({ name: c.name, id: c.id })),
+          };
+        }
+      }
+
+      const oldest = since ? parseSince(since) : undefined;
+
+      const res = await slack.conversations.history({
+        channel: channelId,
+        limit: limit ?? 50,
+        ...(oldest ? { oldest: String(oldest) } : {}),
       });
 
-      if (oldest) {
-        params.set("oldest", oldest);
-      }
-
-      const res = await fetch(
-        `https://slack.com/api/conversations.history?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          signal: controller.signal,
-        }
-      );
-
-      clearTimeout(timeout);
-
       if (!res.ok) {
-        return { error: `Slack API returned ${res.status}` };
+        return {
+          error: `Slack API error: ${res.error}`,
+          channel: channelId,
+        };
       }
 
-      const data = await res.json();
-
-      if (!data.ok) {
-        return { error: `Slack API error: ${data.error}` };
-      }
-
-      const messages = (data.messages ?? []).map(
-        (m: Record<string, unknown>) => ({
-          user: m.user ?? "unknown",
-          text: m.text ?? "",
-          ts: m.ts ?? "",
-          type: m.type ?? "message",
-        })
-      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const messages = ((res.messages ?? []) as any[]).map((m: any) => ({
+        user: m.user ?? "unknown",
+        text: m.text ?? "",
+        ts: m.ts ?? "",
+        type: m.type ?? "message",
+      }));
 
       return {
-        channel,
+        channel: channelId,
+        channelName: channel,
         count: messages.length,
-        hasMore: data.has_more ?? false,
+        hasMore: res.has_more ?? false,
         messages,
       };
     } catch (err) {

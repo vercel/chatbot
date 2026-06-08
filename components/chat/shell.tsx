@@ -107,7 +107,7 @@ export function ChatShell() {
               votes={votes}
             />
 
-            <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
+            <div className="sticky bottom-0 z-10 mx-auto flex w-full max-w-4xl gap-2 border-t border-border/30 bg-background/70 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:px-4 md:pb-[max(1rem,env(safe-area-inset-bottom))] md:pt-3">
               {!isReadonly && (
                 <MultimodalInput
                   attachments={attachments}

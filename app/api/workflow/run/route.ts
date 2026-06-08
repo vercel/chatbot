@@ -8,10 +8,10 @@
  * Tools wired: all inline tools + sandbox tools + MCP tools.
  * Streaming: SSE (Server-Sent Events) for real-time progress.
  */
-import { getAvailableTools } from '@/lib/agent/inline-tools';
-import { sandboxTools } from '@/lib/sandbox/tools';
-import { getLanguageModel } from '@/lib/ai/providers';
-import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
+import { getAvailableTools } from "@/lib/agent/inline-tools";
+import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import { getLanguageModel } from "@/lib/ai/providers";
+import { sandboxTools } from "@/lib/sandbox/tools";
 
 export const maxDuration = 300; // 5 min max for workflow
 
@@ -24,8 +24,8 @@ export async function POST(req: Request) {
 
   if (!task) {
     return new Response(
-      JSON.stringify({ error: 'Missing required field: task' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } },
+      JSON.stringify({ error: "Missing required field: task" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -44,39 +44,48 @@ export async function POST(req: Request) {
       };
 
       try {
-        send({ type: 'status', status: 'starting', task, timestamp: Date.now() });
+        send({
+          type: "status",
+          status: "starting",
+          task,
+          timestamp: Date.now(),
+        });
 
         // Use streamText for the actual AI execution since WorkflowAgent
         // requires a writable stream that needs platform infrastructure.
         // streamText provides equivalent functionality for non-durable workflows.
-        const { streamText } = await import('ai');
+        const { streamText } = await import("ai");
 
         const result = streamText({
           model,
           system: `You are Neptune Workflow, a durable AI agent designed for long-running tasks.
 Your task: ${task}
-${context ? `\nAdditional context: ${JSON.stringify(context)}` : ''}
+${context ? `\nAdditional context: ${JSON.stringify(context)}` : ""}
 
 You have access to all neptune tools including sandbox execution, V2 coding agent handoff,
 Slack integration, database queries, knowledge search, and file system operations.
 
 Complete the task thoroughly. If you encounter an error, try an alternative approach.
 Report your final result at the end.`,
-          messages: [{ role: 'user' as const, content: task }],
+          messages: [{ role: "user" as const, content: task }],
           tools: allTools,
         });
 
-        let fullText = '';
+        let fullText = "";
         for await (const chunk of result.textStream) {
           fullText += chunk;
-          send({ type: 'text', data: chunk, timestamp: Date.now() });
+          send({ type: "text", data: chunk, timestamp: Date.now() });
         }
 
-        send({ type: 'done', fullText: fullText.slice(0, 5000), timestamp: Date.now() });
+        send({
+          type: "done",
+          fullText: fullText.slice(0, 5000),
+          timestamp: Date.now(),
+        });
         controller.close();
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        send({ type: 'error', error: message, timestamp: Date.now() });
+        send({ type: "error", error: message, timestamp: Date.now() });
         controller.close();
       }
     },
@@ -84,10 +93,10 @@ Report your final result at the end.`,
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
     },
   });
 }

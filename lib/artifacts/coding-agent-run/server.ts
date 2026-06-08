@@ -1,16 +1,17 @@
 /**
  * coding-agent-run artifact (server) — subscribes to v2 SSE, persists events.
  */
-import { listV2Sessions, getV2Session } from '@/lib/v2/bridge';
+import { getV2Session, listV2Sessions } from "@/lib/v2/bridge";
 
 export async function getCodingAgentRunData(runId: string) {
   const session = await getV2Session(runId);
   return {
     runId,
-    status: session?.status || 'unknown',
-    prompt: session?.prompt || '',
-    createdAt: session?.createdAt || session?.created_at || new Date().toISOString(),
-    streamUrl: session?.streamUrl || session?.sseUrl || '',
+    status: session?.status || "unknown",
+    prompt: session?.prompt || "",
+    createdAt:
+      session?.createdAt || session?.created_at || new Date().toISOString(),
+    streamUrl: session?.streamUrl || session?.sseUrl || "",
   };
 }
 

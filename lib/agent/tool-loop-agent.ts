@@ -1,13 +1,13 @@
 /**
  * ToolLoopAgent — Primary agent for neptune-chat.
- * 
+ *
  * Aggregates ALL tools: knowledge, data, workflow, sandbox, v2-bridge, canvas, VPS bridge.
  * Uses DeepSeek V4 Pro as default model via AI Gateway.
  */
-import { ToolLoopAgent, stepCountIs } from 'ai';
-import { getLanguageModel } from '@/lib/ai/providers';
-import { getAvailableTools } from './inline-tools';
-import { sandboxTools } from '@/lib/sandbox/tools';
+import { stepCountIs, ToolLoopAgent } from "ai";
+import { getLanguageModel } from "@/lib/ai/providers";
+import { sandboxTools } from "@/lib/sandbox/tools";
+import { getAvailableTools } from "./inline-tools";
 
 export function createToolLoopAgent(modelId?: string) {
   const allTools = {
@@ -16,7 +16,7 @@ export function createToolLoopAgent(modelId?: string) {
   };
 
   return new ToolLoopAgent({
-    model: getLanguageModel(modelId || 'deepseek/deepseek-v4-pro'),
+    model: getLanguageModel(modelId || "deepseek/deepseek-v4-pro"),
     tools: allTools,
     stopWhen: stepCountIs(20),
     instructions: `
@@ -37,5 +37,5 @@ Always report results clearly and concisely. If a tool fails, explain why and su
   });
 }
 
-export { getAvailableTools, getAvailableToolNames } from './inline-tools';
-export { sandboxTools } from '@/lib/sandbox/tools';
+export { sandboxTools } from "@/lib/sandbox/tools";
+export { getAvailableToolNames, getAvailableTools } from "./inline-tools";

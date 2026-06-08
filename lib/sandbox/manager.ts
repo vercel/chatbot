@@ -2,8 +2,8 @@
  * Sandbox Manager — concurrency cap, LRU eviction, Postgres tracking, audit trail.
  * Cardinals: CONCURRENT <10 Hobby (enforce code), AUTO-DESTROY 5min idle, AUDIT every spawn.
  */
-import { Sandbox } from '@vercel/sandbox';
-import { SANDBOX_LIMITS, SANDBOX_CONFIG } from './config';
+import { Sandbox } from "@vercel/sandbox";
+import { SANDBOX_CONFIG, SANDBOX_LIMITS } from "./config";
 
 interface SandboxStats {
   activeCount: number;
@@ -18,7 +18,7 @@ interface SandboxRunRecord {
   userId: string;
   toolName: string;
   runtime: string;
-  status: 'created' | 'running' | 'completed' | 'error' | 'destroyed';
+  status: "created" | "running" | "completed" | "error" | "destroyed";
   stdout?: string;
   stderr?: string;
   durationMs?: number;
@@ -63,7 +63,10 @@ class ConcurrencySemaphore {
 }
 
 class LRUSandboxPool {
-  private pool = new Map<string, { sandbox: Sandbox; lastUsed: number; userId: string }>();
+  private pool = new Map<
+    string,
+    { sandbox: Sandbox; lastUsed: number; userId: string }
+  >();
   private accessOrder: string[] = [];
   private idleTimers = new Map<string, NodeJS.Timeout>();
   private maxSize: number;
@@ -72,7 +75,11 @@ class LRUSandboxPool {
     this.maxSize = maxSize;
   }
 
-  async get(key: string, userId: string, factory: () => Promise<Sandbox>): Promise<Sandbox> {
+  async get(
+    key: string,
+    userId: string,
+    factory: () => Promise<Sandbox>
+  ): Promise<Sandbox> {
     if (this.pool.has(key)) {
       // Move to end of access order
       this.accessOrder = this.accessOrder.filter((k) => k !== key);
@@ -171,7 +178,7 @@ export class SandboxManager {
   async createEphemeral(options: {
     userId: string;
     toolName: string;
-    runtime?: 'node24' | 'python3.13';
+    runtime?: "node24" | "python3.13";
     timeout?: number;
   }): Promise<{ sandbox: Sandbox; runId: string }> {
     await this.semaphore.acquire();
@@ -196,7 +203,7 @@ export class SandboxManager {
         userId: options.userId,
         toolName: options.toolName,
         runtime: options.runtime || SANDBOX_CONFIG.RUNTIME,
-        status: 'running',
+        status: "running",
         createdAt: new Date(),
       };
       this.runs.set(runId, runRecord);
@@ -206,7 +213,7 @@ export class SandboxManager {
       sandbox.stop = async () => {
         const record = this.runs.get(runId);
         if (record) {
-          record.status = 'destroyed';
+          record.status = "destroyed";
           record.durationMs = Date.now() - startTime;
           record.destroyedAt = new Date();
         }
@@ -224,24 +231,28 @@ export class SandboxManager {
   async getOrCreatePersistent(options: {
     sessionKey: string;
     userId: string;
-    runtime?: 'node24' | 'python3.13';
+    runtime?: "node24" | "python3.13";
   }): Promise<Sandbox> {
-    return this.persistentPool.get(options.sessionKey, options.userId, async () => {
-      await this.semaphore.acquire();
-      try {
-        const sandbox = await Sandbox.create({
-          runtime: options.runtime || SANDBOX_CONFIG.RUNTIME,
-          persistent: true,
-          timeout: SANDBOX_LIMITS.MAX_DURATION_MS,
-          tags: { session: options.sessionKey, userId: options.userId },
-        });
-        this.dailyCreations++;
-        return sandbox;
-      } catch (e) {
-        this.semaphore.release();
-        throw e;
+    return this.persistentPool.get(
+      options.sessionKey,
+      options.userId,
+      async () => {
+        await this.semaphore.acquire();
+        try {
+          const sandbox = await Sandbox.create({
+            runtime: options.runtime || SANDBOX_CONFIG.RUNTIME,
+            persistent: true,
+            timeout: SANDBOX_LIMITS.MAX_DURATION_MS,
+            tags: { session: options.sessionKey, userId: options.userId },
+          });
+          this.dailyCreations++;
+          return sandbox;
+        } catch (e) {
+          this.semaphore.release();
+          throw e;
+        }
       }
-    });
+    );
   }
 
   releasePersistent(sessionKey: string): void {
