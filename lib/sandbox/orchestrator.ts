@@ -183,21 +183,43 @@ export class SandboxOrchestrator {
     }
   }
 
-  private async executeVpsBridge(req: ToolRequest): Promise<unknown> {
-    const VPS_BRIDGE_URL = process.env.VPS_BRIDGE_URL || 'http://localhost:8104';
-    const VPS_BRIDGE_TOKEN = process.env.BASE44_DIAG_KEY || process.env.BASE44_API_KEY || '';
+  /** Map flat tool names to VPS bridge category/name paths */
+  private toolToBridgePath(tool: string): { category: string; name: string } {
+    const map: Record<string, { category: string; name: string }> = {
+      slackPost: { category: 'slack', name: 'postMessage' },
+      slackHistory: { category: 'slack', name: 'pullMessages' },
+      nmiCharge: { category: 'nmi', name: 'charge' },
+      nmiQuery: { category: 'nmi', name: 'queryTransactions' },
+      nmiVaultCreate: { category: 'nmi', name: 'vaultCreate' },
+      base44Query: { category: 'base44', name: 'queryEntity' },
+      base44Create: { category: 'base44', name: 'invokeFunction' },
+      base44Invoke: { category: 'base44', name: 'invokeFunction' },
+      // Generic fallback — first segment before dot/hyphen becomes category
+    };
+    if (map[tool]) return map[tool];
+    // Fallback: split on first non-alphanumeric boundary
+    const match = tool.match(/^([a-zA-Z0-9]+)/);
+    const category = match ? match[1].toLowerCase() : 'misc';
+    return { category, name: tool };
+  }
 
-    const res = await fetch(`${VPS_BRIDGE_URL}/tools/${req.tool}`, {
+  private async executeVpsBridge(req: ToolRequest): Promise<unknown> {
+    const VPS_BRIDGE_URL = process.env.VPS_BRIDGE_URL || 'http://localhost:8400';
+    const VPS_BRIDGE_TOKEN = process.env.NEPTUNE_INTERNAL_TOKEN || '';
+    const { category, name } = this.toolToBridgePath(req.tool);
+
+    const res = await fetch(`${VPS_BRIDGE_URL}/tool/${category}/${name}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-internal-token': VPS_BRIDGE_TOKEN,
+        'Authorization': `Bearer ${VPS_BRIDGE_TOKEN}`,
       },
       body: JSON.stringify(req.payload),
     });
 
     if (!res.ok) {
-      throw new Error(`VPS bridge error: ${res.status} ${await res.text()}`);
+      const body = await res.text().catch(() => '');
+      throw new Error(`VPS bridge error: ${res.status} ${body.slice(0, 200)}`);
     }
 
     return res.json();
