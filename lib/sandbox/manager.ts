@@ -192,7 +192,7 @@ export class SandboxManager {
 
       const runRecord: SandboxRunRecord = {
         id: runId,
-        sandboxId: sandbox.id,
+        sandboxId: sandbox.name,
         userId: options.userId,
         toolName: options.toolName,
         runtime: options.runtime || SANDBOX_CONFIG.RUNTIME,

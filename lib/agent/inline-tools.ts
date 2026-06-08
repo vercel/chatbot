@@ -303,9 +303,6 @@ export const queryDatabase = tool({
     const safeLimit = Math.min(Math.max(limit ?? 50, 1), 100);
 
     try {
-      // @vercel/postgres is deprecated but used as runtime-only dynamic import.
-      // Falls back gracefully if not installed.
-      // @ts-expect-error - deprecated package, runtime import only
       const { createClient } = await import("@vercel/postgres");
 
       const client = createClient({

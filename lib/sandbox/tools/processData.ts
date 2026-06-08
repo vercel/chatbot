@@ -8,7 +8,7 @@ import { sandboxOrchestrator } from '../orchestrator';
 
 export const processDataTool = tool({
   description: 'Filter, transform, or aggregate data using JavaScript expressions in a sandbox.',
-  parameters: z.object({
+  inputSchema: z.object({
     data: z.string().describe('JSON string of the data to process'),
     operation: z.enum(['filter', 'transform', 'aggregate', 'sort', 'map']).describe('Operation to perform'),
     expression: z.string().describe('JavaScript expression to apply'),

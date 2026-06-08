@@ -8,7 +8,7 @@ import { sandboxOrchestrator } from '../orchestrator';
 
 export const runWorkflowTool = tool({
   description: 'Execute a multi-step workflow. Each step runs in its own sandbox. Supports parallel fan-out.',
-  parameters: z.object({
+  inputSchema: z.object({
     steps: z
       .array(
         z.object({

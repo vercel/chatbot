@@ -8,7 +8,7 @@ import { sandboxManager } from '../manager';
 
 export const spawnPersistentSessionTool = tool({
   description: 'Create a persistent sandbox session for interactive coding. Session auto-destroys after 5min idle.',
-  parameters: z.object({
+  inputSchema: z.object({
     sessionKey: z.string().describe('Unique key for this session'),
     userId: z.string().describe('User ID for audit trail'),
     runtime: z.enum(['node', 'python']).default('node').describe('Runtime for the session'),
@@ -22,7 +22,7 @@ export const spawnPersistentSessionTool = tool({
 
     return {
       sessionKey,
-      sandboxId: sandbox.id,
+      sandboxId: sandbox.name,
       status: 'ready',
       message: `Persistent session ${sessionKey} ready. Idle timeout: 5 min.`,
     };

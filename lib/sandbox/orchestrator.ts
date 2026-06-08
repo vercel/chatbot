@@ -132,7 +132,8 @@ export class SandboxOrchestrator {
     }
   }
 
-  private async runInSandbox(sandbox: Sandbox, req: ToolRequest): Promise<unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async runInSandbox(sandbox: Sandbox, req: ToolRequest): Promise<Record<string, any>> {
     const { tool, payload } = req;
 
     switch (tool) {

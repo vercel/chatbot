@@ -71,6 +71,9 @@ importers:
       '@vercel/otel':
         specifier: ^1.12.0
         version: 1.14.0(@opentelemetry/api-logs@0.200.0)(@opentelemetry/api@1.9.0)(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.0))(@opentelemetry/resources@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.57.2(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.0))
+      '@vercel/postgres':
+        specifier: ^0.10.0
+        version: 0.10.0
       '@vercel/sandbox':
         specifier: ^2.1.1
         version: 2.1.1
@@ -4881,7 +4884,6 @@ snapshots:
   '@neondatabase/serverless@0.9.5':
     dependencies:
       '@types/pg': 8.11.6
-    optional: true
 
   '@neptune/core@file:vendor/neptune-core-0.1.0.tgz':
     dependencies:
@@ -6059,7 +6061,6 @@ snapshots:
       '@types/node': 22.13.10
       pg-protocol: 1.8.0
       pg-types: 4.0.2
-    optional: true
 
   '@types/prop-types@15.7.14': {}
 
@@ -6125,7 +6126,6 @@ snapshots:
       ws: 8.18.1(bufferutil@4.0.9)
     transitivePeerDependencies:
       - utf-8-validate
-    optional: true
 
   '@vercel/sandbox@2.1.1':
     dependencies:
@@ -6212,7 +6212,6 @@ snapshots:
   bufferutil@4.0.9:
     dependencies:
       node-gyp-build: 4.8.4
-    optional: true
 
   bytes@3.1.2: {}
 
@@ -7518,8 +7517,7 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  node-gyp-build@4.8.4:
-    optional: true
+  node-gyp-build@4.8.4: {}
 
   nypm@0.6.2:
     dependencies:
@@ -7531,8 +7529,7 @@ snapshots:
 
   oauth4webapi@3.8.5: {}
 
-  obuf@1.1.2:
-    optional: true
+  obuf@1.1.2: {}
 
   oniguruma-parser@0.12.1: {}
 
@@ -7575,14 +7572,11 @@ snapshots:
 
   pathe@2.0.3: {}
 
-  pg-int8@1.0.1:
-    optional: true
+  pg-int8@1.0.1: {}
 
-  pg-numeric@1.0.2:
-    optional: true
+  pg-numeric@1.0.2: {}
 
-  pg-protocol@1.8.0:
-    optional: true
+  pg-protocol@1.8.0: {}
 
   pg-types@4.0.2:
     dependencies:
@@ -7593,7 +7587,6 @@ snapshots:
       postgres-date: 2.1.0
       postgres-interval: 3.0.0
       postgres-range: 1.1.4
-    optional: true
 
   picocolors@1.1.1: {}
 
@@ -7643,22 +7636,17 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postgres-array@3.0.4:
-    optional: true
+  postgres-array@3.0.4: {}
 
   postgres-bytea@3.0.0:
     dependencies:
       obuf: 1.1.2
-    optional: true
 
-  postgres-date@2.1.0:
-    optional: true
+  postgres-date@2.1.0: {}
 
-  postgres-interval@3.0.0:
-    optional: true
+  postgres-interval@3.0.0: {}
 
-  postgres-range@1.1.4:
-    optional: true
+  postgres-range@1.1.4: {}
 
   postgres@3.4.5: {}
 
@@ -8358,7 +8346,6 @@ snapshots:
   ws@8.18.1(bufferutil@4.0.9):
     optionalDependencies:
       bufferutil: 4.0.9
-    optional: true
 
   xdg-app-paths@5.1.0:
     dependencies:
