@@ -1,0 +1,19 @@
+# Forth DPP Connector Playbook
+
+## Overview
+Forth Debt Protection Program — credit repair, dispute management, and enrollment tracking via Base44 bridge.
+
+## Tools
+- `getDisputes` — Active dispute retrieval
+- `updateDispute` — Status changes + evidence
+- `queryContact` — Contact/credit lookup
+- `pullCreditReport` — Triple-bureau or single
+- `listEnrollments` — Enrollment status
+
+## Auth
+- `FORTH_API_TOKEN` via Base44 bridge
+
+## Anti-Patterns
+1. Never pull credit without explicit consent
+2. Auth tokens rotate every 90 days — watch for 401 responses
+3. Dispute updates must include evidence reference

@@ -1,0 +1,24 @@
+# Linear Connector Playbook
+
+## Overview
+Linear issue tracking integration. Uses Linear GraphQL API directly with `LINEAR_API_KEY`.
+
+## Tools
+- `listIssues` — List by team, status, assignee
+- `createIssue` — Create new issues
+- `searchIssues` — Full text search
+- `listProjects` — Project listing
+
+## Auth
+- `LINEAR_API_KEY` — Personal API key from Linear settings
+
+## Our Teams
+| Team | Purpose |
+|---|---|
+| Engineering Sprint | Feature development + bug fixes |
+| Customer Operations | Support + dispute tracking |
+
+## Anti-Patterns
+1. Do NOT create duplicate issues — search first
+2. Priority 0 = urgent (use sparingly)
+3. GraphQL rate limit: 2500 req/hour

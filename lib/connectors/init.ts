@@ -2,17 +2,20 @@
  * Connector auto-init — registers all connector manifests at import time.
  * Import this once in the chat route to populate the registry.
  */
-import { registerConnector } from "./registry";
 
-import slackManifest from "./slack/manifest";
-import nmiManifest from "./nmi/manifest";
+import affyManifest from "./affy/manifest";
 import base44Manifest from "./base44/manifest";
+import forthManifest from "./forth/manifest";
+import ghlManifest from "./ghl/manifest";
+import githubManifest from "./github/manifest";
 import hyperswitchManifest from "./hyperswitch/manifest";
 import linearManifest from "./linear/manifest";
-import githubManifest from "./github/manifest";
-import forthManifest from "./forth/manifest";
-import vapiManifest from "./vapi/manifest";
 import mcpHubManifest from "./mcp-hub/manifest";
+import nmiManifest from "./nmi/manifest";
+import { registerConnector } from "./registry";
+import slackManifest from "./slack/manifest";
+import vapiManifest from "./vapi/manifest";
+import wikiManifest from "./wiki/manifest";
 
 const manifests = [
   slackManifest,
@@ -24,6 +27,9 @@ const manifests = [
   forthManifest,
   vapiManifest,
   mcpHubManifest,
+  wikiManifest,
+  ghlManifest,
+  affyManifest,
 ];
 
 let initialized = false;

@@ -27,7 +27,10 @@ export async function getAllTools(): Promise<Record<string, unknown>> {
   for (const [id, entry] of registry) {
     if (!entry.tools) {
       try {
-        entry.tools = (await entry.manifest.toolModule()) as Record<string, unknown>;
+        entry.tools = (await entry.manifest.toolModule()) as Record<
+          string,
+          unknown
+        >;
       } catch {
         continue;
       }
@@ -53,7 +56,10 @@ export function getAllToolNames(): string[] {
 }
 
 /** Check if a connector has its required env vars set */
-export function checkConnectorEnv(envKeys: string[]): { ok: boolean; missing: string[] } {
+export function checkConnectorEnv(envKeys: string[]): {
+  ok: boolean;
+  missing: string[];
+} {
   const missing = envKeys.filter((k) => !process.env[k]);
   return { ok: missing.length === 0, missing };
 }

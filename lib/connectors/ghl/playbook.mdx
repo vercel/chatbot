@@ -1,0 +1,20 @@
+# GHL Connector Playbook
+
+## Overview
+GoHighLevel CRM integration. Uses GHL API v2 via Base44 bridge.
+
+## Tools
+- `createContact` — Create or update contacts
+- `sendSms` — Send SMS (max 1600 chars)
+- `sendEmail` — Send email (HTML or plain)
+- `queryConversations` — Search conversations
+- `getOpportunity` — Get pipeline details
+
+## Auth
+- `GHL_API_KEY` — API key from GHL subaccount settings
+- `GHL_LOCATION_ID` — Location/subaccount ID
+
+## Anti-Patterns
+1. Do NOT send SMS without opt-in verification
+2. Do NOT create duplicate contacts — check by email/phone first
+3. Rate limit: 100 requests per 10 seconds

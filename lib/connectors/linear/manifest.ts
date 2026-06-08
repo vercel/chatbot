@@ -1,6 +1,6 @@
 import { ListTodoIcon } from "lucide-react";
-import type { ConnectorManifest } from "../types";
 import { checkConnectorEnv } from "../registry";
+import type { ConnectorManifest } from "../types";
 
 const linearManifest: ConnectorManifest = {
   id: "linear",
@@ -10,10 +10,32 @@ const linearManifest: ConnectorManifest = {
   brandColor: "#5E6AD2",
   envKeys: ["LINEAR_API_KEY"],
   capabilities: [
-    { id: "listIssues", label: "List Issues", description: "List Linear issues by team, status, or assignee", icon: "List" },
-    { id: "createIssue", label: "Create Issue", description: "Create a new Linear issue", icon: "Plus" },
+    {
+      id: "listIssues",
+      label: "List Issues",
+      description: "List Linear issues by team, status, or assignee",
+      icon: "List",
+    },
+    {
+      id: "createIssue",
+      label: "Create Issue",
+      description: "Create a new Linear issue",
+      icon: "Plus",
+    },
+    {
+      id: "searchIssues",
+      label: "Search Issues",
+      description: "Full-text search across Linear issues",
+      icon: "Search",
+    },
+    {
+      id: "listProjects",
+      label: "List Projects",
+      description: "List Linear projects with status",
+      icon: "Folder",
+    },
   ],
-  toolModule: () => Promise.resolve({}),
+  toolModule: () => import("./tools"),
   resultRenderers: {},
   playbookPath: "lib/connectors/linear/playbook.mdx",
   getStatus: () => {

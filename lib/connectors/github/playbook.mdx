@@ -1,0 +1,30 @@
+# GitHub Connector Playbook
+
+## Overview
+GitHub integration for code search, file access, PR management, and V2 coding agent handoff.
+
+## Tools
+- `searchCode` — GitHub code search with org/repo scoping
+- `getFile` — Read files from any repo
+- `listPRs` — Pull request listing
+- `createPR` — Open new pull requests
+- `spawnCodingAgent` — Hand off to V2 sandbox (via lib/ai/tools)
+
+## V2 Coding Agent Handoff
+
+When the user says "fix X in repo Y", the chat agent:
+1. Calls `spawnCodingAgent({goal, repoOwner, repoName, baseBranch})`
+2. V2 sandbox spins up, clones the repo via GITHUB_TOKEN
+3. V2 makes changes, commits, pushes to a new branch
+4. V2 opens a PR if `createPR: true`
+5. V2 can optionally deploy to Vercel
+6. Chat streams progress + renders PR card when complete
+
+## Auth
+- `GITHUB_TOKEN` — Personal Access Token with repo scope
+
+## Anti-Patterns
+1. Never expose GITHUB_TOKEN in chat output
+2. PR titles should be descriptive (under 70 chars)
+3. Branch names should be descriptive (e.g., `fix/auth-bug`, `feat/new-widget`)
+4. Always create PR from a branch, never from main

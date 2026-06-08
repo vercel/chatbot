@@ -1,6 +1,6 @@
 import { PhoneIcon } from "lucide-react";
-import type { ConnectorManifest } from "../types";
 import { checkConnectorEnv } from "../registry";
+import type { ConnectorManifest } from "../types";
 
 const vapiManifest: ConnectorManifest = {
   id: "vapi",
@@ -10,8 +10,18 @@ const vapiManifest: ConnectorManifest = {
   brandColor: "#F97316",
   envKeys: ["VAPI_PRIVATE_KEY"],
   capabilities: [
-    { id: "getCallLogs", label: "Get Call Logs", description: "Retrieve recent VAPI call logs", icon: "PhoneCall" },
-    { id: "getTranscript", label: "Get Transcript", description: "Get transcript for a specific call", icon: "FileText" },
+    {
+      id: "getCallLogs",
+      label: "Get Call Logs",
+      description: "Retrieve recent VAPI call logs",
+      icon: "PhoneCall",
+    },
+    {
+      id: "getTranscript",
+      label: "Get Transcript",
+      description: "Get transcript for a specific call",
+      icon: "FileText",
+    },
   ],
   toolModule: () => Promise.resolve({}),
   resultRenderers: {},

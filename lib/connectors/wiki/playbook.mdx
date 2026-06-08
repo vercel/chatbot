@@ -1,0 +1,45 @@
+# Wiki Playbook
+
+## Wiki Operations
+
+The Wiki connector manages a Karpathy-style three-layer knowledge base living at `/home/hermes/knowledge-base/wiki/` on the VPS.
+
+## Architecture
+
+```
+Layer 1: Raw Sources (/home/hermes/knowledge-base/sources/) — immutable
+Layer 2: Living Wiki (/home/hermes/knowledge-base/wiki/) — LLM-owned
+Layer 3: Schema (/home/hermes/knowledge-base/wiki/_schema/) — co-evolved
+```
+
+## Ingestion Protocol
+
+When ingesting a new source:
+1. Read the raw source
+2. Synthesize a summary page in the appropriate wiki directory
+3. Update index.md with the new page + one-line summary
+4. Update log.md with `## [date] ingest | Title`
+5. Cross-reference existing entity/concept pages
+
+## Linting
+
+Weekly lint checks:
+- Contradictions across pages
+- Staleness (>90 days since last update)
+- Orphan pages (no incoming references)
+- Schema compliance (template adherence)
+- Index completeness
+
+## Anti-Patterns
+
+1. **No raw content in wiki** — summarize; raw goes in Layer 1
+2. **No unlinked pages** — every page must have at least 1 cross-reference
+3. **No stale index.md** — every write updates index
+4. **No unsourced claims** — every factual claim cites a source or page
+5. **No duplicate pages** — check index.md before creating
+
+## Cross-References
+
+- Schema: `/home/hermes/knowledge-base/wiki/_schema/NEPTUNE-WIKI.md`
+- Index: `/home/hermes/knowledge-base/wiki/_schema/index.md`
+- Log: `/home/hermes/knowledge-base/wiki/_schema/log.md`

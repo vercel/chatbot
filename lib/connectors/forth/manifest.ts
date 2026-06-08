@@ -1,6 +1,6 @@
 import { ShieldIcon } from "lucide-react";
-import type { ConnectorManifest } from "../types";
 import { checkConnectorEnv } from "../registry";
+import type { ConnectorManifest } from "../types";
 
 const forthManifest: ConnectorManifest = {
   id: "forth",
@@ -10,10 +10,38 @@ const forthManifest: ConnectorManifest = {
   brandColor: "#059669",
   envKeys: ["FORTH_API_TOKEN"],
   capabilities: [
-    { id: "getDisputes", label: "Get Disputes", description: "Retrieve active disputes for a customer", icon: "AlertTriangle" },
-    { id: "updateDispute", label: "Update Dispute", description: "Update dispute status or add evidence", icon: "Edit" },
+    {
+      id: "getDisputes",
+      label: "Get Disputes",
+      description: "Retrieve active disputes for a customer",
+      icon: "AlertTriangle",
+    },
+    {
+      id: "updateDispute",
+      label: "Update Dispute",
+      description: "Update dispute status or add evidence",
+      icon: "Edit",
+    },
+    {
+      id: "queryContact",
+      label: "Query Contact",
+      description: "Look up contact and credit report info",
+      icon: "Search",
+    },
+    {
+      id: "pullCreditReport",
+      label: "Pull Credit Report",
+      description: "Pull triple-bureau credit report",
+      icon: "FileText",
+    },
+    {
+      id: "listEnrollments",
+      label: "List Enrollments",
+      description: "List DPP enrollments by status",
+      icon: "List",
+    },
   ],
-  toolModule: () => Promise.resolve({}),
+  toolModule: () => import("./tools"),
   resultRenderers: {},
   playbookPath: "lib/connectors/forth/playbook.mdx",
   getStatus: () => {

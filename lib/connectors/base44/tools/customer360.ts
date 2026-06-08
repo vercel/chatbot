@@ -6,7 +6,8 @@ import { z } from "zod";
 import { base44Service } from "../client";
 
 export const customer360 = tool({
-  description: "Get a complete customer dossier: profile + payments + calls + emails + tickets + credit reports. Pass customerId, email, or phone.",
+  description:
+    "Get a complete customer dossier: profile + payments + calls + emails + tickets + credit reports. Pass customerId, email, or phone.",
   inputSchema: z.object({
     customerId: z.string().optional().describe("Base44 customer ID"),
     email: z.string().email().optional().describe("Customer email"),
@@ -23,7 +24,9 @@ export const customer360 = tool({
       });
       return { customer: result };
     } catch (err) {
-      return { error: `Customer 360 failed: ${err instanceof Error ? err.message : "Unknown"}` };
+      return {
+        error: `Customer 360 failed: ${err instanceof Error ? err.message : "Unknown"}`,
+      };
     }
   },
 });

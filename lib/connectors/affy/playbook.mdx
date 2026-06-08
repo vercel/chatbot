@@ -1,0 +1,25 @@
+# Affy Maverick Playbook
+
+## Overview
+Chargeback dispute management and defense automation via Maverick. Uses Base44 bridge for API access.
+
+## Tools
+- `getChargebacks` — List chargebacks by status/customer
+- `submitEvidence` — Upload defense evidence
+- `generateAffidavit` — Auto-generate from transaction data
+- `trackDispute` — Track through resolution
+
+## Auth
+- `AFFY_API_KEY` via Base44 bridge
+
+## Chargeback Workflow
+1. Chargeback received → status: "open"
+2. Evidence gathered → submitEvidence
+3. Affidavit generated → generateAffidavit
+4. Submitted → status: "under_review"
+5. Outcome → status: "won" or "lost"
+
+## Anti-Patterns
+1. Never submit without evidence
+2. Affidavits must include transaction receipts + IP logs
+3. Track all deadlines — chargebacks have strict response windows

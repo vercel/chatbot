@@ -6,7 +6,8 @@ import { z } from "zod";
 import { base44Service } from "../client";
 
 export const updateEntity = tool({
-  description: "Update an existing Base44 entity record by ID. Partial update (patch).",
+  description:
+    "Update an existing Base44 entity record by ID. Partial update (patch).",
   inputSchema: z.object({
     entity: z.string().describe("Entity type to update"),
     id: z.string().describe("Record ID to update"),
@@ -14,10 +15,15 @@ export const updateEntity = tool({
   }),
   execute: async ({ entity, id, data }) => {
     try {
-      const record = await base44Service.entities[entity].update(id, data as Record<string, unknown>);
+      const record = await base44Service.entities[entity].update(
+        id,
+        data as Record<string, unknown>
+      );
       return { updated: true, entity, id, record };
     } catch (err) {
-      return { error: `Base44 update failed: ${err instanceof Error ? err.message : "Unknown"}` };
+      return {
+        error: `Base44 update failed: ${err instanceof Error ? err.message : "Unknown"}`,
+      };
     }
   },
 });

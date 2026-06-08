@@ -9,9 +9,24 @@ const mcpHubManifest: ConnectorManifest = {
   brandColor: "#6366F1",
   envKeys: [],
   capabilities: [
-    { id: "listServers", label: "List Servers", description: "List all registered MCP servers and their status", icon: "Server" },
-    { id: "connectServer", label: "Connect Server", description: "Connect to an MCP server and discover tools", icon: "Plug" },
-    { id: "listTools", label: "List MCP Tools", description: "List all available MCP tools across servers", icon: "Wrench" },
+    {
+      id: "listServers",
+      label: "List Servers",
+      description: "List all registered MCP servers and their status",
+      icon: "Server",
+    },
+    {
+      id: "connectServer",
+      label: "Connect Server",
+      description: "Connect to an MCP server and discover tools",
+      icon: "Plug",
+    },
+    {
+      id: "listTools",
+      label: "List MCP Tools",
+      description: "List all available MCP tools across servers",
+      icon: "Wrench",
+    },
   ],
   toolModule: () => Promise.resolve({}),
   resultRenderers: {},

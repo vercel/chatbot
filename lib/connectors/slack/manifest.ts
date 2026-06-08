@@ -2,8 +2,8 @@
  * Slack Connector Manifest
  */
 import { MessageSquareIcon } from "lucide-react";
-import type { ConnectorManifest } from "../types";
 import { checkConnectorEnv } from "../registry";
+import type { ConnectorManifest } from "../types";
 
 const slackManifest: ConnectorManifest = {
   id: "slack",
@@ -11,12 +11,17 @@ const slackManifest: ConnectorManifest = {
   description: "Channel messaging, history search, and notifications",
   icon: MessageSquareIcon,
   brandColor: "#4A154B",
-  envKeys: ["SLACK_BOT_TOKEN", "NEWLEAF_ADMIN_CHANNEL_ID", "JARVIS_ADMIN_CHANNEL_ID"],
+  envKeys: [
+    "SLACK_BOT_TOKEN",
+    "NEWLEAF_ADMIN_CHANNEL_ID",
+    "JARVIS_ADMIN_CHANNEL_ID",
+  ],
   capabilities: [
     {
       id: "pullMessages",
       label: "Pull Messages",
-      description: "Pull recent messages from a Slack channel with name→ID resolution",
+      description:
+        "Pull recent messages from a Slack channel with name→ID resolution",
       icon: "MessageSquare",
     },
     {

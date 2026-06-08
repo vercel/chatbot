@@ -2,23 +2,54 @@
  * Base44 CRM Connector Manifest
  */
 import { DatabaseIcon } from "lucide-react";
-import type { ConnectorManifest } from "../types";
 import { checkConnectorEnv } from "../registry";
+import type { ConnectorManifest } from "../types";
 
 const base44Manifest: ConnectorManifest = {
   id: "base44",
   name: "Base44 CRM",
-  description: "Entity queries, customer 360, reporting hub, and function invocation",
+  description:
+    "Entity queries, customer 360, reporting hub, and function invocation",
   icon: DatabaseIcon,
   brandColor: "#7C3AED",
   envKeys: ["BASE44_API_KEY"],
   capabilities: [
-    { id: "queryEntity", label: "Query Entity", description: "Query any Base44 entity with MongoDB-style filter", icon: "Search" },
-    { id: "createEntity", label: "Create Entity", description: "Create a new Base44 entity record", icon: "Plus" },
-    { id: "updateEntity", label: "Update Entity", description: "Update an existing Base44 entity by ID", icon: "Edit" },
-    { id: "invokeFunction", label: "Invoke Function", description: "Call any registered Base44 backend function", icon: "Zap" },
-    { id: "reportingHub", label: "Reporting Hub", description: "Operational reports: overview, enrollments, billing, etc.", icon: "BarChart3" },
-    { id: "customer360", label: "Customer 360", description: "Complete customer dossier across all systems", icon: "User" },
+    {
+      id: "queryEntity",
+      label: "Query Entity",
+      description: "Query any Base44 entity with MongoDB-style filter",
+      icon: "Search",
+    },
+    {
+      id: "createEntity",
+      label: "Create Entity",
+      description: "Create a new Base44 entity record",
+      icon: "Plus",
+    },
+    {
+      id: "updateEntity",
+      label: "Update Entity",
+      description: "Update an existing Base44 entity by ID",
+      icon: "Edit",
+    },
+    {
+      id: "invokeFunction",
+      label: "Invoke Function",
+      description: "Call any registered Base44 backend function",
+      icon: "Zap",
+    },
+    {
+      id: "reportingHub",
+      label: "Reporting Hub",
+      description: "Operational reports: overview, enrollments, billing, etc.",
+      icon: "BarChart3",
+    },
+    {
+      id: "customer360",
+      label: "Customer 360",
+      description: "Complete customer dossier across all systems",
+      icon: "User",
+    },
   ],
   toolModule: () => import("./tools"),
   resultRenderers: {},
@@ -29,7 +60,10 @@ const base44Manifest: ConnectorManifest = {
   },
   getStatus: () => {
     const { ok, missing } = checkConnectorEnv(["BASE44_API_KEY"]);
-    return { connected: ok, message: ok ? "Connected" : `Missing: ${missing.join(", ")}` };
+    return {
+      connected: ok,
+      message: ok ? "Connected" : `Missing: ${missing.join(", ")}`,
+    };
   },
 };
 

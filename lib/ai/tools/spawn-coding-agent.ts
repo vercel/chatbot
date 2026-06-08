@@ -1,9 +1,13 @@
 /**
- * spawn-coding-agent tool — Handoff complex coding tasks to neptune-v2 /api/runs.
- * This is Layer 5 of the sandbox orchestrator.
+ * spawn-coding-agent tool — Handoff complex coding tasks to neptune-v2.
  *
- * Calls POST /api/sandbox on neptune-v2 (open-agents sandbox route)
- * and streams back results via SSE.
+ * V2 is a sandbox coding agent (E2B-backed) that can:
+ * - Clone any abhiswami2121 repo via GITHUB_TOKEN
+ * - Write/edit code, run tests
+ * - Commit changes, create branches, open pull requests
+ * - Deploy to Vercel (via VERCEL_TOKEN)
+ *
+ * Chat → spawnCodingAgent → neptune-v2 sandbox → git commit → PR → deploy
  */
 import { tool } from "ai";
 import { z } from "zod";
@@ -11,41 +15,84 @@ import { z } from "zod";
 const OPEN_AGENTS_URL =
   process.env.OPEN_AGENTS_URL || "https://neptune-v2.vercel.app";
 const OPEN_AGENTS_API_KEY = process.env.OPEN_AGENTS_API_KEY || "";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
 
 interface V2SandboxResponse {
   sandboxId: string;
   status: string;
   streamUrl?: string;
   sessionId?: string;
+  prUrl?: string;
+  branchName?: string;
 }
 
 export const spawnCodingAgent = tool({
   description:
     "Hand off a complex multi-step coding task to the neptune-v2 coding agent. " +
-    "The v2 agent has full sandbox access, file system, git, and browser tools. " +
-    "Use this for tasks that require multiple sandbox runs, git operations, or browser automation.",
+    "V2 has full sandbox access, git, and browser tools. It can clone any abhiswami2121 repo, " +
+    "make changes, commit, open pull requests, and deploy to Vercel. " +
+    "Use this for: fixing bugs across repos, adding features, refactoring, " +
+    "or any task that requires git operations or sandbox execution.",
   inputSchema: z.object({
-    code: z
+    goal: z
       .string()
-      .describe("The code or instructions to execute in v2 sandbox"),
+      .describe(
+        "Natural language description of what to build/fix. Be specific."
+      ),
+    repoOwner: z
+      .string()
+      .default("abhiswami2121")
+      .describe("GitHub repo owner (default: abhiswami2121)"),
+    repoName: z
+      .string()
+      .describe(
+        "Target repository name (e.g. 'neptune-v2', 'neptune-chat', 'newleaf-financial')"
+      ),
+    baseBranch: z
+      .string()
+      .default("main")
+      .describe("Base branch to branch from (default: main)"),
     runtime: z
       .enum(["node", "python"])
       .default("node")
       .describe("Runtime to use"),
-    context: z
-      .record(z.unknown())
-      .optional()
-      .describe("Additional context for the coding agent"),
     sessionId: z
       .string()
       .optional()
       .describe("Existing v2 session ID to resume"),
+    createPR: z
+      .boolean()
+      .default(true)
+      .describe("Whether to create a pull request after changes"),
+    deployToVercel: z
+      .boolean()
+      .default(false)
+      .describe("Whether to deploy to Vercel after PR is opened"),
   }),
-  execute: async ({ code, runtime, context, sessionId }) => {
+  execute: async ({
+    goal,
+    repoOwner,
+    repoName,
+    baseBranch,
+    runtime,
+    sessionId,
+    createPR,
+    deployToVercel,
+  }) => {
     const body: Record<string, unknown> = {
-      code,
+      goal,
       runtime,
-      context: context || {},
+      repo: {
+        owner: repoOwner,
+        name: repoName,
+        baseBranch,
+      },
+      context: {
+        githubToken: GITHUB_TOKEN,
+        vercelToken: process.env.VERCEL_TOKEN || "",
+        createPR,
+        deployToVercel,
+      },
     };
 
     if (sessionId) {
@@ -64,7 +111,7 @@ export const spawnCodingAgent = tool({
     if (!res.ok) {
       const errorText = await res.text();
       throw new Error(
-        `V2 coding agent handoff failed: ${res.status} ${errorText}`
+        `V2 coding agent startup failed: ${res.status} ${errorText}`
       );
     }
 
@@ -74,11 +121,16 @@ export const spawnCodingAgent = tool({
       sandboxId: data.sandboxId,
       sessionId: data.sessionId || data.sandboxId,
       status: data.status,
+      repo: `${repoOwner}/${repoName}`,
+      branch: data.branchName || "pending",
+      prUrl: data.prUrl || null,
       streamUrl:
         data.streamUrl ||
         `${OPEN_AGENTS_URL}/api/sandbox/status?sandboxId=${data.sandboxId}`,
       message:
-        "Coding agent spawned in neptune-v2. Track progress via the stream URL.",
+        `V2 coding agent spawned for ${repoOwner}/${repoName}. ` +
+        (createPR ? "Will create a PR when complete. " : "") +
+        "Track progress via the stream URL.",
     };
   },
 });
