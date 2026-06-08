@@ -15,6 +15,7 @@ import nmiManifest from "./nmi/manifest";
 import { registerConnector } from "./registry";
 import slackManifest from "./slack/manifest";
 import vapiManifest from "./vapi/manifest";
+import vercelManifest from "./vercel/manifest";
 import wikiManifest from "./wiki/manifest";
 
 const manifests = [
@@ -30,6 +31,7 @@ const manifests = [
   wikiManifest,
   ghlManifest,
   affyManifest,
+  vercelManifest,
 ];
 
 let initialized = false;
