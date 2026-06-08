@@ -16,6 +16,32 @@ import {
 } from "@/components/chat/icons";
 import { generateUUID } from "@/lib/utils";
 
+// Cache the Pyodide instance globally to avoid re-initializing on every Run click.
+// Pyodide WASM is ~12MB — re-downloading it per run wastes bandwidth and causes
+// "error initializing decimal" race conditions when the previous init isn't done.
+const globalAny: any = globalThis;
+
+let pyodideInstancePromise: Promise<any> | null = null;
+
+function getPyodideInstance() {
+  if (pyodideInstancePromise) {
+    return pyodideInstancePromise;
+  }
+
+  if (typeof globalAny.loadPyodide !== "function") {
+    throw new Error(
+      "Python sandbox is still loading. The Pyodide runtime (~12MB) is being downloaded. " +
+        "Please wait a moment and try again."
+    );
+  }
+
+  pyodideInstancePromise = globalAny.loadPyodide({
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
+  });
+
+  return pyodideInstancePromise;
+}
+
 const OUTPUT_HANDLERS = {
   matplotlib: `
     import io
@@ -133,10 +159,7 @@ export const codeArtifact = new Artifact<"code", Metadata>({
         }));
 
         try {
-          // @ts-expect-error - loadPyodide is not defined
-          const currentPyodideInstance = await globalThis.loadPyodide({
-            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
-          });
+          const currentPyodideInstance = await getPyodideInstance();
 
           currentPyodideInstance.setStdout({
             batched: (output: string) => {
