@@ -226,6 +226,7 @@ export async function POST(request: Request): Promise<Response> {
       );
       break;
     }
+    case "deployment.succeeded":
     case "deployment.ready": {
       console.log(
         `[vercel-webhook] Deployment READY: ${event.payload.deployment?.url}`
