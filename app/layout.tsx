@@ -13,9 +13,7 @@ export const metadata: Metadata = {
     "Neptune Chat — a Vercel AI Chatbot powered by the Vercel AI Gateway with multi-provider model support.",
 };
 
-export const viewport = {
-  maximumScale: 1,
-};
+export const viewport = {};
 
 const geist = Geist({
   subsets: ["latin"],

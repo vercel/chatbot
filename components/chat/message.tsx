@@ -345,12 +345,11 @@ const PurePreviewMessage = ({
             type={type as any}
           />
           <ToolContent>
-            {(isStreaming || isRunning || isComplete) && toolPart.input != null
-              ? (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                <ToolInput input={toolPart.input as any} />
-              )
-              : null}
+            {(isStreaming || isRunning || isComplete) &&
+            toolPart.input != null ? (
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              <ToolInput input={toolPart.input as any} />
+            ) : null}
             {isComplete && (
               <ToolResultRenderer
                 part={

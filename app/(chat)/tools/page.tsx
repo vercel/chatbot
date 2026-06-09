@@ -9,7 +9,9 @@ import { ToolsClient } from "./client";
 export default async function ToolsPage() {
   const session = await auth();
   if (!session?.user) {
-    return <div className="p-8 text-muted-foreground">Sign in to view tools.</div>;
+    return (
+      <div className="p-8 text-muted-foreground">Sign in to view tools.</div>
+    );
   }
 
   initConnectors();
@@ -23,7 +25,9 @@ export default async function ToolsPage() {
     tools: entry.manifest.capabilities.map((cap) => ({
       name: `${entry.manifest.id}.${cap.id}`,
       description: cap.description,
-      inputs: cap.schema ? JSON.stringify(cap.schema) : "input: Record<string, unknown>",
+      inputs: cap.schema
+        ? JSON.stringify(cap.schema)
+        : "input: Record<string, unknown>",
       connectorName: entry.manifest.name,
     })),
   }));

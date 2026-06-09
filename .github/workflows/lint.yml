@@ -1,6 +1,8 @@
 name: Lint
 on:
   push:
+  pull_request:
+    branches: [main]
 
 jobs:
   build:
@@ -21,5 +23,7 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
+      - name: CVE Audit
+        run: pnpm audit
       - name: Run check
         run: pnpm check

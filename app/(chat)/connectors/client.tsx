@@ -1,9 +1,9 @@
 "use client";
+import { SearchIcon } from "lucide-react";
 /**
  * ConnectorsClient — renders connector grid with search and detail sheet.
  */
 import { useState } from "react";
-import { SearchIcon } from "lucide-react";
 import { ConnectorCard } from "@/components/connectors/ConnectorCard";
 import { ConnectorDetailSheet } from "@/components/connectors/ConnectorDetailSheet";
 import { initConnectors } from "@/lib/connectors/init";
@@ -47,7 +47,8 @@ export function ConnectorsClient({ connectors, counts }: Props) {
       <div className="border-b p-4">
         <h1 className="text-lg font-semibold">Connectors</h1>
         <p className="text-sm text-muted-foreground">
-          {counts.connected} connected · {counts.notConfigured} not configured · {counts.total} total
+          {counts.connected} connected · {counts.notConfigured} not configured ·{" "}
+          {counts.total} total
         </p>
       </div>
 
@@ -75,13 +76,15 @@ export function ConnectorsClient({ connectors, counts }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {filtered.map((c, i) => (
               <ConnectorCard
-                key={c.id}
                 index={i}
+                key={c.id}
                 manifest={{
                   id: c.id,
                   name: c.name,
                   description: c.description,
-                  icon: (() => <span />) as unknown as ConnectorManifest["icon"],
+                  icon: (() => (
+                    <span />
+                  )) as unknown as ConnectorManifest["icon"],
                   brandColor: c.brandColor,
                   envKeys: c.envKeys,
                   capabilities: [],
@@ -90,8 +93,8 @@ export function ConnectorsClient({ connectors, counts }: Props) {
                   playbookPath: "",
                   getStatus: () => c.status,
                 }}
-                status={c.status}
                 onClick={() => setSelectedId(c.id)}
+                status={c.status}
               />
             ))}
           </div>
@@ -110,8 +113,10 @@ export function ConnectorsClient({ connectors, counts }: Props) {
             playbookPath: `lib/connectors/${selected.id}/playbook.mdx`,
             getStatus: () => selected.status,
           }}
+          onOpenChange={(open) => {
+            if (!open) setSelectedId(null);
+          }}
           open={!!selectedId}
-          onOpenChange={(open) => { if (!open) setSelectedId(null); }}
           status={selected.status}
         />
       )}

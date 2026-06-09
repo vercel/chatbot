@@ -8,7 +8,11 @@ import { ConnectorsClient } from "./client";
 export default async function ConnectorsPage() {
   const session = await auth();
   if (!session?.user) {
-    return <div className="p-8 text-muted-foreground">Sign in to manage connectors.</div>;
+    return (
+      <div className="p-8 text-muted-foreground">
+        Sign in to manage connectors.
+      </div>
+    );
   }
 
   // Ensure registry is populated (server-side)
