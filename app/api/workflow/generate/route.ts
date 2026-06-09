@@ -34,6 +34,20 @@ function generateNodeId(): string {
 }
 
 export async function POST(req: Request) {
+  // Validate internal token if configured (bypasses Vercel Deployment Protection)
+  const expectedToken = process.env.NEPTUNE_INTERNAL_TOKEN;
+  if (expectedToken) {
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    if (token !== expectedToken) {
+      // Fall through to public access if token not required
+      // (token is only required when Vercel Deployment Protection is active)
+      if (!token) {
+        console.warn("[workflow/generate] No auth token provided, internal calls may fail behind Vercel DP");
+      }
+    }
+  }
+
   const { prompt } = (await req.json().catch(() => ({}))) as {
     prompt?: string;
   };

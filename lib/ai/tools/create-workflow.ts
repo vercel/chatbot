@@ -57,9 +57,13 @@ export const createWorkflow = tool({
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000";
 
+      const internalToken = process.env.NEPTUNE_INTERNAL_TOKEN;
       const res = await fetch(`${baseUrl}/api/workflow/generate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(internalToken ? { Authorization: `Bearer ${internalToken}` } : {}),
+        },
         body: JSON.stringify({ prompt: description }),
       });
 
