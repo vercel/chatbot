@@ -126,7 +126,10 @@ spawnCodingAgent({
 
 ## Refinement Notes
 
-- **Version:** 1.1.0
-- **Created:** 2026-05, 2026-06-09 (6-section refactor)
+- **2026-06-09** — Playbook ingest mission: added YAML frontmatter with trigger_tools. All repos under abhiswami2121 now listed explicitly (neptune-chat, neptune-v2, neptune-ui, neptune-agent-v2, neptune-landing-demo, newleaf-financial). Secret scanning confirmed active — 2026-04-12 incident where token was committed to scratch repo validated the diff-scan safeguard exists.
+- **2026-06-09** — Vercel auto-deploys from main branch on neptune-chat. Don't create redundant redeploy PRs immediately after a push — wait for Vercel build to complete first. Cross-reference: vercel/PLAYBOOK.md.
+- **2026-06-09** — spawnCodingAgent handoff flow documented: Chat → V2 API → E2B sandbox → git clone → code → push → PR → optional deploy. Full round-trip ~45-90s.
+- **Version:** 1.2.0
+- **Created:** 2026-05, 2026-06-09 (6-section refactor + frontmatter + refinement loop)
 - **Last Reviewed:** 2026-06-09
 - **Source:** GitHub REST API docs, V2 Coding Agent architecture

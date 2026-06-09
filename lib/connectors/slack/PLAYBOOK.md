@@ -112,8 +112,11 @@ reactionAdd({ channel: "C096PSS45Q9", timestamp: "1234567890.123456", reaction: 
 
 ## Refinement Notes
 
-- **Version:** 1.1.0
-- **Created:** 2026-05, 2026-06-09 (6-section refactor)
+- **2026-06-09** — Playbook ingest mission: added YAML frontmatter, channel allowlist expanded (C0AQDDC3HAB jarvis-admin, C096PSS45Q9 newleaf-admin, C0SUPPORTTKT newleaf-support-tickets, C0PAYALERTS payment-alerts, C0SOCIAL social-no-bots). Added PII redaction rule for card/SSN/DOB patterns. Added 60s content-hash dedupe safeguard for duplicate posts. Linked slack-delivery cortex skill.
+- **2026-06-09** — Vercel deploy notifications must go to #jarvis-admin (C0AQDDC3HAB), not #newleaf-admin. Cross-reference: vercel/PLAYBOOK.md deploy notification workflow.
+- **2026-05-15** — Bot not_in_channel error for new channels: first-time use requires manual `/invite @bot_name` by channel admin. Added note in Operational Knowledge.
+- **Version:** 1.2.0
+- **Created:** 2026-05, 2026-06-09 (6-section refactor + frontmatter + refinement loop)
 - **Last Reviewed:** 2026-06-09
 - **Source:** Slack API docs (api.slack.com), slack-delivery cortex skill
 - **Related:** jarvis/cortex/skills/slack-delivery.md
