@@ -98,13 +98,8 @@ export async function handoffToNeptuneCode(
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return {
-      success: false,
-      error: `V2 unreachable: ${message}`,
-      degraded: true,
-    };
 
-    // Best-effort: also record handoff in V2 /tasks store for /tasks page visibility
+    // Best-effort: record handoff task in V2 /tasks store for /tasks page visibility
     try {
       await fetch(V2_TASKS_ENDPOINT, {
         method: "POST",
@@ -118,6 +113,12 @@ export async function handoffToNeptuneCode(
         signal: AbortSignal.timeout(5000),
       });
     } catch { /* best-effort, don't block handoff */ }
+
+    return {
+      success: false,
+      error: `V2 unreachable: ${message}`,
+      degraded: true,
+    };
   }
 }
 
