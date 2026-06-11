@@ -39,8 +39,8 @@ export function PureMessageActions({
       for (const part of message.parts) {
         if (part.type === "text") {
           parts.push(part.text);
-        } else if (part.type === "tool-invocation") {
-          const ti = part as { type: string; toolInvocation?: { toolName?: string; state?: string; result?: unknown } };
+        } else if ("toolInvocation" in part && part.toolInvocation) {
+          const ti = part as unknown as { type: string; toolInvocation?: { toolName?: string; state?: string; result?: unknown } };
           const inv = ti.toolInvocation;
           if (inv) {
             parts.push(`\n--- Tool: ${inv.toolName || "unknown"} (${inv.state || "unknown"}) ---`);

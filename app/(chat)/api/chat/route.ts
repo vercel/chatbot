@@ -200,7 +200,7 @@ export async function POST(request: Request) {
     const modelMessages = await convertToModelMessages(uiMessages);
 
     // V4: Discover relevant action groups for the user's task
-    const userPrompt = uiMessages.filter(m => m.role === 'user').pop()?.content || '';
+    const userPrompt = uiMessages.filter(m => m.role === 'user').pop()?.parts?.find(p => p.type === 'text')?.text || '';
     const actionGroupCtx = typeof userPrompt === 'string'
       ? (await discoverActionGroup({ prompt: userPrompt }).catch(() => null)) ||
         formatPlaybookContext(loadPlaybooksForIntent(userPrompt))

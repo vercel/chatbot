@@ -1,102 +1,84 @@
 /**
- * GET /api/skills — List available Jarvis cortex skills.
- * Tries VPS bridge first, falls back to bundled static catalog.
+ * GET /api/skills — List all skills from shared registry.
+ * Reads from /home/neptune/_shared-skills/registry.json
  */
+import { NextResponse } from "next/server";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 
-const FALLBACK_SKILLS = [
-  {
-    name: "neptune-project-hierarchy-LOCKED.md",
-    description: "Project identity and hierarchy for all Neptune projects",
-    category: "neptune",
-  },
-  {
-    name: "mission-resume-protocol-LOCKED.md",
-    description: "How to resume missions from checkpoint",
-    category: "mission",
-  },
-  {
-    name: "neptune-auto-mode-routing.md",
-    description: "Auto-mode intent routing and model selection",
-    category: "neptune",
-  },
-  {
-    name: "neptune-ai-byok-routing.md",
-    description: "BYOK routing patterns for AI providers",
-    category: "neptune",
-  },
-  {
-    name: "working-with-neptune-ui.md",
-    description: "Guide for working with Neptune UI components",
-    category: "neptune",
-  },
-  {
-    name: "working-with-newleaf-base44.md",
-    description: "Guide for NewLeaf Base44 platform",
-    category: "platform",
-  },
-  {
-    name: "checkpoint-discipline.md",
-    description: "Checkpoint protocol for long missions",
-    category: "mission",
-  },
-  {
-    name: "billing-and-payments.md",
-    description: "Billing, payments, and NMI integration",
-    category: "platform",
-  },
-  {
-    name: "jarvis-os-repo-map.md",
-    description: "Repository structure map for Jarvis OS",
-    category: "platform",
-  },
-  {
-    name: "orchestration-and-dispatch.md",
-    description: "Agent orchestration and dispatch patterns",
-    category: "agent",
-  },
-];
+const SHARED_SKILLS_ROOT = "/home/neptune/_shared-skills";
+const REGISTRY_PATH = join(SHARED_SKILLS_ROOT, "registry.json");
+
+interface SkillEntry {
+  name: string;
+  version: string;
+  path: string;
+  primary_domain: string;
+  also_in?: string[];
+  tools?: number;
+  dependencies?: string[];
+}
+
+interface Registry {
+  connectors: SkillEntry[];
+  functions: SkillEntry[];
+  capabilities: SkillEntry[];
+  summary: {
+    totalConnectors: number;
+    totalFunctions: number;
+    totalCapabilities: number;
+    totalSkills: number;
+  };
+}
+
+function loadRegistry(): Registry | null {
+  try {
+    if (!existsSync(REGISTRY_PATH)) return null;
+    return JSON.parse(readFileSync(REGISTRY_PATH, "utf-8"));
+  } catch {
+    return null;
+  }
+}
 
 export async function GET() {
-  // Try VPS bridge first
-  try {
-    const bridgeUrl = process.env.VPS_FS_BRIDGE_URL || null;
+  const registry = loadRegistry();
 
-    if (bridgeUrl) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-
-      const res = await fetch(`${bridgeUrl}/list`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ parentPath: "jarvis/cortex/skills" }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-
-      if (res.ok) {
-        const data = await res.json();
-        const files = (data.files ?? []).map(
-          (f: { name: string; size?: number }) => ({
-            name: f.name,
-            description: `Skill file (${f.size ?? "unknown"} bytes)`,
-            category: "skills",
-          })
-        );
-        return Response.json({
-          source: "vps",
-          count: files.length,
-          skills: files,
-        });
-      }
-    }
-  } catch {
-    // Fall through to static catalog
+  if (!registry) {
+    return NextResponse.json(
+      { error: "Skills registry not available" },
+      { status: 503 }
+    );
   }
 
-  return Response.json({
-    source: "static",
-    count: FALLBACK_SKILLS.length,
-    skills: FALLBACK_SKILLS,
+  return NextResponse.json({
+    connectors: registry.connectors.map((s) => ({
+      name: s.name,
+      version: s.version,
+      path: s.path,
+      tools: s.tools,
+      primary_domain: s.primary_domain,
+      also_in: s.also_in ?? [],
+      dependencies: s.dependencies ?? [],
+      kind: "connector",
+    })),
+    functions: registry.functions.map((s) => ({
+      name: s.name,
+      version: s.version,
+      path: s.path,
+      primary_domain: s.primary_domain,
+      also_in: s.also_in ?? [],
+      dependencies: s.dependencies ?? [],
+      kind: "function",
+    })),
+    capabilities: registry.capabilities.map((s) => ({
+      name: s.name,
+      version: s.version,
+      path: s.path,
+      primary_domain: s.primary_domain,
+      also_in: s.also_in ?? [],
+      dependencies: s.dependencies ?? [],
+      kind: "capability",
+    })),
+    summary: registry.summary,
   });
 }
