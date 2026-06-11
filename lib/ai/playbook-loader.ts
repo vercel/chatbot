@@ -191,12 +191,15 @@ function parsePlaybookMarkdown(content: string, filePath: string): PlaybookDocum
 
 /**
  * Parse routines section into structured Routine objects.
+ * Handles multi-line trigger word definitions (indented continuation lines).
  */
 function parseRoutines(lines: string[]): Routine[] {
   const routines: Routine[] = [];
   let currentRoutine: Routine | null = null;
   let currentSteps: string[] = [];
   let inSteps = false;
+  let collectingTriggers = false;
+  let triggerAccumulator = "";
 
   for (const line of lines) {
     // Match "### Routine: Name"
@@ -209,18 +212,34 @@ function parseRoutines(lines: string[]): Routine[] {
       currentRoutine = { name: routineHeader[1].trim(), triggerWords: [], steps: [], safeguards: [] };
       currentSteps = [];
       inSteps = false;
+      collectingTriggers = false;
+      triggerAccumulator = "";
       continue;
     }
 
     if (!currentRoutine) continue;
 
-    // Trigger words
-    const triggerMatch = line.match(/Trigger\s*words?:?\s*(.+)/i);
-    if (triggerMatch) {
-      currentRoutine.triggerWords = triggerMatch[1]
+    // Collect continuation lines for multi-line trigger definitions
+    if (collectingTriggers) {
+      // Continuation lines are indented and contain trigger content (quotes, commas, or names)
+      if (/^\s{6,}/.test(line) && /['"\[,\]]/.test(line)) {
+        triggerAccumulator += " " + line.trim();
+        continue;
+      }
+      // Done collecting — parse accumulated triggers
+      currentRoutine.triggerWords = triggerAccumulator
         .split(/[,;]/)
         .map((w) => w.trim().replace(/['"]/g, ""))
         .filter(Boolean);
+      collectingTriggers = false;
+      triggerAccumulator = "";
+    }
+
+    // Trigger words (primary line)
+    const triggerMatch = line.match(/Trigger\s*words?:?\s*(.+)/i);
+    if (triggerMatch) {
+      triggerAccumulator = triggerMatch[1];
+      collectingTriggers = true;
       continue;
     }
 
@@ -237,6 +256,14 @@ function parseRoutines(lines: string[]): Routine[] {
     if (line.toLowerCase().includes("parallel") && currentSteps.length > 0) {
       currentSteps[currentSteps.length - 1] += " [PARALLEL]";
     }
+  }
+
+  // Flush any remaining trigger accumulator
+  if (currentRoutine && collectingTriggers && triggerAccumulator) {
+    currentRoutine.triggerWords = triggerAccumulator
+      .split(/[,;]/)
+      .map((w) => w.trim().replace(/['"]/g, ""))
+      .filter(Boolean);
   }
 
   if (currentRoutine) {
@@ -411,7 +438,7 @@ export function loadPlaybookForIntent(
  */
 export function loadPlaybooksForIntent(
   userMessage: string,
-  minConfidence = 20,
+  minConfidence = 10,
   org = "newleaf-financial"
 ): PlaybookLoadResult[] {
   const orgPath = join(ORGS_ROOT, org);
