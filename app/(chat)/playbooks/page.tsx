@@ -3,9 +3,12 @@
  * skills, and domain playbooks organized by organization.
  */
 import { auth } from "@/app/(auth)/auth";
+import { cookies } from "next/headers";
 import { PlaybooksClient } from "./client";
 
 export default async function PlaybooksPage() {
+  // Force dynamic rendering to bypass CDN cache
+  cookies();
   const session = await auth();
   if (!session?.user) {
     return (

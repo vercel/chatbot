@@ -3,9 +3,12 @@
  * conversation context, and recent cortex files.
  */
 import { auth } from "@/app/(auth)/auth";
+import { cookies } from "next/headers";
 import { MemoryClient } from "./client";
 
 export default async function MemoryPage() {
+  // Force dynamic rendering to bypass CDN cache
+  cookies();
   const session = await auth();
   if (!session?.user) {
     return (

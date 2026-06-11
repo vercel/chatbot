@@ -2,10 +2,13 @@
  * Connectors Page — dynamic grid of connector cards from registry.
  */
 import { auth } from "@/app/(auth)/auth";
+import { cookies } from "next/headers";
 import { initConnectors, manifests } from "@/lib/connectors/init";
 import { ConnectorsClient } from "./client";
 
 export default async function ConnectorsPage() {
+  // Force dynamic rendering to bypass CDN cache
+  cookies();
   const session = await auth();
   if (!session?.user) {
     return (

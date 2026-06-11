@@ -3,9 +3,12 @@
  * Mobile-first. Fetches from /api/skills at the client for interactivity.
  */
 import { auth } from "@/app/(auth)/auth";
+import { cookies } from "next/headers";
 import { SkillsLibraryClient } from "./client";
 
 export default async function SkillsPage() {
+  // Force dynamic rendering to bypass CDN cache
+  cookies();
   const session = await auth();
   if (!session?.user) {
     return (
