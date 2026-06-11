@@ -2,12 +2,14 @@
 
 import {
   BarChart3Icon,
+  BookOpen,
   BrainCircuitIcon,
   KeyRoundIcon,
   MessageSquareIcon,
   PanelLeftIcon,
   PenSquareIcon,
   PlugIcon,
+  Sparkles,
   TrashIcon,
   ZapIcon,
 } from "lucide-react";
@@ -113,6 +115,13 @@ const NAV_ITEMS = [
     icon: KeyRoundIcon,
     shortcut: "⌘7",
   },
+] as const;
+
+const LIBRARY_ITEMS = [
+  { id: "skills", label: "Skills", icon: Sparkles, href: "/skills" },
+  { id: "connectors", label: "Connectors", icon: PlugIcon, href: "/connectors" },
+  { id: "playbooks", label: "Playbooks", icon: BookOpen, href: "/playbooks" },
+  { id: "memory", label: "Memory", icon: BrainCircuitIcon, href: "/memory" },
 ] as const;
 
 export function AppSidebar({
@@ -250,6 +259,40 @@ export function AppSidebar({
                       >
                         <Icon className="size-4" />
                         <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarSeparator className="bg-zinc-800" />
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-zinc-500 text-[11px] tracking-wider uppercase">
+              Library
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {LIBRARY_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname?.startsWith(item.href);
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        asChild
+                        aria-label={`${item.label} page`}
+                        className={cn(
+                          "transition-colors duration-150",
+                          isActive && "bg-cyan-400/10 text-cyan-400"
+                        )}
+                        isActive={isActive}
+                        onClick={() => setOpenMobile(false)}
+                        tooltip={item.label}
+                      >
+                        <Link href={item.href}>
+                          <Icon className="size-4" />
+                          <span>{item.label}</span>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
