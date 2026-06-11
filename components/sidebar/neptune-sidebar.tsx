@@ -3,6 +3,7 @@
 import {
   BarChart3,
   BookOpen,
+  Brain,
   ChevronLeft,
   ChevronRight,
   FolderGit2,
@@ -30,6 +31,7 @@ const TABS = [
   },
   { id: "skills", label: "Skills", icon: Target, href: "/skills" },
   { id: "playbooks", label: "Playbooks", icon: FolderGit2, href: "/playbooks" },
+  { id: "memory", label: "Memory", icon: Brain, href: "/memory" },
   { id: "knowledge", label: "Knowledge", icon: BookOpen, href: "/knowledge" },
   { id: "workflows", label: "Workflows", icon: Zap, href: "/workflows" },
   { id: "reports", label: "Reports", icon: BarChart3, href: "/reports" },
