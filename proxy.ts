@@ -13,6 +13,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Bearer-token authenticated API routes — bypass JWT check.
+  // These routes handle their own auth via NEPTUNE_INTERNAL_TOKEN or similar.
+  if (
+    pathname.startsWith("/api/skill") ||
+    pathname.startsWith("/api/v2") ||
+    pathname.startsWith("/api/vercel/webhook") ||
+    pathname.startsWith("/api/mcp") ||
+    pathname.startsWith("/api/sandbox/stream") ||
+    pathname.startsWith("/api/tools") ||
+    pathname.startsWith("/api/connectors") ||
+    pathname.startsWith("/api/workflow")
+  ) {
+    return NextResponse.next();
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,

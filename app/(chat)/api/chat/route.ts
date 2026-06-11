@@ -48,6 +48,7 @@ import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 import { discoverActionGroup } from "@/lib/playbook-os-client";
+import { loadPlaybooksForIntent, formatPlaybookContext } from "@/lib/ai/playbook-loader";
 
 export const maxDuration = 60;
 
@@ -201,7 +202,8 @@ export async function POST(request: Request) {
     // V4: Discover relevant action groups for the user's task
     const userPrompt = uiMessages.filter(m => m.role === 'user').pop()?.content || '';
     const actionGroupCtx = typeof userPrompt === 'string'
-      ? await discoverActionGroup({ prompt: userPrompt })
+      ? (await discoverActionGroup({ prompt: userPrompt }).catch(() => null)) ||
+        formatPlaybookContext(loadPlaybooksForIntent(userPrompt))
       : null;
 
     const stream = createUIMessageStream({
