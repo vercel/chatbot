@@ -20,11 +20,13 @@ interface ConnectorInfo {
   id: string;
   name: string;
   description: string;
-  iconName: string;
   brandColor: string;
-  capabilities: number;
+  capabilities: { id: string; label: string; description: string; icon?: string }[];
+  toolCount: number;
   envKeys: string[];
   status: { connected: boolean; message?: string };
+  docs?: { official: string; ourGuide?: string };
+  playbookPath?: string;
 }
 
 interface Props {
@@ -124,10 +126,10 @@ export function ConnectorsClient({ connectors, counts }: Props) {
                   )) as unknown as ConnectorManifest["icon"],
                   brandColor: c.brandColor,
                   envKeys: c.envKeys,
-                  capabilities: [],
+                  capabilities: c.capabilities,
                   toolModule: () => Promise.resolve({}),
                   resultRenderers: {},
-                  playbookPath: "",
+                  playbookPath: c.playbookPath || "",
                   getStatus: () => c.status,
                 }}
                 onClick={() =>
@@ -135,7 +137,7 @@ export function ConnectorsClient({ connectors, counts }: Props) {
                 }
                 status={mapStatus(c.status)}
                 statusMessage={c.status.message}
-                toolCount={c.capabilities}
+                toolCount={c.toolCount}
               />
             ))}
           </ConnectorGrid>
@@ -148,10 +150,10 @@ export function ConnectorsClient({ connectors, counts }: Props) {
           manifest={{
             ...selected,
             icon: (() => <span />) as unknown as ConnectorManifest["icon"],
-            capabilities: [],
+            capabilities: selected.capabilities,
             toolModule: () => Promise.resolve({}),
             resultRenderers: {},
-            playbookPath: `lib/connectors/${selected.id}/playbook.mdx`,
+            playbookPath: selected.playbookPath || `lib/connectors/${selected.id}/playbook.mdx`,
             getStatus: () => selected.status,
           }}
           onOpenChange={(open) => {

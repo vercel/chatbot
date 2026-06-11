@@ -22,11 +22,13 @@ export default async function ConnectorsPage() {
     id: m.id,
     name: m.name,
     description: m.description,
-    iconName: m.icon.displayName || m.name,
     brandColor: m.brandColor,
-    capabilities: m.capabilities.length,
+    capabilities: m.capabilities, // pass full capability objects
+    toolCount: m.capabilities.length,
     envKeys: m.envKeys,
     status: m.getStatus(),
+    docs: m.docs,
+    playbookPath: m.playbookPath,
   }));
 
   const counts = {
