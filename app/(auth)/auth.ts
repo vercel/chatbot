@@ -79,6 +79,23 @@ export const {
     }),
   ],
   callbacks: {
+    signIn({ user }) {
+      const ALLOWED_EMAILS: string[] = [
+        "abhiswami2121@gmail.com",
+        "jerry.b.yirenkyi@gmail.com",
+      ];
+
+      // Guest users (no email) are allowed through
+      if (user.type === "guest") return true;
+
+      // Regular users must have an allowed email
+      const email = user.email?.toLowerCase();
+      if (!email || !ALLOWED_EMAILS.includes(email)) {
+        return false;
+      }
+
+      return true;
+    },
     jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
