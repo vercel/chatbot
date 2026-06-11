@@ -28,6 +28,25 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Public library pages — bypass JWT check.
+  // These are informational catalog pages (skills, connectors, playbooks, memory)
+  // that render the library UI for all users, including guests.
+  const publicLibraryPaths = [
+    "/skills",
+    "/connectors",
+    "/playbooks",
+    "/memory",
+    "/tools",
+    "/integrations",
+    "/knowledge",
+    "/vault",
+    "/reports",
+    "/secrets",
+  ];
+  if (publicLibraryPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return NextResponse.next();
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
