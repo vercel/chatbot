@@ -71,11 +71,11 @@ export function PureMessageActions({
 
   if (message.role === "user") {
     return (
-      <Actions className="-mr-0.5 justify-end opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
+      <Actions className="-mr-0.5 justify-end opacity-100 md:opacity-0 transition-opacity duration-150 md:group-hover/message:opacity-100">
         <div className="flex items-center gap-0.5">
           {onEdit && (
             <Action
-              className="size-7 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              className="min-h-[44px] min-w-[44px] size-7 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-lg"
               data-testid="message-edit-button"
               onClick={onEdit}
               tooltip="Edit"
@@ -84,7 +84,7 @@ export function PureMessageActions({
             </Action>
           )}
           <Action
-            className="size-7 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="min-h-[44px] min-w-[44px] size-7 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-lg"
             onClick={handleCopy}
             tooltip="Copy"
           >
@@ -96,9 +96,9 @@ export function PureMessageActions({
   }
 
   return (
-    <Actions className="-ml-0.5 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
+    <Actions className="-ml-0.5 opacity-100 md:opacity-0 transition-opacity duration-150 md:group-hover/message:opacity-100">
       <Action
-        className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+        className="min-h-[44px] min-w-[44px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-lg"
         onClick={handleCopy}
         tooltip="Copy full response (Cmd+Shift+C)"
       >
@@ -106,7 +106,7 @@ export function PureMessageActions({
       </Action>
 
       <Action
-        className="text-zinc-500 dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400"
+        className="min-h-[44px] min-w-[44px] text-zinc-500 dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 border border-zinc-200 dark:border-zinc-700 rounded-lg"
         data-testid="message-upvote"
         disabled={vote?.isUpvoted}
         onClick={() => {
@@ -159,7 +159,7 @@ export function PureMessageActions({
       </Action>
 
       <Action
-        className="text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400"
+        className="min-h-[44px] min-w-[44px] text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 border border-zinc-200 dark:border-zinc-700 rounded-lg"
         data-testid="message-downvote"
         disabled={vote && !vote.isUpvoted}
         onClick={() => {
