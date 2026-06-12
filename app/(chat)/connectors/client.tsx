@@ -255,7 +255,7 @@ export function ConnectorsClient({ connectors, counts, inventory }: Props) {
             capabilities: selected.capabilities,
             toolModule: () => Promise.resolve({}),
             resultRenderers: {},
-            playbookPath: selected.playbookPath || `lib/connectors/${selected.id}/playbook.mdx`,
+            playbookPath: selected.playbookPath || `connectors/${selected.id}/playbook.mdx`,
             getStatus: () => selected.status,
           }}
           onOpenChange={(open) => {

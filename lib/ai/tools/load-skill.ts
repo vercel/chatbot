@@ -16,6 +16,8 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { secrets } from "@/secrets";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 
 const VPS_FS_URL = secrets.vps.fsBridgeUrl || "https://187.127.250.171:8102/api/fs";
 
@@ -90,6 +92,26 @@ async function vpsFsList(parentPath: string): Promise<FsListResult> {
   }
 }
 
+// ── Local File System Fallback ────────────────────────────────────────────────
+
+const CWD = process.cwd();
+
+function localFsRead(fsPath: string): FsReadResult {
+  try {
+    const fullPath = join(CWD, fsPath);
+    if (!existsSync(fullPath)) {
+      return { success: false, error: `File not found: ${fsPath}` };
+    }
+    const content = readFileSync(fullPath, "utf-8");
+    return { success: true, content, path: fsPath };
+  } catch (err) {
+    return {
+      success: false,
+      error: `Local read failed: ${err instanceof Error ? err.message : "Unknown"}`,
+    };
+  }
+}
+
 // ── Skill Path Resolution ────────────────────────────────────────────────────
 
 interface SkillContent {
@@ -148,10 +170,26 @@ function resolveSkillPaths(skillPath: string): string[] {
   if (normalized.startsWith("connectors/")) {
     const name = normalized.replace("connectors/", "");
     return [
+      // New U2.2 paths (local repo)
+      `connectors/${name}/SKILL.md`,
+      `connectors/${name}/PLAYBOOK.md`,
+      `connectors/${name}/playbook.mdx`,
+      // Legacy JFS paths
       `jarvis/cortex/connectors/${name}/SKILL.md`,
       `jarvis/cortex/connectors/${name}/playbook.md`,
       `jarvis/cortex/skills/${name}-connector.md`,
       `jarvis/cortex/skills/${name}.md`,
+    ];
+  }
+
+  if (normalized.startsWith("playbooks/")) {
+    const domain = normalized.replace("playbooks/", "");
+    return [
+      // New U2.2 flat playbook paths (local repo)
+      `playbooks/${domain}/playbook-${domain}.md`,
+      `playbooks/${domain}/PLAYBOOK.md`,
+      `playbooks/${domain}/playbook.md`,
+      `playbooks/${domain}/SKILL.md`,
     ];
   }
 
@@ -160,6 +198,10 @@ function resolveSkillPaths(skillPath: string): string[] {
     const org = parts[1];
     const domain = parts.slice(2).join("/");
     return [
+      // New U2.2 paths first for legacy org lookups
+      `playbooks/${domain}/playbook-${domain}.md`,
+      `playbooks/${domain}/PLAYBOOK.md`,
+      // Legacy JFS paths
       `jarvis/cortex/organizations/${org}/${domain}/SKILL.md`,
       `jarvis/cortex/organizations/${org}/${domain}/playbook.md`,
       `jarvis/cortex/organizations/${org}/${domain}/README.md`,
@@ -169,6 +211,9 @@ function resolveSkillPaths(skillPath: string): string[] {
   if (normalized.startsWith("capabilities/")) {
     const name = normalized.replace("capabilities/", "");
     return [
+      // New U2.2 local paths
+      `skills/capabilities/${name}/SKILL.md`,
+      // Legacy JFS paths
       `jarvis/cortex/skills/${name}.md`,
       `jarvis/cortex/capabilities/${name}/SKILL.md`,
     ];
@@ -176,13 +221,19 @@ function resolveSkillPaths(skillPath: string): string[] {
 
   if (normalized.startsWith("skills/")) {
     const name = normalized.replace("skills/", "");
-    return [`jarvis/cortex/skills/${name}.md`];
+    return [
+      `jarvis/cortex/skills/${name}.md`,
+      `skills/${name}/SKILL.md`,
+    ];
   }
 
-  // Bare name — try skills directory
+  // Bare name — try skills directory + playbooks
   return [
     `jarvis/cortex/skills/${normalized}.md`,
     `jarvis/cortex/skills/${normalized}-skill.md`,
+    `skills/capabilities/${normalized}/SKILL.md`,
+    `skills/functions/${normalized}/SKILL.md`,
+    `playbooks/${normalized}/playbook-${normalized}.md`,
     `jarvis/prd/${normalized}.md`,
   ];
 }
@@ -194,8 +245,8 @@ export const loadSkill = tool({
     "Load detailed skill content on-demand from the knowledge base. " +
     "Use when you need specific connector, playbook, or capability details. " +
     "Categories: connectors/ (NMI, Slack, GitHub, Vercel, etc.), " +
-    "capabilities/ (self-coding, sandbox, etc.), " +
-    "organizations/<org>/<domain>/ (org-specific playbooks). " +
+    "playbooks/ (billing, disputes, customer-support, etc.), " +
+    "capabilities/ (self-coding, sandbox, etc.). " +
     "Keeps context efficient — only load what you need, when you need it.",
   inputSchema: z.object({
     skill_path: z
@@ -220,7 +271,11 @@ export const loadSkill = tool({
     let foundAny = false;
 
     for (const fsPath of paths) {
-      const result = await vpsFsRead(fsPath);
+      // Try VPS bridge first, then local filesystem
+      let result = await vpsFsRead(fsPath);
+      if (!result.success || !result.content) {
+        result = localFsRead(fsPath);
+      }
       if (result.success && result.content) {
         foundAny = true;
         const { description } = parseSkillMarkdown(result.content);
@@ -238,18 +293,33 @@ export const loadSkill = tool({
     }
 
     if (!foundAny) {
-      // Try listing the skills directory to give the user context on what's available
+      // Try listing the local skills directory to give the user context on what's available
+      const availableSkills: string[] = [];
+      // Try VPS bridge skill listing
       const skillsList = await vpsFsList("jarvis/cortex/skills");
-      const availableSkills = skillsList.success && skillsList.files
-        ? skillsList.files.slice(0, 30).map((f) => f.name.replace(".md", ""))
-        : [];
+      if (skillsList.success && skillsList.files) {
+        availableSkills.push(...skillsList.files.slice(0, 30).map((f) => f.name.replace(".md", "")));
+      }
+      // Also try local playbooks + skills dirs
+      try {
+        const fullSkillsDir = join(CWD, "skills");
+        if (existsSync(fullSkillsDir)) {
+          const { readdirSync } = await import("fs");
+          for (const dir of ["capabilities", "connectors", "functions"]) {
+            const d = join(fullSkillsDir, dir);
+            if (existsSync(d)) {
+              availableSkills.push(...readdirSync(d).map((f: string) => `${dir}/${f.replace(".md", "")}`));
+            }
+          }
+        }
+      } catch { /* local fs unavailable — not an error */ }
 
       return {
         skill_path,
         loaded: false,
-        error: `Skill "${skill_path}" not found. Tried paths: ${paths.join(", ")}. VPS bridge: ${skillsList.success ? "reachable" : "unreachable"}`,
-        available_skills_sample: availableSkills,
-        hint: "Use listSkills to browse all available skills, or try a different path format.",
+        error: `Skill "${skill_path}" not found. Tried paths: ${paths.join(", ")}. `,
+        available_skills_sample: availableSkills.slice(0, 30),
+        hint: "Use listSkills to browse all available skills, or try a different path format. Available prefixes: playbooks/<domain>, connectors/<name>, skills/<name>.",
       };
     }
 

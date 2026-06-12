@@ -1,22 +1,24 @@
 /**
  * Connector auto-init — registers all connector manifests at import time.
  * Also exports dynamic connector discovery (server-only via init-server.ts).
+ *
+ * U2.2: Connector folders moved from ./<name>/ to ../../connectors/<name>/
  */
 
-import affyManifest from "./affy/manifest";
-import base44Manifest from "./base44/manifest";
-import forthManifest from "./forth/manifest";
-import ghlManifest from "./ghl/manifest";
-import githubManifest from "./github/manifest";
-import hyperswitchManifest from "./hyperswitch/manifest";
-import linearManifest from "./linear/manifest";
-import mcpHubManifest from "./mcp-hub/manifest";
-import nmiManifest from "./nmi/manifest";
+import affyManifest from "../../connectors/affy/manifest";
+import base44Manifest from "../../connectors/base44/manifest";
+import forthManifest from "../../connectors/forth/manifest";
+import ghlManifest from "../../connectors/ghl/manifest";
+import githubManifest from "../../connectors/github/manifest";
+import hyperswitchManifest from "../../connectors/hyperswitch/manifest";
+import linearManifest from "../../connectors/linear/manifest";
+import mcpHubManifest from "../../connectors/mcp-hub/manifest";
+import nmiManifest from "../../connectors/nmi/manifest";
 import { registerConnector } from "./registry";
-import slackManifest from "./slack/manifest";
-import vapiManifest from "./vapi/manifest";
-import vercelManifest from "./vercel/manifest";
-import wikiManifest from "./wiki/manifest";
+import slackManifest from "../../connectors/slack/manifest";
+import vapiManifest from "../../connectors/vapi/manifest";
+import vercelManifest from "../../connectors/vercel/manifest";
+import wikiManifest from "../../connectors/wiki/manifest";
 
 const manifests = [
   slackManifest,

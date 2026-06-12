@@ -380,7 +380,7 @@ export function ConnectorDetailSheet({
                     <p className="text-[11px] text-muted-foreground">
                       Source:{" "}
                       <code className="text-[10px] bg-muted px-1 py-0.5 rounded font-mono">
-                        lib/connectors/{manifest.id}/PLAYBOOK.md
+                        connectors/{manifest.id}/PLAYBOOK.md
                       </code>
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-1">

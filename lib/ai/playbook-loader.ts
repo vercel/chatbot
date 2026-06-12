@@ -113,7 +113,8 @@ const ENROLLMENT_FALLBACK = `
 
 // ── File System Playbook Loader ─────────────────────────────────────────────
 
-const ORGS_ROOT = join(process.cwd(), "organizations");
+const PLAYBOOKS_ROOT = join(process.cwd(), "playbooks");
+const ORGS_LEGACY_ROOT = join(process.cwd(), "organizations");
 const SKILLS_ROOT = join(process.cwd(), "skills");
 
 /**
@@ -284,15 +285,31 @@ function parseSteps(rawSteps: string[]): RoutineStep[] {
 
 /**
  * Try to load a playbook from the filesystem.
+ * First tries new flat playbooks/<domain>/ layout,
+ * then legacy organizations/<org>/<domain>/ layout.
  */
 function loadPlaybookFile(orgPath: string, domain: string): PlaybookDocument | null {
-  const paths = [
+  // New paths: flat playbooks/<domain>/ layout
+  const newPaths = [
+    join(PLAYBOOKS_ROOT, domain, `playbook-${domain}.md`),
+    join(PLAYBOOKS_ROOT, domain, "PLAYBOOK.md"),
+    join(PLAYBOOKS_ROOT, domain, "playbook.md"),
+  ];
+
+  for (const p of newPaths) {
+    if (existsSync(p)) {
+      return parsePlaybookMarkdown(readFileSync(p, "utf-8"), p);
+    }
+  }
+
+  // Legacy paths: organizations/<org>/<domain>/ layout
+  const legacyPaths = [
     join(orgPath, domain, `playbook-${domain}.md`),
     join(orgPath, domain, "PLAYBOOK.md"),
     join(orgPath, domain, "playbook.md"),
   ];
 
-  for (const p of paths) {
+  for (const p of legacyPaths) {
     if (existsSync(p)) {
       return parsePlaybookMarkdown(readFileSync(p, "utf-8"), p);
     }
@@ -301,24 +318,38 @@ function loadPlaybookFile(orgPath: string, domain: string): PlaybookDocument | n
 }
 
 /**
- * Scan organizations/ directory for available playbooks.
+ * Scan playbooks/ and organizations/ directories for available playbooks.
  */
 export function listAvailablePlaybooks(): string[] {
   const results: string[] = [];
-  if (!existsSync(ORGS_ROOT)) return results;
 
-  const orgs = readdirSync(ORGS_ROOT);
-  for (const org of orgs) {
-    const orgPath = join(ORGS_ROOT, org);
-    if (!statSync(orgPath).isDirectory()) continue;
-    const domains = readdirSync(orgPath).filter((d) =>
-      statSync(join(orgPath, d)).isDirectory()
+  // 1. New flat playbooks/ layout (U2.2+)
+  if (existsSync(PLAYBOOKS_ROOT)) {
+    const domains = readdirSync(PLAYBOOKS_ROOT).filter((d) =>
+      statSync(join(PLAYBOOKS_ROOT, d)).isDirectory()
     );
     for (const domain of domains) {
-      const pb = loadPlaybookFile(orgPath, domain);
-      if (pb) results.push(`${org}/${domain}`);
+      const pb = loadPlaybookFile("", domain); // orgPath unused in flat layout
+      if (pb) results.push(`playbooks/${domain}`);
     }
   }
+
+  // 2. Legacy organizations/<org>/<domain>/ layout
+  if (existsSync(ORGS_LEGACY_ROOT)) {
+    const orgs = readdirSync(ORGS_LEGACY_ROOT);
+    for (const org of orgs) {
+      const orgPath = join(ORGS_LEGACY_ROOT, org);
+      if (!statSync(orgPath).isDirectory()) continue;
+      const domains = readdirSync(orgPath).filter((d) =>
+        statSync(join(orgPath, d)).isDirectory()
+      );
+      for (const domain of domains) {
+        const pb = loadPlaybookFile(orgPath, domain);
+        if (pb) results.push(`${org}/${domain}`);
+      }
+    }
+  }
+
   return results;
 }
 
@@ -374,7 +405,7 @@ export function loadPlaybookForIntent(
   userMessage: string,
   org = "newleaf-financial"
 ): PlaybookLoadResult | null {
-  const orgPath = join(ORGS_ROOT, org);
+  const orgPath = join(ORGS_LEGACY_ROOT, org);
   const scores = TRIGGER_ENTRIES.map((entry) => ({
     entry,
     score: scoreMatch(userMessage, entry.triggers),
@@ -441,7 +472,7 @@ export function loadPlaybooksForIntent(
   minConfidence = 10,
   org = "newleaf-financial"
 ): PlaybookLoadResult[] {
-  const orgPath = join(ORGS_ROOT, org);
+  const orgPath = join(ORGS_LEGACY_ROOT, org);
   const allScores = TRIGGER_ENTRIES.map((entry) => ({
     entry,
     score: scoreMatch(userMessage, entry.triggers),

@@ -125,7 +125,7 @@ function parseSections(markdown: string): PlaybookSection[] {
 function loadPlaybook(connectorId: string): Playbook | null {
   const playbookPath = resolve(
     process.cwd(),
-    `lib/connectors/${connectorId}/PLAYBOOK.md`
+    `connectors/${connectorId}/PLAYBOOK.md`
   );
 
   if (!existsSync(playbookPath)) {
