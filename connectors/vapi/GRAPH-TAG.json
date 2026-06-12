@@ -1,0 +1,30 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/vapi",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/customer-support", "relationship": "haley_ai_calls"},
+      {"ref": "playbooks/marketing", "relationship": "lead_qualification"}
+    ],
+    "associated_skills": [],
+    "exposed_functions": [
+      "vapi_create_assistant", "vapi_update_assistant", "vapi_delete_assistant", "vapi_list_assistants",
+      "vapi_create_phone_number", "vapi_update_phone_number", "vapi_delete_phone_number", "vapi_list_phone_numbers",
+      "vapi_start_call", "vapi_end_call", "vapi_get_call", "vapi_list_calls",
+      "vapi_get_call_transcript", "vapi_get_call_recording",
+      "vapi_import_contacts", "vapi_run_outbound_campaign",
+      "vapi_health_check"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["vapi", "voice", "call", "haley", "assistant", "transcript", "outbound"]
+  },
+  "metadata": {
+    "domain": "support-triage",
+    "mcp": false,
+    "custom_client": true,
+    "function_count": 16,
+    "description": "VAPI voice AI — Haley assistant, inbound/outbound calls, transcripts, campaigns"
+  }
+}

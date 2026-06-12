@@ -1,0 +1,20 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/wiki",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/engineering", "relationship": "documentation"},
+      {"ref": "playbooks/reporting", "relationship": "documentation"},
+      {"ref": "playbooks/HR", "relationship": "documentation"}
+    ],
+    "associated_skills": [],
+    "exposed_functions": [
+      "wiki_search", "wiki_get_page", "wiki_create_page", "wiki_update_page", "wiki_list_pages"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["wiki", "docs", "documentation", "knowledge base"]
+  },
+  "metadata": {"domain": "reporting", "mcp": false, "custom_client": true, "function_count": 5, "description": "Internal wiki/documentation knowledge base"}
+}

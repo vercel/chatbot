@@ -1,0 +1,8 @@
+[
+  {"ref": "connectors/ghl", "version": "^1.0.0"},
+  {"ref": "connectors/slack", "version": "^1.0.0"},
+  {"ref": "connectors/vapi", "version": "^1.0.0"},
+  {"ref": "connectors/base44", "version": "^1.0.0"},
+  {"ref": "functions/generate-ai-email", "version": "^1.0.0"},
+  {"ref": "capabilities/response-formatting", "version": "^1.0.0"}
+]

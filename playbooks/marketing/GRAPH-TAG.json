@@ -1,0 +1,33 @@
+{
+  "entity_type": "playbook",
+  "entity_id": "playbooks/marketing",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": ["playbooks/customer-support", "playbooks/reporting"],
+    "associated_connectors": [
+      {"ref": "connectors/ghl", "relationship": "campaign_platform", "strength": "primary"},
+      {"ref": "connectors/slack", "relationship": "campaign_alerts", "strength": "secondary"},
+      {"ref": "connectors/vapi", "relationship": "lead_qualification", "strength": "secondary"},
+      {"ref": "connectors/base44", "relationship": "analytics", "strength": "secondary"}
+    ],
+    "associated_skills": [
+      {"ref": "functions/generate-ai-email", "relationship": "content_generation"},
+      {"ref": "capabilities/response-formatting", "relationship": "content_delivery"}
+    ],
+    "exposed_functions": [
+      "load_skill:playbooks/marketing",
+      "execute_skill:create_email_campaign",
+      "execute_skill:lead_flow_analysis"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["marketing", "campaign", "lead", "email", "SMS", "nurture", "content"]
+  },
+  "metadata": {
+    "priority": "P2",
+    "domain": "lead-flow",
+    "routines_count": 2,
+    "auto_load": false,
+    "description": "Campaigns, lead nurture, content strategy"
+  }
+}

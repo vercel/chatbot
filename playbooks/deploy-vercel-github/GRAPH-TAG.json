@@ -1,0 +1,33 @@
+{
+  "entity_type": "playbook",
+  "entity_id": "playbooks/deploy-vercel-github",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": ["playbooks/engineering", "playbooks/vercel-discipline", "playbooks/vps-ops", "playbooks/agent-orchestration"],
+    "associated_connectors": [
+      {"ref": "connectors/github", "relationship": "source_control", "strength": "primary"},
+      {"ref": "connectors/vercel", "relationship": "deployment", "strength": "primary"},
+      {"ref": "connectors/slack", "relationship": "deploy_notifications", "strength": "secondary"}
+    ],
+    "associated_skills": [
+      {"ref": "capabilities/deploy-yourself", "relationship": "self_deployment"},
+      {"ref": "capabilities/code-review", "relationship": "pre_deploy_review"},
+      {"ref": "functions/validate-action", "relationship": "pre_execution"}
+    ],
+    "exposed_functions": [
+      "load_skill:playbooks/deploy-vercel-github",
+      "execute_skill:ship_a_feature",
+      "execute_skill:diagnose_stale_ui"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["ship", "deploy", "land", "merge", "release", "push", "PR"]
+  },
+  "metadata": {
+    "priority": "P1",
+    "domain": "mcp-edits",
+    "routines_count": 2,
+    "auto_load": true,
+    "description": "Vercel deployments, GitHub PR workflows, CI/CD automation"
+  }
+}

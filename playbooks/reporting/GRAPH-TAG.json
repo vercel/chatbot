@@ -1,0 +1,33 @@
+{
+  "entity_type": "playbook",
+  "entity_id": "playbooks/reporting",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": ["playbooks/billing", "playbooks/customer-support", "playbooks/agent-orchestration"],
+    "associated_connectors": [
+      {"ref": "connectors/base44", "relationship": "data_source", "strength": "primary"},
+      {"ref": "connectors/slack", "relationship": "report_delivery", "strength": "primary"},
+      {"ref": "connectors/wiki", "relationship": "documentation", "strength": "secondary"}
+    ],
+    "associated_skills": [
+      {"ref": "capabilities/research", "relationship": "data_analysis"},
+      {"ref": "functions/billing-event-logger", "relationship": "event_tracking"}
+    ],
+    "exposed_functions": [
+      "load_skill:playbooks/reporting",
+      "execute_skill:morning_pulse_report",
+      "execute_skill:customer_metrics_query",
+      "execute_skill:sync_health_audit"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["reporting", "dashboard", "analytics", "morning pulse", "metrics", "query", "aggregate", "stats"]
+  },
+  "metadata": {
+    "priority": "P1",
+    "domain": "reporting",
+    "routines_count": 3,
+    "auto_load": false,
+    "description": "Operational dashboards, morning pulse, analytics queries"
+  }
+}

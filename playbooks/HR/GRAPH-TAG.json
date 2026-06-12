@@ -1,0 +1,29 @@
+{
+  "entity_type": "playbook",
+  "entity_id": "playbooks/HR",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": ["playbooks/agent-orchestration"],
+    "associated_connectors": [
+      {"ref": "connectors/slack", "relationship": "team_comms", "strength": "primary"},
+      {"ref": "connectors/wiki", "relationship": "documentation", "strength": "secondary"},
+      {"ref": "connectors/base44", "relationship": "task_tracking", "strength": "secondary"}
+    ],
+    "associated_skills": [],
+    "exposed_functions": [
+      "load_skill:playbooks/HR",
+      "execute_skill:agent_task_assignment",
+      "execute_skill:team_status_check"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["HR", "team", "personnel", "onboarding", "compliance", "training"]
+  },
+  "metadata": {
+    "priority": "P2",
+    "domain": "HR",
+    "routines_count": 2,
+    "auto_load": false,
+    "description": "Team management, onboarding, compliance, personnel"
+  }
+}

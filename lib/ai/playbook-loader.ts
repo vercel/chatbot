@@ -32,6 +32,14 @@ export interface PlaybookDocument {
   domain: string;
   title: string;
   frontmatter: Record<string, unknown>;
+  /** U2.4 enriched frontmatter fields */
+  intentTags: string[];
+  associatedConnectors: string[];
+  associatedSkills: string[];
+  associatedFunctions: string[];
+  priority: string;
+  routinesCount: number;
+  graphTagPath: string | null;
   operationalKnowledge: string;
   businessContext: string;
   antiPatterns: string[];
@@ -120,6 +128,86 @@ const SKILLS_ROOT = join(process.cwd(), "skills");
 /**
  * Parse a playbook markdown file into structured sections.
  */
+/**
+ * Parse YAML list items from frontmatter. Handles:
+ *   - flow style: [a, b, c]
+ *   - block style with dashes
+ *   - comma-separated bare values
+ */
+function parseYamlList(raw: string): string[] {
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "[]") return [];
+  // Flow style: [a, b, c]
+  const bracketMatch = trimmed.match(/^\[(.*)\]$/);
+  if (bracketMatch) {
+    return bracketMatch[1].split(",").map((s) => s.trim().replace(/['"]/g, "")).filter(Boolean);
+  }
+  // Plain comma-separated
+  if (trimmed.includes(",")) {
+    return trimmed.split(",").map((s) => s.trim().replace(/['"]/g, "")).filter(Boolean);
+  }
+  // Single value
+  return [trimmed.replace(/['"]/g, "")];
+}
+
+/**
+ * Parse full YAML frontmatter block. Handles nested/indented list items
+ * for intent_tags, associated_connectors, associated_skills, associated_functions.
+ */
+function parseFullFrontmatter(content: string): Record<string, unknown> {
+  const fm: Record<string, unknown> = {};
+  if (!content.startsWith("---")) return fm;
+
+  const end = content.indexOf("---", 3);
+  if (end < 0) return fm;
+
+  const fmRaw = content.substring(3, end).trim();
+  const lines = fmRaw.split("\n");
+
+  let currentListKey: string | null = null;
+  let currentListValues: string[] = [];
+
+  for (const line of lines) {
+    // Indented list item (under a list key)
+    const listMatch = line.match(/^\s{2,}-\s+(.+)/);
+    if (listMatch && currentListKey) {
+      currentListValues.push(listMatch[1].trim().replace(/['"]/g, ""));
+      continue;
+    }
+
+    // Flush the current list if we hit a non-list line
+    if (currentListKey && currentListValues.length > 0) {
+      fm[currentListKey] = currentListValues;
+      currentListKey = null;
+      currentListValues = [];
+    }
+
+    // Key: value line
+    const colonIdx = line.indexOf(":");
+    if (colonIdx > 0) {
+      const key = line.substring(0, colonIdx).trim();
+      const value = line.substring(colonIdx + 1).trim();
+
+      // Check if value is a list indicator (empty or starts with indent marker)
+      if (value === "" || value === "[]") {
+        currentListKey = key;
+        currentListValues = [];
+      } else if (value.startsWith("[") && value.endsWith("]")) {
+        fm[key] = parseYamlList(value);
+      } else {
+        fm[key] = value.replace(/^['"]/g, "").replace(/['"]$/g, "");
+      }
+    }
+  }
+
+  // Flush any remaining list
+  if (currentListKey && currentListValues.length > 0) {
+    fm[currentListKey] = currentListValues;
+  }
+
+  return fm;
+}
+
 function parsePlaybookMarkdown(content: string, filePath: string): PlaybookDocument {
   const lines = content.split("\n");
   const sections: Record<string, string[]> = { _current: [] };
@@ -145,20 +233,39 @@ function parsePlaybookMarkdown(content: string, filePath: string): PlaybookDocum
   // Extract title
   const title = (sections.title || sections._preamble || [""])[0] || filePath;
 
-  // Parse frontmatter
-  const frontmatter: Record<string, unknown> = {};
-  if (content.startsWith("---")) {
-    const end = content.indexOf("---", 3);
-    if (end > 0) {
-      const fm = content.substring(3, end).trim();
-      for (const line of fm.split("\n")) {
-        const [key, ...rest] = line.split(":");
-        if (key && rest.length > 0) {
-          frontmatter[key.trim()] = rest.join(":").trim();
-        }
-      }
-    }
-  }
+  // Parse enriched frontmatter (U2.4)
+  const frontmatter = parseFullFrontmatter(content);
+
+  // U2.4 enriched fields
+  const intentTags = Array.isArray(frontmatter.intent_tags)
+    ? frontmatter.intent_tags as string[]
+    : typeof frontmatter.intent_tags === "string"
+      ? parseYamlList(frontmatter.intent_tags as string)
+      : [];
+  const associatedConnectors = Array.isArray(frontmatter.associated_connectors)
+    ? frontmatter.associated_connectors as string[]
+    : typeof frontmatter.associated_connectors === "string"
+      ? parseYamlList(frontmatter.associated_connectors as string)
+      : [];
+  const associatedSkills = Array.isArray(frontmatter.associated_skills)
+    ? frontmatter.associated_skills as string[]
+    : typeof frontmatter.associated_skills === "string"
+      ? parseYamlList(frontmatter.associated_skills as string)
+      : [];
+  const associatedFunctions = Array.isArray(frontmatter.associated_functions)
+    ? frontmatter.associated_functions as string[]
+    : typeof frontmatter.associated_functions === "string"
+      ? parseYamlList(frontmatter.associated_functions as string)
+      : [];
+  const priority = (frontmatter.priority as string) || "P2";
+  const routinesCount = typeof frontmatter.routines_count === "number"
+    ? frontmatter.routines_count as number
+    : parseInt(frontmatter.routines_count as string, 10) || 0;
+
+  // Check for GRAPH-TAG.json
+  const dirName = filePath.substring(0, filePath.lastIndexOf("/"));
+  const graphTagPath = join(dirName, "GRAPH-TAG.json");
+  const hasGraphTag = existsSync(graphTagPath);
 
   // Parse anti-patterns
   const antiPatterns = (sections.anti_patterns || sections["anti-patterns"] || [])
@@ -180,6 +287,13 @@ function parsePlaybookMarkdown(content: string, filePath: string): PlaybookDocum
     domain: filePath.split("/").slice(-2, -1)[0] || "root",
     title,
     frontmatter,
+    intentTags,
+    associatedConnectors,
+    associatedSkills,
+    associatedFunctions,
+    priority,
+    routinesCount: routinesCount || routines.length,
+    graphTagPath: hasGraphTag ? graphTagPath : null,
     operationalKnowledge: (sections.operational_knowledge || []).join("\n").trim(),
     businessContext: (sections.business_context || []).join("\n").trim(),
     antiPatterns,
@@ -431,6 +545,13 @@ export function loadPlaybookForIntent(
       domain: best.entry.domain,
       title: `${best.entry.domain} Playbook`,
       frontmatter: {},
+      intentTags: [],
+      associatedConnectors: [],
+      associatedSkills: [],
+      associatedFunctions: [],
+      priority: "P1",
+      routinesCount: 0,
+      graphTagPath: null,
       operationalKnowledge: best.entry.fallbackContent,
       businessContext: "",
       antiPatterns: [],
@@ -486,6 +607,13 @@ export function loadPlaybooksForIntent(
         domain: s.entry.domain,
         title: `${s.entry.domain} Playbook`,
         frontmatter: {},
+        intentTags: [],
+        associatedConnectors: [],
+        associatedSkills: [],
+        associatedFunctions: [],
+        priority: "P2",
+        routinesCount: 0,
+        graphTagPath: null,
         operationalKnowledge: s.entry.fallbackContent,
         businessContext: "",
         antiPatterns: [],
@@ -521,11 +649,13 @@ export function formatPlaybookContext(results: PlaybookLoadResult[]): string {
   if (results.length === 0) return "";
 
   const sections = results.map((r) => {
-    let section = `[LOADED: ${r.domain} (confidence: ${r.confidence}%)]`;
+    let section = `[LOADED: ${r.domain} | Priority: ${r.playbook.priority} | Confidence: ${r.confidence}%]`;
     if (r.playbook.operationalKnowledge)
       section += `\n${r.playbook.operationalKnowledge}`;
     if (r.playbook.safeguards.length > 0)
       section += `\nSafeguards:\n${r.playbook.safeguards.map((s) => `  - ${s}`).join("\n")}`;
+    if (r.playbook.associatedConnectors.length > 0)
+      section += `\n\nConnector context: ${r.playbook.associatedConnectors.join(", ")}`;
     if (r.matchedRoutine) {
       section += `\n\n▶ MATCHED ROUTINE: ${r.matchedRoutine.name}`;
       section += `\n${r.matchedRoutine.steps

@@ -1,0 +1,24 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/ghl",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/customer-support", "relationship": "customer_messaging"},
+      {"ref": "playbooks/marketing", "relationship": "campaign_platform"},
+      {"ref": "playbooks/billing", "relationship": "payment_links"}
+    ],
+    "associated_skills": [
+      {"ref": "functions/generate-ai-email", "relationship": "email_delivery"}
+    ],
+    "exposed_functions": [
+      "ghl_get_contacts", "ghl_create_contact", "ghl_update_contact", "ghl_search_contacts",
+      "ghl_send_sms", "ghl_send_email", "ghl_get_conversations", "ghl_create_campaign",
+      "ghl_get_pipeline", "ghl_update_opportunity", "ghl_get_automations"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["ghl", "go high level", "crm", "sms", "email", "campaign", "pipeline"]
+  },
+  "metadata": {"domain": "customer-comms", "mcp": false, "custom_client": true, "function_count": 11, "description": "GoHighLevel CRM — contacts, SMS, email, campaigns, pipeline"}
+}

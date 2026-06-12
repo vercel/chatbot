@@ -1,0 +1,18 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/affy",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/marketing", "relationship": "affiliate_program"}
+    ],
+    "associated_skills": [],
+    "exposed_functions": [
+      "affy_get_offers", "affy_create_referral", "affy_track_conversion", "affy_get_earnings"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["affy", "affiliate", "referral", "commission"]
+  },
+  "metadata": {"domain": "lead-flow", "mcp": false, "custom_client": true, "function_count": 4, "description": "Affy affiliate/referral platform"}
+}

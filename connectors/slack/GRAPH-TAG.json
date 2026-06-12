@@ -1,0 +1,37 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/slack",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/billing", "relationship": "billing_alerts"},
+      {"ref": "playbooks/customer-support", "relationship": "internal_comms"},
+      {"ref": "playbooks/disputes", "relationship": "dispute_alerts"},
+      {"ref": "playbooks/reporting", "relationship": "report_delivery"},
+      {"ref": "playbooks/agent-orchestration", "relationship": "agent_comms"},
+      {"ref": "playbooks/deploy-vercel-github", "relationship": "deploy_notifications"},
+      {"ref": "playbooks/marketing", "relationship": "campaign_alerts"},
+      {"ref": "playbooks/HR", "relationship": "team_comms"}
+    ],
+    "associated_skills": [],
+    "exposed_functions": [
+      "slack_post_message", "slack_post_thread", "slack_get_channel_history", "slack_get_user_info",
+      "slack_react", "slack_update_message", "slack_search_messages", "slack_list_channels",
+      "slack_list_users", "slack_get_thread_replies", "slack_delete_message", "slack_upload_file",
+      "slack_invite_user", "slack_kick_user", "slack_set_topic", "slack_set_purpose",
+      "slack_create_channel", "slack_archive_channel", "slack_join_channel", "slack_leave_channel",
+      "slack_get_team_info", "slack_schedule_message", "slack_reminder_add", "slack_reminder_list",
+      "slack_pin_message", "slack_unpin_message", "slack_get_pins"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["slack", "message", "notify", "channel", "thread", "comms"]
+  },
+  "metadata": {
+    "domain": "customer-comms",
+    "mcp": true,
+    "custom_client": true,
+    "function_count": 27,
+    "description": "Slack workspace messaging, search, and channel management — MCP + Custom client"
+  }
+}

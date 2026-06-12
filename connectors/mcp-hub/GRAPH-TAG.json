@@ -1,0 +1,19 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/mcp-hub",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/agent-orchestration", "relationship": "protocol_bridge"}
+    ],
+    "associated_skills": [],
+    "exposed_functions": [
+      "mcp_hub_list_servers", "mcp_hub_get_server", "mcp_hub_invoke_tool", "mcp_hub_list_tools",
+      "mcp_hub_health_check"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["mcp", "protocol", "bridge", "server", "tool"]
+  },
+  "metadata": {"domain": "mcp-edits", "mcp": true, "custom_client": true, "function_count": 5, "description": "MCP Hub — protocol bridge for MCP server discovery and invocation"}
+}

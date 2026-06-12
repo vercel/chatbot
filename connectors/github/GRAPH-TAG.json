@@ -1,0 +1,26 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/github",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/deploy-vercel-github", "relationship": "source_control"},
+      {"ref": "playbooks/engineering", "relationship": "source_control"},
+      {"ref": "playbooks/agent-orchestration", "relationship": "code_handoff"}
+    ],
+    "associated_skills": [
+      {"ref": "capabilities/code-review", "relationship": "pr_review"},
+      {"ref": "capabilities/deploy-yourself", "relationship": "push_deploy"}
+    ],
+    "exposed_functions": [
+      "github_read_file", "github_write_file", "github_create_branch", "github_create_pr",
+      "github_merge_pr", "github_list_prs", "github_get_pr", "github_review_pr",
+      "github_search_code", "github_list_issues", "github_create_issue", "github_get_commit",
+      "github_list_commits", "github_get_diff", "github_get_repo", "github_fork_repo"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["github", "PR", "commit", "code review", "branch", "repo", "git"]
+  },
+  "metadata": {"domain": "mcp-edits", "mcp": false, "custom_client": true, "function_count": 16, "description": "GitHub API — repository operations, PR management, code search"}
+}

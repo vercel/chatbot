@@ -1,0 +1,7 @@
+[
+  {"ref": "connectors/base44", "version": "^1.0.0"},
+  {"ref": "connectors/slack", "version": "^1.0.0"},
+  {"ref": "connectors/wiki", "version": "^1.0.0"},
+  {"ref": "capabilities/research", "version": "^1.0.0"},
+  {"ref": "functions/billing-event-logger", "version": "^1.0.0"}
+]

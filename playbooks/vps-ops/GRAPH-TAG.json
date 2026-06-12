@@ -1,0 +1,31 @@
+{
+  "entity_type": "playbook",
+  "entity_id": "playbooks/vps-ops",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": ["playbooks/deploy-vercel-github", "playbooks/vercel-discipline"],
+    "associated_connectors": [
+      {"ref": "connectors/base44", "relationship": "health_monitoring", "strength": "secondary"},
+      {"ref": "connectors/slack", "relationship": "health_alerts", "strength": "primary"}
+    ],
+    "associated_skills": [
+      {"ref": "capabilities/deploy-yourself", "relationship": "vps_deployment"}
+    ],
+    "exposed_functions": [
+      "load_skill:playbooks/vps-ops",
+      "execute_skill:deploy_vps_change",
+      "execute_skill:vps_health_check",
+      "execute_skill:vps_incident_response"
+    ],
+    "runtime_types": ["python", "bash"],
+    "intent_tags": ["VPS", "pm2", "nginx", "Cloudflare", "server", "hostinger", "daemon", "health check"]
+  },
+  "metadata": {
+    "priority": "P1",
+    "domain": "vps-ops",
+    "routines_count": 3,
+    "auto_load": false,
+    "description": "VPS management, pm2, nginx, Cloudflare, system health"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "entity_type": "playbook",
+  "entity_id": "playbooks/customer-support",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": ["playbooks/billing", "playbooks/disputes", "playbooks/reporting"],
+    "associated_connectors": [
+      {"ref": "connectors/base44", "relationship": "customer_360_queries", "strength": "primary"},
+      {"ref": "connectors/slack", "relationship": "internal_comms", "strength": "primary"},
+      {"ref": "connectors/ghl", "relationship": "customer_messaging", "strength": "primary"},
+      {"ref": "connectors/vapi", "relationship": "haley_ai_calls", "strength": "primary"},
+      {"ref": "connectors/linear", "relationship": "ticket_tracking", "strength": "secondary"},
+      {"ref": "connectors/nmi", "relationship": "payment_check", "strength": "secondary"},
+      {"ref": "connectors/hyperswitch", "relationship": "payment_methods", "strength": "secondary"}
+    ],
+    "associated_skills": [
+      {"ref": "functions/resolve-customer-identity", "relationship": "identity_verification"},
+      {"ref": "functions/generate-ai-email", "relationship": "customer_comms"},
+      {"ref": "functions/validate-action", "relationship": "pre_execution"}
+    ],
+    "exposed_functions": [
+      "load_skill:playbooks/customer-support",
+      "execute_skill:customer_360_lookup",
+      "execute_skill:resolve_support_ticket"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["ticket", "support", "help", "issue", "complaint", "cfpb", "legal", "look up", "who is", "customer", "status", "find"]
+  },
+  "metadata": {
+    "priority": "P0",
+    "domain": "support-triage",
+    "routines_count": 2,
+    "auto_load": true,
+    "description": "Customer 360, ticket triage, escalations, communications"
+  }
+}

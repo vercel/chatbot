@@ -1,0 +1,4582 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-06-12T04:21:46.940Z",
+  "total_functions": 199,
+  "connectors": [
+    "base44",
+    "nmi",
+    "slack",
+    "hyperswitch",
+    "vapi",
+    "custom-skills"
+  ],
+  "functions": [
+    {
+      "function_name": "customer_profile_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"customer_profile_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "customer_profile_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"customer_profile_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "customer_profile_create",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"customer_profile_create\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "customer_profile_update",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"customer_profile_update\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "customer_profile_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"customer_profile_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "support_ticket_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"support_ticket_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "support_ticket_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"support_ticket_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "support_ticket_create",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"support_ticket_create\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "support_ticket_update",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"support_ticket_update\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "support_ticket_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"support_ticket_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "negative_item_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"negative_item_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "negative_item_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"negative_item_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "negative_item_create",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"negative_item_create\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "negative_item_update",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"negative_item_update\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "negative_item_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"negative_item_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "admin_notification_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"admin_notification_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "admin_notification_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"admin_notification_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "admin_notification_create",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"admin_notification_create\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "admin_notification_update",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"admin_notification_update\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "admin_notification_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"admin_notification_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_task_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_task_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_task_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_task_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_task_create",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_task_create\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_task_update",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_task_update\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_task_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_task_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "payment_log_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"payment_log_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "payment_log_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"payment_log_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "payment_log_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"payment_log_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "call_log_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"call_log_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "call_log_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"call_log_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "call_log_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"call_log_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "credit_report_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"credit_report_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "credit_report_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"credit_report_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "credit_report_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"credit_report_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "vapi_call_event_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"vapi_call_event_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "vapi_call_event_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"vapi_call_event_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "vapi_call_event_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"vapi_call_event_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "ghl_message_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"ghl_message_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "ghl_message_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"ghl_message_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "ghl_message_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"ghl_message_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "email_message_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"email_message_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "email_message_get",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"email_message_get\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "email_message_count",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"email_message_count\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "customer_360",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"customer_360\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_overview",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_overview\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_enrollments",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_enrollments\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_lead_flow",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_lead_flow\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_billing",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_billing\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_communications",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_communications\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_calls",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_calls\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_agents",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_agents\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_support",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_support\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_automations",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_automations\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_activity_feed",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_activity_feed\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_customer_360",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_customer_360\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_customer_comms",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_customer_comms\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_sync_health",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_sync_health\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_morning_pulse",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_morning_pulse\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_vapi_intelligence",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_vapi_intelligence\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "reporting_enrollment_intelligence",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"reporting_enrollment_intelligence\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "nmi_invoke",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"nmi_invoke\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "slack_invoke",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"slack_invoke\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "ghl_invoke",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"ghl_invoke\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "vapi_invoke",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"vapi_invoke\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_file_read",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_file_read\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_file_write",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_file_write\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_file_list",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_file_list\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_file_search",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_file_search\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_task_get_my_tasks",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_task_get_my_tasks\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_task_create",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_task_create\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_task_complete",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_task_complete\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_data_guard_query",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_data_guard_query\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_data_guard_session_deposit",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_data_guard_session_deposit\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "jarvis_data_guard_session_recall",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"jarvis_data_guard_session_recall\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "rolling_context_read",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"rolling_context_read\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "rolling_context_add_item",
+      "execution_signature": "execute_skill(\"connectors/base44\", \"rolling_context_add_item\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/base44",
+      "parent_skill": "connectors/base44",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "entity",
+        "query",
+        "customer",
+        "reporting",
+        "data",
+        "base44",
+        "crm",
+        "task"
+      ],
+      "category": "base44"
+    },
+    {
+      "function_name": "health_check",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"health_check\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "query_transactions",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"query_transactions\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "get_transaction",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"get_transaction\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "query_vault",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"query_vault\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "query_subscription",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"query_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "query_subscriptions_bulk",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"query_subscriptions_bulk\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "create_vault_from_token",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"create_vault_from_token\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "update_vault",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"update_vault\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "delete_card_from_vault",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"delete_card_from_vault\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "set_primary_card",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"set_primary_card\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "create_subscription",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"create_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "update_subscription",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"update_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "delete_subscription",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"delete_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "pause_subscription",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"pause_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "reactivate_subscription",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"reactivate_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "one_time_charge",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"one_time_charge\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cit_vault_sale",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cit_vault_sale\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "day_zero_auth",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"day_zero_auth\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "recover_charge",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"recover_charge\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "refund_transaction",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"refund_transaction\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cof_health_scan",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cof_health_scan\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cof_get_results",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cof_get_results\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cof_deep_inspect",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cof_deep_inspect\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cof_recover",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cof_recover\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cof_relink_sub",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cof_relink_sub\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cof_fix_mit_flags",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cof_fix_mit_flags\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cof_link_day_zero",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cof_link_day_zero\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "cof_provision_token",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"cof_provision_token\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "gv_validate_card",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"gv_validate_card\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "gv_create_vault",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"gv_create_vault\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "gv_mit_charge",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"gv_mit_charge\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "gv_cit_charge",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"gv_cit_charge\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "gv_inspect",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"gv_inspect\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "gv_full_test",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"gv_full_test\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "create_invoice",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"create_invoice\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "send_invoice",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"send_invoice\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "close_invoice",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"close_invoice\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "create_product",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"create_product\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "update_product",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"update_product\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "delete_product",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"delete_product\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "send_txt2pay",
+      "execution_signature": "execute_skill(\"connectors/nmi\", \"send_txt2pay\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/nmi",
+      "parent_skill": "connectors/nmi",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "nmi",
+        "payment",
+        "charge",
+        "refund",
+        "vault",
+        "subscription",
+        "card",
+        "recurring",
+        "golden vault"
+      ],
+      "category": "nmi"
+    },
+    {
+      "function_name": "list_channels",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"list_channels\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "get_channel",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"get_channel\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "channel_history",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"channel_history\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "thread_replies",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"thread_replies\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "search_messages",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"search_messages\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "list_users",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"list_users\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "get_user",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"get_user\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "get_user_by_email",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"get_user_by_email\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "get_reactions",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"get_reactions\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "get_channel_members",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"get_channel_members\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "get_team_info",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"get_team_info\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "get_user_presence",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"get_user_presence\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "send_message",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"send_message\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "send_thread_reply",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"send_thread_reply\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "send_dm",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"send_dm\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "add_reaction",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"add_reaction\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "remove_reaction",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"remove_reaction\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "update_message",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"update_message\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "delete_message",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"delete_message\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "set_topic",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"set_topic\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "set_purpose",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"set_purpose\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "upload_file",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"upload_file\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "schedule_message",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"schedule_message\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "invite_to_channel",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"invite_to_channel\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "kick_from_channel",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"kick_from_channel\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "bulk_send",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"bulk_send\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "bulk_react",
+      "execution_signature": "execute_skill(\"connectors/slack\", \"bulk_react\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/slack",
+      "parent_skill": "connectors/slack",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support",
+        "playbooks/disputes",
+        "playbooks/reporting",
+        "playbooks/agent-orchestration",
+        "playbooks/deploy-vercel-github",
+        "playbooks/marketing",
+        "playbooks/HR"
+      ],
+      "intent_tags": [
+        "slack",
+        "message",
+        "notify",
+        "channel",
+        "thread",
+        "comms"
+      ],
+      "category": "slack"
+    },
+    {
+      "function_name": "create_payment",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"create_payment\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "get_payment",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"get_payment\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "capture_payment",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"capture_payment\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "cancel_payment",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"cancel_payment\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "list_payments",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"list_payments\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "list_payment_methods",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"list_payment_methods\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "get_payment_method",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"get_payment_method\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "delete_payment_method",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"delete_payment_method\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "create_customer",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"create_customer\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "get_customer",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"get_customer\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "update_customer",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"update_customer\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "create_refund",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"create_refund\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "get_refund",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"get_refund\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "list_refunds",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"list_refunds\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "create_subscription",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"create_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "get_subscription",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"get_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "update_subscription",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"update_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "cancel_subscription",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"cancel_subscription\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "list_events",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"list_events\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "retry_event",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"retry_event\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "gateway_failover",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"gateway_failover\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "cof_audit",
+      "execution_signature": "execute_skill(\"connectors/hyperswitch\", \"cof_audit\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/hyperswitch",
+      "parent_skill": "connectors/hyperswitch",
+      "associated_playbooks": [
+        "playbooks/billing",
+        "playbooks/customer-support"
+      ],
+      "intent_tags": [
+        "hyperswitch",
+        "payment gateway",
+        "orchestration",
+        "routing",
+        "failover",
+        "payment methods"
+      ],
+      "category": "hyperswitch"
+    },
+    {
+      "function_name": "list_calls",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"list_calls\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "get_call",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"get_call\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "create_call",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"create_call\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "end_call",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"end_call\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "list_assistants",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"list_assistants\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "get_assistant",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"get_assistant\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "create_assistant",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"create_assistant\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "update_assistant",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"update_assistant\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "list_phone_numbers",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"list_phone_numbers\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "get_analytics_overview",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"get_analytics_overview\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "get_lead_funnel",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"get_lead_funnel\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "get_call_quality",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"get_call_quality\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "list_transfers",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"list_transfers\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "get_transfer_outcome",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"get_transfer_outcome\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "list_assistant_tools",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"list_assistant_tools\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "update_assistant_tools",
+      "execution_signature": "execute_skill(\"connectors/vapi\", \"update_assistant_tools\", args)",
+      "runtime_type": "node",
+      "parent_connector": "connectors/vapi",
+      "parent_skill": "connectors/vapi",
+      "associated_playbooks": [
+        "playbooks/customer-support",
+        "playbooks/marketing"
+      ],
+      "intent_tags": [
+        "vapi",
+        "voice",
+        "call",
+        "haley",
+        "assistant",
+        "transcript",
+        "outbound"
+      ],
+      "category": "vapi"
+    },
+    {
+      "function_name": "capability:playbook-refiner",
+      "execution_signature": "load_skill(\"skills/capabilitys/playbook-refiner\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/capabilitys/playbook-refiner",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "capability:code-review",
+      "execution_signature": "load_skill(\"skills/capabilitys/code-review\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/capabilitys/code-review",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "capability:deploy-yourself",
+      "execution_signature": "load_skill(\"skills/capabilitys/deploy-yourself\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/capabilitys/deploy-yourself",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "capability:self-coding",
+      "execution_signature": "load_skill(\"skills/capabilitys/self-coding\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/capabilitys/self-coding",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "capability:research",
+      "execution_signature": "load_skill(\"skills/capabilitys/research\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/capabilitys/research",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "capability:response-formatting",
+      "execution_signature": "load_skill(\"skills/capabilitys/response-formatting\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/capabilitys/response-formatting",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "capability:artifact-response-pattern",
+      "execution_signature": "load_skill(\"skills/capabilitys/artifact-response-pattern\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/capabilitys/artifact-response-pattern",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:billing-event-logger",
+      "execution_signature": "load_skill(\"skills/functions/billing-event-logger\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/billing-event-logger",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:cof-health-audit",
+      "execution_signature": "load_skill(\"skills/functions/cof-health-audit\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/cof-health-audit",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:calculate-refund-eligibility",
+      "execution_signature": "load_skill(\"skills/functions/calculate-refund-eligibility\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/calculate-refund-eligibility",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:validate-action",
+      "execution_signature": "load_skill(\"skills/functions/validate-action\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/validate-action",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:resolve-customer-identity",
+      "execution_signature": "load_skill(\"skills/functions/resolve-customer-identity\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/resolve-customer-identity",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:generate-ai-email",
+      "execution_signature": "load_skill(\"skills/functions/generate-ai-email\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/generate-ai-email",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:parse-fcra-credit-report",
+      "execution_signature": "load_skill(\"skills/functions/parse-fcra-credit-report\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/parse-fcra-credit-report",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:extract-customer-pii",
+      "execution_signature": "load_skill(\"skills/functions/extract-customer-pii\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/extract-customer-pii",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:build-customer-vde",
+      "execution_signature": "load_skill(\"skills/functions/build-customer-vde\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/build-customer-vde",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    },
+    {
+      "function_name": "function:execute-with-post-verify",
+      "execution_signature": "load_skill(\"skills/functions/execute-with-post-verify\")",
+      "runtime_type": "node",
+      "parent_connector": "connectors/custom-skills",
+      "parent_skill": "skills/functions/execute-with-post-verify",
+      "associated_playbooks": [],
+      "intent_tags": [],
+      "category": "custom-skills"
+    }
+  ]
+}

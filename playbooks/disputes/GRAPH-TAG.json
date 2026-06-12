@@ -1,0 +1,33 @@
+{
+  "entity_type": "playbook",
+  "entity_id": "playbooks/disputes",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": ["playbooks/customer-support", "playbooks/billing"],
+    "associated_connectors": [
+      {"ref": "connectors/forth", "relationship": "dispute_engine", "strength": "primary"},
+      {"ref": "connectors/base44", "relationship": "entity_persistence", "strength": "primary"},
+      {"ref": "connectors/slack", "relationship": "dispute_alerts", "strength": "secondary"}
+    ],
+    "associated_skills": [
+      {"ref": "functions/parse-fcra-credit-report", "relationship": "report_parsing"},
+      {"ref": "functions/validate-action", "relationship": "pre_execution"},
+      {"ref": "functions/resolve-customer-identity", "relationship": "identity_check"}
+    ],
+    "exposed_functions": [
+      "load_skill:playbooks/disputes",
+      "execute_skill:start_dispute_round",
+      "execute_skill:track_dispute_response"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["dispute", "credit report", "fcra", "bureau", "equifax", "experian", "transunion", "deletion", "investigation", "round 2"]
+  },
+  "metadata": {
+    "priority": "P0",
+    "domain": "credit-disputes",
+    "routines_count": 2,
+    "auto_load": true,
+    "description": "Credit disputes, FCRA letters, dispute rounds, evidence submission"
+  }
+}

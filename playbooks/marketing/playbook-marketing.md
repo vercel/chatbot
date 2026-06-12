@@ -1,27 +1,96 @@
 ---
 playbook: marketing
-version: 0.1.0
+version: 1.0.0
+domain: marketing
 scope: domain
 auto_load: false
-headline: marketing domain playbook for NewLeaf Financial
+headline: Campaigns, lead nurture, content strategy and marketing operations
+priority: P2
+intent_tags:
+  - marketing
+  - campaign
+  - lead
+  - email
+  - SMS
+  - nurture
+  - content
+associated_connectors:
+  - ghl
+  - slack
+  - vapi
+associated_skills:
+  - capabilities/response-formatting
+  - functions/generate-ai-email
+associated_functions:
+  - generate-ai-email
+  - reporting_enrollments
+  - reporting_lead_flow
+routines_count: 2
 ---
 
-# marketing Domain Playbook
+# Marketing Domain Playbook
 
 ## Operational Knowledge
-(To be populated from existing procedures)
+- **CRM:** GoHighLevel (GHL) for campaigns, pipelines, automation sequences
+- **Email:** Resend for transactional, GHL for marketing campaigns
+- **SMS:** GHL native SMS with opt-in tracking
+- **Voice:** VAPI AI (Haley) for inbound lead qualification
+- **Lead Sources:** Web forms, referrals, paid channels, organic
+- **Pipeline Stages:** New Lead → Contacted → Qualified → Enrolled → Active
+- **Key Metric:** 1,783 Haley leads processed, conversion to enrolled
 
 ## Business Context
-(To be populated)
+- Marketing funnel feeds into customer-enrollment domain
+- GHL automations trigger at pipeline stage changes
+- Lead scoring based on engagement signals
+- Campaign performance tracked via Base44 reportingHub
+- Content: educational emails, SMS reminders, newsletter
 
-## Anti-Patterns
-- Follow root playbook-newleaf.md anti-patterns
+## Anti-Patterns (DO NOT DO)
+- DON'T send marketing messages without verified opt-in (TCPA compliance)
+- DON'T blast all leads at once — use GHL sequences with spacing
+- DON'T mix transactional and marketing emails in same thread
+- DON'T send to customers who requested do-not-contact
+- DON'T use scare tactics or misleading claims
+- DON'T ignore unsubscribe requests (must process within 10 business days)
 
 ## Safeguards
-- Apply org-wide safeguards from playbook-newleaf.md
+1. Before any campaign: verify opt-in status for all recipients
+2. Before SMS blast: check timezone (no messages before 8am or after 9pm local)
+3. After campaign: track delivery rate, open rate, response rate
+4. Bounce handling: remove hard bounces, investigate soft bounces >3
+5. Unsubscribe: process immediately, confirm via email
+6. Never send to customers marked do_not_contact in CustomerProfile
+7. A/B test subject lines for major campaigns
 
 ## Routines
-(To be populated)
+
+### Routine: 'Create Email Campaign'
+Trigger words: 'send campaign', 'email blast', 'newsletter',
+              'marketing email', 'draft campaign'
+
+Mandatory steps:
+1. Define campaign goal + target audience from CustomerProfile
+2. Draft email content using generate-ai-email function (brand voice)
+3. Verify opt-in status for all recipients
+4. Set up GHL campaign with proper tracking
+5. Schedule send time (respect timezone rules)
+6. Test send to internal address first
+7. After send: monitor delivery + open rates
+8. Report campaign results to #jarvis-admin
+
+### Routine: 'Lead Flow Analysis'
+Trigger words: 'lead report', 'conversion rate', 'lead funnel',
+              'pipeline status', 'how are leads doing'
+
+Mandatory steps:
+1. Run reportingHub lead_flow for pipeline overview
+2. Run reportingHub enrollment_intelligence for conversion metrics
+3. Break down by lead source
+4. Identify bottlenecks: stages with high drop-off
+5. Calculate time-to-conversion for each stage
+6. Report with recommendations for pipeline optimization
 
 ## Refinement Notes
 - 2026-06-11: Skeleton created during NEPTUNE-CLEAR-STRUCTURE CS1 migration.
+- 2026-06-12: U2.4 enriched with campaign and lead flow routines.

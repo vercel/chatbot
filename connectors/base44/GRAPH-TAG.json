@@ -1,0 +1,55 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/base44",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/billing", "relationship": "entity_persistence"},
+      {"ref": "playbooks/customer-support", "relationship": "customer_360"},
+      {"ref": "playbooks/disputes", "relationship": "entity_persistence"},
+      {"ref": "playbooks/reporting", "relationship": "data_source"},
+      {"ref": "playbooks/agent-orchestration", "relationship": "task_management"},
+      {"ref": "playbooks/HR", "relationship": "task_tracking"}
+    ],
+    "associated_skills": [
+      {"ref": "functions/billing-event-logger", "relationship": "event_writing"},
+      {"ref": "functions/cof-health-audit", "relationship": "health_check"},
+      {"ref": "functions/resolve-customer-identity", "relationship": "identity_resolution"},
+      {"ref": "functions/build-customer-vde", "relationship": "vd_creation"},
+      {"ref": "functions/calculate-refund-eligibility", "relationship": "refund_logic"}
+    ],
+    "exposed_functions": [
+      "customer_profile_query", "customer_profile_get", "customer_profile_create", "customer_profile_update", "customer_profile_count",
+      "support_ticket_query", "support_ticket_get", "support_ticket_create", "support_ticket_update", "support_ticket_count",
+      "negative_item_query", "negative_item_get", "negative_item_create", "negative_item_update", "negative_item_count",
+      "admin_notification_query", "admin_notification_get", "admin_notification_create", "admin_notification_update", "admin_notification_count",
+      "jarvis_task_query", "jarvis_task_get", "jarvis_task_create", "jarvis_task_update", "jarvis_task_count",
+      "payment_log_query", "payment_log_get", "payment_log_count",
+      "call_log_query", "call_log_get", "call_log_count",
+      "credit_report_query", "credit_report_get", "credit_report_count",
+      "vapi_call_event_query", "vapi_call_event_get", "vapi_call_event_count",
+      "ghl_message_query", "ghl_message_get", "ghl_message_count",
+      "email_message_query", "email_message_get", "email_message_count",
+      "customer_360",
+      "reporting_overview", "reporting_enrollments", "reporting_lead_flow", "reporting_billing", "reporting_communications",
+      "reporting_calls", "reporting_agents", "reporting_support", "reporting_automations", "reporting_activity_feed",
+      "reporting_customer_360", "reporting_customer_comms", "reporting_sync_health", "reporting_morning_pulse",
+      "reporting_vapi_intelligence", "reporting_enrollment_intelligence",
+      "nmi_invoke", "slack_invoke", "ghl_invoke", "vapi_invoke",
+      "jarvis_file_read", "jarvis_file_write", "jarvis_file_list", "jarvis_file_search",
+      "jarvis_task_get_my_tasks", "jarvis_task_create", "jarvis_task_complete",
+      "jarvis_data_guard_query", "jarvis_data_guard_session_deposit", "jarvis_data_guard_session_recall",
+      "rolling_context_read", "rolling_context_add_item"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["entity", "query", "customer", "reporting", "data", "base44", "crm", "task"]
+  },
+  "metadata": {
+    "domain": "customer-enrollment",
+    "mcp": false,
+    "custom_client": true,
+    "function_count": 63,
+    "description": "Entity queries, customer 360, reporting hub, function invocation — the central CRM connector"
+  }
+}

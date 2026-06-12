@@ -1,0 +1,5 @@
+[
+  {"ref": "connectors/base44", "version": "^1.0.0"},
+  {"ref": "connectors/slack", "version": "^1.0.0"},
+  {"ref": "capabilities/deploy-yourself", "version": "^1.0.0"}
+]

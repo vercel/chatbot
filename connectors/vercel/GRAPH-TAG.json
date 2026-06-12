@@ -1,0 +1,26 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/vercel",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/deploy-vercel-github", "relationship": "deployment"},
+      {"ref": "playbooks/engineering", "relationship": "deployment"},
+      {"ref": "playbooks/vercel-discipline", "relationship": "deployment_platform"},
+      {"ref": "playbooks/agent-orchestration", "relationship": "deploy_verification"}
+    ],
+    "associated_skills": [
+      {"ref": "capabilities/deploy-yourself", "relationship": "self_deployment"}
+    ],
+    "exposed_functions": [
+      "vercel_list_deployments", "vercel_get_deployment", "vercel_create_deployment",
+      "vercel_cancel_deployment", "vercel_get_deployment_events", "vercel_list_projects",
+      "vercel_get_project", "vercel_get_env", "vercel_create_env", "vercel_delete_env",
+      "vercel_list_domains", "vercel_add_domain", "vercel_get_function_logs"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["vercel", "deploy", "project", "domain", "env", "logs"]
+  },
+  "metadata": {"domain": "mcp-edits", "mcp": false, "custom_client": true, "function_count": 13, "description": "Vercel REST API — deployments, projects, env vars, domains, logs"}
+}

@@ -1,0 +1,41 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/nmi",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/billing", "relationship": "payment_processing"},
+      {"ref": "playbooks/customer-support", "relationship": "payment_check"}
+    ],
+    "associated_skills": [
+      {"ref": "functions/cof-health-audit", "relationship": "compliance_check"},
+      {"ref": "functions/calculate-refund-eligibility", "relationship": "refund_validation"},
+      {"ref": "functions/billing-event-logger", "relationship": "transaction_logging"}
+    ],
+    "exposed_functions": [
+      "nmi_charge", "nmi_refund", "nmi_void", "nmi_vault_create", "nmi_vault_update",
+      "nmi_vault_delete", "nmi_vault_query", "nmi_customer_vault_query",
+      "nmi_subscription_create", "nmi_subscription_update", "nmi_subscription_cancel", "nmi_subscription_query",
+      "nmi_transaction_query", "nmi_transaction_void", "nmi_transaction_refund",
+      "nmi_validate_card", "nmi_tokenize_card", "nmi_process_payment",
+      "nmi_add_subscription", "nmi_update_subscription", "nmi_delete_subscription",
+      "nmi_process_recurring", "nmi_get_recurring_plans", "nmi_send_payment_link",
+      "nmi_check_health", "nmi_audit_vault", "nmi_check_cof_compliance",
+      "nmi_smart_retry_enqueue", "nmi_smart_retry_check", "nmi_smart_retry_cancel",
+      "nmi_recovery_check", "nmi_recovery_process", "nmi_recovery_schedule",
+      "nmi_golden_vault_health", "nmi_dpan_generate", "nmi_cit_consent_check",
+      "nmi_invoice_create", "nmi_invoice_send", "nmi_invoice_query",
+      "nmi_product_create", "nmi_product_query"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["nmi", "payment", "charge", "refund", "vault", "subscription", "card", "recurring", "golden vault"]
+  },
+  "metadata": {
+    "domain": "billing-flow",
+    "mcp": false,
+    "custom_client": true,
+    "function_count": 41,
+    "description": "NMI payment gateway — vault, subscriptions, CoF compliance, Golden Vault, smart retry"
+  }
+}

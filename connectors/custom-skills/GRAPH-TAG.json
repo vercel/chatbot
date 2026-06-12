@@ -1,0 +1,36 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/custom-skills",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/agent-orchestration", "relationship": "self_improvement"},
+      {"ref": "playbooks/engineering", "relationship": "quality_gate"},
+      {"ref": "playbooks/billing", "relationship": "compliance"},
+      {"ref": "playbooks/disputes", "relationship": "credit_parsing"},
+      {"ref": "playbooks/customer-support", "relationship": "identity_verification"},
+      {"ref": "playbooks/marketing", "relationship": "content_generation"},
+      {"ref": "playbooks/deploy-vercel-github", "relationship": "self_deployment"}
+    ],
+    "associated_skills": [],
+    "exposed_functions": [
+      "capability:playbook-refiner", "capability:code-review", "capability:deploy-yourself",
+      "capability:self-coding", "capability:research", "capability:response-formatting",
+      "capability:artifact-response-pattern",
+      "function:billing-event-logger", "function:cof-health-audit", "function:calculate-refund-eligibility",
+      "function:validate-action", "function:resolve-customer-identity", "function:generate-ai-email",
+      "function:parse-fcra-credit-report", "function:extract-customer-pii", "function:build-customer-vde",
+      "function:execute-with-post-verify"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["capability", "skill", "internal", "pure", "non-api"]
+  },
+  "metadata": {
+    "domain": "agent-orchestration",
+    "mcp": false,
+    "custom_client": false,
+    "function_count": 17,
+    "description": "Pseudo-connector for pure non-API capabilities — 7 capabilities + 10 functions"
+  }
+}

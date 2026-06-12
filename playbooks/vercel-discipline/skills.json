@@ -1,0 +1,6 @@
+[
+  {"ref": "connectors/vercel", "version": "^1.0.0"},
+  {"ref": "connectors/github", "version": "^1.0.0"},
+  {"ref": "capabilities/deploy-yourself", "version": "^1.0.0"},
+  {"ref": "capabilities/code-review", "version": "^1.0.0"}
+]

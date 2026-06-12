@@ -1,0 +1,32 @@
+{
+  "entity_type": "playbook",
+  "entity_id": "playbooks/vercel-discipline",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": ["playbooks/deploy-vercel-github", "playbooks/engineering", "playbooks/vps-ops"],
+    "associated_connectors": [
+      {"ref": "connectors/vercel", "relationship": "deployment_platform", "strength": "primary"},
+      {"ref": "connectors/github", "relationship": "source_integration", "strength": "primary"}
+    ],
+    "associated_skills": [
+      {"ref": "capabilities/deploy-yourself", "relationship": "self_deployment"},
+      {"ref": "capabilities/code-review", "relationship": "quality_gate"}
+    ],
+    "exposed_functions": [
+      "load_skill:playbooks/vercel-discipline",
+      "execute_skill:verify_deployment",
+      "execute_skill:rollback_deployment",
+      "execute_skill:audit_environment_variables"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": ["vercel", "deploy", "environment variables", "build", "edge", "serverless"]
+  },
+  "metadata": {
+    "priority": "P1",
+    "domain": "mcp-edits",
+    "routines_count": 3,
+    "auto_load": true,
+    "description": "Vercel deployment standards, security patterns, framework discipline"
+  }
+}
