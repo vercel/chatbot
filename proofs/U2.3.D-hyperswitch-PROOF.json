@@ -1,1 +1,31 @@
-{"phase":"U2.3.D","connector":"hyperswitch","actions":22,"target":20,"met":true,"commit":"e092a72","files":["connectors/hyperswitch/client.ts","connectors/hyperswitch/mcp-config.json","connectors/hyperswitch/mcp-guide.md","connectors/hyperswitch/docs/api-reference.md","connectors/hyperswitch/docs/connector-routing.md"],"smoke_tests":[{"action":"list_payments","curl":"curl -sX POST 'https://neptune-chat.vercel.app/api/skill/hyperswitch-connector/list_payments' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -H 'Content-Type: application/json' -d '{\"args\":{\"limit\":1}}'","expected":200}],"secrets":"secrets.vps.toolsBridgeUrl (Hyperswitch key on VPS)","mcp_coverage":17,"custom_actions":5,"routing_to_nmi":true}
+{
+  "phase": "U2.3.D",
+  "title": "HYPERSWITCH COMPREHENSIVE CONNECTOR PACK",
+  "date": "2026-06-12",
+  "connector": "hyperswitch",
+  "commit": "e092a72",
+  "branch": "main",
+  "repository": "abhiswami2121/neptune-chat",
+  "actions": {
+    "total": 22,
+    "target": 20,
+    "met": true,
+    "excess": 2,
+    "breakdown": {
+      "payments": {"count": 5, "list": ["create_payment", "get_payment", "capture_payment", "cancel_payment", "list_payments"]},
+      "payment_methods": {"count": 3, "list": ["list_payment_methods", "get_payment_method", "delete_payment_method"]},
+      "customers": {"count": 3, "list": ["create_customer", "get_customer", "update_customer"]},
+      "refunds": {"count": 3, "list": ["create_refund", "get_refund", "list_refunds"]},
+      "subscriptions": {"count": 4, "list": ["create_subscription", "get_subscription", "update_subscription", "cancel_subscription"]},
+      "webhooks": {"count": 2, "list": ["list_events", "retry_event"]},
+      "cof": {"count": 2, "list": ["gateway_failover", "cof_audit"]}
+    }
+  },
+  "mcp": {"server": "@juspay/hyperswitch-mcp", "coverage": 17, "custom_only": 5, "mcp_config": "connectors/hyperswitch/mcp-config.json", "mcp_guide": "connectors/hyperswitch/mcp-guide.md"},
+  "docs": {"connector_routing": {"path": "connectors/hyperswitch/docs/connector-routing.md", "covers": ["Hyperswitch→NMI routing flow", "connector config", "gateway failover logic", "webhook events", "CoF audit chain"]}},
+  "files_created": ["connectors/hyperswitch/client.ts (250+ lines, 22 action router)", "connectors/hyperswitch/mcp-config.json", "connectors/hyperswitch/mcp-guide.md", "connectors/hyperswitch/docs/api-reference.md", "connectors/hyperswitch/docs/connector-routing.md"],
+  "files_preserved": ["connectors/hyperswitch/SKILL.md", "connectors/hyperswitch/manifest.ts", "connectors/hyperswitch/tools/* (3 legacy tools)", "connectors/hyperswitch/PLAYBOOK.md"],
+  "architecture": {"pattern": "VPS Bridge proxy + MCP hybrid", "bridge": "POST ${VPS_TOOLS_BRIDGE_URL}/tool/hyperswitch/{action}", "routing": "Hyperswitch→NMI Connector→NMI Gateway", "config": "secrets.vps.toolsBridgeUrl (NOT process.env)"},
+  "smoke_tests": [{"action": "list_payments", "curl": "curl -sX POST 'https://neptune-chat.vercel.app/api/skill/hyperswitch-connector/list_payments' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -d '{\"args\":{\"limit\":1}}'", "expected": 200}],
+  "verification": {"tsc_noEmit": "0 errors", "next_build": "PASS"}
+}

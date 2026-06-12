@@ -1,1 +1,29 @@
-{"phase":"U2.3.E","connector":"vapi","actions":16,"target":15,"met":true,"commit":"31c9cdb","files":["connectors/vapi/client.ts","connectors/vapi/docs/api-reference.md","connectors/vapi/docs/lead-flow-funnel.md"],"smoke_tests":[{"action":"list_assistants","curl":"curl -sX POST 'https://neptune-chat.vercel.app/api/skill/vapi-connector/list_assistants' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -H 'Content-Type: application/json' -d '{\"args\":{}}'","expected":200}],"secrets":"secrets.vapi.privateKey (Vapi REST API direct)","haley_v3_funnel":true,"pattern_a_preserved":true}
+{
+  "phase": "U2.3.E",
+  "title": "VAPI COMPREHENSIVE CONNECTOR PACK",
+  "date": "2026-06-12",
+  "connector": "vapi",
+  "commit": "31c9cdb",
+  "branch": "main",
+  "repository": "abhiswami2121/neptune-chat",
+  "actions": {
+    "total": 16,
+    "target": 15,
+    "met": true,
+    "excess": 1,
+    "breakdown": {
+      "calls": {"count": 4, "list": ["list_calls", "get_call", "create_call", "end_call"]},
+      "assistants": {"count": 4, "list": ["list_assistants", "get_assistant", "create_assistant", "update_assistant"]},
+      "phone_numbers": {"count": 1, "list": ["list_phone_numbers"]},
+      "analytics": {"count": 3, "list": ["get_analytics_overview", "get_lead_funnel", "get_call_quality"]},
+      "transfers": {"count": 2, "list": ["list_transfers", "get_transfer_outcome"]},
+      "tools": {"count": 2, "list": ["list_assistant_tools", "update_assistant_tools"]}
+    }
+  },
+  "docs": {"lead_flow_funnel": {"path": "connectors/vapi/docs/lead-flow-funnel.md", "assistant": "Haley v3", "covers": ["funnel stages (6 stages)", "12 call outcome categories", "assistant configuration", "analytics metrics", "guardrails", "integration with Base44/NMI/Slack"]}},
+  "files_created": ["connectors/vapi/client.ts (270+ lines, 16 action router)", "connectors/vapi/docs/api-reference.md", "connectors/vapi/docs/lead-flow-funnel.md"],
+  "files_preserved": ["connectors/vapi/SKILL.md", "connectors/vapi/manifest.ts", "connectors/vapi/schema.ts"],
+  "architecture": {"pattern": "Direct REST API (Vapi has its own API key)", "base_url": "https://api.vapi.ai", "auth": "Bearer VAPI_PRIVATE_KEY", "config": "secrets.vapi.privateKey (typed, NOT process.env)", "note": "VAPI is the only connector that calls its API directly (not through VPS bridge)"},
+  "smoke_tests": [{"action": "list_assistants", "curl": "curl -sX POST 'https://neptune-chat.vercel.app/api/skill/vapi-connector/list_assistants' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -d '{\"args\":{}}'", "expected": 200}],
+  "verification": {"tsc_noEmit": "0 errors", "next_build": "PASS", "existing_empty_tools_fixed": true}
+}

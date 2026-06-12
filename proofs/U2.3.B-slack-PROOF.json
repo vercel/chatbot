@@ -1,1 +1,69 @@
-{"phase":"U2.3.B","connector":"slack","actions":27,"target":25,"met":true,"commit":"e728419","files":["connectors/slack/client.ts","connectors/slack/mcp-config.json","connectors/slack/mcp-guide.md","connectors/slack/docs/api-reference.md","connectors/slack/docs/changelog.md"],"smoke_tests":[{"action":"list_channels","curl":"curl -sX POST 'https://neptune-chat.vercel.app/api/skill/slack-connector/list_channels' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -H 'Content-Type: application/json' -d '{\"args\":{\"limit\":5}}'","expected":200},{"action":"send_message","curl":"curl -sX POST 'https://neptune-chat.vercel.app/api/skill/slack-connector/send_message' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -H 'Content-Type: application/json' -d '{\"args\":{\"channel\":\"#jarvis-admin\",\"text\":\"U2.3.B smoke test\"}}'","expected":200}],"secrets":"secrets.slack.botToken","mcp_coverage":16,"custom_actions":11,"pattern_a_preserved":true}
+{
+  "phase": "U2.3.B",
+  "title": "SLACK COMPREHENSIVE CONNECTOR PACK",
+  "date": "2026-06-12",
+  "connector": "slack",
+  "commit": "e728419",
+  "branch": "main",
+  "repository": "abhiswami2121/neptune-chat",
+  "actions": {
+    "total": 27,
+    "target": 25,
+    "met": true,
+    "excess": 2,
+    "breakdown": {
+      "read": {
+        "count": 12,
+        "list": ["list_channels", "get_channel", "channel_history", "thread_replies", "search_messages", "list_users", "get_user", "get_user_by_email", "get_reactions", "get_channel_members", "get_team_info", "get_user_presence"]
+      },
+      "write": {
+        "count": 13,
+        "list": ["send_message", "send_thread_reply", "send_dm", "add_reaction", "remove_reaction", "update_message", "delete_message", "set_topic", "set_purpose", "upload_file", "schedule_message", "invite_to_channel", "kick_from_channel"]
+      },
+      "bulk": {
+        "count": 2,
+        "list": ["bulk_send", "bulk_react"]
+      }
+    }
+  },
+  "mcp": {
+    "server": "@modelcontextprotocol/server-slack",
+    "coverage": 16,
+    "custom_only": 11,
+    "mcp_config": "connectors/slack/mcp-config.json",
+    "mcp_guide": "connectors/slack/mcp-guide.md"
+  },
+  "files_created": [
+    "connectors/slack/client.ts (320+ lines, 27 action router)",
+    "connectors/slack/mcp-config.json (official Slack MCP server config)",
+    "connectors/slack/mcp-guide.md (MCP + custom client hybrid guide)",
+    "connectors/slack/docs/api-reference.md (full action reference)",
+    "connectors/slack/docs/changelog.md (watched changelog)"
+  ],
+  "files_preserved": [
+    "connectors/slack/SKILL.md",
+    "connectors/slack/manifest.ts",
+    "connectors/slack/tools/* (5 legacy tools)",
+    "connectors/slack/PLAYBOOK.md"
+  ],
+  "architecture": {
+    "pattern": "MCP + Custom Client hybrid",
+    "sdk": "@slack/web-api v7.16.0+",
+    "auth": "Bearer SLACK_BOT_TOKEN",
+    "config": "secrets.slack.botToken (typed, NOT process.env)"
+  },
+  "smoke_tests": [
+    {
+      "action": "list_channels",
+      "curl": "curl -s -X POST 'https://neptune-chat.vercel.app/api/skill/slack-connector/list_channels' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -H 'Content-Type: application/json' -d '{\"args\":{\"limit\":5}}'",
+      "expected_status": 200
+    },
+    {
+      "action": "send_message",
+      "curl": "curl -s -X POST 'https://neptune-chat.vercel.app/api/skill/slack-connector/send_message' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -H 'Content-Type: application/json' -d '{\"args\":{\"channel\":\"#jarvis-admin\",\"text\":\"U2.3.B smoke test\"}}'",
+      "expected_status": 200
+    }
+  ],
+  "api_route": "POST /api/skill/slack-connector/{action} → connectors/slack/client.ts → execute({action, args})",
+  "verification": {"tsc_noEmit": "0 errors", "next_build": "PASS", "git_push": "main→origin/main"}
+}

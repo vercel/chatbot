@@ -1,1 +1,44 @@
-{"phase":"U2.3.C","connector":"nmi","actions":41,"target":30,"met":true,"commit":"0b0b85a","files":["connectors/nmi/client.ts","connectors/nmi/docs/api-reference.md","connectors/nmi/docs/cof-compliance.md","connectors/nmi/docs/golden-vault-flow.md"],"smoke_tests":[{"action":"health_check","curl":"curl -sX POST 'https://neptune-chat.vercel.app/api/skill/nmi-connector/health_check' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -H 'Content-Type: application/json' -d '{\"args\":{}}'","expected":200},{"action":"query_subscriptions_bulk","curl":"curl -sX POST 'https://neptune-chat.vercel.app/api/skill/nmi-connector/query_subscriptions_bulk' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -H 'Content-Type: application/json' -d '{\"args\":{\"result_limit\":5}}'","expected":200}],"secrets":"secrets.vps.toolsBridgeUrl (NMI key on VPS)","cof_compliance_locked":"cardinal 6a1f118b","golden_vault_documented":true}
+{
+  "phase": "U2.3.C",
+  "title": "NMI COMPREHENSIVE CONNECTOR PACK",
+  "date": "2026-06-12",
+  "connector": "nmi",
+  "commit": "0b0b85a",
+  "branch": "main",
+  "repository": "abhiswami2121/neptune-chat",
+  "actions": {
+    "total": 41,
+    "target": 30,
+    "met": true,
+    "excess": 11,
+    "breakdown": {
+      "read": {"count": 6, "list": ["health_check", "query_transactions", "get_transaction", "query_vault", "query_subscription", "query_subscriptions_bulk"]},
+      "vault": {"count": 4, "list": ["create_vault_from_token", "update_vault", "delete_card_from_vault", "set_primary_card"]},
+      "subscriptions": {"count": 5, "list": ["create_subscription", "update_subscription", "delete_subscription", "pause_subscription", "reactivate_subscription"]},
+      "charges": {"count": 4, "list": ["one_time_charge", "cit_vault_sale", "day_zero_auth", "recover_charge"]},
+      "refunds": {"count": 1, "list": ["refund_transaction"]},
+      "cof": {"count": 8, "list": ["cof_health_scan", "cof_get_results", "cof_deep_inspect", "cof_recover", "cof_relink_sub", "cof_fix_mit_flags", "cof_link_day_zero", "cof_provision_token"]},
+      "golden_vault": {"count": 6, "list": ["gv_validate_card", "gv_create_vault", "gv_mit_charge", "gv_cit_charge", "gv_inspect", "gv_full_test"]},
+      "invoicing": {"count": 3, "list": ["create_invoice", "send_invoice", "close_invoice"]},
+      "products": {"count": 3, "list": ["create_product", "update_product", "delete_product"]},
+      "txt2pay": {"count": 1, "list": ["send_txt2pay"]}
+    }
+  },
+  "docs": {
+    "cof_compliance": {"path": "connectors/nmi/docs/cof-compliance.md", "locked_by": "cardinal 6a1f118b", "covers": ["consent model (CIT→MIT)", "CoF health dimensions", "recovery flow", "banned operations", "NMI CVV 225 incident"]},
+    "golden_vault_flow": {"path": "connectors/nmi/docs/golden-vault-flow.md", "covers": ["architecture diagram", "7-step lifecycle", "API parameters", "production guardrails", "recovery wizard flow"]}
+  },
+  "files_created": [
+    "connectors/nmi/client.ts (300+ lines, 41 action router)",
+    "connectors/nmi/docs/api-reference.md",
+    "connectors/nmi/docs/cof-compliance.md",
+    "connectors/nmi/docs/golden-vault-flow.md"
+  ],
+  "files_preserved": ["connectors/nmi/SKILL.md", "connectors/nmi/manifest.ts", "connectors/nmi/tools/* (4 legacy tools)", "connectors/nmi/PLAYBOOK.md"],
+  "architecture": {"pattern": "VPS Bridge proxy (NMI key never leaves VPS)", "bridge": "POST ${VPS_TOOLS_BRIDGE_URL}/tool/nmi/{action}", "auth": "Bearer BASE44_API_KEY", "config": "secrets.vps.toolsBridgeUrl (NOT process.env)", "no_public_mcp": true},
+  "smoke_tests": [
+    {"action": "health_check", "curl": "curl -sX POST 'https://neptune-chat.vercel.app/api/skill/nmi-connector/health_check' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -d '{\"args\":{}}'", "expected": 200},
+    {"action": "query_subscriptions_bulk", "curl": "curl -sX POST 'https://neptune-chat.vercel.app/api/skill/nmi-connector/query_subscriptions_bulk' -H 'Authorization: Bearer $NEPTUNE_INTERNAL_TOKEN' -d '{\"args\":{\"result_limit\":5}}'", "expected": 200}
+  ],
+  "verification": {"tsc_noEmit": "0 errors", "next_build": "PASS"}
+}
