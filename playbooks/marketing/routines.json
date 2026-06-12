@@ -1,0 +1,17 @@
+{
+  "domain": "marketing",
+  "priority": "P2",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "routines": [
+    {
+      "name": "Campaign Performance Report",
+      "trigger_keywords": ["campaign roi", "conversion rate", "how is campaign"],
+      "steps": [
+        {"action": "ghl.campaign.list", "description": "List active campaigns"},
+        {"action": "ghl.analytics.campaign", "input": "{campaignId}", "description": "Performance metrics"},
+        {"action": "ghl.analytics.lead_source", "input": "{campaignId}", "description": "Attribution report"}
+      ]
+    }
+  ]
+}

@@ -106,7 +106,21 @@ Mandatory steps:
 6. If any system is DOWN: create admin notification
 7. Post health dashboard to #jarvis-admin
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `ghl` | 35 | `connectors/neptune/skills/ghl/` | Campaign analytics, pipeline reporting |
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `compute-mrr` | `connectors/neptune/functions/compute-mrr.ts` | Monthly Recurring Revenue calculation from subscriptions |
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track report generation frequency and errors |
+
 ## Refinement Notes
 - 2026-06-11: Freshcaller was DOWN (19h no sync) — sync health monitoring now mandatory.
 - 2026-06-11: Slack sync was writing 0 records — requires investigation.
 - 2026-06-12: Morning Pulse routine formalized with 8-step procedure.
+- 2026-06-12: Phase 8 — compute-mrr provides server-side MRR calculation from payment records.

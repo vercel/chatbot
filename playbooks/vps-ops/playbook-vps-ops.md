@@ -111,7 +111,15 @@ Mandatory steps:
 9. If unrecoverable: revert to last known good backup, restart
 10. Post incident report to #jarvis-admin
 
+## Custom Skills (under connectors/neptune)
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track VPS operation success/failure rates and durations |
+
 ## Refinement Notes
 - 2026-06-11: cardinal 6a153d63 established after session c0e7413d17dd died at 82% during pm2 reload.
 - 2026-06-11: Deferred reload via `at` command is the only safe VPS update mechanism.
 - 2026-06-12: Added incident response routine for VPS outage scenarios.
+- 2026-06-12: Phase 8 — usage-telemetry tracks VPS operation patterns for anomaly detection.

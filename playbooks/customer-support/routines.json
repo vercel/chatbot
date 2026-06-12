@@ -1,0 +1,37 @@
+{
+  "domain": "customer-support",
+  "priority": "P0",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "routines": [
+    {
+      "name": "Customer 360 Lookup",
+      "trigger_keywords": ["customer 360", "look up", "who is", "check on", "pull up", "find customer"],
+      "steps": [
+        {"action": "base44.customer360", "input": "{customerId|email|phone}", "description": "Full cross-system dossier"},
+        {"action": "base44.query_warehouse", "table": "slack_messages", "description": "Communication history"},
+        {"action": "base44.query_warehouse", "table": "support_tickets", "description": "Ticket history"}
+      ]
+    },
+    {
+      "name": "Triage Support Ticket",
+      "trigger_keywords": ["triage", "classify", "route", "assign ticket"],
+      "steps": [
+        {"action": "classify_inbound", "input": "{ticket_content}", "description": "Determine category + priority"},
+        {"action": "base44.b44_update", "entity": "SupportTicket", "description": "Set category, priority, SLA timer"},
+        {"action": "route_to_agent", "input": "{category, priority}", "description": "Round-robin to available agent"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Notify assigned agent"}
+      ]
+    },
+    {
+      "name": "Chargeback Risk Escalation",
+      "trigger_keywords": ["chargeback", "unauthorized", "didn't authorize", "bank shut down"],
+      "steps": [
+        {"action": "classify_inbound", "input": "{transcript}", "description": "Detect chargeback language"},
+        {"action": "base44.b44_update", "entity": "SupportTicket", "priority": "CRITICAL", "description": "P0 escalation"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Immediate admin notification"},
+        {"action": "handoff", "domain": "disputes", "description": "Route to credit-disputes domain"}
+      ]
+    }
+  ]
+}

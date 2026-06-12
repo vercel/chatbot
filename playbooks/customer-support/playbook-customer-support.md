@@ -81,6 +81,21 @@ Mandatory steps:
 6. Post resolution, update ticket status
 7. Notify customer via email/SMS per their channel preference
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `ghl` | 35 | `connectors/neptune/skills/ghl/` | SMS/email threads, automation sequences, contact management |
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `parse-decline-reason` | `connectors/neptune/functions/parse-decline-reason.ts` | Classify payment declines for support triage |
+| `annotation-collector` | `connectors/neptune/functions/annotation-collector.ts` | Capture support resolution outcomes for learning |
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track support function usage patterns |
+
 ## Refinement Notes
 - 2026-06-11: Customer 360 routine is the single most important workflow. It fires 10+ connectors in parallel. Never skip parallelization.
 - 2026-06-11: Stale ticket detection (>7 days) is a mandatory safeguard.
+- 2026-06-12: Phase 8 — GHL connector provides 35 SMS/email/contact actions via neptune skills.

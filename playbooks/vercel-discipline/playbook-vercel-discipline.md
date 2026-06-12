@@ -105,7 +105,15 @@ Mandatory steps:
 5. Flag any missing or mismatched variables
 6. Report audit summary with recommendations
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `vercel` | 25 | `connectors/neptune/skills/vercel/` | Deployments, builds, projects, domains, env vars, analytics, security |
+
 ## Refinement Notes
 - 2026-06-11: vercel CLI permanently banned after cardinal 6a273f70 incident.
 - 2026-06-11: U2.2 moved deploy playbook from organizations/ to playbooks/ flat layout.
 - 2026-06-12: Added env audit routine for cross-project consistency.
+- 2026-06-12: Phase 8 — Vercel (25 actions) provides complete deploy lifecycle via REST API.

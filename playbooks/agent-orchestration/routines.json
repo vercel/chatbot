@@ -1,0 +1,28 @@
+{
+  "domain": "agent-orchestration",
+  "priority": "P1",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "cardinals": ["6a29d171"],
+  "routines": [
+    {
+      "name": "Dispatch Code Task",
+      "trigger_keywords": ["dispatch", "send to agent", "assign", "handoff", "delegate"],
+      "steps": [
+        {"action": "classify_task", "input": "{user_message}", "description": "Determine complexity: small/medium/large"},
+        {"action": "decision", "input": "{complexity}", "description": "≤50 lines→self_code, >50 lines→spawn_v2"},
+        {"action": "spawn_v2", "input": "{goal, repo, branch}", "description": "Hand off to V2 sandbox"},
+        {"action": "monitor", "input": "{sessionId}", "description": "Track V2 session progress"}
+      ]
+    },
+    {
+      "name": "Self-Heal After Agent Failure",
+      "trigger_keywords": ["agent failed", "retry", "stuck", "dispatch error"],
+      "steps": [
+        {"action": "diagnose", "input": "{error, sessionId}", "description": "Classify failure: timeout/build/network"},
+        {"action": "decision", "input": "{error_type}", "description": "Retry with backoff OR reassign OR escalate"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Alert if escalated"}
+      ]
+    }
+  ]
+}

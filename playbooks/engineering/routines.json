@@ -1,0 +1,37 @@
+{
+  "domain": "engineering",
+  "priority": "P1",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "routines": [
+    {
+      "name": "Code Review",
+      "trigger_keywords": ["review", "code review", "audit code", "look at this code"],
+      "steps": [
+        {"action": "github.pr.get", "input": "{repo, prNumber}", "description": "Get PR diff and files"},
+        {"action": "github.code.search", "input": "{repo, query}", "description": "Find related patterns"},
+        {"action": "review_patterns", "input": "{files}", "description": "Check: security, perf, patterns, anti-patterns"},
+        {"action": "github.pr.review", "input": "{repo, prNumber, event, body}", "description": "Submit review"}
+      ]
+    },
+    {
+      "name": "Architecture Decision",
+      "trigger_keywords": ["should we", "which approach", "architecture", "design", "pattern"],
+      "steps": [
+        {"action": "wiki.search.semantic", "input": "{query}", "description": "Find prior art in wiki"},
+        {"action": "github.code.search", "input": "{repo, query}", "description": "Find existing patterns in codebase"},
+        {"action": "decision_matrix", "input": "{options, criteria}", "description": "Trade-off analysis"},
+        {"action": "wiki.page.create", "input": "{path, title, content}", "description": "Document as ADR in wiki"}
+      ]
+    },
+    {
+      "name": "Create PRD",
+      "trigger_keywords": ["write prd", "spec out", "plan feature", "document requirement"],
+      "steps": [
+        {"action": "research", "input": "{topic}", "description": "Gather technical requirements"},
+        {"action": "wiki.search.semantic", "input": "{query}", "description": "Check for existing PRDs"},
+        {"action": "write_prd", "input": "{template, requirements}", "description": "Author PRD with success criteria"}
+      ]
+    }
+  ]
+}

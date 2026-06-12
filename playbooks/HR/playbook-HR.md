@@ -78,6 +78,15 @@ Mandatory steps:
 5. Report team dashboard with capacity indicators
 6. Suggest rebalancing if needed
 
+## Custom Skills (under connectors/neptune)
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `annotation-collector` | `connectors/neptune/functions/annotation-collector.ts` | Capture team/personnel operation outcomes for learning |
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track HR function usage patterns |
+
 ## Refinement Notes
 - 2026-06-11: Skeleton created during NEPTUNE-CLEAR-STRUCTURE CS1 migration.
 - 2026-06-12: U2.4 enriched with routines and operational knowledge.
+- 2026-06-12: Phase 8 — annotation-collector captures personnel operation outcomes for continuous refinement.

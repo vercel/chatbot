@@ -1,0 +1,30 @@
+{
+  "domain": "vps-ops",
+  "priority": "P1",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "cardinals": ["6a153d63"],
+  "routines": [
+    {
+      "name": "VPS Health Check",
+      "trigger_keywords": ["vps health", "server status", "system check", "cpu", "memory"],
+      "steps": [
+        {"action": "system_check", "input": "cpu,memory,disk,network", "description": "System resource check"},
+        {"action": "pm2_status", "description": "Check pm2 process list"},
+        {"action": "nginx_status", "description": "Check nginx is serving"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Report health summary"}
+      ]
+    },
+    {
+      "name": "VPS Incident Response",
+      "trigger_keywords": ["vps down", "server crashed", "outage", "offline", "not responding"],
+      "steps": [
+        {"action": "cloudflare_check", "description": "Verify not a Cloudflare issue first"},
+        {"action": "ssh_check", "description": "Attempt SSH connection"},
+        {"action": "pm2_logs", "input": "{service}", "description": "Check last error logs"},
+        {"action": "restart_service", "input": "{service}", "description": "pm2 restart if safe"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Incident report"}
+      ]
+    }
+  ]
+}

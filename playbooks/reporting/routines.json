@@ -1,0 +1,27 @@
+{
+  "domain": "reporting",
+  "priority": "P1",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "routines": [
+    {
+      "name": "Morning Pulse Report",
+      "trigger_keywords": ["morning pulse", "daily report", "today summary", "overview"],
+      "steps": [
+        {"action": "reporting_hub.overview", "description": "Full operational snapshot"},
+        {"action": "reporting_hub.billing", "description": "Billing chain health"},
+        {"action": "reporting_hub.enrollments", "description": "Enrollment funnel stats"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Post pulse summary"}
+      ]
+    },
+    {
+      "name": "Customer Metrics Query",
+      "trigger_keywords": ["how many customers", "mrr", "revenue", "churn", "growth"],
+      "steps": [
+        {"action": "base44.b44_aggregate", "entity": "CustomerProfile", "description": "Count by status"},
+        {"action": "compute_mrr", "input": "{subscriptions}", "description": "Calculate MRR from active subs"},
+        {"action": "base44.query_warehouse", "table": "nmi_transactions", "description": "Revenue trend data"}
+      ]
+    }
+  ]
+}

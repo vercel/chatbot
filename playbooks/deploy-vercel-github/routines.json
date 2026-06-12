@@ -1,0 +1,28 @@
+{
+  "domain": "deploy-vercel-github",
+  "priority": "P1",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "routines": [
+    {
+      "name": "Ship a Feature",
+      "trigger_keywords": ["ship", "deploy", "land", "merge", "release", "push to prod"],
+      "steps": [
+        {"action": "github.pr.create", "input": "{repo, title, head, base, body}", "description": "Create PR with ai-agent label"},
+        {"action": "github.workflow.list", "input": "{repo, branch}", "description": "Wait for CI checks"},
+        {"action": "github.pr.merge", "input": "{repo, prNumber}", "description": "Squash-merge to main"},
+        {"action": "vercel.deploy.redeploy", "input": "{projectId}", "description": "Trigger Vercel deploy"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Deploy complete notification"}
+      ]
+    },
+    {
+      "name": "Diagnose Stale UI",
+      "trigger_keywords": ["stale", "not updating", "old version", "cache", "didn't change"],
+      "steps": [
+        {"action": "vercel.deploy.list", "input": "{projectId, limit: 3}", "description": "Check recent deployments"},
+        {"action": "vercel.deploy.get", "input": "{deploymentId}", "description": "Verify build completed"},
+        {"action": "github.commit.list", "input": "{repo, branch: main, limit: 5}", "description": "Check commits landed"}
+      ]
+    }
+  ]
+}

@@ -71,6 +71,22 @@ routines_count: 3
 8. New connectors: follow _template pattern in connectors/ folder
 
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `github` | 35 | `connectors/neptune/skills/github/` | Full GitHub REST API: repos, branches, commits, PRs, issues |
+| `linear` | 25 | `connectors/neptune/skills/linear/` | Project management: issues, projects, cycles, workflows |
+| `wiki` | 20 | `connectors/neptune/skills/wiki/` | Karpathy Wiki: pages, search, ingest, lint, indexing |
+| `mcp-hub` | 15 | `connectors/neptune/skills/mcp-hub/` | MCP server management, tool discovery, health checks |
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `annotation-collector` | `connectors/neptune/functions/annotation-collector.ts` | Capture build/code-review outcomes for learning |
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track engineering function usage patterns |
+
 ## Connector: cat-facts
 
 - **Path:** connectors/cat-facts

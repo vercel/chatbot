@@ -1,0 +1,38 @@
+{
+  "domain": "disputes",
+  "priority": "P0",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "cardinals": ["FCRA 30-day clock", "FCRA 45-day clock"],
+  "routines": [
+    {
+      "name": "Start Dispute Round",
+      "trigger_keywords": ["dispute", "challenge", "remove from credit", "fix credit", "delete item"],
+      "steps": [
+        {"action": "forth.report.pull_single", "input": "{customerId, bureau}", "description": "Pull latest credit report"},
+        {"action": "forth.report.negative_items", "input": "{reportId}", "description": "Identify disputable items"},
+        {"action": "forth.dispute.create", "input": "{customerId, negativeItemId, bureau, reason}", "description": "Create dispute"},
+        {"action": "forth.dispute.letter.generate", "input": "{disputeId}", "description": "FCRA-compliant letter"},
+        {"action": "forth.compliance.deadline", "input": "{disputeId}", "description": "Start 30-day clock"}
+      ]
+    },
+    {
+      "name": "Track Dispute Response",
+      "trigger_keywords": ["dispute status", "bureau response", "what happened"],
+      "steps": [
+        {"action": "forth.dispute.get", "input": "{disputeId}", "description": "Get dispute details"},
+        {"action": "forth.resolution.track", "input": "{disputeId}", "description": "Check resolution progress"},
+        {"action": "forth.compliance.check", "input": "{customerId}", "description": "FCRA compliance verification"}
+      ]
+    },
+    {
+      "name": "Round 2 Reinvestigation",
+      "trigger_keywords": ["round 2", "second dispute", "escalated", "reinvestigation"],
+      "steps": [
+        {"action": "forth.dispute.get", "input": "{disputeId}", "description": "Review first round outcome"},
+        {"action": "supervisor_review", "input": "{disputeId}", "description": "Round 2 requires supervisor approval"},
+        {"action": "forth.dispute.create", "input": "{customerId, itemId, round: 2}", "description": "File reinvestigation"}
+      ]
+    }
+  ]
+}

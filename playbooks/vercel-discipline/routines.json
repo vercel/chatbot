@@ -1,0 +1,27 @@
+{
+  "domain": "vercel-discipline",
+  "priority": "P1",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "cardinals": ["6a273f70"],
+  "routines": [
+    {
+      "name": "Verify Deployment",
+      "trigger_keywords": ["is it live", "deploy status", "build status", "vercel check"],
+      "steps": [
+        {"action": "vercel.deploy.list", "input": "{projectId, limit: 5}", "description": "Get recent deployments"},
+        {"action": "vercel.deploy.get", "input": "{deploymentId}", "description": "Check build and state"},
+        {"action": "vercel.build.log", "input": "{deploymentId}", "description": "Inspect build logs if failed"}
+      ]
+    },
+    {
+      "name": "Rollback Deployment",
+      "trigger_keywords": ["rollback", "revert", "undo deploy", "go back"],
+      "steps": [
+        {"action": "vercel.deploy.list", "input": "{projectId, state: READY, limit: 10}", "description": "Find last working deploy"},
+        {"action": "vercel.deploy.rollback", "input": "{projectId, deploymentId}", "description": "Rollback to previous"},
+        {"action": "vercel.deploy.get", "input": "{deploymentId}", "description": "Verify rollback succeeded"}
+      ]
+    }
+  ]
+}

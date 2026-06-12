@@ -85,6 +85,23 @@ Mandatory steps:
 4. Log to CustomerActivityLog
 5. If link expires: send follow-up reminder
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `github` | 35 | `connectors/neptune/skills/github/` | Code commits, PR management, billing logic deployment |
+| `ghl` | 35 | `connectors/neptune/skills/ghl/` | SMS billing links, email payment reminders |
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `parse-decline-reason` | `connectors/neptune/functions/parse-decline-reason.ts` | NMI decline code classification (HARD/SOFT/CONFIG) |
+| `compute-mrr` | `connectors/neptune/functions/compute-mrr.ts` | MRR calculation from payment records |
+| `annotation-collector` | `connectors/neptune/functions/annotation-collector.ts` | Capture billing execution outcomes for learning |
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track billing function usage and error patterns |
+
 ## Refinement Notes
 - 2026-06-11: source_transaction_id is BANNED per NMI Golden Vault Architecture. Use customer_vault_id + DPAN only.
 - 2026-06-11: Day-Zero CIT is the consent anchor. Never charge without it.
+- 2026-06-12: Phase 8 — 200 neptune-authored skills available. parse-decline-reason replaces inline decline classification.

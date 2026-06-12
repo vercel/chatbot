@@ -91,6 +91,19 @@ Mandatory steps:
 5. Calculate time-to-conversion for each stage
 6. Report with recommendations for pipeline optimization
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `ghl` | 35 | `connectors/neptune/skills/ghl/` | Campaigns, pipelines, SMS/email marketing, automations |
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `annotation-collector` | `connectors/neptune/functions/annotation-collector.ts` | Capture campaign execution outcomes for learning |
+
 ## Refinement Notes
 - 2026-06-11: Skeleton created during NEPTUNE-CLEAR-STRUCTURE CS1 migration.
 - 2026-06-12: U2.4 enriched with campaign and lead flow routines.
+- 2026-06-12: Phase 8 — GHL (35 actions) provides complete campaign management via neptune skills.

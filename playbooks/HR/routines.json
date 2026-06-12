@@ -1,0 +1,16 @@
+{
+  "domain": "HR",
+  "priority": "P2",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "routines": [
+    {
+      "name": "Team Status Check",
+      "trigger_keywords": ["team", "who is working", "agent availability", "staffing"],
+      "steps": [
+        {"action": "base44.b44_query", "entity": "AgentAvailability", "description": "Current agent statuses"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Staffing summary"}
+      ]
+    }
+  ]
+}

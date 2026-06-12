@@ -108,7 +108,21 @@ Mandatory steps:
 6. Log failure + recovery to rolling context
 7. Update playbook refinement notes with learned pattern
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `mcp-hub` | 15 | `connectors/neptune/skills/mcp-hub/` | Server health checks, tool discovery, protocol compliance |
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `annotation-collector` | `connectors/neptune/functions/annotation-collector.ts` | Capture agent dispatch outcomes for self-healing loop |
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track agent dispatch success/failure rates |
+
 ## Refinement Notes
 - 2026-06-11: V5 Domain-Driven Architecture established 10-domain routing with 4-step agent flow.
 - 2026-06-11: U2.3 landed 169 total actions across 5 comprehensive connector packs.
 - 2026-06-12: U2.4 adds relational graph connecting playbooks, connectors, skills, and functions.
+- 2026-06-12: Phase 8 — annotation-collector + usage-telemetry close the self-healing feedback loop.

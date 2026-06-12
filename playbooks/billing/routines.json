@@ -1,0 +1,60 @@
+{
+  "domain": "billing",
+  "priority": "P0",
+  "version": "1.0.0",
+  "created": "2026-06-12",
+  "cardinals": ["6a153d63", "6a273f70", "6a29cf6f"],
+  "routines": [
+    {
+      "name": "Customer 360 Lookup",
+      "trigger_keywords": ["customer 360", "look up", "who is", "find customer", "check on", "pull up account"],
+      "steps": [
+        {"action": "base44.customer360", "input": "{customerId|email|phone}", "description": "Full cross-system dossier"},
+        {"action": "nmi.customer_vault_query", "input": "{vault_id}", "description": "Verify vault exists in NMI"},
+        {"action": "reporting_hub.overview", "params": {"action": "customer_360"}, "description": "Operational context"}
+      ]
+    },
+    {
+      "name": "Charge Customer",
+      "trigger_keywords": ["charge", "bill", "payment", "collect", "run card", "transaction"],
+      "steps": [
+        {"action": "nmi.customer_vault_query", "input": "{customerId}", "description": "Verify vault BEFORE charge"},
+        {"action": "check_cof", "input": "{vault_id}", "description": "Card-on-file health audit"},
+        {"action": "nmi.charge", "input": "{amount, vault_id, initial_transaction_id}", "description": "Execute with CIT/MIT rules"},
+        {"action": "base44.b44_create", "entity": "PaymentLog", "description": "Record payment outcome"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Only if decline, notify"}
+      ]
+    },
+    {
+      "name": "Refund Customer",
+      "trigger_keywords": ["refund", "return money", "reverse charge", "give back"],
+      "steps": [
+        {"action": "base44.customer360", "input": "{customerId}", "description": "Look up customer first"},
+        {"action": "nmi.transaction_query", "input": "{transaction_id}", "description": "Verify original charge exists"},
+        {"action": "check_amount", "input": "{amount}", "description": ">$200 needs Jennifer approval"},
+        {"action": "nmi.refund", "input": "{transaction_id, amount}", "description": "Process via NMI"},
+        {"action": "base44.b44_update", "entity": "PaymentLog", "description": "Record refund"}
+      ]
+    },
+    {
+      "name": "Recover Decline",
+      "trigger_keywords": ["decline", "failed", "insufficient funds", "do not honor", "card declined"],
+      "steps": [
+        {"action": "parse_decline_reason", "input": "{decline_code}", "description": "Classify HARD/SOFT/CONFIG"},
+        {"action": "decision", "input": "{category}", "description": "HARD→billing link, SOFT→Smart Retry, CONFIG→fix+retry"},
+        {"action": "slack.send_message", "channel": "#jarvis-admin", "description": "Notify if hard decline"},
+        {"action": "base44.b44_create", "entity": "RecoveryItem", "description": "Track recovery attempt"}
+      ]
+    },
+    {
+      "name": "Billing Chain Reconciliation",
+      "trigger_keywords": ["broken chain", "orphan sub", "ghost CRM", "billing recon"],
+      "steps": [
+        {"action": "reporting_hub.billing", "description": "Get chain health report"},
+        {"action": "nmi.customer_vault_query", "input": "{vault_id}", "description": "Verify NMI side"},
+        {"action": "base44.b44_query", "entity": "Subscription", "description": "Verify CRM side"},
+        {"action": "repair", "input": "{mismatch}", "description": "Link or recreate as needed"}
+      ]
+    }
+  ]
+}

@@ -54,6 +54,21 @@ Mandatory steps:
 5. If rejected: increment round counter, prepare for re-dispute or escalate
 6. If no response >30 days: flag as overdue, follow up
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `forth` | 30 | `connectors/neptune/skills/forth/` | DPP credit repair: reports, enrollments, disputes, resolutions, compliance |
+| `affy` | 15 | `connectors/neptune/skills/affy/` | Chargeback defense: disputes, evidence, affidavits, tracking, analytics |
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `annotation-collector` | `connectors/neptune/functions/annotation-collector.ts` | Capture dispute execution outcomes for learning |
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track dispute function usage patterns |
+
 ## Refinement Notes
 - 2026-06-11: 3-rejection auto-escalate rule prevents infinite dispute loops.
 - 2026-06-11: Credit report must be <90 days old per FCRA guidelines. Stale credit trigger at 90 days.
+- 2026-06-12: Phase 8 — Forth (30) + Affy (15) provide complete credit repair + chargeback defense tooling.

@@ -77,6 +77,20 @@ Mandatory steps:
 5. If file in build but old version served: check CDN cache, force-refresh
 6. If file not in build at all: check if file was actually committed (git log <path>)
 
+## Custom Skills (under connectors/neptune)
+
+### Connectors
+| Skill Pack | Actions | Path | Used For |
+|-----------|---------|------|----------|
+| `github` | 35 | `connectors/neptune/skills/github/` | Repos, branches, commits, PRs, issues, workflows, releases |
+| `vercel` | 25 | `connectors/neptune/skills/vercel/` | Deployments, builds, projects, domains, env vars, analytics |
+
+### Functions
+| Function | Path | Used For |
+|----------|------|----------|
+| `usage-telemetry` | `connectors/neptune/functions/usage-telemetry.ts` | Track deploy success/failure rates and durations |
+
 ## Refinement Notes
 - 2026-06-11: Recurring V2 deploy failures (commits 9ffc6ec, cc860a6) indicate we keep shipping broken code. Enforce pnpm build locally before push.
 - 2026-06-11: UX2-UX6 from prior mission committed but never deployed — agent assumed success without verifying.
+- 2026-06-12: Phase 8 — GitHub (35) + Vercel (25) provide complete deploy pipeline tooling via neptune skills.
