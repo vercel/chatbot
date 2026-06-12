@@ -21,6 +21,7 @@ import {
   Search,
   ArrowUpDown,
   ExternalLink,
+  Shield,
 } from "lucide-react";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -558,6 +559,13 @@ export default function LibraryPage() {
             <Zap className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Functions</span>
             <Badge variant="secondary" className="ml-2 text-xs">199</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="secrets" className="min-h-[44px]" asChild>
+            <Link href="/library/secrets">
+              <Shield className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Secrets</span>
+              <Badge variant="secondary" className="ml-2 text-xs">🔒</Badge>
+            </Link>
           </TabsTrigger>
         </TabsList>
 

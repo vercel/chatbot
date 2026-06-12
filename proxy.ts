@@ -24,7 +24,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/tools") ||
     pathname.startsWith("/api/connectors") ||
     pathname.startsWith("/api/workflow") ||
-    pathname.startsWith("/api/context")
+    pathname.startsWith("/api/context") ||
+    pathname.startsWith("/api/secrets")
   ) {
     return NextResponse.next();
   }
