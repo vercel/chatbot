@@ -74,8 +74,8 @@ export async function POST(req: Request) {
     }
 
     const now = new Date().toISOString();
-    let outcome: "success" | "partial" | "failure";
-    let learning: string;
+    let outcome: "success" | "partial" | "failure" = "failure";
+    let learning = "Unknown decision";
 
     switch (decision) {
       case "approve": {
