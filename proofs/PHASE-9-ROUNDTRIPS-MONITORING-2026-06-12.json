@@ -1,0 +1,108 @@
+{
+  "proof": {
+    "phase": "9",
+    "title": "Round-Trips + Monitoring — Telemetry, Diagnostics, Proxy",
+    "commit": "dc7a94a",
+    "timestamp": "2026-06-12T03:05:00.000Z",
+    "status": "LANDED",
+    "parent_prd": "jarvis/prd/PLAYBOOK-FIRST-ORCHESTRATION-MASTER-PRD-2026-06-12.md"
+  },
+  "deliverables": {
+    "api_telemetry": {
+      "path": "app/api/telemetry/route.ts",
+      "methods": ["GET", "POST"],
+      "description": "Skill/function usage tracking. GET returns telemetry entries with summary. POST records new usage event.",
+      "wired_to": "connectors/neptune/functions/usage-telemetry.ts"
+    },
+    "api_diagnostics": {
+      "path": "app/api/diagnostics/route.ts",
+      "methods": ["GET"],
+      "description": "System health diagnostics. Returns VPS health, connector health, telemetry health with status badges.",
+      "checks": ["vps-health (agent API reachable)", "connector-health (neptune registry)", "telemetry-health (invocation stats)"]
+    },
+    "api_proxy_connector": {
+      "path": "app/api/proxy/connector/route.ts",
+      "methods": ["POST"],
+      "description": "Chat↔V2 round-trip relay. Routes connector actions, emits skills_changed events for mutations, records telemetry on every call.",
+      "skills_changed": "Emitted on create/update/delete/submit/push/deploy/merge actions"
+    },
+    "page_telemetry": {
+      "path": "app/(chat)/telemetry/page.tsx",
+      "description": "Live telemetry dashboard with summary cards, sortable skill table, connector-level aggregation. Tabs: By Skill, By Connector."
+    },
+    "page_diagnostics": {
+      "path": "app/(chat)/diagnostics/page.tsx",
+      "description": "System health dashboard with overall banner (healthy/degraded/down), per-section status cards, 30s auto-refresh."
+    },
+    "chat_status_bar": {
+      "path": "components/chat/chat-status-bar.tsx",
+      "description": "Compact status bar in ChatHeader. Shows: VPS health dot (green/yellow/red), active V2 session count, quick nav to /telemetry and /diagnostics. Auto-refreshes every 60s."
+    },
+    "nav_admin_updated": {
+      "path": "components/sidebar/nav-admin.tsx",
+      "new_items": ["Telemetry (ActivityIcon)", "Diagnostics (ShieldAlertIcon)"]
+    }
+  },
+  "architecture": {
+    "round_trip_loop": "Chat → /api/proxy/connector → routeNeptuneAction() → recordUsage() → skills_changed event → V2 notification",
+    "data_flow": "Skill execution → annotation-collector → usage-telemetry → /api/telemetry → dashboard UI",
+    "health_monitoring": "ChatStatusBar → /api/diagnostics (60s poll) → VPS/connector/telemetry checks → visual indicators",
+    "event_bus": "skills_changed event type emitted by proxy/connector for mutation actions, consumed by annotation loop (PB-D)"
+  },
+  "upstash_integration": {
+    "status": "foundation_ready",
+    "note": "In-memory telemetry store active. Upstash Redis persistence ready when REDIS_URL secret is configured. usage-telemetry.ts interface supports swap to persisted store.",
+    "requires": "VERCEL_REDIS_URL or UPSTASH_REDIS_URL secret + @upstash/redis dependency"
+  },
+  "next_phases": {
+    "PB-C": "Formalize connectors/neptune/ structure — migrate scattered skills, update master-registry.json",
+    "PB-D": "Annotation loop — wire annotation-collector to every run_workflow/execute_skill, weekly digest cron",
+    "Phase 10": "Prompt upgrade + master synthesis — system prompt rewrite, master proof JSON 15KB+"
+  },
+  "slack_synthesis_posted": false,
+  "file_manifest": {
+    "app/api/telemetry/route.ts": { "lines": 44, "methods": ["GET", "POST"], "imports": ["getTelemetry", "getTelemetrySummary", "recordUsage"] },
+    "app/api/diagnostics/route.ts": { "lines": 112, "methods": ["GET"], "imports": ["getTelemetrySummary", "SKILL_REGISTRY"] },
+    "app/api/proxy/connector/route.ts": { "lines": 71, "methods": ["POST"], "imports": ["routeNeptuneAction", "recordUsage"] },
+    "app/(chat)/telemetry/page.tsx": { "lines": 253, "components": ["StatCard", "EntryRow", "PlugIcon"], "features": ["summary cards", "sortable table", "connector aggregation", "refresh button"] },
+    "app/(chat)/diagnostics/page.tsx": { "lines": 194, "components": ["OverallBanner", "SectionCard"], "features": ["auto-refresh (30s)", "health badges", "section drilldown"] },
+    "components/chat/chat-status-bar.tsx": { "lines": 98, "features": ["VPS health dot", "V2 session count", "nav links", "auto-refresh (60s)"] },
+    "components/chat/chat-header.tsx": { "modified": true, "added": "ChatStatusBar import + render" },
+    "components/sidebar/nav-admin.tsx": { "modified": true, "added_items": ["telemetry", "diagnostics"] }
+  },
+  "api_contracts": {
+    "GET /api/telemetry": {
+      "params": "connector?, domain?, sortBy? (invocationCount|avgDurationMs|errorCount), limit?",
+      "response": "{ entries: TelemetryEntry[], summary: TelemetrySummary, timestamp, filters }",
+      "summary_shape": "{ totalInvocations, totalErrors, uniqueSkills, topSkill, errorRate }"
+    },
+    "POST /api/telemetry": {
+      "body": "{ skillOrFunction, connector, domain, durationMs, error? }",
+      "response": "{ recorded: TelemetryEntry, timestamp }",
+      "status": "201 created | 400 bad request | 500 server error"
+    },
+    "GET /api/diagnostics": {
+      "response": "{ status: healthy|degraded|down, timestamp, sections: DiagnosticSection[], summary }",
+      "section_shape": "{ status, name, details: Record<string,unknown>, checkedAt }"
+    },
+    "POST /api/proxy/connector": {
+      "body": "{ action, payload?, source? (chat|v2|cron), domain?, annotation? }",
+      "response": "{ success, result?, error?, durationMs, event?: { type: skills_changed, ... }, timestamp }",
+      "mutation_actions": ["create", "update", "delete", "submit", "push", "deploy", "merge"]
+    }
+  },
+  "integration_map": {
+    "usage-telemetry.ts": "connectors/neptune/functions/ — in-memory Map<string, TelemetryEntry> — wired to POST /api/telemetry",
+    "annotation-collector.ts": "connectors/neptune/functions/ — in-memory Annotation[] — feeds PB-D annotation loop",
+    "neptune_client.ts": "connectors/neptune/ — SKILL_REGISTRY (8 connectors, 200 actions) — used by diagnostics",
+    "chat_status_bar": "components/chat/ — polls /api/diagnostics every 60s — renders in ChatHeader",
+    "nav_admin": "components/sidebar/ — Telemetry + Diagnostics links in Admin group"
+  },
+  "cardinal_compliance": {
+    "J_no_grep_without_router": "All API routes are standalone endpoints — no grep bypass",
+    "6a153d63_no_pm2": "No VPS Python edits or pm2 reloads in this phase",
+    "6a273f70_vercel_rest_only": "No vercel CLI usage — all deploy via REST API patterns",
+    "shadcn_only": "All UI uses shadcn/ui primitives: Card, Button, Badge, Skeleton, Tabs",
+    "author_email": "abhiswami2121@gmail.com on all commits"
+  }
+}

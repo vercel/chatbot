@@ -1,0 +1,55 @@
+{
+  "node": {
+    "id": "connector-neptune",
+    "type": "connector",
+    "name": "Neptune Custom Skills Connector",
+    "path": "connectors/neptune/",
+    "version": "1.0.0",
+    "phase": "8+PB-C",
+    "created": "2026-06-12T00:00:00.000Z",
+    "total_actions": 200,
+    "total_skills": 8,
+    "total_functions": 4
+  },
+  "skills": {
+    "github": { "actions": 35, "path": "skills/github/SKILL.md", "domains": ["engineering", "deploy-vercel-github", "agent-orchestration"] },
+    "ghl": { "actions": 35, "path": "skills/ghl/SKILL.md", "domains": ["billing", "customer-support", "marketing", "reporting"] },
+    "linear": { "actions": 25, "path": "skills/linear/SKILL.md", "domains": ["engineering"] },
+    "vercel": { "actions": 25, "path": "skills/vercel/SKILL.md", "domains": ["deploy-vercel-github", "vercel-discipline"] },
+    "forth": { "actions": 30, "path": "skills/forth/SKILL.md", "domains": ["disputes"] },
+    "wiki": { "actions": 20, "path": "skills/wiki/SKILL.md", "domains": ["engineering"] },
+    "mcp-hub": { "actions": 15, "path": "skills/mcp-hub/SKILL.md", "domains": ["engineering", "agent-orchestration"] },
+    "affy": { "actions": 15, "path": "skills/affy/SKILL.md", "domains": ["disputes"] }
+  },
+  "functions": {
+    "parse-decline-reason": { "path": "functions/parse-decline-reason.ts", "domains": ["billing", "customer-support"] },
+    "compute-mrr": { "path": "functions/compute-mrr.ts", "domains": ["billing", "reporting"] },
+    "annotation-collector": { "path": "functions/annotation-collector.ts", "domains": ["billing", "customer-support", "disputes", "engineering", "agent-orchestration", "marketing", "HR"] },
+    "usage-telemetry": { "path": "functions/usage-telemetry.ts", "domains": ["billing", "customer-support", "disputes", "deploy-vercel-github", "engineering", "agent-orchestration", "reporting", "vps-ops", "HR"] }
+  },
+  "cross_references": {
+    "associated_connectors": ["base44", "nmi", "slack", "github", "vercel", "ghl", "vapi", "forth", "affy", "linear", "wiki", "mcp-hub"],
+    "associated_playbooks": [
+      "playbooks/PLAYBOOK-ROUTER.md",
+      "playbooks/billing/playbook-billing.md",
+      "playbooks/customer-support/playbook-customer-support.md",
+      "playbooks/disputes/playbook-disputes.md",
+      "playbooks/deploy-vercel-github/playbook-deploy.md",
+      "playbooks/engineering/playbook-engineering.md",
+      "playbooks/agent-orchestration/playbook-agent-orchestration.md",
+      "playbooks/reporting/playbook-reporting.md",
+      "playbooks/vps-ops/playbook-vps-ops.md",
+      "playbooks/vercel-discipline/playbook-vercel-discipline.md",
+      "playbooks/marketing/playbook-marketing.md",
+      "playbooks/HR/playbook-HR.md"
+    ],
+    "cardinals_referenced": ["6a153d63", "6a273f70", "6a276f8c", "6a29cf6f", "6a29d171"],
+    "parent_prd": "jarvis/prd/PLAYBOOK-FIRST-ORCHESTRATION-MASTER-PRD-2026-06-12.md"
+  },
+  "routing": {
+    "entry_point": "connectors/neptune/SKILL.md",
+    "playbook": "connectors/neptune/PLAYBOOK.md",
+    "action_router": "connectors/neptune/client.ts",
+    "playbook_router_intents": ["neptune skill", "custom skill", "neptune function", "github skill", "ghl skill", "linear skill", "vercel skill", "forth skill", "wiki skill", "mcp-hub skill", "affy skill"]
+  }
+}

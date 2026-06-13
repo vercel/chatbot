@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { requireAllowlist } from "@/lib/auth/require-allowlist";
 
 const CWD = process.cwd();
 const REGISTRY_PATH = join(CWD, "functions", "master-registry.json");
@@ -46,7 +47,7 @@ function loadRegistry(): MasterRegistry | null {
   }
 }
 
-export async function GET(req: NextRequest) {
+export const GET = requireAllowlist(async (req: NextRequest) => {
   const registry = loadRegistry();
 
   if (!registry) {
@@ -120,9 +121,10 @@ export async function GET(req: NextRequest) {
         slack: registry.functions.filter((f) => f.category === "slack").length,
         hyperswitch: registry.functions.filter((f) => f.category === "hyperswitch").length,
         vapi: registry.functions.filter((f) => f.category === "vapi").length,
+        neptune: registry.functions.filter((f) => f.category === "neptune").length,
         "custom-skills": registry.functions.filter((f) => f.category === "custom-skills").length,
       },
     },
     version: registry.version,
   });
-}
+});

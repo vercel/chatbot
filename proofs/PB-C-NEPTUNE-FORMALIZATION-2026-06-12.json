@@ -1,0 +1,90 @@
+{
+  "proof": {
+    "phase": "PB-C",
+    "title": "Neptune Connector Formalization — Action Registry + Cross-References",
+    "commit": "pending",
+    "timestamp": "2026-06-12T03:20:00.000Z",
+    "status": "LANDED",
+    "parent_prd": "jarvis/prd/PLAYBOOK-FIRST-ORCHESTRATION-MASTER-PRD-2026-06-12.md"
+  },
+  "scope": {
+    "connector": "connectors/neptune/",
+    "total_actions": 200,
+    "skill_packs": 8,
+    "functions": 4,
+    "new_files": ["GRAPH-TAG.json"],
+    "modified_files": ["client.ts (added availableActions + exports)", "app/api/function-registry/route.ts (added neptune counts)"]
+  },
+  "deliverables": {
+    "available_actions_export": {
+      "path": "connectors/neptune/client.ts",
+      "description": "Flat availableActions array for master-registry.json auto-discovery. Format: connector.category.verb for all 200 actions.",
+      "exports": ["availableActions", "SKILL_REGISTRY", "FUNCTION_REGISTRY", "routeNeptuneAction", "listNeptuneSkills", "listNeptuneFunctions", "getTotalActions"]
+    },
+    "graph_tag": {
+      "path": "connectors/neptune/GRAPH-TAG.json",
+      "description": "Bidirectional cross-reference linking neptune skills/functions to 11 domain playbooks, 12 associated connectors, 5 cardinal rules.",
+      "size_bytes": "~3,000"
+    },
+    "function_registry_update": {
+      "path": "app/api/function-registry/route.ts",
+      "description": "Added neptune category to by_connector counts in API response summary."
+    },
+    "skill_registry": {
+      "connectors": ["github (35)", "ghl (35)", "linear (25)", "vercel (25)", "forth (30)", "wiki (20)", "mcp-hub (15)", "affy (15)"],
+      "total": 200
+    },
+    "function_registry": {
+      "names": ["parse-decline-reason", "compute-mrr", "annotation-collector", "usage-telemetry"],
+      "total": 4
+    }
+  },
+  "architecture": {
+    "structure": "connectors/neptune/ → SKILL.md + PLAYBOOK.md + client.ts + GRAPH-TAG.json + skills/ (8 packs) + functions/ (4 utils)",
+    "action_router": "routeNeptuneAction(action, payload) — resolves connector.skill or function calls",
+    "master_registry_integration": "availableActions export feeds master-registry.json scanner for auto-discovery",
+    "domain_mapping": "Every skill/function mapped to specific domain playbooks via GRAPH-TAG.json + Custom Skills sections in playbook-*.md",
+    "cross_references": "12 associated connectors, 11 domain playbooks, 5 cardinal rules referenced"
+  },
+  "cardinal_compliance": {
+    "all_skills_in_neptune": "All new skills land in connectors/neptune/skills/ — no scattering",
+    "template_conformant": "Follows connector _template pattern: SKILL.md + PLAYBOOK.md + client.ts + GRAPH-TAG.json",
+    "author_email": "abhiswami2121@gmail.com"
+  },
+  "integration_with_prior_phases": {
+    "PB-A": "PLAYBOOK-ROUTER.md references neptune skills via intent tags",
+    "Phase_8": "All 200 skills created in connectors/neptune/skills/",
+    "PB-B": "All 11 domain playbooks reference neptune skills in Custom Skills section",
+    "Phase_9": "/api/proxy/connector uses routeNeptuneAction for round-trips"
+  },
+  "slack_synthesis_posted": false,
+  "file_manifest": {
+    "connectors/neptune/SKILL.md": { "status": "active", "version": "1.0.0", "total_actions": 200, "intent_tags": ["neptune", "custom", "skill-author"] },
+    "connectors/neptune/PLAYBOOK.md": { "status": "active", "description": "How to use neptune-authored skills — discovery paths, anti-patterns, safeguards" },
+    "connectors/neptune/client.ts": { "status": "active", "exports": ["routeNeptuneAction", "listNeptuneSkills", "listNeptuneFunctions", "getTotalActions", "availableActions", "SKILL_REGISTRY", "FUNCTION_REGISTRY"] },
+    "connectors/neptune/GRAPH-TAG.json": { "status": "active", "description": "Bidirectional cross-reference graph linking all neptune skills/functions to domains" },
+    "connectors/neptune/skills/github/SKILL.md": { "actions": 35, "categories": ["repos", "branches", "commits", "PRs", "search", "issues", "workflows", "releases"] },
+    "connectors/neptune/skills/ghl/SKILL.md": { "actions": 35, "categories": ["contacts", "SMS", "email", "pipeline", "campaigns", "calendar", "analytics"] },
+    "connectors/neptune/skills/linear/SKILL.md": { "actions": 25, "categories": ["issues", "projects", "teams", "cycles", "views", "workflows"] },
+    "connectors/neptune/skills/vercel/SKILL.md": { "actions": 25, "categories": ["deployments", "builds", "projects", "domains", "env", "analytics", "security"] },
+    "connectors/neptune/skills/forth/SKILL.md": { "actions": 30, "categories": ["reports", "contacts", "enrollments", "disputes", "resolutions", "compliance"] },
+    "connectors/neptune/skills/wiki/SKILL.md": { "actions": 20, "categories": ["pages", "search", "ingest", "index", "lint", "categories"] },
+    "connectors/neptune/skills/mcp-hub/SKILL.md": { "actions": 15, "categories": ["servers", "tools", "health", "resources", "protocol"] },
+    "connectors/neptune/skills/affy/SKILL.md": { "actions": 15, "categories": ["chargebacks", "evidence", "affidavits", "tracking", "analytics"] },
+    "connectors/neptune/functions/parse-decline-reason.ts": { "type": "function", "exports": ["parseDeclineReason", "isHardDecline", "isRetryable"] },
+    "connectors/neptune/functions/compute-mrr.ts": { "type": "function", "exports": ["computeMRR"] },
+    "connectors/neptune/functions/annotation-collector.ts": { "type": "function", "exports": ["collectAnnotation", "getAnnotations", "getAnnotationSummary", "clearAnnotations"] },
+    "connectors/neptune/functions/usage-telemetry.ts": { "type": "function", "exports": ["recordUsage", "getTelemetry", "getTelemetrySummary"] }
+  },
+  "available_actions_breakdown": {
+    "github": ["repo.list", "repo.get", "repo.create", "repo.delete", "repo.branches", "branch.get", "branch.create", "branch.delete", "branch.protect", "commit.list", "commit.get", "commit.compare", "commit.files", "pr.list", "pr.get", "pr.create", "pr.merge", "pr.close", "pr.review", "search.code", "search.repos", "search.commits", "search.issues", "search.users", "issue.list", "issue.get", "issue.create", "issue.update", "issue.comment", "workflow.list", "workflow.run", "workflow.status", "release.list", "release.get", "release.create"],
+    "ghl": ["contact.list", "contact.get", "contact.create", "contact.update", "contact.delete", "contact.search", "sms.send", "sms.list", "sms.bulk", "sms.template", "sms.opt_in", "email.send", "email.list", "email.template", "email.campaign", "email.bulk", "pipeline.stages", "pipeline.opportunity", "pipeline.move", "pipeline.status", "pipeline.metrics", "pipeline.deal", "campaign.create", "campaign.list", "campaign.status", "campaign.analytics", "campaign.edit", "calendar.events", "calendar.schedule", "calendar.availability", "calendar.book", "analytics.pipeline", "analytics.campaign", "analytics.contacts", "analytics.sms"],
+    "linear": ["issue.list", "issue.get", "issue.create", "issue.update", "issue.delete", "issue.search", "issue.assign", "project.list", "project.get", "project.create", "project.update", "team.list", "team.get", "team.members", "cycle.list", "cycle.get", "cycle.create", "cycle.update", "view.list", "view.get", "view.create", "view.update", "workflow.list", "workflow.get", "workflow.transition"],
+    "vercel": ["deployment.list", "deployment.get", "deployment.create", "deployment.cancel", "deployment.promote", "deployment.rollback", "build.list", "build.get", "build.logs", "project.list", "project.get", "project.create", "project.update", "domain.list", "domain.get", "domain.add", "domain.verify", "env.list", "env.get", "env.update", "analytics.visits", "analytics.bandwidth", "analytics.errors", "security.headers", "security.firewall"],
+    "forth": ["report.fetch", "report.parse", "report.audit", "report.summary", "report.history", "report.export", "contact.get", "contact.create", "contact.update", "contact.verify", "enrollment.create", "enrollment.status", "enrollment.update", "enrollment.cancel", "enrollment.audit", "dispute.create", "dispute.get", "dispute.status", "dispute.evidence", "dispute.submit", "dispute.track", "dispute.result", "dispute.appeal", "resolution.get", "resolution.update", "resolution.verify", "resolution.audit", "compliance.check", "compliance.audit", "compliance.report"],
+    "wiki": ["page.list", "page.get", "page.create", "page.update", "page.delete", "search.fulltext", "search.tag", "search.related", "search.recent", "ingest.url", "ingest.file", "ingest.text", "index.rebuild", "index.status", "index.optimize", "lint.spelling", "lint.links", "lint.format", "category.list", "category.assign"],
+    "mcp-hub": ["server.list", "server.get", "server.start", "server.stop", "server.restart", "tool.list", "tool.get", "tool.invoke", "health.check", "health.status", "health.metrics", "resource.list", "resource.get", "protocol.version", "protocol.capabilities"],
+    "affy": ["chargeback.list", "chargeback.get", "chargeback.alert", "evidence.prepare", "evidence.submit", "evidence.status", "evidence.requirements", "affidavit.generate", "affidavit.review", "affidavit.template", "dispute.track", "dispute.outcome", "dispute.timeline", "analytics.by_reason", "analytics.win_rate"],
+    "neptune_functions": ["neptune.function.parse-decline-reason", "neptune.function.compute-mrr", "neptune.function.annotation-collector", "neptune.function.usage-telemetry"]
+  }
+}
