@@ -38,6 +38,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/workflow") ||
     pathname.startsWith("/api/context") ||
     pathname.startsWith("/api/secrets") ||
+    pathname.startsWith("/api/capabilities") ||
     pathname.startsWith("/api/playbooks") ||
     pathname.startsWith("/api/research") ||
     pathname.startsWith("/api/plan-mode") ||
