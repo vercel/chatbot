@@ -4,12 +4,24 @@ import { guestRegex, isDevelopmentEnvironment } from "./lib/constants";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
+  // Health check
   if (pathname.startsWith("/ping")) {
     return new Response("pong", { status: 200 });
   }
 
-  if (pathname.startsWith("/api/auth")) {
+  // Public paths — no auth required
+  const publicPaths = [
+    "/login",
+    "/register",
+    "/api/auth",
+    "/access-denied",
+    "/_next",
+    "/favicon.ico",
+    "/api/vercel",
+  ];
+  if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
@@ -25,7 +37,19 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/connectors") ||
     pathname.startsWith("/api/workflow") ||
     pathname.startsWith("/api/context") ||
-    pathname.startsWith("/api/secrets")
+    pathname.startsWith("/api/secrets") ||
+    pathname.startsWith("/api/playbooks") ||
+    pathname.startsWith("/api/research") ||
+    pathname.startsWith("/api/plan-mode") ||
+    pathname.startsWith("/api/annotations") ||
+    pathname.startsWith("/api/file-tree") ||
+    pathname.startsWith("/api/prds") ||
+    pathname.startsWith("/api/shared-skills") ||
+    pathname.startsWith("/api/function-trace") ||
+    pathname.startsWith("/api/connector-graph") ||
+    pathname.startsWith("/api/vault") ||
+    pathname.startsWith("/api/wiki") ||
+    pathname.startsWith("/api/integrations")
   ) {
     return NextResponse.next();
   }
@@ -55,19 +79,23 @@ export async function proxy(request: NextRequest) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-
+  // Protected routes: require authentication
   if (!token) {
-    const redirectUrl = encodeURIComponent(new URL(request.url).pathname);
-
-    return NextResponse.redirect(
-      new URL(`${base}/api/auth/guest?redirectUrl=${redirectUrl}`, request.url)
-    );
+    const loginUrl = new URL(`${base}/login`, request.url);
+    loginUrl.searchParams.set("callbackUrl", request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
   const isGuest = guestRegex.test(token?.email ?? "");
 
-  if (token && !isGuest && ["/login", "/register"].includes(pathname)) {
+  // Guest users: redirect to access-denied on protected routes
+  if (isGuest) {
+    const deniedUrl = new URL(`${base}/access-denied`, request.url);
+    return NextResponse.redirect(deniedUrl);
+  }
+
+  // Authenticated users: redirect away from login/register
+  if (!isGuest && ["/login", "/register"].includes(pathname)) {
     return NextResponse.redirect(new URL(`${base}/`, request.url));
   }
 
