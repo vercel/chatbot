@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/annotations/digest?period=week",
-      "schedule": "0 12 * * MON"
+      "schedule": "0 12 * * 1"
     }
   ]
 }
