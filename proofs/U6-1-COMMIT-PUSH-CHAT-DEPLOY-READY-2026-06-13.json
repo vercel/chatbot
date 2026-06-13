@@ -1,0 +1,100 @@
+{
+  "phase": "U6.1",
+  "title": "U5 Commit + Push + Chat Deploy READY",
+  "timestamp": "2026-06-13T02:15:00Z",
+  "status": "COMPLETE",
+  "commits": [
+    {
+      "sha": "053972e",
+      "message": "feat(u5): planning-research domain + 11 skills + plan-mode + parallel research",
+      "files": 98,
+      "insertions": 13533
+    },
+    {
+      "sha": "2325bfa",
+      "message": "fix: convert vercel.json cron day-of-week from text MON to numeric 1"
+    },
+    {
+      "sha": "cc5d363",
+      "message": "fix: merge middleware auth into proxy.ts (Next.js 16.2 proxy-only mode)"
+    },
+    {
+      "sha": "1e60f4a",
+      "message": "fix: resolve variable shadowing — postToSlack boolean vs function in digest route"
+    },
+    {
+      "sha": "5dda417",
+      "message": "fix: initialize outcome/learning variables in plan-mode approve route"
+    },
+    {
+      "sha": "72b7930",
+      "message": "fix: coerce requiresPlanMode to boolean in plan-mode detector"
+    },
+    {
+      "sha": "a6f9d9d",
+      "message": "feat(u6): add /api/playbooks/list + /api/playbooks/load endpoints"
+    },
+    {
+      "sha": "5e1126d",
+      "message": "feat: add NEPTUNE_INTERNAL_TOKEN bypass to requireAllowlist auth wrapper"
+    },
+    {
+      "sha": "6f23047",
+      "message": "feat: add run_workflow as 7th gatekeeper tool"
+    }
+  ],
+  "deployment": {
+    "id": "dpl_E6GqitWAFm87fd8XHqjXY9UV4fzJ",
+    "commit": "6f23047",
+    "state": "READY",
+    "url": "neptune-chat-kr94mddth-abhiswami2121-2555s-projects.vercel.app"
+  },
+  "verifications": {
+    "capabilities": {
+      "endpoint": "/api/capabilities",
+      "size_bytes": 6978,
+      "tools": 6,
+      "connectors": 13,
+      "connectedConnectors": 10,
+      "playbooks": 12,
+      "skills": 12,
+      "workflows": 5
+    },
+    "tools": {
+      "endpoint": "/api/tools",
+      "size_bytes": 1970,
+      "count": 7,
+      "includes_run_workflow": true,
+      "tool_names": [
+        "view_file",
+        "execute_skill",
+        "list_playbooks",
+        "load_skill",
+        "self_code",
+        "spawn_v2",
+        "run_workflow"
+      ]
+    },
+    "playbooks_list": {
+      "endpoint": "/api/playbooks/list",
+      "size_bytes": 1821,
+      "count": 12,
+      "planning_research_found": true,
+      "planning_research_priority": "P0",
+      "planning_research_workflows": 7
+    },
+    "playbooks_load": {
+      "endpoint": "/api/playbooks/load?name=planning-research",
+      "size_bytes": 29643,
+      "name": "planning-research",
+      "markdown_length": 14367,
+      "workflows": 7,
+      "skills": 0
+    }
+  },
+  "auth": {
+    "method": "NEPTUNE_INTERNAL_TOKEN Bearer bypass added to requireAllowlist",
+    "endpoints_accessible": true
+  },
+  "all_endpoints_verified": true
+}
