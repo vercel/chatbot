@@ -1,0 +1,80 @@
+{
+  "proof": {
+    "phase": "PB-D",
+    "title": "Annotation Loop — Execution Feedback + Weekly Digest",
+    "commit": "pending",
+    "timestamp": "2026-06-12T03:35:00.000Z",
+    "status": "LANDED",
+    "parent_prd": "jarvis/prd/PLAYBOOK-FIRST-ORCHESTRATION-MASTER-PRD-2026-06-12.md"
+  },
+  "scope": {
+    "annotation_collector": "connectors/neptune/functions/annotation-collector.ts (already created in Phase 8)",
+    "annotation_api": "app/api/annotations/route.ts (GET + POST + DELETE)",
+    "digest_api": "app/api/annotations/digest/route.ts (weekly digest with trends + recommendations)",
+    "proxy_wiring": "app/api/proxy/connector/route.ts (auto-records annotations on every execution)",
+    "telemetry_wiring": "Already wired via usage-telemetry.ts + POST /api/telemetry"
+  },
+  "deliverables": {
+    "annotation_api": {
+      "path": "app/api/annotations/route.ts",
+      "methods": ["GET", "POST", "DELETE"],
+      "description": "CRUD for execution annotations. GET returns filtered annotations + domain summaries. POST records new annotation from skill/workflow execution. DELETE clears all (for testing)."
+    },
+    "weekly_digest": {
+      "path": "app/api/annotations/digest/route.ts",
+      "methods": ["GET"],
+      "params": "?days=7 (default) — configurable lookback window",
+      "description": "Generates structured digest: overall stats, per-domain sections with trend analysis, top learnings, auto-generated recommendations.",
+      "digest_shape": "title, period (start/end), generated, overall (totalExecutions, successRate, domainsActive, totalErrors), byDomain[], topLearnings[], recommendations[]"
+    },
+    "proxy_annotation_wiring": {
+      "path": "app/api/proxy/connector/route.ts",
+      "description": "Every proxy call now auto-records both telemetry (recordUsage) AND annotation (collectAnnotation). Returns annotation ID in response.",
+      "outcome_derivation": "success if no error, failure if error thrown"
+    },
+    "annotation_collector": {
+      "path": "connectors/neptune/functions/annotation-collector.ts",
+      "exports": ["collectAnnotation", "getAnnotations", "getAnnotationSummary", "clearAnnotations"],
+      "interface": "Annotation { id, timestamp, domain, playbook, skillOrWorkflow, outcome (success|partial|failure), durationMs, error?, learning?, toolsUsed[] }"
+    }
+  },
+  "annotation_loop_architecture": {
+    "trigger": "Every run_workflow / execute_skill / proxy connector call",
+    "flow": "Execution → collectAnnotation() → in-memory store → GET /api/annotations → digest analysis",
+    "feedback": "Weekly digest auto-generates recommendations based on trend analysis: declining domains, high error diversity, new failure patterns",
+    "playbook_refinement": "Top learnings surfaced in digest are candidates for playbook refinement notes / self-healing rules",
+    "telemetry_integration": "recordUsage() tracks invocation counts + error rates; annotation stores execution context + learnings"
+  },
+  "digest_trend_analysis": {
+    "improving": "Recent success rate > overall + 5 percentage points",
+    "declining": "Recent success rate < overall - 5 percentage points",
+    "stable": "Within 5 point band",
+    "new": "No recent annotations for this domain"
+  },
+  "cardinal_compliance": {
+    "J_annotation_after_execution": "Every proxy/connector call auto-records annotation — no manual step required",
+    "shadcn_only": "N/A — backend APIs only, no new UI components",
+    "no_vps_edits": "No Python or pm2 changes",
+    "author_email": "abhiswami2121@gmail.com"
+  },
+  "integration_map": {
+    "Phase_8": "annotation-collector.ts created as function stub",
+    "Phase_9": "proxy/connector wired to recordUsage — now also records annotations",
+    "PB_D": "Annotation API + digest + auto-wiring complete",
+    "Phase_10": "Digest learnings feed into prompt upgrade + master synthesis"
+  },
+  "slack_synthesis_posted": false,
+  "file_manifest": {
+    "app/api/annotations/route.ts": { "methods": ["GET", "POST", "DELETE"], "imports": ["collectAnnotation", "getAnnotations", "getAnnotationSummary", "clearAnnotations"] },
+    "app/api/annotations/digest/route.ts": { "methods": ["GET"], "imports": ["getAnnotations", "getAnnotationSummary"], "features": ["7-day default lookback", "trend analysis", "auto-recommendations"] },
+    "app/api/proxy/connector/route.ts": { "modified": true, "additions": ["collectAnnotation import", "annotation recording block", "annotation.id in response"] },
+    "connectors/neptune/functions/annotation-collector.ts": { "status": "active", "created": "Phase 8", "enhanced": "PB-D via API wiring" },
+    "connectors/neptune/functions/usage-telemetry.ts": { "status": "active", "created": "Phase 8", "enhanced": "Phase 9 via /api/telemetry wiring" }
+  },
+  "weekly_digest_cron_integration": {
+    "endpoint": "GET /api/annotations/digest?days=7",
+    "suggested_cron": "0 9 * * 1 (Monday 9am UTC)",
+    "output": "Slack post to #jarvis-admin with digest summary + top recommendations",
+    "self_healing_feed": "Digest recommendations feed into playbook refinement cron (02:57 UTC daily)"
+  }
+}

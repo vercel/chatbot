@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { routeNeptuneAction } from "@/connectors/neptune/client";
 import { recordUsage } from "@/connectors/neptune/functions/usage-telemetry";
+import { collectAnnotation } from "@/connectors/neptune/functions/annotation-collector";
 
 export async function POST(req: Request) {
   try {
@@ -45,12 +46,26 @@ export async function POST(req: Request) {
 
     // Record telemetry
     const [connector] = action.split(".");
+    const domain = body.domain || "cross-cutting";
     recordUsage({
       skillOrFunction: action,
       connector,
-      domain: body.domain || "cross-cutting",
+      domain,
       durationMs,
       error,
+    });
+
+    // Record annotation for feedback loop (PB-D)
+    const outcome = error ? "failure" : "success";
+    const annotationRecord = collectAnnotation({
+      domain,
+      playbook: body.playbook || `playbooks/${domain}/playbook-${domain}.md`,
+      skillOrWorkflow: action,
+      outcome,
+      durationMs,
+      error,
+      learning: body.annotation?.learning,
+      toolsUsed: [connector, ...(body.annotation?.toolsUsed || [])],
     });
 
     // Emit skills_changed event if this was a mutation
@@ -68,6 +83,7 @@ export async function POST(req: Request) {
       error,
       durationMs,
       event,
+      annotation: annotationRecord.id,
       timestamp: new Date().toISOString(),
     });
   } catch (e: any) {
