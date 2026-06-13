@@ -82,11 +82,11 @@ export async function upsertEntity(
       ${entity.type},
       ${entity.name},
       ${entity.description ?? null},
-      ${sql.json(entity.properties ?? {})},
+      ${sql.json((entity.properties ?? {}) as Record<string, any>)},
       ${vectorLiteral ? sql.unsafe(`'${vectorLiteral}'::vector`) : null},
       ${entity.path ?? null}::ltree,
       ${entity.confidence ?? 1.0},
-      ${entity.provenance ? sql.json(entity.provenance) : null}
+      ${entity.provenance ? sql.json(entity.provenance as Record<string, any>) : null}
     )
     ON CONFLICT (type, name)
     DO UPDATE SET
@@ -180,9 +180,9 @@ export async function upsertRelation(
       ${rel.from_entity_id},
       ${rel.to_entity_id},
       ${rel.type},
-      ${sql.json(rel.properties ?? {})},
+      ${sql.json((rel.properties ?? {}) as Record<string, any>)},
       ${rel.confidence ?? 1.0},
-      ${rel.provenance ? sql.json(rel.provenance) : null}
+      ${rel.provenance ? sql.json(rel.provenance as Record<string, any>) : null}
     )
     ON CONFLICT (from_entity_id, to_entity_id, type)
     DO UPDATE SET

@@ -36,7 +36,7 @@ Best used for:
 - "is this still right" → find recent lessons that may have invalidated old knowledge
 - Before executing any billing, support, or deployment routine`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("Natural language query about what you want to know"),
     scope: z
       .array(

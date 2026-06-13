@@ -13,7 +13,7 @@ import { config } from "dotenv";
 
 config({ path: ".env.local" });
 
-const POSTGRES_URL = process.env.POSTGRES_URL;
+const POSTGRES_URL: string = process.env.POSTGRES_URL as string;
 if (!POSTGRES_URL) {
   console.error("POSTGRES_URL not set — cannot run speed tests");
   process.exit(1);
@@ -43,7 +43,7 @@ async function run() {
   console.log("║  U7.1 — Postgres KG Speed Test Suite                ║");
   console.log("╚══════════════════════════════════════════════════════╝\n");
 
-  const sql = postgres(POSTGRES_URL, { max: 10, idle_timeout: 30 });
+  const sql = postgres(POSTGRES_URL!, { max: 10, idle_timeout: 30 });
 
   // Verify extensions
   const exts = await sql<{ extname: string }[]>`

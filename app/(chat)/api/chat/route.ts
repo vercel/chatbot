@@ -354,8 +354,8 @@ export async function POST(request: Request) {
                 turnId,
                 userId: session?.user?.id ?? "anonymous",
                 userMessage: userText,
-                systemPrompt: systemMessage,
-                loadedPlaybook: playbooks?.active?.name,
+                systemPrompt: "",
+                loadedPlaybook: "",
                 outcomes: { success: true, durationMs: 0, errors: [] },
                 finalResponse: assistantText,
               };

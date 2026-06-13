@@ -147,7 +147,7 @@ export async function queryRawLogs(
   const offset = params.offset ?? 0;
 
   let where = "WHERE 1=1";
-  const vals: unknown[] = [];
+  const vals: any[] = [];
 
   if (params.sessionId) {
     where += ` AND session_id = $${vals.push(params.sessionId)}`;
@@ -166,7 +166,7 @@ export async function queryRawLogs(
     `SELECT COUNT(*)::int AS total FROM raw_logs ${where}`,
     vals
   );
-  const total = (countResult[0] as { total: number }).total;
+  const total = (countResult[0] as unknown as { total: number }).total;
 
   const entries = await pg.unsafe(
     `SELECT
