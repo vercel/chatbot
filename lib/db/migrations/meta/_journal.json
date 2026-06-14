@@ -64,6 +64,13 @@
       "when": 1782200000000,
       "tag": "0008_constraint_aware_library",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782300000000,
+      "tag": "0009_model_library",
+      "breakpoints": true
     }
   ]
 }

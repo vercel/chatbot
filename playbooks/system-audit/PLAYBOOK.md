@@ -1,3 +1,15 @@
+---
+playbook: system-audit
+version: "1.0.0"
+domain: system-audit
+priority: P1
+model_routing:
+  default: "anthropic/claude-sonnet-4-6"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  long_context: "google/gemini-2-pro"
+---
+
 # System Audit — Master Playbook
 
 > **Version:** 1.0.0 | **Date:** 2026-06-13 | **Status:** ACTIVE

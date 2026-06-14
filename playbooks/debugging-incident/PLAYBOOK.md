@@ -1,3 +1,15 @@
+---
+playbook: debugging-incident
+version: "1.0.0"
+domain: debugging-incident
+priority: P0
+model_routing:
+  default: "anthropic/claude-sonnet-4-6"
+  reasoning_heavy: "anthropic/claude-opus-4-6"
+  coding: "deepseek/deepseek-v4-pro"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+---
+
 # Debugging & Incident Response — Master Playbook
 
 > **Version:** 1.0.0 | **Date:** 2026-06-13 | **Status:** ACTIVE

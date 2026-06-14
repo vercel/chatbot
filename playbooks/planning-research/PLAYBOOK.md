@@ -1,3 +1,16 @@
+---
+playbook: planning-research
+version: "2.0.0"
+domain: planning-research
+priority: P0
+model_routing:
+  default: "anthropic/claude-sonnet-4-6"
+  reasoning_heavy: "anthropic/claude-opus-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  long_context: "google/gemini-2-pro"
+  json_output: "deepseek/deepseek-v4-pro"
+---
+
 # Planning & Research — Master Playbook
 
 > **Version:** 2.0.0 | **Date:** 2026-06-13 | **Status:** ACTIVE

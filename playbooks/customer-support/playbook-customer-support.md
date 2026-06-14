@@ -22,6 +22,11 @@ workflows:
   - enrollment-stage-engine
   - lifecycle-automation
 description: "Customer support SOP — ticket triage, escalation, customer 360 lookup, Vapi call analysis, and Slack comms. Routes to Slack, Vapi, GHL, Base44, and Linear connectors."
+model_routing:
+  default: "deepseek/deepseek-v4-flash"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  cheap: "groq/llama-4-maverick"
 ---
 
 # Customer Support Domain Playbook

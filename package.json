@@ -17,7 +17,9 @@
     "db:up": "drizzle-kit up",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
     "neptune:bootstrap": "tsx scripts/bootstrap-neptune.ts",
-    "neptune:bootstrap:dry": "tsx scripts/bootstrap-neptune.ts --dry-run"
+    "neptune:bootstrap:dry": "tsx scripts/bootstrap-neptune.ts --dry-run",
+    "seed:models": "tsx scripts/seed-models.ts",
+    "seed:models:dry": "tsx scripts/seed-models.ts --dry-run"
   },
   "dependencies": {
     "@ai-sdk/mcp": "^1.0.46",

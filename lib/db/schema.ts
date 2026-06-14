@@ -5,6 +5,7 @@ import {
   integer,
   json,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -334,3 +335,52 @@ export const libraryUsageLog = pgTable("library_usage_logs", {
 });
 
 export type LibraryUsageLog = InferSelectModel<typeof libraryUsageLog>;
+
+// ── Phase 14: Model Library (0009_model_library.sql) ─────────────────────────
+
+export const libraryModel = pgTable("library_models", {
+  identifier: text("identifier").primaryKey().notNull(),
+  displayName: text("display_name").notNull().default(""),
+  provider: text("provider").notNull().default(""),
+  family: text("family"),
+  version: text("version").notNull().default("1.0.0"),
+  releaseDate: timestamp("release_date", { withTimezone: true }),
+  contextWindowTokens: integer("context_window_tokens").notNull().default(0),
+  maxOutputTokens: integer("max_output_tokens").notNull().default(0),
+  inputPricePerMillion: numeric("input_price_per_million").notNull().default("0"),
+  outputPricePerMillion: numeric("output_price_per_million").notNull().default("0"),
+  cachedInputPrice: numeric("cached_input_price"),
+  capabilities: jsonb("capabilities").notNull().default([]),
+  modalities: jsonb("modalities").notNull().default([]),
+  reasoningScore: integer("reasoning_score").default(0),
+  codingScore: integer("coding_score").default(0),
+  visionScore: integer("vision_score").default(0),
+  speedScore: integer("speed_score").default(0),
+  costScore: integer("cost_score").default(0),
+  benchmarkScores: jsonb("benchmark_scores"),
+  bestFor: jsonb("best_for").notNull().default([]),
+  notGoodFor: jsonb("not_good_for").notNull().default([]),
+  status: text("status").notNull().default("active"),
+  sourceUrl: text("source_url"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryModel = InferSelectModel<typeof libraryModel>;
+
+export const libraryModelUsageLog = pgTable("library_model_usage_logs", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  sessionId: text("session_id"),
+  modelUsed: text("model_used").notNull(),
+  playbookRoutedFrom: text("playbook_routed_from"),
+  skillRoutedTo: text("skill_routed_to"),
+  tokensIn: integer("tokens_in"),
+  tokensOut: integer("tokens_out"),
+  latencyMs: integer("latency_ms"),
+  costUsd: numeric("cost_usd", { precision: 14, scale: 8 }),
+  successMarker: boolean("success_marker").notNull().default(true),
+  userRating: integer("user_rating").default(0),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryModelUsageLog = InferSelectModel<typeof libraryModelUsageLog>;

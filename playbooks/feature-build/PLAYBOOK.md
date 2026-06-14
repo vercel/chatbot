@@ -1,3 +1,16 @@
+---
+playbook: feature-build
+version: "1.0.0"
+domain: feature-build
+priority: P0
+model_routing:
+  default: "deepseek/deepseek-v4-pro"
+  coding: "deepseek/deepseek-v4-pro"
+  reasoning_heavy: "anthropic/claude-opus-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  cheap: "deepseek/deepseek-v3.2"
+---
+
 # Feature Build — Master Playbook
 
 > **Version:** 1.0.0 | **Date:** 2026-06-13 | **Status:** ACTIVE

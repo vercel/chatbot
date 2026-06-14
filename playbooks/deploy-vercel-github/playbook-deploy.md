@@ -1,3 +1,15 @@
+---
+playbook: deploy-vercel-github
+version: "1.0.0"
+domain: deploy-vercel-github
+priority: P0
+model_routing:
+  default: "deepseek/deepseek-v4-pro"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  coding: "deepseek/deepseek-v4-pro"
+---
+
 # Deploy Playbook (Chat + V2 + VPS)
 
 

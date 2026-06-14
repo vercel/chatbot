@@ -23,6 +23,12 @@ workflows:
   - lifecycle-automation
   - billing-event-logger
 description: "Billing operations SOP — refunds, declines, charges, payment recovery, and NMI vault management. Routes to NMI, Hyperswitch, Forth, and Base44 connectors."
+model_routing:
+  default: "deepseek/deepseek-v4-pro"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  cheap: "deepseek/deepseek-v3.2"
+  coding: "deepseek/deepseek-v4-pro"
 ---
 
 # Billing Domain Playbook

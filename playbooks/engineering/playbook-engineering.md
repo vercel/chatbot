@@ -26,6 +26,12 @@ workflows:
   - code-refactor
   - research-swarm
 description: "Engineering SOP — code reviews, PR management, deployment pipeline, architecture decisions, and sandbox coding. Routes to GitHub, Vercel, Linear, MCP Hub, and Neptune connectors."
+model_routing:
+  default: "deepseek/deepseek-v4-pro"
+  reasoning_heavy: "anthropic/claude-opus-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  coding: "deepseek/deepseek-v4-pro"
+  cheap: "deepseek/deepseek-v3.2"
 intent_tags:
   - code review
   - architecture

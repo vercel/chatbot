@@ -1,3 +1,15 @@
+---
+playbook: code-review
+version: "1.0.0"
+domain: code-review
+priority: P1
+model_routing:
+  default: "deepseek/deepseek-v4-pro"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  coding: "deepseek/deepseek-v4-pro"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+---
+
 # Code Review — Master Playbook
 
 > **Version:** 1.0.0 | **Date:** 2026-06-13 | **Status:** ACTIVE

@@ -20,6 +20,11 @@ workflows:
   - dispute-orchestrator
   - credit-restoration-engine
 description: "Credit disputes SOP — debt validation, FCRA compliance, credit report parsing, and dispute orchestration. Routes to Forth, Base44, and Slack connectors."
+model_routing:
+  default: "anthropic/claude-sonnet-4-6"
+  reasoning_heavy: "anthropic/claude-opus-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  long_context: "google/gemini-2-pro"
 ---
 
 # Disputes Domain Playbook
