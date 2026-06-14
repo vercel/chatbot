@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Brain, MessageSquare, Wrench, Loader2 } from "lucide-react";
 
-export type StreamPhase = "thinking" | "replying" | "calling-tool" | "idle";
+export type StreamPhase = "thinking" | "replying" | "calling-tool" | "reconnecting" | "idle";
 
 interface StreamingIndicatorProps {
   phase: StreamPhase;
@@ -34,6 +34,11 @@ const PHASE_CONFIG: Record<
     label: "Calling tool",
     icon: <Wrench className="h-3 w-3" />,
     color: "text-amber-500 border-amber-200 dark:border-amber-800",
+  },
+  reconnecting: {
+    label: "Reconnecting",
+    icon: <Loader2 className="h-3 w-3 animate-spin" />,
+    color: "text-orange-500 border-orange-200 dark:border-orange-800",
   },
   idle: {
     label: "",

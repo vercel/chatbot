@@ -36,6 +36,7 @@ type ActiveChatContextValue = {
   status: UseChatHelpers<ChatMessage>["status"];
   stop: UseChatHelpers<ChatMessage>["stop"];
   regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+  resumeStream: UseChatHelpers<ChatMessage>["resumeStream"];
   addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
   input: string;
   setInput: Dispatch<SetStateAction<string>>;
@@ -163,10 +164,38 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       } else if (error instanceof ChatbotError) {
         toast({ type: "error", description: error.message });
       } else {
-        toast({
-          type: "error",
-          description: error.message || "Oops, an error occurred!",
-        });
+        // Phase 18.D: Auto-resume on stream/connection/timeout errors
+        const isResumableError =
+          error.message?.includes("stream") ||
+          error.message?.includes("timeout") ||
+          error.message?.includes("connection") ||
+          error.message?.includes("network") ||
+          error.message?.includes("ECONNRESET") ||
+          error.message?.includes("ETIMEDOUT");
+
+        if (isResumableError) {
+          toast({
+            type: "error",
+            description: "Stream interrupted. Reconnecting...",
+          });
+          // Attempt resume after brief backoff
+          setTimeout(() => {
+            try {
+              resumeStream();
+            } catch (_) {
+              // Resume failed, show manual retry option
+              toast({
+                type: "error",
+                description: "Could not reconnect. Please try again.",
+              });
+            }
+          }, 1500);
+        } else {
+          toast({
+            type: "error",
+            description: error.message || "Oops, an error occurred!",
+          });
+        }
       }
     },
   });
@@ -253,6 +282,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       status,
       stop,
       regenerate,
+      resumeStream,
       addToolApprovalResponse,
       input,
       setInput,
@@ -273,6 +303,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       status,
       stop,
       regenerate,
+      resumeStream,
       addToolApprovalResponse,
       input,
       visibility,

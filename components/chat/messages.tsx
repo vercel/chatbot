@@ -26,6 +26,7 @@ type MessagesProps = {
   isLoading?: boolean;
   selectedModelId: string;
   onEditMessage?: (message: ChatMessage) => void;
+  onResume?: () => void;
 };
 
 function PureMessages({
@@ -41,6 +42,7 @@ function PureMessages({
   isLoading,
   selectedModelId: _selectedModelId,
   onEditMessage,
+  onResume,
 }: MessagesProps) {
   useDataStream();
 
@@ -78,6 +80,7 @@ function PureMessages({
             onRetry={() => {
               // Re-render by resetting error state
             }}
+            onResume={onResume}
           >
             <PreviewMessage
               addToolApprovalResponse={addToolApprovalResponse}

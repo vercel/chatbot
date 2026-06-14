@@ -36,6 +36,7 @@ export function ChatShell() {
     status,
     stop,
     regenerate,
+    resumeStream,
     addToolApprovalResponse,
     input,
     setInput,
@@ -104,6 +105,7 @@ export function ChatShell() {
                 setInput(text ?? "");
                 setEditingMessage(msg);
               }}
+              onResume={resumeStream}
               regenerate={regenerate}
               selectedModelId={currentModelId}
               setMessages={setMessages}

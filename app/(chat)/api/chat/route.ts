@@ -56,7 +56,7 @@ import {
   generateCheckpointSummary,
 } from "@/lib/ai/token-tracker";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function getStreamContext() {
   try {

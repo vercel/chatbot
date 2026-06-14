@@ -14,7 +14,7 @@
 import { auth } from "@/app/(auth)/auth";
 import { ChatbotError } from "@/lib/errors";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   try {

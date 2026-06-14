@@ -12,6 +12,7 @@ import {
   ActivityIcon,
   BarChart3Icon,
   BeakerIcon,
+  FunctionSquareIcon,
   KeyRoundIcon,
   LayoutDashboardIcon,
   PlugIcon,
@@ -60,6 +61,13 @@ async function fetchAdminCounts(): Promise<AdminCounts> {
 }
 
 const ADMIN_ITEMS = [
+  {
+    id: "function-inventory",
+    label: "Function Inventory",
+    icon: FunctionSquareIcon,
+    href: "/admin/function-inventory",
+    description: "Enterprise function map",
+  },
   {
     id: "dashboard",
     label: "Dashboard",
