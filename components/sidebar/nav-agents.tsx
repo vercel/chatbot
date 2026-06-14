@@ -68,6 +68,14 @@ const AGENT_ITEMS = [
     shortcut: "⌘1",
   },
   {
+    id: "v2-sessions",
+    label: "V2 Sessions",
+    icon: BotIcon,
+    href: "/v2-sessions",
+    shortcut: "⌘2",
+    countKey: "v2Sessions" as const,
+  },
+  {
     id: "tools",
     label: "Tools",
     icon: ZapIcon,
@@ -76,25 +84,11 @@ const AGENT_ITEMS = [
     countKey: "tools" as const,
   },
   {
-    id: "v2-sessions",
-    label: "V2 Sessions",
-    icon: BotIcon,
-    href: "/v2-sessions",
-    shortcut: "⌘8",
-    countKey: "v2Sessions" as const,
-  },
-  {
-    id: "sessions",
-    label: "Sessions",
-    icon: BotIcon,
-    href: "/sessions",
-  },
-  {
     id: "workflows",
     label: "Workflows",
     icon: WorkflowIcon,
     href: "/workflows",
-    shortcut: "⌘5",
+    shortcut: "⌘4",
   },
   {
     id: "sandbox",

@@ -49,7 +49,6 @@ async function SidebarShell({ children }: { children: React.ReactNode }) {
           <ChatLayoutClient user={session?.user} />
         </ActiveChatProvider>
       </Suspense>
-      {/* Children render below the main layout for portal-based content (sheets, dialogs) */}
       {children}
     </SidebarProvider>
   );

@@ -30,6 +30,7 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { V2LivePanel } from "@/components/v2-live-panel";
 import { useV2Session } from "@/hooks/use-v2-session";
 import { CanvasShell } from "@/components/canvas/canvas-shell";
+import { MobileHeader } from "@/components/mobile-header";
 import { useCanvasStore } from "@/lib/canvas/store";
 import { useSearchParams } from "next/navigation";
 
@@ -110,8 +111,9 @@ function ChatLayoutInner({ user }: ChatLayoutClientProps) {
         user={user}
       />
 
-      {/* Main content: ResizablePanelGroup wrapping chat + canvas + context panel */}
+      {/* Main content: MobileHeader + ResizablePanelGroup wrapping chat + canvas + context panel */}
       <SidebarInset>
+        <MobileHeader />
         <ResizablePanelGroup
           autoSave="neptune-chat-layout"
           className="!h-dvh"
