@@ -20,11 +20,12 @@ Source of truth for the Progressive Disclosure skill loading system (U2).
 | Vercel Discipline | playbooks/vercel-discipline/ | playbook-vercel-discipline.md |
 | VPS Ops | playbooks/vps-ops/ | playbook-vps-ops.md |
 
-## 🔌 Connectors (15 integration packs)
+## 🔌 Connectors (17 integration packs)
 
 | Connector | Path | Domain | MCP | Description |
 |-----------|------|--------|-----|-------------|
 | Affy | connectors/affy/ | billing-flow | - | Chargeback disputes — affidavits, evidence, and defense automation |
+| AI SDK 6 | connectors/ai-sdk-6/ | mcp-edits | - | Vercel AI SDK v6 — streamText, generateText, ToolLoopAgent, resumable streams, MCP tools |
 | Base44 | connectors/base44/ | customer-enrollment | - | Entity queries, customer 360, reporting hub, and function invocation |
 | Cat-facts | connectors/cat-facts/ | engineering | - | Cat Facts API — random feline trivia from catfact.ninja |
 | Custom-skills | connectors/custom-skills/ | agent-orchestration | - | Pure non-API capabilities — playbook refinement, code review, self-coding, research, and response formatting. No external API, operates on local filesystem and knowledge graph. |
@@ -39,6 +40,7 @@ Source of truth for the Progressive Disclosure skill loading system (U2).
 | Vapi | connectors/vapi/ | support-triage | - | Voice AI — call logs, transcripts, and agent analytics |
 | Vercel | connectors/vercel/ | engineering | - | Manage Vercel projects, deployments, build logs, and webhook events |
 | Wiki | connectors/wiki/ | reporting | - | Karpathy-style second brain — ingest, query, lint, and manage knowledge |
+| Workflow DevKit | connectors/workflow-devkit/ | mcp-edits | - | Durable workflows — createWorkflow, step.run, hooks.waitFor, sleep, crash recovery |
 
 ## ✨ Capabilities (7 agent skills)
 
@@ -67,11 +69,12 @@ Source of truth for the Progressive Disclosure skill loading system (U2).
 | resolve-customer-identity | skills/functions/resolve-customer-identity/ | customer-enrollment |
 | validate-action | skills/functions/validate-action/ | compliance-audit |
 
-## 🔗 Connector Skills (13 per-connector docs)
+## 🔗 Connector Skills (15 per-connector docs)
 
 | Skill | Path |
 |-------|------|
 | affy | skills/connectors/affy/ |
+| ai-sdk-6 | skills/connectors/ai-sdk-6/ |
 | base44 | skills/connectors/base44/ |
 | forth | skills/connectors/forth/ |
 | ghl | skills/connectors/ghl/ |
@@ -84,6 +87,7 @@ Source of truth for the Progressive Disclosure skill loading system (U2).
 | vapi | skills/connectors/vapi/ |
 | vercel | skills/connectors/vercel/ |
 | wiki | skills/connectors/wiki/ |
+| workflow-devkit | skills/connectors/workflow-devkit/ |
 
 ## Load via `load_skill`
 
@@ -97,10 +101,10 @@ skills/functions/billing-event-logger
 ## Totals
 
 - **10** playbook domains
-- **15** connector integration packs
+- **17** connector integration packs
 - **7** capabilities
 - **10** functions
-- **13** connector skill docs
-- **55** total loadable skill paths
+- **15** connector skill docs
+- **59** total loadable skill paths
 
 *Regenerated 2026-06-12T06:02:00.850Z*

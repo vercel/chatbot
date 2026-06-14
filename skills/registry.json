@@ -118,6 +118,24 @@
       "primary_domain": "customer-comms",
       "also_in": ["lead-flow"],
       "dependencies": []
+    },
+    {
+      "name": "ai-sdk-6-connector",
+      "version": "6.0.116",
+      "path": "connectors/ai-sdk-6",
+      "tools": 7,
+      "primary_domain": "mcp-edits",
+      "also_in": ["agent-payments", "reporting", "support-triage", "customer-comms", "lead-flow"],
+      "dependencies": ["workflow-devkit-connector"]
+    },
+    {
+      "name": "workflow-devkit-connector",
+      "version": "0.0.0-beta",
+      "path": "connectors/workflow-devkit",
+      "tools": 6,
+      "primary_domain": "mcp-edits",
+      "also_in": ["agent-payments", "billing-flow", "credit-disputes", "support-triage"],
+      "dependencies": ["ai-sdk-6-connector"]
     }
   ],
   "functions": [
@@ -281,9 +299,9 @@
     ]
   },
   "summary": {
-    "totalConnectors": 13,
+    "totalConnectors": 15,
     "totalFunctions": 10,
     "totalCapabilities": 5,
-    "totalSkills": 28
+    "totalSkills": 30
   }
 }

@@ -13,7 +13,14 @@ export const metadata: Metadata = {
     "Neptune Chat — a Vercel AI Chatbot powered by the Vercel AI Gateway with multi-provider model support.",
 };
 
-export const viewport = {};
+// Phase 11: Viewport meta lock — NO maximum-scale or user-scalable=no.
+// Fixes mobile-resize bug (US-2): server-side mobile detection via headers()
+// prevents runtime layout swaps. This viewport ensures consistent rendering.
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+} as const;
 
 const geist = Geist({
   subsets: ["latin"],

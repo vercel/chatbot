@@ -57,6 +57,9 @@ export const message = pgTable("Message_v2", {
   tokenCount: integer("token_count"),
   artifactSpec: text("artifact_spec"),
   artifactModel: varchar("artifact_model", { length: 64 }),
+  // Phase 11: Artifact draft persistence for refresh recovery
+  artifactDraft: text("artifact_draft"),
+  streamPosition: integer("stream_position").default(0),
 });
 
 export type DBMessage = InferSelectModel<typeof message>;
