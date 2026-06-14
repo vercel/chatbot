@@ -3,6 +3,11 @@ playbook: reporting
 version: 1.0.0
 domain: reporting
 scope: domain
+model_routing:
+  default: "deepseek/deepseek-v4-pro"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  cheap: "deepseek/deepseek-v3.2"
 auto_load: false
 headline: Operational dashboards, morning pulse, analytics and data queries
 priority: P1

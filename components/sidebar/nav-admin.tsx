@@ -11,11 +11,15 @@
 import {
   ActivityIcon,
   BarChart3Icon,
+  BeakerIcon,
   KeyRoundIcon,
+  LayoutDashboardIcon,
   PlugIcon,
+  PuzzleIcon,
   SettingsIcon,
   ShieldAlertIcon,
   ShieldIcon,
+  StoreIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -57,13 +61,48 @@ async function fetchAdminCounts(): Promise<AdminCounts> {
 
 const ADMIN_ITEMS = [
   {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboardIcon,
+    href: "/admin/dashboard",
+    description: "Observability KPIs",
+  },
+  {
+    id: "marketplace",
+    label: "Marketplace",
+    icon: StoreIcon,
+    href: "/admin/marketplace",
+    description: "Skill discovery",
+  },
+  {
+    id: "agent-sim",
+    label: "Agent Sim",
+    icon: BeakerIcon,
+    href: "/admin/agent-sim",
+    description: "Side-by-side comparison",
+  },
+  {
+    id: "connector-wizard",
+    label: "Connector Wizard",
+    icon: PuzzleIcon,
+    href: "/admin/connector-wizard",
+    description: "8-step builder",
+  },
+  {
+    id: "evals",
+    label: "Evals",
+    icon: BarChart3Icon,
+    href: "/admin/evals",
+    description: "Quality leaderboard",
+  },
+  {
     id: "connectors-admin",
     label: "Connectors",
     icon: PlugIcon,
     href: "/connectors",
     shortcut: "⌘2",
     countKey: "connectorsConfigured" as const,
-    countLabel: "active",
+    description: "MCP connections",
   },
   {
     id: "secrets",
@@ -71,6 +110,7 @@ const ADMIN_ITEMS = [
     icon: KeyRoundIcon,
     href: "/secrets",
     shortcut: "⌘7",
+    description: "API keys",
   },
   {
     id: "reports",
@@ -78,24 +118,28 @@ const ADMIN_ITEMS = [
     icon: BarChart3Icon,
     href: "/reports",
     shortcut: "⌘6",
+    description: "Operational reports",
   },
   {
     id: "telemetry",
     label: "Telemetry",
     icon: ActivityIcon,
     href: "/telemetry",
+    description: "Event tracing",
   },
   {
     id: "diagnostics",
     label: "Diagnostics",
     icon: ShieldAlertIcon,
     href: "/diagnostics",
+    description: "System health",
   },
   {
     id: "settings",
     label: "Settings",
     icon: SettingsIcon,
     href: "/settings",
+    description: "Configuration",
   },
 ];
 

@@ -3,6 +3,11 @@ playbook: agent-orchestration
 version: 1.0.0
 domain: agent-orchestration
 scope: domain
+model_routing:
+  default: "anthropic/claude-sonnet-4-20250514"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  fast_iteration: "deepseek/deepseek-v4-pro"
+  cheap: "deepseek/deepseek-v3.2"
 auto_load: true
 headline: Agent routing, dispatch, multi-agent coordination and task delegation playbook
 priority: P1

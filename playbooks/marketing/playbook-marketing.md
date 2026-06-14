@@ -3,6 +3,11 @@ playbook: marketing
 version: 1.0.0
 domain: marketing
 scope: domain
+model_routing:
+  default: "deepseek/deepseek-v3.2"
+  reasoning_heavy: "anthropic/claude-sonnet-4-20250514"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  cheap: "deepseek/deepseek-v3.2"
 auto_load: false
 headline: Campaigns, lead nurture, content strategy and marketing operations
 priority: P2

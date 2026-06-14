@@ -3,6 +3,11 @@ playbook: HR
 version: 1.0.0
 domain: HR
 scope: domain
+model_routing:
+  default: "deepseek/deepseek-v3.2"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  cheap: "deepseek/deepseek-v3.2"
 auto_load: false
 headline: Team management, onboarding, compliance and personnel operations
 priority: P2

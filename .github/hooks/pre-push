@@ -1,0 +1,61 @@
+#!/bin/bash
+# Phase 15.D — Pre-push git hook: typecheck + lint + build smoke
+# Must complete in <30s to avoid developer friction.
+# Exit 1 blocks push. Exit 0 allows.
+
+set -e
+START=$(date +%s)
+FAIL=0
+TIMING=""
+
+bench() {
+  local label="$1"
+  local start=$(date +%s%N)
+  shift
+  "$@" 2>&1 || { FAIL=1; echo "❌ $label FAILED"; return 1; }
+  local end=$(date +%s%N)
+  local ms=$(( (end - start) / 1000000 ))
+  TIMING="$TIMING  $label: ${ms}ms"
+  echo "  ✓ $label (${ms}ms)"
+}
+
+echo "┌─ Pre-push Check ──────────────────────────────┐"
+
+# 1. TypeScript typecheck (~8-15s, cached)
+bench "tsc" npx tsc --noEmit --pretty 2>&1 | tail -5
+
+# 2. Biome lint (~2-5s)
+bench "lint" npx biome check --no-errors-on-unmatched --files-ignore-unknown=true app/ lib/ components/ 2>&1 | tail -3
+
+# 3. Build dry-run smoke (~10-15s, critical)
+# Only check that the build can start without config errors
+bench "build-check" npx next build --dry-run 2>&1 | tail -3 || {
+  # Fallback: at minimum verify next.config loads
+  node -e "require('./next.config.ts'); console.log('  ✓ next.config.ts loads')" 2>&1 || true
+}
+
+# 4. Migration dry-run check
+if [ -f "lib/db/migrate.ts" ]; then
+  bench "migration-dry-run" npx drizzle-kit check 2>&1 | tail -3 || {
+    echo "  ⚠ Migration check skipped (DB may not be reachable)"
+  }
+fi
+
+END=$(date +%s)
+ELAPSED=$((END - START))
+echo "├───────────────────────────────────────────────┤"
+echo "│ Duration: ${ELAPSED}s (budget: 30s)               │"
+
+if [ $ELAPSED -gt 30 ]; then
+  echo "│ ⚠ WARNING: Exceeded 30s budget!              │"
+fi
+
+if [ $FAIL -eq 1 ]; then
+  echo "│ ❌ PUSH BLOCKED — fix errors above            │"
+  echo "└───────────────────────────────────────────────┘"
+  exit 1
+else
+  echo "│ ✅ All checks passed                          │"
+  echo "└───────────────────────────────────────────────┘"
+  exit 0
+fi

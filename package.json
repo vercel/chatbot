@@ -19,7 +19,12 @@
     "neptune:bootstrap": "tsx scripts/bootstrap-neptune.ts",
     "neptune:bootstrap:dry": "tsx scripts/bootstrap-neptune.ts --dry-run",
     "seed:models": "tsx scripts/seed-models.ts",
-    "seed:models:dry": "tsx scripts/seed-models.ts --dry-run"
+    "seed:models:dry": "tsx scripts/seed-models.ts --dry-run",
+    "seed:evals": "tsx scripts/seed-evals.ts",
+    "seed:evals:dry": "tsx scripts/seed-evals.ts --dry-run",
+    "health": "curl -s http://localhost:3000/api/health | jq .",
+    "vps-health": "curl -s http://localhost:3000/api/admin/vps-health | jq .",
+    "pre-push": "bash .github/hooks/pre-push"
   },
   "dependencies": {
     "@ai-sdk/mcp": "^1.0.46",

@@ -3,6 +3,11 @@ playbook: vps-ops
 version: 1.0.0
 domain: vps-ops
 scope: domain
+model_routing:
+  default: "deepseek/deepseek-v4-pro"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  fast_iteration: "deepseek/deepseek-v4-flash"
+  cheap: "deepseek/deepseek-v3.2"
 auto_load: false
 headline: VPS management, pm2, nginx, Cloudflare and system health operations
 priority: P1

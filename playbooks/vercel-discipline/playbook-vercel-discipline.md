@@ -3,6 +3,11 @@ playbook: vercel-discipline
 version: 1.0.0
 domain: vercel-discipline
 scope: domain
+model_routing:
+  default: "anthropic/claude-sonnet-4-20250514"
+  reasoning_heavy: "anthropic/claude-sonnet-4-6"
+  fast_iteration: "deepseek/deepseek-v4-pro"
+  cheap: "deepseek/deepseek-v3.2"
 auto_load: true
 headline: Vercel deployment standards, security patterns and framework discipline
 priority: P1

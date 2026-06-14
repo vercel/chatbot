@@ -384,3 +384,44 @@ export const libraryModelUsageLog = pgTable("library_model_usage_logs", {
 });
 
 export type LibraryModelUsageLog = InferSelectModel<typeof libraryModelUsageLog>;
+
+// ── Phase 15: Evals (0010_library_evals.sql) ──────────────────────────────────
+
+export const libraryEval = pgTable("library_evals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  evalName: text("eval_name").notNull(),
+  domain: text("domain").notNull().default("general"),
+  query: text("query").notNull(),
+  expectedSkills: jsonb("expected_skills").notNull().default([]),
+  expectedConnectors: jsonb("expected_connectors").notNull().default([]),
+  expectedModel: text("expected_model"),
+  successCriteria: jsonb("success_criteria").notNull().default({}),
+  severity: text("severity").notNull().default("normal"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryEval = InferSelectModel<typeof libraryEval>;
+
+export const libraryEvalRun = pgTable("library_eval_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  evalId: uuid("eval_id").notNull().references(() => libraryEval.id, { onDelete: "cascade" }),
+  sessionId: text("session_id"),
+  runAt: timestamp("run_at", { withTimezone: true }).notNull().defaultNow(),
+  status: text("status").notNull().default("pending"),
+  skillsLoaded: jsonb("skills_loaded").default([]),
+  connectorsUsed: jsonb("connectors_used").default([]),
+  modelUsed: text("model_used"),
+  qualityGrade: text("quality_grade"),
+  qualityScore: integer("quality_score"),
+  subScores: jsonb("sub_scores"),
+  latencyMs: integer("latency_ms"),
+  costUsd: numeric("cost_usd", { precision: 14, scale: 8 }),
+  tokensIn: integer("tokens_in"),
+  tokensOut: integer("tokens_out"),
+  errorMessage: text("error_message"),
+  rawResponse: text("raw_response"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryEvalRun = InferSelectModel<typeof libraryEvalRun>;
