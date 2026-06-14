@@ -20,6 +20,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCanvasStore } from "@/lib/canvas/store";
+import type { CanvasMode } from "@/lib/canvas/types";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -262,6 +264,39 @@ export function LibrarySidebarV2({
   const [loading, setLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Canvas store integration (Phase 16) ───────────────────────────
+  const canvasOpen = useCanvasStore((s) => s.open);
+
+  // Default drill-down: open the corresponding canvas mode
+  const handleDrillDown = useCallback(
+    (node: TreeNode) => {
+      if (onDrillDown) {
+        onDrillDown(node);
+        return;
+      }
+      // Default: map tree node type → canvas mode
+      const modeMap: Record<string, CanvasMode> = {
+        connector: "connector-detail",
+        skill: "skill-detail",
+        function: "function-detail",
+        playbook: "playbook-detail",
+        workflow: "workflow-canvas",
+        model: "library-overview",
+      };
+      const mode = modeMap[node.type] || "library-overview";
+      // Build context from node type
+      const ctx: Record<string, string> = {};
+      if (node.type === "connector") ctx.connectorName = node.id.replace(/-connector$/, "");
+      if (node.type === "skill") ctx.skillName = node.id;
+      if (node.type === "function") ctx.functionName = node.id;
+      if (node.type === "playbook") ctx.playbookName = node.id;
+      if (node.type === "workflow") ctx.workflowName = node.id;
+
+      canvasOpen(mode, ctx);
+    },
+    [onDrillDown, canvasOpen],
+  );
+
   // Load tree data on mount
   useEffect(() => {
     if (isExpanded) {
@@ -421,7 +456,7 @@ export function LibrarySidebarV2({
                       key={node.id}
                       node={node}
                       searchQuery={searchQuery}
-                      onDrillDown={onDrillDown}
+                      onDrillDown={handleDrillDown}
                       activeNodeId={activeNodeId}
                     />
                   ))}

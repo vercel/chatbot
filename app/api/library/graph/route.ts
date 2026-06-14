@@ -44,10 +44,13 @@ interface GraphResponse {
 
 // ── Handler ────────────────────────────────────────────────────────────────
 
-export const GET = requireAllowlist(async () => {
+export const GET = requireAllowlist(async (req: Request) => {
   if (!POSTGRES_URL) {
     return NextResponse.json({ error: "DB not configured" }, { status: 500 });
   }
+
+  const { searchParams } = new URL(req.url);
+  const enrich = searchParams.get("enrich") === "usage";
 
   const sql = postgres(POSTGRES_URL, { max: 1 });
 
@@ -202,13 +205,63 @@ export const GET = requireAllowlist(async () => {
       },
     };
 
+    // ── Enrichment: usage stats + recent items ─────────────────────────
+    let usage: Record<string, unknown> = {};
+    let recent: Array<Record<string, unknown>> = [];
+
+    if (enrich) {
+      // Usage aggregation — last 7 days
+      const [usageRow] = await sql`
+        SELECT
+          COALESCE(SUM("tokens_actual"), 0) as tokens_this_week,
+          COALESCE(SUM("cost_actual_usd"), 0) as cost_this_week,
+          COALESCE(
+            SUM(CASE WHEN "tokens_actual" > 0 THEN 1 ELSE 0 END)::float / NULLIF(COUNT(*), 0),
+            0
+          ) as eval_pass_rate
+        FROM "library_usage_logs"
+        WHERE "created_at" >= NOW() - INTERVAL '7 days'
+      `;
+
+      usage = {
+        tokensThisWeek: Number(usageRow?.tokens_this_week || 0),
+        costThisWeek: Number(usageRow?.cost_this_week || 0),
+        evalPassRate: Number(usageRow?.eval_pass_rate || 0),
+        sparkline: [], // Daily breakdown — deferred to dedicated analytics endpoint
+      };
+
+      // Recent items — last 10 distinct viewed connectors/skills
+      const recentRows = await sql`
+        SELECT DISTINCT ON ("skill_loaded")
+          "skill_loaded" as name,
+          "skill_type" as type,
+          "created_at" as viewed_at
+        FROM "library_usage_logs"
+        WHERE "created_at" >= NOW() - INTERVAL '30 days'
+        ORDER BY "skill_loaded", "created_at" DESC
+        LIMIT 10
+      `;
+
+      recent = recentRows.map((r) => ({
+        type: r.type || "connector",
+        name: r.name,
+        label: (r.name || "").replace(/-/g, " ").replace(/\b\w/g, (ch: string) => ch.toUpperCase()),
+        viewedAt: r.viewed_at,
+      }));
+    }
+
     // ETag from max edge updated_at
     const [maxTs] = await sql`
       SELECT COALESCE(MAX("updated_at"), NOW()) as ts FROM "library_edges"
     `;
     const etag = `"${new Date(maxTs.ts).getTime().toString(36)}"`;
 
-    return NextResponse.json(response, {
+    const enrichedResponse = {
+      ...response,
+      ...(enrich ? { usage, recent } : {}),
+    };
+
+    return NextResponse.json(enrichedResponse, {
       status: 200,
       headers: {
         "Cache-Control": "public, max-age=300, s-maxage=300",

@@ -13,7 +13,7 @@
  * Renders INSIDE SidebarProvider in layout.tsx.
  */
 import type { User } from "next-auth";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { AppSidebar } from "@/components/chat/app-sidebar";
 import { CommandPalette } from "@/components/chat/command-palette";
 import type { PanelId } from "@/components/chat/app-sidebar";
@@ -29,6 +29,9 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { V2LivePanel } from "@/components/v2-live-panel";
 import { useV2Session } from "@/hooks/use-v2-session";
+import { CanvasShell } from "@/components/canvas/canvas-shell";
+import { useCanvasStore } from "@/lib/canvas/store";
+import { useSearchParams } from "next/navigation";
 
 interface ChatLayoutClientProps {
   user: User | undefined;
@@ -38,6 +41,39 @@ function ChatLayoutInner({ user }: ChatLayoutClientProps) {
   const [activePanel, setActivePanel] = useState<PanelId>(null);
   const { toggleSidebar } = useSidebar();
   const { activeSession, isPanelOpen: isV2PanelOpen, closeSession } = useV2Session();
+
+  // ── Canvas state ───────────────────────────────────────────────────
+  const canvasOpen = useCanvasStore((s) => s.isOpen);
+  const canvasWidth = useCanvasStore((s) => s.width);
+  const canvasOpenFn = useCanvasStore((s) => s.open);
+
+  // ── Deep linking: ?canvas=mode&name=NAME ───────────────────────────
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const mode = searchParams.get("canvas");
+    const name = searchParams.get("name");
+    if (mode) {
+      const validModes = [
+        "library-overview", "connector-detail", "skill-detail",
+        "function-detail", "playbook-detail", "workflow-canvas",
+        "kg-explorer", "wiki-browser", "add-new",
+      ];
+      if (validModes.includes(mode)) {
+        const ctx: Record<string, string> = {};
+        if (name) {
+          // Infer context key from mode
+          if (mode === "connector-detail") ctx.connectorName = name;
+          else if (mode === "skill-detail") ctx.skillName = name;
+          else if (mode === "function-detail") ctx.functionName = name;
+          else if (mode === "playbook-detail") ctx.playbookName = name;
+          else if (mode === "workflow-canvas") ctx.workflowName = name;
+          else if (mode === "kg-explorer") ctx.kgNode = name;
+          else if (mode === "wiki-browser") ctx.wikiPath = name;
+        }
+        canvasOpenFn(mode as Parameters<typeof canvasOpenFn>[0], ctx);
+      }
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
@@ -56,6 +92,9 @@ function ChatLayoutInner({ user }: ChatLayoutClientProps) {
 
   const isPanelOpen = activePanel !== null;
 
+  // Calculate panel sizes considering canvas
+  const chatSize = canvasOpen ? Math.max(30, 100 - canvasWidth - (isPanelOpen ? 20 : 0)) : (isPanelOpen ? 65 : 100);
+
   return (
     <>
       {/* Cmd+K command palette */}
@@ -71,7 +110,7 @@ function ChatLayoutInner({ user }: ChatLayoutClientProps) {
         user={user}
       />
 
-      {/* Main content: ResizablePanelGroup wrapping chat + context panel */}
+      {/* Main content: ResizablePanelGroup wrapping chat + canvas + context panel */}
       <SidebarInset>
         <ResizablePanelGroup
           autoSave="neptune-chat-layout"
@@ -80,12 +119,22 @@ function ChatLayoutInner({ user }: ChatLayoutClientProps) {
           orientation="horizontal"
         >
           {/* Chat area — always visible */}
-          <ResizablePanel defaultSize={isPanelOpen ? 65 : 100} minSize={40}>
+          <ResizablePanel defaultSize={chatSize} minSize={25}>
             <ChatShell />
           </ResizablePanel>
 
+          {/* ── Library Canvas — Phase 16 ──────────────────────────── */}
+          {canvasOpen && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={canvasWidth} minSize={20} maxSize={60}>
+                <CanvasShell>{/* CanvasShell renders canvas content when open */}</CanvasShell>
+              </ResizablePanel>
+            </>
+          )}
+
           {/* Context panel — visible when a sidebar item is selected */}
-          {isPanelOpen && (
+          {isPanelOpen && !canvasOpen && (
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={25}>
