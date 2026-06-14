@@ -152,3 +152,23 @@ export const sandboxRun = pgTable("SandboxRun", {
 });
 
 export type SandboxRun = InferSelectModel<typeof sandboxRun>;
+
+// Phase 9: Handoff sessions table for V2 coding agent session tracking
+export const handoffSession = pgTable("handoff_sessions", {
+  id: text("id").primaryKey().notNull(),
+  chatMessageId: text("chat_message_id"),
+  userId: uuid("user_id").references(() => user.id),
+  repo: text("repo"),
+  goal: text("goal"),
+  v2SessionId: text("v2_session_id"),
+  v2SandboxId: text("v2_sandbox_id"),
+  status: text("status").notNull().default("spawning"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  prUrl: text("pr_url"),
+  deployUrl: text("deploy_url"),
+  resultSummary: text("result_summary"),
+});
+
+export type HandoffSession = InferSelectModel<typeof handoffSession>;

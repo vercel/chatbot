@@ -1,17 +1,19 @@
 /**
- * V2 Bidirectional Bridge — shared module for all Neptune V2 interactions.
+ * V2 Bidirectional Bridge - shared module for all Neptune V2 interactions.
  *
- * PRD ref: Section 3, Layer 4 — V2 Integration (Bidirectional)
+ * PRD ref: Section 3, Layer 4 - V2 Integration (Bidirectional)
  *
- * Chat → V2 (handoff):     handoffToV2()  — POST /api/sessions
- * Chat ← V2 (read state):  listV2Sessions(), getV2Session(), streamV2Progress()
- * Chat → V2 (control):     controlV2Session() — pause/resume/cancel
+ * Chat -> V2 (handoff):     handoffToV2()  - POST /api/sessions
+ * Chat <- V2 (read state):  listV2Sessions(), getV2Session(), streamV2Progress()
+ * Chat -> V2 (control):     controlV2Session() - pause/resume/cancel
  *
- * U1.2: handoffToV2 now includes auto-retry (1 retry with 2s backoff).
+ * Phase 9: Fixed sseUrl to return session-specific stream URL (not /api/chat).
+ * Added sessionId resume support in handoffToV2().
+ * U1.2: handoffToV2 includes auto-retry (1 retry with 2s backoff).
  * U1.2: All functions return structured results, never throw unhandled.
  */
 
-// ── Configuration ────────────────────────────────────────────────────────
+// --- Configuration --------------------------------------------------------
 import { secrets } from "@/secrets";
 
 const NEPTUNE_V2_URL =
@@ -23,8 +25,14 @@ const NEPTUNE_INTERNAL_TOKEN = secrets.vps.internalToken;
 const DEFAULT_TIMEOUT = 15_000;
 const V2_HANDOFF_TIMEOUT = 60_000; // U1.2: 60s max for V2 handoff
 const V2_CHAT_ENDPOINT = `${NEPTUNE_V2_URL}/api/chat`;
+const V2_SESSIONS_ENDPOINT = `${NEPTUNE_V2_URL}/api/sessions`;
 
-// ── Types ────────────────────────────────────────────────────────────────
+/** Phase 9: Build the correct session SSE stream URL */
+function buildSessionStreamUrl(sessionId: string): string {
+  return `${V2_SESSIONS_ENDPOINT}/${sessionId}/stream`;
+}
+
+// --- Types ----------------------------------------------------------------
 
 export interface V2Session {
   sessionId?: string;
@@ -72,7 +80,7 @@ export interface V2ControlResult {
   error?: string;
 }
 
-// ── Shared Helpers ───────────────────────────────────────────────────────
+// --- Shared Helpers -------------------------------------------------------
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
@@ -104,21 +112,60 @@ async function fetchWithTimeout(
   }
 }
 
-// ── Core Bridge API ──────────────────────────────────────────────────────
+// --- Core Bridge API ------------------------------------------------------
 
 /**
  * Hand off a coding task to Neptune V2 via /api/chat.
  * V2 uses chatId as the session identifier; the SSE stream is consumed
  * by the calling API route.
  *
- * U1.2: Auto-retry — first failure retries once with 2s backoff.
+ * Phase 9: Supports sessionId for resume. If sessionId is provided,
+ * attempts GET /api/sessions/{sessionId} to check if the session exists.
+ * If it does and is still active, returns the existing session's stream URL.
+ * If 404 or terminal, creates a new session and logs a warning.
+ *
+ * U1.2: Auto-retry - first failure retries once with 2s backoff.
  * Second failure returns structured error.
  */
 export async function handoffToV2(
   prompt: string,
   context?: string,
-  model?: string
+  model?: string,
+  sessionId?: string
 ): Promise<V2HandoffResult> {
+  // Phase 9: If sessionId provided, attempt resume first
+  if (sessionId) {
+    try {
+      const resumeRes = await fetchWithTimeout(
+        `${V2_SESSIONS_ENDPOINT}/${sessionId}`,
+        { method: "GET", headers: authHeaders() },
+        10_000
+      );
+      if (resumeRes.ok) {
+        const sessionData = await resumeRes.json().catch(() => ({}));
+        const status = sessionData.status ?? sessionData.state ?? "";
+        if (!["completed", "failed", "aborted"].includes(status)) {
+          // Session exists and is still active - return it for resume
+          return {
+            success: true,
+            sessionId,
+            sessionUrl: `${NEPTUNE_V2_URL}/sessions/${sessionId}`,
+            sseUrl: buildSessionStreamUrl(sessionId),
+          };
+        }
+      }
+      // Session not found or terminal - log and continue to create new
+      console.log(
+        `[handoffToV2] Session ${sessionId} not found or terminal, creating new`
+      );
+    } catch {
+      // Resume check failed, proceed to create new session
+      console.log(
+        `[handoffToV2] Resume check failed for ${sessionId}, creating new`
+      );
+    }
+  }
+
   const chatId = `handoff-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const attempt = async (): Promise<V2HandoffResult> => {
@@ -154,7 +201,7 @@ export async function handoffToV2(
         };
       }
 
-      // V2 returns SSE stream — read first event to confirm session started
+      // V2 returns SSE stream - read first event to confirm session started
       const contentType = res.headers.get("content-type") ?? "";
       if (contentType.includes("text/event-stream") && res.body) {
         const reader = res.body.getReader();
@@ -173,17 +220,18 @@ export async function handoffToV2(
         if (!sessionStarted) {
           return {
             success: false,
-            error: "V2 session did not start — no start event in SSE stream",
+            error: "V2 session did not start - no start event in SSE stream",
           };
         }
       }
 
+      // Phase 9: Return correct session stream URL, not /api/chat
       // Use chatId as sessionId (V2 identifies sessions by chatId)
       return {
         success: true,
         sessionId: chatId,
         sessionUrl: `${NEPTUNE_V2_URL}/chat/${chatId}`,
-        sseUrl: V2_CHAT_ENDPOINT,
+        sseUrl: buildSessionStreamUrl(chatId),
       };
     } catch (err) {
       return {
@@ -193,7 +241,7 @@ export async function handoffToV2(
     }
   };
 
-  // U1.2: Auto-retry — first attempt fails, retry once with 2s backoff
+  // U1.2: Auto-retry - first attempt fails, retry once with 2s backoff
   const firstAttempt = await attempt();
   if (firstAttempt.success) return firstAttempt;
 
@@ -300,29 +348,24 @@ export async function getV2Session(
 
 /**
  * Get the SSE stream URL for a V2 session.
- * V2 identifies sessions by chatId; stream URL is the /api/chat endpoint.
+ * Phase 9: Returns session-specific stream URL, not generic /api/chat.
  */
 export function getV2StreamUrl(sessionId: string): string {
-  return V2_CHAT_ENDPOINT;
+  return buildSessionStreamUrl(sessionId);
 }
 
 /**
  * Get the V2 SSE stream as a ReadableStream for proxying.
- * Replays the session by sending the chatId and requesting continuation.
+ * Phase 9: Uses GET on session stream endpoint instead of POST to /api/chat.
  * Returns null if V2 is unreachable.
  */
 export async function getV2SSEStream(
   sessionId: string
 ): Promise<ReadableStream<Uint8Array> | null> {
   try {
-    const res = await fetch(V2_CHAT_ENDPOINT, {
-      method: "POST",
+    const res = await fetch(buildSessionStreamUrl(sessionId), {
+      method: "GET",
       headers: authHeaders(),
-      body: JSON.stringify({
-        messages: [{ role: "user", content: "continue" }],
-        chatId: sessionId,
-        mode: "chat",
-      }),
     });
 
     if (!res.ok || !res.body) {

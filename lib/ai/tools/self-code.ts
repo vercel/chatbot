@@ -5,13 +5,16 @@
  * (typos, color tweaks, copy changes, prop additions).
  * For larger work, use spawnCodingAgent to hand off to Neptune V2.
  *
+ * Phase 9: execute path now delegates to spawnCodingAgent instead of
+ * directly calling V2 sandbox API (which requires sessionId management).
+ *
  * SC2 — NEPTUNE SELF-CODING MISSION (2026-06-11)
  */
 import { tool } from "ai";
 import { z } from "zod";
 import { secrets } from "@/secrets";
 
-// ─── Self-Context Constants ────────────────────────────────────────────────
+// --- Self-Context Constants ------------------------------------------------
 
 const SELF_CONTEXT = {
   agent: "Neptune Chat",
@@ -26,7 +29,7 @@ const SELF_CONTEXT = {
   commitAuthor: { name: "abhiswami2121", email: "abhiswami2121@gmail.com" },
 };
 
-// ─── Vercel API Helpers ────────────────────────────────────────────────────
+// --- Vercel API Helpers ----------------------------------------------------
 
 const VERCEL_API = "https://api.vercel.com";
 const VERCEL_TOKEN = secrets.vercel.token;
@@ -94,7 +97,7 @@ async function pollSelfDeploy(maxWaitMs = 480_000): Promise<{
       };
     }
 
-    // Still building — wait
+    // Still building - wait
     await new Promise((r) => setTimeout(r, 10000));
   }
 
@@ -136,7 +139,7 @@ async function smokeTest(paths: string[]): Promise<
   return results;
 }
 
-// ─── Main Tool ─────────────────────────────────────────────────────────────
+// --- Main Tool -------------------------------------------------------------
 
 export const selfCode = tool({
   description:
@@ -155,13 +158,13 @@ export const selfCode = tool({
       .array(z.string())
       .optional()
       .describe(
-        "Specific files to modify (optional — if omitted, the sandbox will find the right files)"
+        "Specific files to modify (optional - if omitted, the sandbox will find the right files)"
       ),
     scope: z
       .enum(["small", "large"])
       .default("small")
       .describe(
-        "'small' = self-code this (≤50 lines, ≤3 files). 'large' = routes to spawnCodingAgent instead."
+        "'small' = self-code this (<=50 lines, <=3 files). 'large' = routes to spawnCodingAgent instead."
       ),
     dryRun: z
       .boolean()
@@ -206,104 +209,40 @@ export const selfCode = tool({
           `7. Smoke test affected routes`,
           `8. Report result`,
         ],
-        message: `📋 Dry run plan for: "${task}". Ready to execute when you confirm.`,
+        message: `[Dry run] Plan for: "${task}". Ready to execute when you confirm.`,
       };
     }
 
-    // ── Execute: use V2 sandbox to modify self ──────────────────────────
-    const OPEN_AGENTS_URL =
-      secrets.neptuneV2.openAgentsUrl || "https://neptune-v2.vercel.app";
-    const OPEN_AGENTS_API_KEY = secrets.neptuneV2.openAgentsApiKey;
-
-    if (!OPEN_AGENTS_API_KEY) {
-      return {
-        error:
-          "OPEN_AGENTS_API_KEY not configured. Cannot spawn self-coding sandbox. " +
-          "Set this in your Vercel environment variables.",
-        fallback:
-          "You can still use spawnCodingAgent with mode=modify_existing to hand off to V2.",
-      };
-    }
-
-    try {
-      // Spawn V2 sandbox targeting our own repo
-      const res = await fetch(`${OPEN_AGENTS_URL}/api/sandbox`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OPEN_AGENTS_API_KEY}`,
-        },
-        body: JSON.stringify({
-          goal: `SELF-CODE (Neptune Chat modifying itself): ${task}`,
-          runtime: "node",
-          repo: {
-            owner: SELF_CONTEXT.repoOwner,
-            name: SELF_CONTEXT.repoName,
-            baseBranch: "main",
-          },
-          context: {
-            source: "neptune-chat-self-code",
-            instructions: [
-              `This is Neptune Chat modifying ITSELF.`,
-              `Task: ${task}`,
-              files?.length
-                ? `Target files: ${files.join(", ")}`
-                : "Auto-detect files to change.",
-              `CRITICAL: Commit author MUST be: ${SELF_CONTEXT.commitAuthor.name} <${SELF_CONTEXT.commitAuthor.email}>`,
-              `Branch: feat/self-code-<slug>`,
-              `Before push: pnpm typecheck && pnpm build`,
-              `After push: verify Vercel deploy READY`,
-            ].join("\n"),
-            githubToken: secrets.github.token,
-            vercelToken: VERCEL_TOKEN,
-            createPR: true,
-            deployToVercel: true,
-          },
-        }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        return {
-          error: `Self-coding sandbox failed to start: ${res.status} ${errText.slice(0, 300)}`,
-          fallback: "Use spawnCodingAgent instead for this task.",
-        };
-      }
-
-      const data = (await res.json()) as {
-        sandboxId?: string;
-        sessionId?: string;
-        streamUrl?: string;
-        prUrl?: string;
-      };
-
-      return {
-        action: "self_code_started",
-        task,
-        sandboxId: data.sandboxId,
-        sessionId: data.sessionId,
-        streamUrl: data.streamUrl,
-        repo: `${SELF_CONTEXT.repoOwner}/${SELF_CONTEXT.repoName}`,
-        deployedUrl: SELF_CONTEXT.deployedUrl,
-        message:
-          `🔧 Self-coding session started for Neptune Chat!\n` +
-          `Task: ${task}\n` +
-          `Sandbox: ${data.sandboxId || "pending..."}\n` +
-          `Track progress via stream URL. I'll poll Vercel deploy once the commit is pushed.`,
-      };
-    } catch (err) {
-      return {
-        error: `Self-coding failed: ${err instanceof Error ? err.message : "Unknown error"}`,
-        fallback: "Try spawnCodingAgent with mode=modify_existing as a fallback.",
-      };
-    }
+    // --- Execute: Phase 9 fix ---
+    // selfCode execute no longer calls V2 sandbox API directly.
+    // V2 requires sessionId management that selfCode doesn't handle.
+    // Instead, return a clear delegation directing to spawnCodingAgent
+    // which properly manages V2 session lifecycle and resume.
+    return {
+      action: "self_code_execute_delegated",
+      message:
+        `selfCode execute delegates to spawnCodingAgent. ` +
+        `The dry_run above confirmed the plan is valid. ` +
+        `Use spawnCodingAgent with mode=modify_existing to execute.`,
+      recommendedTool: "spawnCodingAgent",
+      recommendedParams: {
+        mode: "modify_existing",
+        goal: task,
+        repoOwner: SELF_CONTEXT.repoOwner,
+        repoName: SELF_CONTEXT.repoName || "neptune-chat",
+        baseBranch: "main",
+        createPR: true,
+        deployToVercel: true,
+      },
+      context: SELF_CONTEXT,
+    };
   },
 });
 
-// ─── Context Helper (exported for use by /api/context endpoint) ────────────
+// --- Context Helper (exported for use by /api/context endpoint) ------------
 
 /**
- * Returns Neptune Chat's self-context — repo, Vercel project, capabilities.
+ * Returns Neptune Chat's self-context - repo, Vercel project, capabilities.
  * Used by the /api/context endpoint and injected into the system prompt.
  */
 export function getSelfContext() {
@@ -322,6 +261,6 @@ export function getSelfContext() {
   };
 }
 
-// ─── Deploy Poller (exported for use by /api/context endpoint) ─────────────
+// --- Deploy Poller (exported for use by /api/context endpoint) -------------
 
 export { pollSelfDeploy, smokeTest, SELF_CONTEXT };

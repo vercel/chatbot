@@ -400,7 +400,7 @@ export const spawnCodingAgent = tool({
         `Vercel token available: ${VERCEL_TOKEN ? "yes" : "no"}`,
       ].filter(Boolean).join("\n");
 
-      const handoffResult = await handoffToV2(goal, context, "deepseek-v4-pro");
+      const handoffResult = await handoffToV2(goal, context, "deepseek-v4-pro", sessionId);
 
       if (!handoffResult.success) {
         // Determine if retryable (timeout, network, 503)

@@ -84,6 +84,12 @@ const AGENT_ITEMS = [
     countKey: "v2Sessions" as const,
   },
   {
+    id: "sessions",
+    label: "Sessions",
+    icon: BotIcon,
+    href: "/sessions",
+  },
+  {
     id: "workflows",
     label: "Workflows",
     icon: WorkflowIcon,
@@ -124,7 +130,9 @@ export function NavAgents() {
           const Icon = item.icon;
           const isActive = item.href === "/"
             ? pathname === "/"
-            : pathname?.startsWith(item.href);
+            : item.href === "/sessions"
+              ? pathname?.startsWith("/sessions") || pathname?.startsWith("/handoff")
+              : pathname?.startsWith(item.href);
           const count = item.countKey ? counts?.[item.countKey] : undefined;
           const showCount = count !== undefined && count > 0;
 
