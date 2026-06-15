@@ -1,0 +1,8 @@
+playbook: billing
+organization: newleaf-financial
+version: "2.0.0"
+requires:
+  connectors: [nmi, hyperswitch, base44, slack]
+  skills: [nmi-connector, base44-connector]
+  functions: [charge-customer, refund-customer, vault-health-check, subscription-manage, decline-recovery]
+  workflows: [payment-reminders, nmi-slack-reconciliation]

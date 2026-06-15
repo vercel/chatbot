@@ -185,7 +185,10 @@ function resolveSkillPaths(skillPath: string): string[] {
   if (normalized.startsWith("playbooks/")) {
     const domain = normalized.replace("playbooks/", "");
     return [
-      // New U2.2 flat playbook paths (local repo)
+      // Phase 21 V3: Fractal library canonical paths (playbook-skills meta-skill)
+      `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/playbook-${domain}.md`,
+      `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/playbook-${domain.replace(/-/g, "")}.md`,
+      // Legacy paths (adapter pattern — backward compat)
       `playbooks/${domain}/playbook-${domain}.md`,
       `playbooks/${domain}/PLAYBOOK.md`,
       `playbooks/${domain}/playbook.md`,
@@ -216,6 +219,35 @@ function resolveSkillPaths(skillPath: string): string[] {
       // Legacy JFS paths
       `jarvis/cortex/skills/${name}.md`,
       `jarvis/cortex/capabilities/${name}/SKILL.md`,
+    ];
+  }
+
+  if (normalized.startsWith("playbook-skills")) {
+    const rest = normalized.replace("playbook-skills/", "").replace("playbook-skills", "");
+    // Phase 21 V3: Fractal paths within the meta-skill
+    if (rest.startsWith("playbooks/") || rest.match(/^playbook-/)) {
+      const domain = rest.replace("playbooks/", "").replace(/^playbook-/, "").replace(/\.md$/, "");
+      return [
+        `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/playbook-${domain}.md`,
+        `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/${rest}`,
+      ];
+    }
+    if (rest.startsWith("functions/")) {
+      const fn = rest.replace("functions/", "").replace(/\.ts$/, "");
+      return [
+        `connectors/neptune/skills/custom-skills/playbook-skills/functions/${fn}.ts`,
+      ];
+    }
+    if (rest.startsWith("workflows/")) {
+      const wf = rest.replace("workflows/", "").replace(/\.ts$/, "");
+      return [
+        `connectors/neptune/skills/custom-skills/playbook-skills/workflows/${wf}.ts`,
+      ];
+    }
+    // Default: treat as playbook-skills direct reference (e.g., "playbook-skills" → router)
+    return [
+      `connectors/neptune/skills/custom-skills/playbook-skills/PLAYBOOK-ROUTER.md`,
+      `connectors/neptune/skills/custom-skills/playbook-skills/${rest}`,
     ];
   }
 

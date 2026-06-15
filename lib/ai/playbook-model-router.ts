@@ -162,9 +162,23 @@ function parseFrontmatter(rawContent: string): Record<string, unknown> {
 }
 
 function findPlaybookFile(domain: string): string | null {
-  const playbooksRoot = join(process.cwd(), "playbooks");
+  const cwd = process.cwd();
 
-  // try domain directory first
+  // Phase 21 V3: Try fractal library canonical paths first
+  const fractalPlaybooksDir = join(cwd, "connectors/neptune/skills/custom-skills/playbook-skills/playbooks");
+  if (existsSync(fractalPlaybooksDir)) {
+    for (const name of [
+      `playbook-${domain}.md`,
+      `playbook-${domain.replace(/-/g, "")}.md`,
+      `${domain}.md`,
+    ]) {
+      const p = join(fractalPlaybooksDir, name);
+      if (existsSync(p)) return p;
+    }
+  }
+
+  // Legacy paths (adapter pattern — backward compat)
+  const playbooksRoot = join(cwd, "playbooks");
   const domainPath = join(playbooksRoot, domain);
   if (existsSync(domainPath)) {
     for (const name of ["playbook.md", "PLAYBOOK.md", `playbook-${domain}.md`]) {
@@ -173,7 +187,6 @@ function findPlaybookFile(domain: string): string | null {
     }
   }
 
-  // try top-level
   for (const name of ["playbook.md", "PLAYBOOK.md", `playbook-${domain}.md`]) {
     const p = join(playbooksRoot, name);
     if (existsSync(p)) return p;

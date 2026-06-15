@@ -50,6 +50,7 @@ import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 import { discoverActionGroup } from "@/lib/playbook-os-client";
+import { swarmDispatchTool } from "@/lib/ai/tools/swarm-dispatch";
 import { loadPlaybooksForIntent, formatPlaybookContext } from "@/lib/ai/playbook-loader";
 import {
   createTokenTracker,
@@ -267,6 +268,7 @@ export async function POST(request: Request) {
               "selfCode",
               "spawnCodingAgent",
               "planSession",
+              "swarmDispatch",
               ...mcpToolNames,
             ];
 
@@ -280,6 +282,7 @@ export async function POST(request: Request) {
           editDocument: editDocument({ dataStream, session }),
           updateDocument: updateDocument({ session, dataStream, modelId: chatModel }),
           requestSuggestions: requestSuggestions({ session, dataStream, modelId: chatModel }),
+          swarmDispatch: swarmDispatchTool,
           ...getAvailableTools(),
           ...sandboxTools,
           ...mcpTools,

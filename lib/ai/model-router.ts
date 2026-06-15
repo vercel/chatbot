@@ -4,7 +4,7 @@
  * Automatically selects the best model for each task type:
  *   - Planning/Architecture → Claude Sonnet 4.6
  *   - Coding/Technical      → Kimi K2.7
- *   - Long-context/Docs      → GLM 5.2
+ *   - Long-context/Docs      → GLM 5.1
  *   - Multilingual           → Qwen 3 235B
  *   - Tool-heavy             → DeepSeek V4 Pro
  *   - General/Default        → DeepSeek V4 Pro
@@ -74,9 +74,9 @@ const ROUTING_RULES: RoutingRule[] = [
   },
   {
     taskType: "long_context",
-    primaryModel: "zhipuai/glm-5.2",
+    primaryModel: "zai/glm-5.1",
     fallbackModel: "deepseek/deepseek-v4-pro",
-    reasoning: "GLM 5.2 handles 200K tokens natively with strong long-document recall and synthesis",
+    reasoning: "GLM 5.1 handles 202K tokens natively with vision, long-horizon autonomous tasks, and strong long-document synthesis",
     signals: [
       /analyze.*file/i, /review.*codebase/i, /audit/i, /comprehensive/i,
       /entire/i, /whole.*repo/i, /full.*audit/i, /deep.*dive/i,
@@ -142,8 +142,8 @@ const ROUTING_RULES: RoutingRule[] = [
   {
     taskType: "analysis",
     primaryModel: "deepseek/deepseek-v4-pro",
-    fallbackModel: "zhipuai/glm-5.2",
-    reasoning: "DeepSeek V4 Pro for structured analysis, GLM 5.2 for very large datasets",
+    fallbackModel: "zai/glm-5.1",
+    reasoning: "DeepSeek V4 Pro for structured analysis, GLM 5.1 for very large datasets",
     signals: [
       /data/i, /analytics/i, /metrics/i, /statistics/i,
       /pattern/i, /insight/i, /trend/i, /report/i,
@@ -180,6 +180,7 @@ const VALID_MODELS = new Set([
   "anthropic/claude-sonnet-4-6",
   "google/gemini-2-flash",
   "zai/glm-5",
+  "zai/glm-5.1",
   "alibaba/qwen-3-235b",
 ]);
 

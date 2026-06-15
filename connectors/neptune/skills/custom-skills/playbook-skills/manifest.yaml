@@ -1,0 +1,66 @@
+# playbook-skills Root Manifest
+# Phase 21 V3 — Portable Playbook Package (Twin View)
+# Canonical: connectors/neptune/skills/custom-skills/playbook-skills/
+
+playbook: playbook-skills
+organization: newleaf-financial
+version: "2.0.0"
+date: "2026-06-15"
+description: "Complete playbook library — portable AI agent knowledge package. Copy this entire folder to bootstrap a new org."
+
+requires:
+  connectors:
+    - nmi         # Payment gateway (vault, charges, refunds, subscriptions)
+    - slack       # Messaging (#jarvis-admin notifications)
+    - github      # Version control (PRs, commits, code review)
+    - vercel      # Hosting (deploy preview/production)
+    - base44      # Entity store (customer profiles, tickets, payment logs)
+    - ghl         # CRM (campaigns, pipeline, lead nurture)
+    - linear      # Project management (issues, sprints)
+    - forth       # Credit bureau (dispute letters, credit reports)
+    - wiki        # Knowledge base (documentation, knowledge graph)
+    - vapi        # Voice AI (phone calls, transcripts)
+    - hyperswitch # Payment router (multi-gateway)
+    - affy        # Affiliate system (referrals)
+    - mcp-hub     # MCP server registry
+    - neptune     # Agent runtime (skills, playbooks, workflows)
+
+  skills:
+    - ai-agent-sdk        # Core agent capabilities (read, write, bash, edit)
+    - opendesign          # UI design and review
+    - spreadsheet-creator # Reports and Excel/CSV generation
+    - playbook-skills     # THE meta-skill (self-referential)
+
+  functions:
+    - route-intent             # Match user input to playbook
+    - create-playbook          # Scaffold new playbook
+    - update-playbook          # Modify existing playbook
+    - organize-knowledge-graph # Wiki/knowledge graph integration
+    - session-start-handler    # Initialize session context
+    - session-end-handler      # Log outcomes, trigger self-evolution
+
+  workflows:
+    - intent-routing      # Every-user-message routing pipeline
+    - session-end-logger  # Post-session knowledge extraction
+
+playbooks_included:
+  - billing          (P0) — Payments, charges, refunds, NMI vault
+  - support          (P0) — Customer 360, tickets, triage
+  - disputes         (P0) — Credit disputes, FCRA compliance
+  - planning         (P0) — PRDs, TRDs, research, implementation plans
+  - engineering      (P1) — Code review, refactoring, debugging
+  - reporting        (P1) — Morning pulse, metrics, analytics
+  - deploy           (P1) — Ship, PR, rollback, stale UI diagnosis
+  - vercel-discipline(P1) — Vercel deployment standards
+  - vps-ops          (P1) — Server health, incidents, SSL
+  - agent-orchestration (P1) — Dispatch, multi-agent, failure recovery
+  - marketing        (P2) — Campaigns, nurture, SMS/email, DNC
+  - hr               (P2) — Team status, onboarding, compliance training
+  - sales            (P2) — Pipeline, lead qualification, enrollment
+  - video-generation (P2) — AI video generation and editing
+  - newleaf          (ORG) — Organization-wide rules
+  - index            (META) — Domain catalog, capability discovery
+
+# VIEW A (Library): This is the canonical source. All edits happen here.
+# VIEW B (Portable): Copy this folder for org bootstrapping.
+#                     Package is a SNAPSHOT — re-sync from canonical for updates.
