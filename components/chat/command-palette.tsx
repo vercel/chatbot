@@ -83,6 +83,7 @@ const LIBRARY_ITEMS: PaletteAction[] = [
   { id: "playbook-eng", label: "Engineering", icon: FolderGit2, canvasMode: "playbook-detail", canvasContext: { playbookName: "engineering" }, group: "Playbooks" },
   { id: "playbook-deploy", label: "Deploy (Vercel+GitHub)", icon: FolderGit2, canvasMode: "playbook-detail", canvasContext: { playbookName: "deploy-vercel-github" }, group: "Playbooks" },
   // Workflows
+  { id: "workflow-prd-to-deploy", label: "PRD → Deploy", icon: Play, href: "/workflows/prd-to-deploy", group: "Workflows" },
   { id: "workflow-v2", label: "V2 Coding Sessions", icon: Play, href: "/v2-sessions", group: "Workflows" },
   { id: "workflow-sandbox", label: "Sandbox", icon: Play, href: "/sandbox", group: "Workflows" },
 ];

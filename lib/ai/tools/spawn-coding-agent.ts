@@ -1,6 +1,12 @@
 /**
- * spawn-coding-agent tool — Handoff complex coding tasks to neptune-v2,
+ * spawn-coding-agent tool — v2 (Phase 19): Handoff complex coding tasks to neptune-v2,
  * OR create brand-new projects with GitHub + Vercel deployment.
+ *
+ * v2 NEW (Phase 19):
+ *   - planId: Link to a planSession plan for context + tracking
+ *   - skills: Array of skill names to inject into V2 system prompt
+ *   - parallel: Fire multiple V2 sessions for large scopes (max 4)
+ *   - validation_steps: Required V2 post-edit checks (build, lint, test, smoke-deploy)
  *
  * Modes:
  *   - modify_existing: V2 sandbox clones repo, edits, commits, opens PR, deploys
@@ -8,6 +14,9 @@
  *
  * Chat → spawnCodingAgent → (V2 sandbox | direct GitHub + Vercel REST) → live URL
  */
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { tool } from "ai";
 import { z } from "zod";
 import { readFile } from "fs/promises";
@@ -15,6 +24,12 @@ import path from "path";
 import { handoffToV2 } from "@/lib/v2/bridge";
 import { safeToolCall, toolError, type StructuredToolResult } from "@/lib/v2/retry";
 import { secrets } from "@/secrets";
+import { loadSkillsByName, formatSkillsForSystemPrompt } from "@/lib/v2/skills-loader";
+import { libraryV2Session } from "@/lib/db/schema";
+import { generateUUID } from "@/lib/utils";
+
+const dbClient = postgres(process.env.POSTGRES_URL ?? "");
+const db = drizzle(dbClient);
 
 const OPEN_AGENTS_URL =
   secrets.neptuneV2.openAgentsUrl || "https://neptune-v2.vercel.app";
@@ -354,6 +369,30 @@ export const spawnCodingAgent = tool({
       .string()
       .optional()
       .describe("Existing v2 session ID to resume"),
+
+    // ── Phase 19 v2: Planning + Skills + Multi-Session ──
+    planId: z
+      .string()
+      .optional()
+      .describe("UUID of a planSession plan to link this task to. Injects plan context into V2 prompt."),
+    skills: z
+      .array(z.string())
+      .optional()
+      .describe("Array of skill names to load and inject into V2 system prompt (e.g., ['nextjs-shadcn-ai-elements-design-mastery'])."),
+    parallel: z
+      .boolean()
+      .default(false)
+      .describe("If true, spawn multiple V2 sessions for parallel work (max 4). Returns array of sessionIds."),
+    parallelCount: z
+      .number()
+      .min(1)
+      .max(4)
+      .optional()
+      .describe("Number of parallel V2 sessions to spawn when parallel=true (default 2, max 4)."),
+    validationSteps: z
+      .array(z.enum(["build", "lint", "type-check", "test", "smoke-deploy"]))
+      .optional()
+      .describe("Validation steps V2 must run after edits. Default: ['build', 'lint']."),
   }),
   execute: async (params) => {
     try {
@@ -375,7 +414,12 @@ export const spawnCodingAgent = tool({
 
     // ── MODIFY_EXISTING — V2 Handoff via Bridge ────────────────────────
     if (mode === "modify_existing") {
-      const { goal, repoOwner, repoName, baseBranch, createPR, deployToVercel, runtime, sessionId } = params;
+      const {
+        goal, repoOwner, repoName, baseBranch, createPR, deployToVercel,
+        runtime, sessionId,
+        // Phase 19 v2 params
+        planId, skills: skillNames, parallel, parallelCount, validationSteps,
+      } = params;
 
       if (!repoName) {
         return {
@@ -389,7 +433,31 @@ export const spawnCodingAgent = tool({
         };
       }
 
-      // Use the V2 bridge (handoffToV2) which sends via /api/chat with correct auth
+      // Phase 19 v2: Load skills if provided
+      let skillsBlock = "";
+      const loadedSkills: string[] = [];
+      if (skillNames && skillNames.length > 0) {
+        try {
+          const skills = await loadSkillsByName(skillNames);
+          skillsBlock = formatSkillsForSystemPrompt(skills);
+          loadedSkills.push(...skills.map((s) => s.name));
+          console.log(`[spawnCodingAgent v2] Loaded ${skills.length} skills: ${loadedSkills.join(", ")}`);
+        } catch (err) {
+          console.warn("[spawnCodingAgent v2] Skills load failed (non-fatal):", (err as Error).message);
+        }
+      }
+
+      // Phase 19 v2: Inject plan context if planId provided
+      let planContext = "";
+      if (planId) {
+        planContext = `\n\n## Linked Plan\nPlan ID: ${planId}\nFollow the plan phases and acceptance criteria from this plan.`;
+      }
+
+      // Phase 19 v2: Validation steps
+      const validations = validationSteps || ["build", "lint"];
+      const validationBlock = `\n\n## Required Validation Steps\nAfter completing all edits, run these checks:\n${validations.map((v) => `- ${v}`).join("\n")}`;
+
+      // Build enhanced context with skills + plan + validation
       const context = [
         `Repository: ${repoOwner}/${repoName}`,
         `Base branch: ${baseBranch}`,
@@ -398,46 +466,122 @@ export const spawnCodingAgent = tool({
         deployToVercel ? "Deploy to Vercel when done." : "",
         `GitHub token available: ${GITHUB_TOKEN ? "yes" : "no"}`,
         `Vercel token available: ${VERCEL_TOKEN ? "yes" : "no"}`,
+        planContext,
+        validationBlock,
       ].filter(Boolean).join("\n");
 
-      const handoffResult = await handoffToV2(goal, context, "deepseek-v4-pro", sessionId);
+      // Full system context = skills + repo context
+      const fullContext = skillsBlock
+        ? `${skillsBlock}\n\n${context}`
+        : context;
 
-      if (!handoffResult.success) {
-        // Determine if retryable (timeout, network, 503)
-        const isRetryable =
-          handoffResult.error?.includes("timeout") ||
-          handoffResult.error?.includes("503") ||
-          handoffResult.error?.includes("502") ||
-          handoffResult.error?.includes("unreachable") ||
-          handoffResult.error?.includes("ECONNREFUSED") ||
-          handoffResult.error?.includes("AbortError");
+      // Phase 19 v2: Handle parallel spawns
+      const spawnCount = parallel ? Math.min(parallelCount || 2, 4) : 1;
 
+      const spawnResults: Array<{
+        sessionId: string;
+        sandboxId?: string;
+        sseUrl?: string;
+      }> = [];
+
+      for (let i = 0; i < spawnCount; i++) {
+        const parallelTag = spawnCount > 1 ? ` [Session ${i + 1}/${spawnCount}]` : "";
+        const sessionGoal = spawnCount > 1
+          ? `${goal}${parallelTag}`
+          : goal;
+
+        const handoffResult = await handoffToV2(sessionGoal, fullContext, "deepseek-v4-pro", sessionId);
+
+        if (!handoffResult.success) {
+          // Determine if retryable
+          const isRetryable =
+            handoffResult.error?.includes("timeout") ||
+            handoffResult.error?.includes("503") ||
+            handoffResult.error?.includes("502") ||
+            handoffResult.error?.includes("unreachable") ||
+            handoffResult.error?.includes("ECONNREFUSED") ||
+            handoffResult.error?.includes("AbortError");
+
+          // If one parallel spawn fails, continue with others
+          if (spawnCount > 1) {
+            console.warn(`[spawnCodingAgent v2] Parallel spawn ${i + 1}/${spawnCount} failed: ${handoffResult.error}`);
+            continue;
+          }
+
+          return {
+            success: false,
+            error: {
+              code: "V2_HANDOFF_FAILED",
+              message: handoffResult.error || "Unknown error",
+              retryable: !!isRetryable,
+              suggestion: isRetryable
+                ? "V2 is temporarily unreachable. You can retry in a few seconds, or use direct sandbox tools instead."
+                : "V2 handoff is not available. Try using direct sandbox tools or manually creating the changes.",
+            },
+          };
+        }
+
+        spawnResults.push({
+          sessionId: handoffResult.sessionId || "",
+          sandboxId: handoffResult.sessionId,
+          sseUrl: handoffResult.sseUrl || handoffResult.sessionUrl || "",
+        });
+
+        // Phase 19 v2: Record in library_v2_sessions
+        const v2SessionId = generateUUID();
+        try {
+          await db.insert(libraryV2Session).values({
+            id: v2SessionId,
+            planId: planId || null,
+            sessionId: handoffResult.sessionId || "",
+            status: "spawning",
+            progress: 0,
+            skillsLoaded: loadedSkills,
+            parallelGroup: spawnCount > 1 ? `p19-${planId || "direct"}` : null,
+            streamUrl: handoffResult.sseUrl || "",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        } catch (dbErr) {
+          console.warn("[spawnCodingAgent v2] DB record failed (non-fatal):", (dbErr as Error).message);
+        }
+      }
+
+      if (spawnResults.length === 0) {
         return {
           success: false,
           error: {
-            code: "V2_HANDOFF_FAILED",
-            message: handoffResult.error || "Unknown error",
-            retryable: !!isRetryable,
-            suggestion: isRetryable
-              ? "V2 is temporarily unreachable. You can retry in a few seconds, or use direct sandbox tools instead."
-              : "V2 handoff is not available. Try using direct sandbox tools or manually creating the changes.",
+            code: "V2_ALL_SPAWNS_FAILED",
+            message: `All ${spawnCount} parallel V2 spawns failed`,
+            retryable: true,
+            suggestion: "V2 is temporarily unreachable. Retry or use direct sandbox tools.",
           },
         };
       }
 
+      const first = spawnResults[0];
       return {
         success: true,
         mode: "modify_existing",
-        sandboxId: handoffResult.sessionId,
-        sessionId: handoffResult.sessionId,
+        sandboxId: first.sessionId,
+        sessionId: first.sessionId,
+        sessionIds: spawnResults.map((s) => s.sessionId),
         status: "started",
         repo: `${repoOwner}/${repoName}`,
         branch: baseBranch || "pending",
         prUrl: null,
-        streamUrl: handoffResult.sseUrl || handoffResult.sessionUrl || "",
+        streamUrl: first.sseUrl || "",
+        parallel: spawnCount > 1,
+        spawnCount: spawnResults.length,
+        planId: planId || null,
+        skillsLoaded: loadedSkills,
+        validationPlan: validations,
         message:
-          `V2 coding agent spawned for ${repoOwner}/${repoName}. ` +
-          `Session: ${handoffResult.sessionId}. ` +
+          `V2 coding agent${spawnCount > 1 ? "(s)" : ""} spawned for ${repoOwner}/${repoName}. ` +
+          (spawnCount > 1 ? `${spawnResults.length} sessions running in parallel. ` : "") +
+          `Session${spawnCount > 1 ? "s" : ""}: ${spawnResults.map((s) => s.sessionId?.slice(0, 12)).join(", ")}. ` +
+          (planId ? `Linked to plan ${planId.slice(0, 8)}. ` : "") +
+          (loadedSkills.length > 0 ? `${loadedSkills.length} skills loaded. ` : "") +
           (createPR ? "Will create a PR when complete. " : "") +
           "Track progress via the stream URL.",
       };

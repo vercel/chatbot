@@ -260,6 +260,7 @@ export async function POST(request: Request) {
               "loadSkill",
               "selfCode",
               "spawnCodingAgent",
+              "planSession",
               ...mcpToolNames,
             ];
 

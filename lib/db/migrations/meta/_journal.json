@@ -71,6 +71,13 @@
       "when": 1782300000000,
       "tag": "0009_model_library",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781503374978,
+      "tag": "0010_0019_library_plans_v2_sessions",
+      "breakpoints": true
     }
   ]
 }

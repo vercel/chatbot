@@ -425,3 +425,43 @@ export const libraryEvalRun = pgTable("library_eval_runs", {
 });
 
 export type LibraryEvalRun = InferSelectModel<typeof libraryEvalRun>;
+
+// ── Phase 19: Planning Sessions + Multi-V2 Handoff ────────────────────────
+
+export const libraryPlan = pgTable("library_plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull().default(""),
+  phases: jsonb("phases").default([]),
+  acceptanceCriteria: jsonb("acceptance_criteria").default([]),
+  filesAffected: jsonb("files_affected").default([]),
+  skillsLoaded: jsonb("skills_loaded").default([]),
+  status: text("status").notNull().default("draft"),
+  contextGoal: text("context_goal"),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryPlan = InferSelectModel<typeof libraryPlan>;
+
+export const libraryV2Session = pgTable("library_v2_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  planId: uuid("plan_id").references(() => libraryPlan.id, { onDelete: "set null" }),
+  sessionId: text("session_id").notNull(),
+  status: text("status").notNull().default("spawning"),
+  progress: integer("progress").default(0),
+  skillsLoaded: jsonb("skills_loaded").default([]),
+  parallelGroup: text("parallel_group"),
+  validationResults: jsonb("validation_results"),
+  errorMessage: text("error_message"),
+  prUrl: text("pr_url"),
+  deployUrl: text("deploy_url"),
+  streamUrl: text("stream_url"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryV2Session = InferSelectModel<typeof libraryV2Session>;

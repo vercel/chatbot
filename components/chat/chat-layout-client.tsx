@@ -27,7 +27,7 @@ import {
 import { SidebarInset } from "@/components/ui/sidebar";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { V2LivePanel } from "@/components/v2-live-panel";
+import { MultiSessionPanel, type SessionSlot } from "@/components/v2/multi-session-panel";
 import { useV2Session } from "@/hooks/use-v2-session";
 import { CanvasShell } from "@/components/canvas/canvas-shell";
 import { MobileHeader } from "@/components/mobile-header";
@@ -156,17 +156,27 @@ function ChatLayoutInner({ user }: ChatLayoutClientProps) {
         </ResizablePanelGroup>
       </SidebarInset>
 
-      {/* V2 Live Panel — right-side Sheet, auto-opens on spawn_v2 */}
-      <V2LivePanel
+      {/* Phase 19: Multi-Session Panel — replaces V2LivePanel with 1-4 session grid */}
+      <MultiSessionPanel
         open={isV2PanelOpen}
         onOpenChange={(open) => {
           if (!open) closeSession();
         }}
-        sessionId={activeSession?.sessionId ?? null}
-        goal={activeSession?.goal}
-        repo={activeSession?.repo}
-        branch={activeSession?.branch}
-        model={activeSession?.model}
+        sessions={
+          activeSession
+            ? [{
+                id: activeSession.sessionId || "v2-0",
+                sessionId: activeSession.sessionId,
+                goal: activeSession.goal,
+                repo: activeSession.repo,
+                branch: activeSession.branch,
+                model: activeSession.model,
+              }]
+            : []
+        }
+        onStopSession={(sessionId) => {
+          closeSession();
+        }}
       />
     </>
   );
