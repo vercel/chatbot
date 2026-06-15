@@ -122,6 +122,34 @@ export const chatModels: ChatModel[] = [
     gatewayOrder: ["google"],
     routeType: "gateway",
   },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 20 — New Vercel AI Gateway Pro Models
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    id: "zai/glm-5",
+    name: "GLM 5",
+    provider: "zai",
+    description: "Zhipu AI (via Z.ai) — latest GLM flagship, 200K context, strong long-document reasoning",
+    gatewayOrder: ["zai"],
+    routeType: "gateway",
+  },
+  {
+    id: "moonshotai/kimi-k2.7-code",
+    name: "Kimi K2.7 Code",
+    provider: "moonshotai",
+    description: "Moonshot AI — purpose-built code generation specialist, technical tasks, refactoring",
+    gatewayOrder: ["moonshotai"],
+    routeType: "gateway",
+  },
+  {
+    id: "alibaba/qwen-3-235b",
+    name: "Qwen 3 235B",
+    provider: "alibaba",
+    description: "Alibaba Cloud — 235B parameters, multilingual (100+ languages), complex reasoning",
+    gatewayOrder: ["alibaba"],
+    routeType: "gateway",
+  },
 ];
 
 // ── Capabilities ────────────────────────────────────────────────────

@@ -728,7 +728,8 @@ function PureModelSelectorCompact({
               "prime-intellect": "Prime Intellect",
               xiaomi: "Xiaomi",
               xai: "xAI",
-              zai: "Zai",
+              zai: "Zhipu AI",
+              zhipuai: "Zhipu AI",
             };
 
             return sortedKeys.map((key) => (

@@ -19,6 +19,7 @@ import {
   DEFAULT_CHAT_MODEL,
   getCapabilities,
 } from "@/lib/ai/models";
+import { routeModel } from "@/lib/ai/model-router";
 import { type RequestHints, isProgressiveDisclosureEnabled, systemPrompt } from "@/lib/ai/prompts";
 import { progressiveTools } from "@/lib/ai/tools/progressive-disclosure";
 import { getLanguageModel } from "@/lib/ai/providers";
@@ -91,9 +92,14 @@ export async function POST(request: Request) {
       return new ChatbotError("unauthorized:chat").toResponse();
     }
 
+    const messageText = message?.parts
+      ?.filter((p) => p.type === "text")
+      ?.map((p) => p.text)
+      ?.join(" ") ?? "";
+
     const chatModel = allowedModelIds.has(selectedChatModel)
       ? selectedChatModel
-      : DEFAULT_CHAT_MODEL;
+      : routeModel(messageText, null).modelId;
 
     await checkIpRateLimit(ipAddress(request));
 
