@@ -1,0 +1,9 @@
+playbook: other
+organization: shared
+version: 1.0.0
+description: Catches orphan connectors and capabilities that don't fit a specific business domain
+requires:
+  connectors: [cat-facts, affy]
+  skills: []
+  functions: []
+  workflows: []

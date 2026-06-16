@@ -1,0 +1,9 @@
+playbook: video-generation
+organization: newleaf-financial
+version: "1.0.0"
+description: AI video generation, editing, and script-to-video conversion
+requires:
+  connectors: [neptune]
+  skills: [ai-agent-sdk]
+  functions: [video-generate, video-edit, script-to-video]
+  workflows: [video-generation-pipeline]

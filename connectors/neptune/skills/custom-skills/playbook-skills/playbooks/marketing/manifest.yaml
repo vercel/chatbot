@@ -1,0 +1,9 @@
+playbook: marketing
+organization: newleaf-financial
+version: "1.0.0"
+description: Campaigns, lead nurture, SMS/email blasts, DNC compliance, and marketing analytics
+requires:
+  connectors: [ghl, slack, base44]
+  skills: []
+  functions: [campaign-manage, lead-nurture, blast-send, dnc-check]
+  workflows: [campaign-scheduler]

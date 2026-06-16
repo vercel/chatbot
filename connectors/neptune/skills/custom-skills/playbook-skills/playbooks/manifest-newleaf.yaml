@@ -1,0 +1,9 @@
+playbook: newleaf
+organization: newleaf-financial
+version: "1.0.0"
+description: Organization-wide rules, cardinal constraints, and compliance standards
+requires:
+  connectors: [slack, base44, github]
+  skills: [playbook-skills]
+  functions: [rule-enforce, compliance-check]
+  workflows: [compliance-audit]

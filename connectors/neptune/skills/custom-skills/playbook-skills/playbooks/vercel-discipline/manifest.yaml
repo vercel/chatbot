@@ -1,0 +1,9 @@
+playbook: vercel-discipline
+organization: newleaf-financial
+version: "1.0.0"
+description: Vercel deployment standards, env config, security headers, and build verification
+requires:
+  connectors: [vercel, github]
+  skills: []
+  functions: [vercel-deploy, build-status, env-audit]
+  workflows: [vercel-deploy-check]

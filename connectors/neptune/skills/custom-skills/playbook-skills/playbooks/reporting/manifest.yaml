@@ -1,0 +1,9 @@
+playbook: reporting
+organization: newleaf-financial
+version: "1.0.0"
+description: Morning pulse, metrics, analytics, and custom reports
+requires:
+  connectors: [base44, slack]
+  skills: [spreadsheet-creator]
+  functions: [reporting-hub-query, metrics-aggregate, morning-pulse]
+  workflows: [morning-pulse-report]

@@ -1,0 +1,9 @@
+playbook: sales
+organization: newleaf-financial
+version: "1.0.0"
+description: Pipeline management, lead qualification, enrollment funnel metrics
+requires:
+  connectors: [ghl, base44, slack]
+  skills: []
+  functions: [pipeline-manage, lead-qualify, enrollment-track]
+  workflows: [sales-pipeline-monitor]

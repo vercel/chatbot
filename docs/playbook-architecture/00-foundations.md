@@ -81,8 +81,8 @@ All 16 business playbooks live inside `playbook-skills/playbooks/`:
 | Priority | Count | Playbooks |
 |----------|-------|-----------|
 | P0 | 4 | billing, support, disputes, planning |
-| P1 | 7 | engineering, reporting, deploy, vercel-discipline, vps-ops, agent-orchestration |
-| P2 | 4 | marketing, hr, sales, video-generation |
+| P1 | 6 | engineering, reporting, deploy, vercel-discipline, vps-ops, agent-orchestration |
+| P2 | 5 | marketing, hr, sales, video-generation, other ⭐ |
 | META | 2 | newleaf (org), index |
 
 ## The Meta-Skill: playbook-skills
@@ -118,43 +118,123 @@ The reorg to fractal structure uses the **adapter pattern**:
 
 ## The Twin View Architecture ⭐ (Abhi's Portable Playbook Package)
 
-The playbook-skills meta-skill supports TWO simultaneous views:
+The playbook-skills meta-skill supports TWO simultaneous views of the same library:
 
-### VIEW A: Library View (Canonical, Single Source of Truth)
+### VIEW A: Playbook View (Default, Domain-Centric)
+
+The canonical library organized BY BUSINESS DOMAIN. This is what agents see at runtime.
 
 ```
 connectors/neptune/skills/custom-skills/playbook-skills/  ← THE LIBRARY
-├── PLAYBOOK-ROUTER.md         ← Entry point (contains MAP)
-├── functions/                 ← 6 TS functions
-├── playbooks/                 ← 16 business playbooks (canonical copies)
-└── workflows/                 ← 2 durable workflows
+├── PLAYBOOK-ROUTER.md         ← Entry point (contains inline fractal MAP)
+├── manifest.yaml              ← Root manifest (what this package needs)
+├── functions/                 ← 6 TS lifecycle functions
+├── workflows/                 ← 2 durable workflows
+└── playbooks/                 ← 17 business playbooks (nested domain folders)
+    ├── billing/               ← Self-contained domain
+    │   ├── playbook-billing.md
+    │   └── manifest.yaml
+    ├── customer-support/      ← Support triage
+    │   ├── playbook-support.md
+    │   └── manifest.yaml
+    ├── disputes/
+    ├── planning/
+    ├── engineering/
+    ├── reporting/
+    ├── deploy/
+    ├── vercel-discipline/
+    ├── vps-ops/
+    ├── agent-orchestration/
+    ├── marketing/
+    ├── hr/
+    ├── sales/
+    ├── video-generation/
+    ├── other/                 ← ⭐ ORPHAN CATCHER (misc. capabilities)
+    │   ├── playbook-other.md
+    │   ├── manifest.yaml
+    │   ├── connectors/
+    │   ├── skills/
+    │   ├── functions/
+    │   └── workflows/
+    ├── playbook-newleaf.md    ← ORG meta-file (root)
+    └── playbook-index.md      ← META meta-file (root)
 ```
+
+**Purpose:** Domain-centric experience. Agent's mental model = "business operations."
 
 **Properties:**
 - **Canonical:** This is THE source of truth. All edits happen here.
 - **Complete:** Contains all playbooks, functions, workflows in one place.
 - **Connected:** Functions reference live connectors, live APIs, live models.
 - **Evolving:** Self-evolution loop continuously improves playbooks.
+- **Nested:** Each playbook lives in its own folder with manifest + connectors/skills/functions/workflows sub-folders ready for bundling (Phase 22).
 
-### VIEW B: Portable Package View (Self-Contained, Copyable Bundle)
+### VIEW B: Connector Library View (Secondary, Integration-Centric)
+
+The canonical library browsable BY TECHNICAL INTEGRATION at the repo root.
 
 ```
-playbook-skills/               ← COPY THIS ENTIRE FOLDER
-├── PLAYBOOK-ROUTER.md
-├── functions/                 ← Comes with all functions
-├── playbooks/                 ← Comes with all 16 playbooks
-│   └── playbook-billing/
-│       └── manifest.yaml      ← Per-playbook manifest
-├── workflows/                 ← Comes with all workflows
-└── manifest.yaml              ← Root manifest (what this package needs)
+connectors/                          ← single source of truth
+├── nmi/
+├── slack/
+├── github/
+├── vercel/
+├── linear/
+├── ghl/
+├── base44/
+├── wiki/
+├── forth/
+├── hyperswitch/
+├── vapi/
+├── affy/
+├── cat-facts/                       ← orphan connector
+├── mcp-hub/
+└── neptune/                         ← AGENT-AS-CONNECTOR
+    └── skills/
+        ├── native-agent-skills/
+        └── custom-skills/
+            └── playbook-skills/     ← contains VIEW A above
 ```
+
+**Purpose:** Capability-centric experience. Developer's mental model = "available integrations."
 
 **Properties:**
-- **Self-Contained:** Copy this ONE folder and you have the entire library.
+- **Self-Contained:** Copy the entire `playbook-skills/` folder and you have the entire library.
 - **Portable:** Any org can clone `playbook-skills/` and get all playbooks + functions + workflows.
 - **Snapshot:** Packages are snapshots from canonical — they don't auto-sync.
 - **Manifest-Driven:** Each playbook has a `manifest.yaml` declaring its requirements.
 - **Connector-Aware:** Manifests declare which connectors, skills, and functions are needed.
+
+### The 'other' Playbook — Orphan Catcher
+
+The `other/` domain catches connectors, skills, and functions that don't fit a specific business domain:
+
+- **Orphan connectors:** cat-facts, affy (awaiting classification)
+- **Fallback routing:** When PLAYBOOK-ROUTER.md intent matching finds no domain match, routes to `other`
+- **Review cadence:** Orphans reviewed every 5 missions; if 3+ share a domain, create a new playbook
+- **Promotion path:** Orphans graduate to domain playbooks when classified
+
+### Bidirectional Reference Architecture
+
+```
+        VIEW A (Playbook View)              VIEW B (Connector Library)
+             │                                     │
+             │ references via manifest             │
+             │─────────────────────────────────────→
+             │                                     │
+             │ ←───────────────────────────────────│
+             │  knowledge graph edges              │
+             │  surfaces 'used by'                 │
+             ▼                                     ▼
+        Runtime agent                       Developer browsing
+```
+
+**Key rules:**
+1. Playbooks REFERENCE connectors via manifest (default direction)
+2. Connector library is SINGLE source of truth for integrations
+3. Knowledge graph tracks 'connector USED BY playbook X' edges
+4. Phase 22 adds bundling for self-contained portable packages
+5. View toggling available at /library page (coming Phase 22)
 
 ### manifest.yaml Schema
 
@@ -165,12 +245,12 @@ organization: newleaf-financial
 version: "2.0.0"
 description: "Complete playbook library — portable AI agent knowledge package"
 requires:
-  connectors: [nmi, slack, github, vercel, base44, ghl, linear, forth, wiki, vapi]
-  skills: [ai-agent-sdk, opendesign, spreadsheet-creator]
+  connectors: [nmi, slack, github, vercel, base44, ghl, linear, forth, wiki, vapi, hyperswitch, affy, mcp-hub, neptune]
+  skills: [ai-agent-sdk, opendesign, spreadsheet-creator, playbook-skills]
   functions: [route-intent, create-playbook, update-playbook, organize-knowledge-graph, session-start-handler, session-end-handler]
   workflows: [intent-routing, session-end-logger]
 
-# Per-playbook manifest (at playbook-skills/playbooks/playbook-billing/manifest.yaml)
+# Per-playbook manifest (at playbook-skills/playbooks/billing/manifest.yaml)
 playbook: billing
 organization: newleaf-financial
 version: "2.0.0"
@@ -191,8 +271,21 @@ requires:
 | **Complete** | ✅ Everything | ✅ Everything (snapshot) |
 | **Connected** | ✅ Live APIs | ❌ Needs org setup |
 | **Use case** | Active development | Org bootstrapping, sharing |
+| **Orphan handling** | ✅ 'other' bucket | ✅ 'other' included in snapshot |
 
-**KEY INSIGHT:** Anybody could copy the `playbook-skills/` folder and get ALL playbooks + connectors + skills + functions. It's a portable AI agent library. The canonical source lives and evolves in the Library View (A). Portable packages are snapshots for distribution (B).
+**KEY INSIGHT:** Anybody could copy the `playbook-skills/` folder and get ALL playbooks + connectors + skills + functions. It's a portable AI agent library. The canonical source lives and evolves in the Library View (A). Portable packages are snapshots for distribution (B). The 'other' playbook ensures every integration has a home, preventing architectural drift.
+
+### GLM Model Status (2026-06-16)
+
+Confirmed via Vercel AI Gateway query: **GLM-5.1 is the latest Zhipu model** available through `zai/glm-5.1`. No GLM-5.2 registered yet.
+
+| Model ID | Provider | Context | Capabilities | Status |
+|----------|----------|---------|-------------|--------|
+| `zai/glm-5` | Zhipu AI | 202K | Agentic engineering | Available |
+| `zai/glm-5.1` | Zhipu AI | 202K | Vision, long-horizon (8h+), file input | **LATEST** |
+| `zai/glm-5.2` | Zhipu AI | — | — | Not yet available |
+
+Primary long-context routing: `zai/glm-5.1` for planning, research, and long-document synthesis.
 
 ## Cardinal Rules
 
@@ -206,6 +299,8 @@ requires:
 8. **Single atomic commit** — Phase 21 V3 ships in one commit
 9. **Twin View** — Library View (A) is canonical; Portable Package (B) is snapshot
 10. **Manifests required** — every playbook declares its requirements
+11. **'other' bucket** — orphan catcher prevents architectural drift; review every 5 missions
+12. **Nested folders** — each playbook lives in its own domain folder for Twin View B portability
 
 ---
 

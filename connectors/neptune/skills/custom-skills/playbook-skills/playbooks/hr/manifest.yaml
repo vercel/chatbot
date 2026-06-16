@@ -1,0 +1,9 @@
+playbook: hr
+organization: newleaf-financial
+version: "1.0.0"
+description: Team status, agent availability, onboarding, and compliance training
+requires:
+  connectors: [slack, linear]
+  skills: []
+  functions: [team-status, onboarding, compliance-training]
+  workflows: [team-status-check]

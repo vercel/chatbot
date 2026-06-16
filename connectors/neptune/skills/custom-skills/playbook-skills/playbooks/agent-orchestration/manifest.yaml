@@ -1,0 +1,9 @@
+playbook: agent-orchestration
+organization: newleaf-financial
+version: "1.0.0"
+description: Agent dispatch, multi-agent coordination, failure recovery, and status tracking
+requires:
+  connectors: [neptune, slack]
+  skills: [ai-agent-sdk]
+  functions: [dispatch-task, multi-agent-coordinate, failure-recover, agent-status]
+  workflows: [agent-dispatch-pipeline]

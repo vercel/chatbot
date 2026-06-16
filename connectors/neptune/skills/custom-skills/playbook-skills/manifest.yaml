@@ -58,6 +58,7 @@ playbooks_included:
   - hr               (P2) — Team status, onboarding, compliance training
   - sales            (P2) — Pipeline, lead qualification, enrollment
   - video-generation (P2) — AI video generation and editing
+  - other            (P2) — ⭐ FALLBACK: Miscellaneous / Orphan catcher
   - newleaf          (ORG) — Organization-wide rules
   - index            (META) — Domain catalog, capability discovery
 

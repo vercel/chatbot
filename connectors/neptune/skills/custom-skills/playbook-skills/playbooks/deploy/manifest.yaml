@@ -1,0 +1,9 @@
+playbook: deploy
+organization: newleaf-financial
+version: "1.0.0"
+description: Ship features, create PRs, rollback, and diagnose stale UI
+requires:
+  connectors: [github, vercel, slack]
+  skills: [vercel-discipline]
+  functions: [ship-feature, create-pr, rollback, diagnose-stale]
+  workflows: [deploy-pipeline]

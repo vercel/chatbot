@@ -1,0 +1,9 @@
+playbook: vps-ops
+organization: newleaf-financial
+version: "1.0.0"
+description: Server health, incidents, SSL, logs, and service management
+requires:
+  connectors: [neptune]
+  skills: []
+  functions: [vps-health-check, incident-response, log-inspect, ssl-check]
+  workflows: [vps-health-monitor]

@@ -1,0 +1,9 @@
+playbook: index
+organization: shared
+version: "1.0.0"
+description: Full domain catalog and capability discovery — the master index of all playbooks
+requires:
+  connectors: []
+  skills: [playbook-skills]
+  functions: [list-playbooks, domain-discovery]
+  workflows: []

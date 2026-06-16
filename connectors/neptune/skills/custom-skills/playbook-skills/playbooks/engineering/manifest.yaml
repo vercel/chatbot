@@ -1,0 +1,9 @@
+playbook: engineering
+organization: newleaf-financial
+version: "1.0.0"
+description: Code review, refactoring, debugging, and feature implementation
+requires:
+  connectors: [github, vercel, base44]
+  skills: [ai-agent-sdk]
+  functions: [code-review, refactor, debug, feature-build]
+  workflows: []

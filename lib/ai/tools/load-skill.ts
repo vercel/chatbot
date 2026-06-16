@@ -184,8 +184,13 @@ function resolveSkillPaths(skillPath: string): string[] {
 
   if (normalized.startsWith("playbooks/")) {
     const domain = normalized.replace("playbooks/", "");
+    // Map 'support' to 'customer-support' for nested folder convention
+    const nestedDomain = domain === "support" ? "customer-support" : domain;
     return [
-      // Phase 21 V3: Fractal library canonical paths (playbook-skills meta-skill)
+      // Phase 21 V3 Cleanup: Nested folder structure (primary)
+      `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/${nestedDomain}/playbook-${domain}.md`,
+      `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/${domain}/playbook-${domain}.md`,
+      // Flat fallback (adapter pattern — backward compat)
       `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/playbook-${domain}.md`,
       `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/playbook-${domain.replace(/-/g, "")}.md`,
       // Legacy paths (adapter pattern — backward compat)
@@ -224,10 +229,16 @@ function resolveSkillPaths(skillPath: string): string[] {
 
   if (normalized.startsWith("playbook-skills")) {
     const rest = normalized.replace("playbook-skills/", "").replace("playbook-skills", "");
-    // Phase 21 V3: Fractal paths within the meta-skill
+    // Phase 21 V3 Cleanup: Nested folder paths within the meta-skill
     if (rest.startsWith("playbooks/") || rest.match(/^playbook-/)) {
       const domain = rest.replace("playbooks/", "").replace(/^playbook-/, "").replace(/\.md$/, "");
+      // Map 'support' to 'customer-support' for nested folder convention
+      const nestedDomain = domain === "support" ? "customer-support" : domain;
+      // Map 'other' domain for orphan catcher
       return [
+        `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/${nestedDomain}/playbook-${domain}.md`,
+        `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/${domain}/playbook-${domain}.md`,
+        // Flat fallback (adapter)
         `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/playbook-${domain}.md`,
         `connectors/neptune/skills/custom-skills/playbook-skills/playbooks/${rest}`,
       ];
