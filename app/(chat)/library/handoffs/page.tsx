@@ -183,7 +183,7 @@ export default function V2HandoffsPage() {
                   <div className="flex gap-2 flex-shrink-0">
                     {handoff.v2SessionId && (
                       <a
-                        href={`https://neptune-v2.vercel.app/session/${handoff.v2SessionId}`}
+                        href={`https://neptune-v2.vercel.app/agent-sessions/${handoff.v2SessionId}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 text-sm hover:bg-emerald-600/30 transition-colors"

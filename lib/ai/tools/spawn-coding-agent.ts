@@ -238,7 +238,7 @@ export const spawnCodingAgent = tool({
           sessionId: v2SessionId,
           status: "started",
           libraryUrl: "/library/handoffs",
-          v2DirectUrl: `https://neptune-v2.vercel.app/session/${v2SessionId}`,
+          v2DirectUrl: `https://neptune-v2.vercel.app/agent-sessions/${v2SessionId}`,
           message: `V2 coding agent spawned. Track at /library/handoffs or open in V2. Session: ${v2SessionId?.slice(0, 12)}...`,
         };
       }

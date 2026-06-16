@@ -19,7 +19,7 @@ export interface StreamProxyOptions {
  */
 export function createV2StreamProxy(options: StreamProxyOptions): ReadableStream {
   const { v2SessionId, heartbeatMs = 30000 } = options;
-  const v2StreamUrl = `${V2_BASE_URL}/api/sessions/${v2SessionId}/stream`;
+  const v2StreamUrl = `${V2_BASE_URL}/api/agent-sessions/${v2SessionId}/stream`;
 
   return new ReadableStream({
     async start(controller) {

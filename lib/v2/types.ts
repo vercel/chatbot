@@ -56,6 +56,14 @@ export interface V2HandoffListResponse {
 }
 
 // V2 backend env configuration
-export const V2_BASE_URL = process.env.V2_BASE_URL || "https://neptune-v2.vercel.app";
-export const V2_AGENT_TOKEN = process.env.V2_AGENT_TOKEN || "";
+export const V2_BASE_URL = process.env.V2_BASE_URL || process.env.NEPTUNE_V2_API_BASE || "https://neptune-v2.vercel.app";
+
+// Auth token for V2 API calls. Must match NEPTUNE_INTERNAL_TOKEN on V2's Vercel project.
+// Fallback chain: V2_AGENT_TOKEN → NEPTUNE_V2_HANDOFF_SECRET → NEPTUNE_INTERNAL_TOKEN
+export const V2_AGENT_TOKEN =
+  process.env.V2_AGENT_TOKEN ||
+  process.env.NEPTUNE_V2_HANDOFF_SECRET ||
+  process.env.NEPTUNE_INTERNAL_TOKEN ||
+  "";
+
 export const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID || "team_NXlYvSlpN5mMinKXi0emQkFT";
