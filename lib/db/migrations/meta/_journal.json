@@ -78,6 +78,13 @@
       "when": 1781503374978,
       "tag": "0010_0019_library_plans_v2_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788000000000,
+      "tag": "0011_fusion_panels",
+      "breakpoints": true
     }
   ]
 }

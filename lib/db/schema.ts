@@ -465,3 +465,72 @@ export const libraryV2Session = pgTable("library_v2_sessions", {
 });
 
 export type LibraryV2Session = InferSelectModel<typeof libraryV2Session>;
+
+// ── Phase 23A: Fusion Panel Containers (0011_fusion_panels.sql) ──────────────
+
+export const libraryPanelPreset = pgTable("library_panel_presets", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull().default(""),
+  agents: jsonb("agents").notNull().default([]),
+  judge: jsonb("judge").notNull().default({}),
+  capabilities: jsonb("capabilities").notNull().default(["council"]),
+  domainHint: text("domain_hint").notNull().default("general"),
+  defaultMode: text("default_mode").notNull().default("council"),
+  estCostMin: numeric("est_cost_min", { precision: 10, scale: 6 }).notNull().default("0"),
+  estCostMax: numeric("est_cost_max", { precision: 10, scale: 6 }).notNull().default("0"),
+  isSystem: boolean("is_system").notNull().default(false),
+  isDefault: boolean("is_default").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryPanelPreset = InferSelectModel<typeof libraryPanelPreset>;
+
+export const libraryPanelRun = pgTable("library_panel_runs", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  presetId: uuid("preset_id").references(() => libraryPanelPreset.id, { onDelete: "set null" }),
+  presetName: text("preset_name").notNull(),
+  sessionId: text("session_id"),
+  userId: text("user_id"),
+  executionMode: text("execution_mode").notNull().default("council"),
+  modeDecision: text("mode_decision").notNull().default("auto"),
+  modeOverride: text("mode_override"),
+  taskAnalysis: jsonb("task_analysis").default({}),
+  agentResponses: jsonb("agent_responses").default([]),
+  judgeResponse: text("judge_response"),
+  subTaskDecomposition: jsonb("sub_task_decomposition"),
+  subModeBreakdown: jsonb("sub_mode_breakdown"),
+  agentContributionScores: jsonb("agent_contribution_scores"),
+  totalCost: numeric("total_cost", { precision: 10, scale: 8 }).default("0"),
+  totalLatencyMs: integer("total_latency_ms").default(0),
+  totalTokensIn: integer("total_tokens_in").default(0),
+  totalTokensOut: integer("total_tokens_out").default(0),
+  status: text("status").notNull().default("pending"),
+  errorMessage: text("error_message"),
+  userRating: integer("user_rating"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryPanelRun = InferSelectModel<typeof libraryPanelRun>;
+
+export const libraryPanelTelemetry = pgTable("library_panel_telemetry", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  panelRunId: uuid("panel_run_id").notNull().references(() => libraryPanelRun.id, { onDelete: "cascade" }),
+  agentModelId: text("agent_model_id").notNull(),
+  agentRole: text("agent_role").notNull().default("agent"),
+  latencyMs: integer("latency_ms").default(0),
+  tokensIn: integer("tokens_in").default(0),
+  tokensOut: integer("tokens_out").default(0),
+  costUsd: numeric("cost_usd", { precision: 10, scale: 8 }).default("0"),
+  success: boolean("success").notNull().default(true),
+  errorMessage: text("error_message"),
+  responsePreview: text("response_preview"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryPanelTelemetry = InferSelectModel<typeof libraryPanelTelemetry>;

@@ -62,6 +62,11 @@ import {
 } from "./slash-commands";
 import { SuggestedActions } from "./suggested-actions";
 import type { VisibilityType } from "./visibility-selector";
+import { ModeToggle, type FusionMode } from "@/components/fusion/mode-toggle";
+import { PickerButton } from "@/components/fusion/picker-button";
+import { PanelChooserSheet } from "@/components/fusion/panel-chooser-sheet";
+import { getPresetByName, DEFAULT_PRESET_NAME } from "@/lib/ai/fusion/presets";
+import type { PanelPreset } from "@/lib/ai/fusion/types";
 
 function setCookie(name: string, value: string) {
   const maxAge = 60 * 60 * 24 * 365;
@@ -127,6 +132,28 @@ function PureMultimodalInput({
     "input",
     ""
   );
+
+  // Phase 23A: Fusion panel state
+  const [fusionMode, setFusionMode] = useLocalStorage<FusionMode>(
+    "fusion-mode",
+    "panel"
+  );
+  const [selectedPresetName, setSelectedPresetName] = useLocalStorage<string>(
+    "fusion-preset",
+    DEFAULT_PRESET_NAME
+  );
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const pickerRef = useRef<HTMLButtonElement>(null);
+
+  const selectedPreset = getPresetByName(selectedPresetName) ?? getPresetByName(DEFAULT_PRESET_NAME);
+
+  const handlePresetSelect = useCallback((preset: PanelPreset) => {
+    setSelectedPresetName(preset.name);
+  }, [setSelectedPresetName]);
+
+  const pickerLabel = fusionMode === "panel"
+    ? selectedPreset?.name ?? DEFAULT_PRESET_NAME
+    : selectedModelId.split("/").pop()?.replace(/-/g, " ") ?? "Model";
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -523,10 +550,23 @@ function PureMultimodalInput({
               selectedModelId={selectedModelId}
               status={status}
             />
-            <ModelSelectorCompact
-              onModelChange={onModelChange}
-              selectedModelId={selectedModelId}
+            <ModeToggle
+              mode={fusionMode}
+              onModeChange={setFusionMode}
             />
+            {fusionMode === "panel" ? (
+              <PickerButton
+                ref={pickerRef}
+                mode="panel"
+                label={pickerLabel}
+                onClick={() => setChooserOpen(true)}
+              />
+            ) : (
+              <ModelSelectorCompact
+                onModelChange={onModelChange}
+                selectedModelId={selectedModelId}
+              />
+            )}
             <V2CodingButton
               input={input}
               setInput={setInput}
@@ -555,6 +595,15 @@ function PureMultimodalInput({
           )}
         </PromptInputFooter>
       </PromptInput>
+
+      <PanelChooserSheet
+        open={chooserOpen}
+        onOpenChange={setChooserOpen}
+        selectedPresetId={selectedPresetName}
+        onSelect={handlePresetSelect}
+        isDesktop={(width ?? 0) > 768}
+        anchorRef={pickerRef as React.RefObject<HTMLElement | null>}
+      />
     </div>
   );
 }

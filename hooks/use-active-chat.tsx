@@ -139,6 +139,16 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
             })
           );
 
+        // Phase 23A: Read fusion mode + preset from localStorage
+        let fusionMode: string | undefined;
+        let fusionPresetName: string | undefined;
+        try {
+          const rawMode = localStorage.getItem("fusion-mode");
+          const rawPreset = localStorage.getItem("fusion-preset");
+          fusionMode = rawMode ? JSON.parse(rawMode) : undefined;
+          fusionPresetName = rawPreset ? JSON.parse(rawPreset) : undefined;
+        } catch (_) { /* non-critical */ }
+
         return {
           body: {
             id: request.id,
@@ -147,6 +157,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
               : { message: lastMessage }),
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibility,
+            ...(fusionMode ? { fusionMode, fusionPresetName } : {}),
             ...request.body,
           },
         };

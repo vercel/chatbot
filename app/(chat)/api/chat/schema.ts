@@ -32,6 +32,9 @@ export const postRequestBodySchema = z.object({
   messages: z.array(toolApprovalMessageSchema).optional(),
   selectedChatModel: z.string(),
   selectedVisibilityType: z.enum(["public", "private"]),
+  // Phase 23A: Fusion panel mode
+  fusionMode: z.enum(["model", "panel"]).optional(),
+  fusionPresetName: z.string().optional(),
 });
 
 export type PostRequestBody = z.infer<typeof postRequestBodySchema>;

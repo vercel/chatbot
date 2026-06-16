@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { id, message, messages, selectedChatModel, selectedVisibilityType } =
+    const { id, message, messages, selectedChatModel, selectedVisibilityType, fusionMode, fusionPresetName } =
       requestBody;
 
     const [, session] = await Promise.all([
@@ -196,6 +196,96 @@ export async function POST(request: Request) {
           },
         ],
       });
+    }
+
+    // ── Phase 23A: Panel Mode — Multi-Agent Council Execution ──────────────────
+    if (fusionMode === "panel" && fusionPresetName && message) {
+      const userText = message.parts?.filter((p: Record<string, unknown>) => p.type === "text").map((p: Record<string, unknown>) => p.text).join(" ") ?? "";
+
+      const panelStream = createUIMessageStream({
+        execute: async ({ writer: dataStream }) => {
+          // Dynamic import to avoid bundling panel code when not used
+          const { executePanel } = await import("@/lib/ai/fusion");
+          const { getPresetByName } = await import("@/lib/ai/fusion/presets");
+
+          const preset = getPresetByName(fusionPresetName);
+          if (!preset) {
+            dataStream.write({ type: "data-textDelta", data: `Panel preset "${fusionPresetName}" not found. Falling back to model mode.\n\n`, transient: false } as never);
+            return;
+          }
+
+          const result = await executePanel({
+            preset,
+            messages: uiMessages.map((m) => ({
+              role: m.role,
+              content: m.parts?.filter((p: Record<string, unknown>) => p.type === "text").map((p: Record<string, unknown>) => p.text).join(" ") ?? "",
+            })),
+            onEvent: (event) => {
+              // Forward panel events as data stream events
+              if (event.type === "judge:token") {
+                dataStream.write({ type: "data-textDelta", data: event.token, transient: false } as never);
+              }
+            },
+            sessionId: id,
+            userId: session.user.id,
+          });
+
+          dataStream.write({ type: "data-finish", finishReason: "stop" } as never);
+
+          // Log telemetry via after()
+          after(async () => {
+            try {
+              const { logPanelRun } = await import("@/lib/ai/fusion/telemetry");
+              await logPanelRun({
+                presetId: preset.id,
+                presetName: preset.name,
+                sessionId: id,
+                userId: session.user.id,
+                executionMode: "council",
+                modeDecision: "auto",
+                taskAnalysis: result.taskAnalysis,
+                agentResponses: result.agentResponses,
+                judgeResponse: result.judgeResponse,
+                totalCost: result.totalCost,
+                totalLatency: result.totalLatency,
+                totalTokensIn: result.totalTokensIn,
+                totalTokensOut: result.totalTokensOut,
+                status: "completed",
+              });
+            } catch (err) {
+              console.warn("[fusion] Telemetry log failed (non-fatal):", (err as Error).message);
+            }
+          });
+        },
+        generateId: generateUUID,
+        onFinish: async ({ messages: finishedMessages }) => {
+          if (finishedMessages.length > 0) {
+            await saveMessages({
+              messages: finishedMessages.map((currentMessage) => ({
+                id: currentMessage.id,
+                role: currentMessage.role,
+                parts: currentMessage.parts,
+                createdAt: new Date(),
+                attachments: [],
+                chatId: id,
+              })),
+            });
+          }
+
+          if (titlePromise) {
+            try {
+              const title = await titlePromise;
+              updateChatTitleById({ chatId: id, title });
+            } catch (_) { /* non-fatal */ }
+          }
+        },
+        onError: (error) => {
+          console.error("[fusion-panel] Error:", error);
+          return "Panel execution failed";
+        },
+      });
+
+      return createUIMessageStreamResponse({ stream: panelStream });
     }
 
     const modelConfig = chatModels.find((m) => m.id === chatModel);
