@@ -1,153 +1,360 @@
 /**
- * U7.4: query_knowledge — 8th Gatekeeper Tool (Pattern A+2)
+ * Phase 22.5: queryKnowledge — Self-Description Truth Tool
  *
- * The foundational anti-guesswork tool. Queries the Postgres KG for:
- * - Entities matching NL query (vector similarity + text search)
- * - Graph traversal (recursive CTE, depth 1-3)
- * - Cardinal rules (top-priority, confidence=1.0)
- * - Recent lessons learned
- * - Recommended skills based on query context
+ * Queries the library_* tables (populated by seed-library.ts from
+ * system-capabilities.json) to answer questions about what the system
+ * actually IS — not what training data hallucinates.
  *
- * Cardinal rule: query_knowledge SHOULD be called before executing any routine.
+ * Cardinal Rule: Call this BEFORE describing capabilities, playbooks,
+ * connectors, functions, or any system entity. Never answer from memory.
+ *
+ * Uses Drizzle ORM against Postgres library_* tables.
  */
 
 import { tool } from "ai";
 import { z } from "zod";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { sql } from "drizzle-orm";
 import {
-  searchEntities,
-  vectorSearch,
-  traverseGraph,
-  listEntitiesByType,
-  getKgStats,
-} from "@/lib/knowledge/client";
-import { generateEmbedding } from "@/lib/knowledge/embeddings";
-import { ENTITY_TYPES } from "@/lib/knowledge/types";
-import type { KnowledgeResult, SessionRef } from "@/lib/knowledge/types";
+  libraryConnector,
+  librarySkill,
+  libraryFunction,
+  libraryPlaybook,
+  libraryWorkflow,
+  libraryEdge,
+} from "@/lib/db/schema";
+
+const ENTITY_TYPES = [
+  "connector",
+  "skill",
+  "function",
+  "playbook",
+  "workflow",
+  "edge",
+] as const;
+
+// ── Result Types ──────────────────────────────────────────────────────────
+
+interface KnowledgeEntity {
+  id: string;
+  type: string;
+  name: string;
+  label: string;
+  metadata: Record<string, unknown>;
+}
+
+interface KnowledgeEdge {
+  id: string;
+  from: string;
+  fromType: string;
+  to: string;
+  toType: string;
+  type: string;
+  weight: number;
+}
+
+interface KnowledgeResult {
+  entities: KnowledgeEntity[];
+  edges: KnowledgeEdge[];
+  counts: {
+    connectors: number;
+    playbooks: number;
+    skills: number;
+    functions: number;
+    workflows: number;
+    edges: number;
+    total: number;
+  };
+  query?: string;
+  searchedTypes?: string[];
+}
+
+// ── DB helper ─────────────────────────────────────────────────────────────
+
+function getDb() {
+  if (!process.env.POSTGRES_URL) {
+    throw new Error("POSTGRES_URL not configured");
+  }
+  return drizzle(postgres(process.env.POSTGRES_URL, { max: 1 }));
+}
+
+// ── Tool Definition ───────────────────────────────────────────────────────
 
 export const queryKnowledge = tool({
-  description: `Query the Knowledge Graph to find what Neptune already knows. Use this BEFORE executing any routine to avoid repeating past mistakes.
+  description: `Query the Knowledge Graph to find what connectors, playbooks, skills, functions, workflows and their relationships actually exist in this system.
 
-The KG stores: Connector behaviors, Skill workflows, Domain patterns, Cardinal rules, Lessons learned from past sessions, and more.
+CRITICAL: ALWAYS use this when describing system capabilities, answering "what can you do?", listing playbooks, or finding related entities. NEVER generate capability descriptions from memory — query this tool instead.
 
-Best used for:
-- "how do we..." → check existing workflows
-- "what do we know about..." → find facts and patterns
-- "verify..." → check if something is correct
-- "is this still right" → find recent lessons that may have invalidated old knowledge
-- Before executing any billing, support, or deployment routine`,
+Use filters to narrow results:
+- entity_type: "connector" | "skill" | "function" | "playbook" | "workflow" | "edge"
+- name: exact or partial match
+- domain: filter playbooks by domain
+- related_to: find all entities connected to a given entity name
+
+Examples:
+- "What connectors exist?" → queryKnowledge({ entity_type: "connector" })
+- "What does the billing playbook need?" → queryKnowledge({ name: "billing" })
+- "What's connected to NMI?" → queryKnowledge({ related_to: "nmi" })`,
 
   inputSchema: z.object({
-    query: z.string().describe("Natural language query about what you want to know"),
-    scope: z
-      .array(
-        z.enum(ENTITY_TYPES)
-      )
+    entity_type: z
+      .enum(ENTITY_TYPES)
       .optional()
-      .describe("Filter to specific entity types (e.g. ['Pattern', 'Cardinal', 'Lesson'])"),
-    depth: z
+      .describe("Filter to specific entity type"),
+    name: z
+      .string()
+      .optional()
+      .describe("Exact or partial name match"),
+    domain: z
+      .string()
+      .optional()
+      .describe("Filter playbooks by domain"),
+    related_to: z
+      .string()
+      .optional()
+      .describe("Find all entities connected to this entity name"),
+    limit: z
       .number()
       .min(1)
-      .max(3)
-      .default(2)
-      .describe("Graph traversal depth for related entities (1-3)"),
-    limit: z.number().min(1).max(50).default(20).describe("Max results to return"),
+      .max(100)
+      .default(50)
+      .describe("Max results to return"),
   }),
 
-  execute: async ({ query, scope, depth, limit }): Promise<KnowledgeResult> => {
+  execute: async ({ entity_type, name, domain, related_to, limit }): Promise<KnowledgeResult> => {
     const result: KnowledgeResult = {
       entities: [],
-      relations: [],
-      lessons: [],
-      cardinals: [],
-      source_logs: [],
-      recommended_skills: [],
+      edges: [],
+      counts: {
+        connectors: 0,
+        playbooks: 0,
+        skills: 0,
+        functions: 0,
+        workflows: 0,
+        edges: 0,
+        total: 0,
+      },
+      query: name || entity_type || related_to || "all",
+      searchedTypes: entity_type ? [entity_type] : undefined,
     };
 
     try {
-      // 1. Vector similarity search
-      const embedding = await generateEmbedding(query);
-      const similarEntities = await vectorSearch(embedding, limit, 0.3);
+      const db = getDb();
+      const entities: KnowledgeEntity[] = [];
+      const edges: KnowledgeEdge[] = [];
 
-      // 2. Text-based search (fallback/complement)
-      const textMatches = await searchEntities(query, limit);
+      // ── Fetch connectors ─────────────────────────────────────────────
+      if (!entity_type || entity_type === "connector") {
+        const rows = await db
+          .select()
+          .from(libraryConnector)
+          .where(
+            name
+              ? sql`${libraryConnector.name} ILIKE ${"%" + name + "%"}`
+              : undefined
+          )
+          .limit(limit);
 
-      // 3. Merge and deduplicate entities
-      const entityMap = new Map<string, typeof similarEntities[0]>();
-      for (const e of similarEntities) entityMap.set(e.id, e);
-      for (const e of textMatches) {
-        if (!entityMap.has(e.id)) entityMap.set(e.id, { ...e, similarity: 0.5 });
-      }
-
-      let entities = Array.from(entityMap.values());
-
-      // 4. Apply scope filter if specified
-      if (scope && scope.length > 0) {
-        entities = entities.filter((e) => scope.includes(e.type as (typeof ENTITY_TYPES)[number]));
-      }
-
-      // Sort by confidence * similarity
-      entities.sort((a, b) => {
-        const scoreA = a.confidence * (a.similarity ?? 0.5);
-        const scoreB = b.confidence * (b.similarity ?? 0.5);
-        return scoreB - scoreA;
-      });
-
-      result.entities = entities.slice(0, limit) as KnowledgeResult["entities"];
-
-      // 5. Separate cards and lessons
-      result.cardinals = result.entities.filter((e) => e.type === "Cardinal");
-      result.lessons = result.entities.filter((e) => e.type === "Lesson");
-
-      // 6. Graph traversal for top entity
-      if (result.entities.length > 0 && depth > 1) {
-        try {
-          const graph = await traverseGraph(result.entities[0].id, depth as 1 | 2 | 3);
-          // Add relations not already present
-          const existingRelIds = new Set(result.relations.map((r) => r.id));
-          for (const rel of graph.relations) {
-            if (!existingRelIds.has(rel.id)) {
-              result.relations.push(rel);
-            }
-          }
-          // Add entities not already present
-          const existingEntityIds = new Set(result.entities.map((e) => e.id));
-          for (const entity of graph.entities) {
-            if (!existingEntityIds.has(entity.id)) {
-              result.entities.push(entity);
-              if (entity.type === "Lesson") result.lessons.push(entity);
-              if (entity.type === "Cardinal") result.cardinals.push(entity);
-            }
-          }
-        } catch {
-          // Graph traversal is best-effort
+        for (const r of rows) {
+          entities.push({
+            id: `connector:${r.name}`,
+            type: "connector",
+            name: r.name,
+            label: r.name.replace(/-/g, " ").replace(/\b\w/g, (ch: string) => ch.toUpperCase()),
+            metadata: {
+              description: r.description,
+              mcpEnabled: r.mcpEnabled,
+              tools: r.tools,
+              toolNames: r.toolNames,
+              alsoIn: r.alsoIn,
+              domain: r.primaryDomain,
+            },
+          });
         }
       }
 
-      // 7. Get recent source sessions
-      const sessionSet = new Set<string>();
-      for (const e of result.entities) {
-        const prov = e.provenance as { sessionId?: string } | null;
-        if (prov?.sessionId) sessionSet.add(prov.sessionId);
-      }
-      result.source_logs = Array.from(sessionSet).map((sid) => ({
-        sessionId: sid,
-        turnCount: 1,
-        timestamp: "",
-      }));
+      // ── Fetch skills ─────────────────────────────────────────────────
+      if (!entity_type || entity_type === "skill") {
+        const rows = await db
+          .select()
+          .from(librarySkill)
+          .where(
+            name
+              ? sql`${librarySkill.name} ILIKE ${"%" + name + "%"}`
+              : undefined
+          )
+          .limit(limit);
 
-      // 8. Recommend skills based on found entities
-      const skillNames = new Set<string>();
-      for (const e of result.entities) {
-        if (e.type === "Skill" || e.type === "Pattern") {
-          skillNames.add(e.name);
+        for (const r of rows) {
+          entities.push({
+            id: `skill:${r.name}`,
+            type: "skill",
+            name: r.name,
+            label: r.name.replace(/-/g, " ").replace(/\b\w/g, (ch: string) => ch.toUpperCase()),
+            metadata: {
+              description: r.description,
+              skillType: r.type,
+              connectorName: r.connectorName,
+            },
+          });
         }
       }
-      result.recommended_skills = Array.from(skillNames).slice(0, 5);
+
+      // ── Fetch functions ──────────────────────────────────────────────
+      if (!entity_type || entity_type === "function") {
+        const rows = await db
+          .select()
+          .from(libraryFunction)
+          .where(
+            name
+              ? sql`${libraryFunction.name} ILIKE ${"%" + name + "%"}`
+              : undefined
+          )
+          .limit(limit);
+
+        for (const r of rows) {
+          entities.push({
+            id: `function:${r.name}`,
+            type: "function",
+            name: r.name,
+            label: r.name.replace(/-/g, " ").replace(/\b\w/g, (ch: string) => ch.toUpperCase()),
+            metadata: {
+              signature: r.signature,
+              description: r.description,
+              domain: r.domain,
+            },
+          });
+        }
+      }
+
+      // ── Fetch playbooks ──────────────────────────────────────────────
+      if (!entity_type || entity_type === "playbook") {
+        const rows = await db
+          .select()
+          .from(libraryPlaybook)
+          .where(
+            name
+              ? sql`${libraryPlaybook.name} ILIKE ${"%" + name + "%"}`
+              : undefined
+          )
+          .limit(limit);
+
+        for (const r of rows) {
+          entities.push({
+            id: `playbook:${r.name}`,
+            type: "playbook",
+            name: r.name,
+            label: r.name.replace(/-/g, " ").replace(/\b\w/g, (ch: string) => ch.toUpperCase()),
+            metadata: {
+              description: r.description,
+              playbookType: r.type,
+              scopeConnectors: r.scopeConnectors,
+              workflows: r.workflows,
+              triggers: r.triggers,
+            },
+          });
+        }
+      }
+
+      // ── Fetch workflows ──────────────────────────────────────────────
+      if (!entity_type || entity_type === "workflow") {
+        const rows = await db
+          .select()
+          .from(libraryWorkflow)
+          .where(
+            name
+              ? sql`${libraryWorkflow.name} ILIKE ${"%" + name + "%"}`
+              : undefined
+          )
+          .limit(limit);
+
+        for (const r of rows) {
+          entities.push({
+            id: `workflow:${r.name}`,
+            type: "workflow",
+            name: r.name,
+            label: r.name.replace(/-/g, " ").replace(/\b\w/g, (ch: string) => ch.toUpperCase()),
+            metadata: {
+              description: r.description,
+              playbookName: r.playbookName,
+              durable: r.durable,
+            },
+          });
+        }
+      }
+
+      // ── Fetch edges ──────────────────────────────────────────────────
+      if (!entity_type || entity_type === "edge" || related_to) {
+        let edgeRows;
+        if (related_to) {
+          edgeRows = await db
+            .select()
+            .from(libraryEdge)
+            .where(
+              sql`(${libraryEdge.fromNode} ILIKE ${"%" + related_to + "%"} OR ${libraryEdge.toNode} ILIKE ${"%" + related_to + "%"})`
+            )
+            .limit(limit);
+        } else if (!entity_type || entity_type === "edge") {
+          edgeRows = await db
+            .select()
+            .from(libraryEdge)
+            .limit(limit);
+        } else {
+          // Filter edges by entity type
+          edgeRows = await db
+            .select()
+            .from(libraryEdge)
+            .where(
+              sql`(${libraryEdge.fromType} = ${entity_type} OR ${libraryEdge.toType} = ${entity_type})`
+            )
+            .limit(limit);
+        }
+
+        for (const e of (edgeRows || [])) {
+          edges.push({
+            id: e.id,
+            from: e.fromNode,
+            fromType: e.fromType,
+            to: e.toNode,
+            toType: e.toType,
+            type: e.edgeType,
+            weight: e.weight,
+          });
+        }
+      }
+
+      // ── Fetch counts ─────────────────────────────────────────────────
+      const [connCount] = await db.select({ count: sql<number>`count(*)` }).from(libraryConnector);
+      const [pbCount] = await db.select({ count: sql<number>`count(*)` }).from(libraryPlaybook);
+      const [skillCount] = await db.select({ count: sql<number>`count(*)` }).from(librarySkill);
+      const [funcCount] = await db.select({ count: sql<number>`count(*)` }).from(libraryFunction);
+      const [wfCount] = await db.select({ count: sql<number>`count(*)` }).from(libraryWorkflow);
+      const [edgeCount] = await db.select({ count: sql<number>`count(*)` }).from(libraryEdge);
+
+      result.counts = {
+        connectors: connCount?.count ?? 0,
+        playbooks: pbCount?.count ?? 0,
+        skills: skillCount?.count ?? 0,
+        functions: funcCount?.count ?? 0,
+        workflows: wfCount?.count ?? 0,
+        edges: edgeCount?.count ?? 0,
+        total:
+          (connCount?.count ?? 0) +
+          (pbCount?.count ?? 0) +
+          (skillCount?.count ?? 0) +
+          (funcCount?.count ?? 0) +
+          (wfCount?.count ?? 0),
+      };
+
+      result.entities = entities.slice(0, limit);
+      result.edges = edges.slice(0, limit);
 
       return result;
     } catch (err) {
-      console.error("[query_knowledge] Error:", (err as Error).message);
-      return result; // Return partial results on error
+      console.error("[queryKnowledge] Error:", (err as Error).message);
+      // Return partial results on error — better than hallucinations
+      return result;
     }
   },
 });

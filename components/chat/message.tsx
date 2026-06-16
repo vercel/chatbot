@@ -191,7 +191,7 @@ const PurePreviewMessage = ({
       if (isDenied) {
         return (
           <div className={widthClass} key={toolCallId}>
-            <Tool className="w-full" defaultOpen={true}>
+            <Tool className="w-full" defaultOpen={false}>
               <ToolHeader state="output-denied" type="tool-getWeather" />
               <ToolContent>
                 <div className="px-4 py-3 text-muted-foreground text-sm">
@@ -206,7 +206,7 @@ const PurePreviewMessage = ({
       if (state === "approval-responded") {
         return (
           <div className={widthClass} key={toolCallId}>
-            <Tool className="w-full" defaultOpen={true}>
+            <Tool className="w-full" defaultOpen={false}>
               <ToolHeader state={state} type="tool-getWeather" />
               <ToolContent>
                 <ToolInput input={part.input} />
@@ -218,7 +218,7 @@ const PurePreviewMessage = ({
 
       return (
         <div className={widthClass} key={toolCallId}>
-          <Tool className="w-full" defaultOpen={true}>
+          <Tool className="w-full" defaultOpen={false}>
             <ToolHeader state={state} type="tool-getWeather" />
             <ToolContent>
               {(state === "input-available" ||
@@ -314,7 +314,7 @@ const PurePreviewMessage = ({
       return (
         <Tool
           className="w-[min(100%,450px)]"
-          defaultOpen={true}
+          defaultOpen={false}
           key={toolCallId}
         >
           <ToolHeader state={state} type="tool-requestSuggestions" />
@@ -387,7 +387,7 @@ const PurePreviewMessage = ({
             "w-[min(100%,550px)]",
             collapseSummary && "opacity-0 h-0 overflow-hidden pointer-events-none"
           )}
-          defaultOpen={!isComplete}
+          defaultOpen={false}
           key={toolCallId}
         >
           <ToolHeader

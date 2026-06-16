@@ -253,6 +253,22 @@ The KG is Postgres-native (pgvector + ltree). It co-exists with playbooks:
 - Raw Logs = WHEN (immutable audit trail)
 `;
 
+  // Phase 22.5: Self-reference — NEVER hallucinate capabilities
+  const selfReference = `
+## 🔴 SELF-DESCRIPTION — NEVER HALLUCINATE (Phase 22.5)
+
+For ANY question about what you can do, what's available, what playbooks/connectors exist, or what tools you have:
+
+1. **Call \`query_knowledge\` FIRST** — never answer from memory
+2. The knowledge graph (library_* tables) contains the actual truth about connectors, playbooks, skills, functions, and workflows
+3. If you can't query the KG, read \`lib/system-capabilities.json\`
+4. **Any playbook, connector, or capability you describe that doesn't match system-capabilities.json is a HALLUCINATION**
+
+You do NOT have playbooks called code-review, debugging-incident, feature-build, system-audit, or planning-research. The actual playbooks are: agent-orchestration, billing, customer-support, deploy, disputes, engineering, hr, marketing, other, planning, reporting, sales, vercel-discipline, video-generation, vps-ops.
+
+The query_knowledge tool queries the library_* tables and returns real data. Use it.
+`;
+
   const selfModRouting = `
 ## SELF-MODIFICATION ROUTING (Phase 10-C)
 
@@ -270,7 +286,7 @@ When the user asks you to modify your own code, follow this routing logic:
 4. **Critical**: NEVER simulate code changes in chat text. If the user wants a code change to neptune-chat, USE THE TOOL. Do not write code blocks in your response unless you are creating an artifact.
 `;
 
-  return `${neptuneHeader}${regularPrompt}\n\n${requestPrompt}\n\n${routerSection}\n\n${preCheckKnowledge}\n\n${artifactsPrompt}\n\n${selfModRouting}\n\n${connectorCatalog}${playbookSection}`;
+  return `${neptuneHeader}${regularPrompt}\n\n${requestPrompt}\n\n${routerSection}\n\n${selfReference}\n\n${preCheckKnowledge}\n\n${artifactsPrompt}\n\n${selfModRouting}\n\n${connectorCatalog}${playbookSection}`;
 };
 
 export const codePrompt = `

@@ -1,0 +1,3069 @@
+{
+  "generatedAt": "2026-06-16T01:56:13.034Z",
+  "version": "1.0",
+  "repo": "abhiswami2121/neptune-chat",
+  "commitSha": "9ea1d4e",
+  "counts": {
+    "connectors": 17,
+    "playbooks": 17,
+    "skills": 6,
+    "functions": 12,
+    "workflows": 5,
+    "tools": 12,
+    "apiRoutes": 104,
+    "models": 15,
+    "uiComponents": 26
+  },
+  "connectors": [
+    {
+      "name": "_template",
+      "slug": "_template",
+      "path": "connectors/_template/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": false,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": false,
+      "hasSkillMd": false,
+      "playbooksReferencing": []
+    },
+    {
+      "name": "affy",
+      "slug": "affy",
+      "path": "connectors/affy/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "disputes",
+        "other"
+      ]
+    },
+    {
+      "name": "base44",
+      "slug": "base44",
+      "path": "connectors/base44/",
+      "hasMcp": false,
+      "hasCustomClient": true,
+      "hasSchema": true,
+      "toolCount": 6,
+      "toolNames": [
+        "createEntity",
+        "customer360",
+        "invokeFunction",
+        "queryEntity",
+        "reportingHub",
+        "updateEntity"
+      ],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "billing",
+        "customer-support",
+        "disputes",
+        "engineering",
+        "newleaf",
+        "marketing",
+        "planning",
+        "reporting",
+        "sales"
+      ]
+    },
+    {
+      "name": "cat-facts",
+      "slug": "cat-facts",
+      "path": "connectors/cat-facts/",
+      "hasMcp": false,
+      "hasCustomClient": true,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": false,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "other"
+      ]
+    },
+    {
+      "name": "custom-skills",
+      "slug": "custom-skills",
+      "path": "connectors/custom-skills/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": false,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": false,
+      "hasSkillMd": true,
+      "playbooksReferencing": []
+    },
+    {
+      "name": "forth",
+      "slug": "forth",
+      "path": "connectors/forth/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "disputes"
+      ]
+    },
+    {
+      "name": "ghl",
+      "slug": "ghl",
+      "path": "connectors/ghl/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "marketing",
+        "sales"
+      ]
+    },
+    {
+      "name": "github",
+      "slug": "github",
+      "path": "connectors/github/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "deploy",
+        "engineering",
+        "newleaf",
+        "planning",
+        "vercel-discipline"
+      ]
+    },
+    {
+      "name": "hyperswitch",
+      "slug": "hyperswitch",
+      "path": "connectors/hyperswitch/",
+      "hasMcp": true,
+      "hasCustomClient": true,
+      "hasSchema": true,
+      "toolCount": 3,
+      "toolNames": [
+        "createPaymentLink",
+        "listPayments",
+        "refundPayment"
+      ],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "billing"
+      ]
+    },
+    {
+      "name": "linear",
+      "slug": "linear",
+      "path": "connectors/linear/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "hr"
+      ]
+    },
+    {
+      "name": "mcp-hub",
+      "slug": "mcp-hub",
+      "path": "connectors/mcp-hub/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": []
+    },
+    {
+      "name": "neptune",
+      "slug": "neptune",
+      "path": "connectors/neptune/",
+      "hasMcp": false,
+      "hasCustomClient": true,
+      "hasSchema": false,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "agent-orchestration",
+        "planning",
+        "video-generation",
+        "vps-ops"
+      ]
+    },
+    {
+      "name": "nmi",
+      "slug": "nmi",
+      "path": "connectors/nmi/",
+      "hasMcp": false,
+      "hasCustomClient": true,
+      "hasSchema": true,
+      "toolCount": 4,
+      "toolNames": [
+        "getSubscription",
+        "getVault",
+        "queryTransactions",
+        "refundTransaction"
+      ],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "billing"
+      ]
+    },
+    {
+      "name": "slack",
+      "slug": "slack",
+      "path": "connectors/slack/",
+      "hasMcp": true,
+      "hasCustomClient": true,
+      "hasSchema": true,
+      "toolCount": 5,
+      "toolNames": [
+        "listChannels",
+        "postMessage",
+        "pullMessages",
+        "reactionAdd",
+        "searchChannels"
+      ],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "agent-orchestration",
+        "billing",
+        "customer-support",
+        "deploy",
+        "disputes",
+        "hr",
+        "newleaf",
+        "marketing",
+        "planning",
+        "reporting",
+        "sales"
+      ]
+    },
+    {
+      "name": "vapi",
+      "slug": "vapi",
+      "path": "connectors/vapi/",
+      "hasMcp": false,
+      "hasCustomClient": true,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "customer-support"
+      ]
+    },
+    {
+      "name": "vercel",
+      "slug": "vercel",
+      "path": "connectors/vercel/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "deploy",
+        "engineering",
+        "vercel-discipline"
+      ]
+    },
+    {
+      "name": "wiki",
+      "slug": "wiki",
+      "path": "connectors/wiki/",
+      "hasMcp": false,
+      "hasCustomClient": false,
+      "hasSchema": true,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": true,
+      "hasSkillMd": true,
+      "playbooksReferencing": [
+        "planning"
+      ]
+    }
+  ],
+  "playbooks": [
+    {
+      "name": "agent-orchestration",
+      "slug": "agent-orchestration",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/agent-orchestration/",
+      "domain": "agent-orchestration",
+      "version": "1.0.0",
+      "description": "\"Agent orchestration SOP — multi-agent dispatch, task delegation, workflow coordination, and agent routing. Routes to Slack, Base44, and Neptune connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "neptune",
+          "slack"
+        ],
+        "skills": [
+          "ai-agent-sdk"
+        ],
+        "functions": [
+          "dispatch-task",
+          "multi-agent-coordinate",
+          "failure-recover",
+          "agent-status"
+        ],
+        "workflows": [
+          "agent-dispatch-pipeline"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "billing",
+      "slug": "billing",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/billing/",
+      "domain": "billing",
+      "version": "\"1.0.0\"",
+      "description": "\"Billing operations SOP — refunds, declines, charges, payment recovery, and NMI vault management. Routes to NMI, Hyperswitch, Forth, and Base44 connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "nmi",
+          "hyperswitch",
+          "base44",
+          "slack"
+        ],
+        "skills": [
+          "nmi-connector",
+          "base44-connector"
+        ],
+        "functions": [
+          "charge-customer",
+          "refund-customer",
+          "vault-health-check",
+          "subscription-manage",
+          "decline-recovery"
+        ],
+        "workflows": [
+          "payment-reminders",
+          "nmi-slack-reconciliation"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "customer-support",
+      "slug": "customer-support",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/customer-support/",
+      "domain": "customer-support",
+      "version": "2.0.0",
+      "description": "",
+      "hasManifest": true,
+      "hasPlaybookMd": false,
+      "requires": {
+        "connectors": [
+          "base44",
+          "slack",
+          "vapi"
+        ],
+        "skills": [
+          "base44-connector",
+          "vapi-connector"
+        ],
+        "functions": [
+          "customer-360",
+          "create-ticket",
+          "triage-ticket",
+          "resolve-ticket"
+        ],
+        "workflows": [
+          "support-escalation"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "deploy",
+      "slug": "deploy",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/deploy/",
+      "domain": "deploy",
+      "version": "\"1.0.0\"",
+      "description": "Ship features, create PRs, rollback, and diagnose stale UI",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "github",
+          "vercel",
+          "slack"
+        ],
+        "skills": [
+          "vercel-discipline"
+        ],
+        "functions": [
+          "ship-feature",
+          "create-pr",
+          "rollback",
+          "diagnose-stale"
+        ],
+        "workflows": [
+          "deploy-pipeline"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "disputes",
+      "slug": "disputes",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/disputes/",
+      "domain": "disputes",
+      "version": "\"1.0.0\"",
+      "description": "\"Credit disputes SOP — debt validation, FCRA compliance, credit report parsing, and dispute orchestration. Routes to Forth, Base44, and Slack connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "forth",
+          "base44",
+          "slack",
+          "affy"
+        ],
+        "skills": [
+          "forth-connector"
+        ],
+        "functions": [
+          "start-dispute",
+          "track-dispute",
+          "draft-letter",
+          "fcra-compliance-check"
+        ],
+        "workflows": [
+          "dispute-round-tracker"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "engineering",
+      "slug": "engineering",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/engineering/",
+      "domain": "engineering",
+      "version": "1.0.0",
+      "description": "\"Engineering SOP — code reviews, PR management, deployment pipeline, architecture decisions, and sandbox coding. Routes to GitHub, Vercel, Linear, MCP Hub, and Neptune connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "github",
+          "vercel",
+          "base44"
+        ],
+        "skills": [
+          "ai-agent-sdk"
+        ],
+        "functions": [
+          "code-review",
+          "refactor",
+          "debug",
+          "feature-build"
+        ],
+        "workflows": [
+          ""
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "hr",
+      "slug": "hr",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/hr/",
+      "domain": "hr",
+      "version": "1.0.0",
+      "description": "\"HR ops SOP — team management, employee onboarding/offboarding, compliance tracking. Routes to Slack and Base44 connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "slack",
+          "linear"
+        ],
+        "skills": [
+          ""
+        ],
+        "functions": [
+          "team-status",
+          "onboarding",
+          "compliance-training"
+        ],
+        "workflows": [
+          "team-status-check"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "index",
+      "slug": "index",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/manifest-index.yaml",
+      "version": "1.0.0",
+      "description": "Full domain catalog and capability discovery — the master index of all playbooks",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          ""
+        ],
+        "skills": [
+          "playbook-skills"
+        ],
+        "functions": [
+          "list-playbooks",
+          "domain-discovery"
+        ],
+        "workflows": [
+          ""
+        ]
+      },
+      "isMeta": true
+    },
+    {
+      "name": "marketing",
+      "slug": "marketing",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/marketing/",
+      "domain": "marketing",
+      "version": "1.0.0",
+      "description": "\"Marketing ops SOP — campaign orchestration, lead nurture sequences, email/SMS blasts via GHL, and content strategy. Routes to GHL, Affy, and Slack connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "ghl",
+          "slack",
+          "base44"
+        ],
+        "skills": [
+          ""
+        ],
+        "functions": [
+          "campaign-manage",
+          "lead-nurture",
+          "blast-send",
+          "dnc-check"
+        ],
+        "workflows": [
+          "campaign-scheduler"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "newleaf",
+      "slug": "newleaf",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/manifest-newleaf.yaml",
+      "version": "1.0.0",
+      "description": "Organization-wide rules, cardinal constraints, and compliance standards",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "slack",
+          "base44",
+          "github"
+        ],
+        "skills": [
+          "playbook-skills"
+        ],
+        "functions": [
+          "rule-enforce",
+          "compliance-check"
+        ],
+        "workflows": [
+          "compliance-audit"
+        ]
+      },
+      "isMeta": true
+    },
+    {
+      "name": "other",
+      "slug": "other",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/other/",
+      "domain": "other",
+      "version": "1.0.0",
+      "description": "Catches orphan connectors and capabilities that don't fit a specific business domain",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "cat-facts",
+          "affy"
+        ],
+        "skills": [
+          ""
+        ],
+        "functions": [
+          ""
+        ],
+        "workflows": [
+          ""
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "planning",
+      "slug": "planning",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/planning/",
+      "domain": "planning",
+      "version": "2.0.0",
+      "description": "",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "github",
+          "base44",
+          "wiki",
+          "slack",
+          "neptune"
+        ],
+        "skills": [
+          "deep-research",
+          "draft-prd",
+          "draft-trd",
+          "draft-impl-plan",
+          "gap-analysis",
+          "architecture-diagrammer",
+          "cardinal-rules-extract",
+          "source-synthesis",
+          "mission-dispatcher",
+          "workflow-designer",
+          "save-to-cortex"
+        ],
+        "functions": [
+          "write-prd",
+          "draft-trd",
+          "create-impl-plan",
+          "deep-research",
+          "gap-analysis",
+          "plan-mode",
+          "mission-dispatch",
+          "architecture-diagram"
+        ],
+        "workflows": [
+          "deep-research",
+          "mission-dispatch",
+          "gap-analysis",
+          "plan-mode-propose",
+          "implementation-plan",
+          "master-prd",
+          "tech-design-doc"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "reporting",
+      "slug": "reporting",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/reporting/",
+      "domain": "reporting",
+      "version": "1.0.0",
+      "description": "\"Reporting SOP — operational dashboards, morning pulse, analytics queries, and data snapshots. Routes to Base44 (reportingHubQuery), Slack, and Wiki connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "base44",
+          "slack"
+        ],
+        "skills": [
+          "spreadsheet-creator"
+        ],
+        "functions": [
+          "reporting-hub-query",
+          "metrics-aggregate",
+          "morning-pulse"
+        ],
+        "workflows": [
+          "morning-pulse-report"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "sales",
+      "slug": "sales",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/sales/",
+      "domain": "sales",
+      "version": "\"1.0.0\"",
+      "description": "Pipeline management, lead qualification, enrollment funnel metrics",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "ghl",
+          "base44",
+          "slack"
+        ],
+        "skills": [
+          ""
+        ],
+        "functions": [
+          "pipeline-manage",
+          "lead-qualify",
+          "enrollment-track"
+        ],
+        "workflows": [
+          "sales-pipeline-monitor"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "vercel-discipline",
+      "slug": "vercel-discipline",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/vercel-discipline/",
+      "domain": "vercel-discipline",
+      "version": "1.0.0",
+      "description": "\"Vercel deployment SOP — deploy standards, security patterns, preview environments, and production shipping. Routes to Vercel, GitHub, and Slack connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "vercel",
+          "github"
+        ],
+        "skills": [
+          ""
+        ],
+        "functions": [
+          "vercel-deploy",
+          "build-status",
+          "env-audit"
+        ],
+        "workflows": [
+          "vercel-deploy-check"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "video-generation",
+      "slug": "video-generation",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/video-generation/",
+      "domain": "video-generation",
+      "version": "\"1.0.0\"",
+      "description": "AI video generation, editing, and script-to-video conversion",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "neptune"
+        ],
+        "skills": [
+          "ai-agent-sdk"
+        ],
+        "functions": [
+          "video-generate",
+          "video-edit",
+          "script-to-video"
+        ],
+        "workflows": [
+          "video-generation-pipeline"
+        ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "vps-ops",
+      "slug": "vps-ops",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/vps-ops/",
+      "domain": "vps-ops",
+      "version": "1.0.0",
+      "description": "\"VPS ops SOP — server management, pm2 process control, nginx config, Cloudflare DNS, and system health monitoring. Routes to Slack and Wiki connectors.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "neptune"
+        ],
+        "skills": [
+          ""
+        ],
+        "functions": [
+          "vps-health-check",
+          "incident-response",
+          "log-inspect",
+          "ssl-check"
+        ],
+        "workflows": [
+          "vps-health-monitor"
+        ]
+      },
+      "isMeta": false
+    }
+  ],
+  "skills": [
+    {
+      "name": "playbook-skills",
+      "type": "custom-skill-pack",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/",
+      "description": "Meta-skill that loads playbook SOPs and functions"
+    },
+    {
+      "name": "ai-agent-sdk",
+      "type": "native-skill",
+      "path": "skills/",
+      "description": "Agent Skills Library v1.0.0"
+    },
+    {
+      "name": "code-review",
+      "type": "shared-skill",
+      "path": "shared-skills/code-review/",
+      "description": ""
+    },
+    {
+      "name": "deploy-discipline",
+      "type": "shared-skill",
+      "path": "shared-skills/deploy-discipline/",
+      "description": ""
+    },
+    {
+      "name": "playbook-refiner",
+      "type": "shared-skill",
+      "path": "shared-skills/playbook-refiner/",
+      "description": ""
+    },
+    {
+      "name": "skill-author",
+      "type": "shared-skill",
+      "path": "shared-skills/skill-author/",
+      "description": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "create-playbook",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/functions/create-playbook.ts",
+      "description": "${input.description}"
+    },
+    {
+      "name": "organize-knowledge-graph",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/functions/organize-knowledge-graph.ts",
+      "description": ""
+    },
+    {
+      "name": "route-intent",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/functions/route-intent.ts",
+      "description": ""
+    },
+    {
+      "name": "session-end-handler",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/functions/session-end-handler.ts",
+      "description": ""
+    },
+    {
+      "name": "session-start-handler",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/functions/session-start-handler.ts",
+      "description": ""
+    },
+    {
+      "name": "update-playbook",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/functions/update-playbook.ts",
+      "description": ""
+    },
+    {
+      "name": "connectors",
+      "description": ""
+    },
+    {
+      "name": "functions",
+      "description": ""
+    },
+    {
+      "name": "projects",
+      "description": ""
+    },
+    {
+      "name": "summary",
+      "description": ""
+    },
+    {
+      "name": "secrets",
+      "description": ""
+    },
+    {
+      "name": "driftReport",
+      "description": ""
+    }
+  ],
+  "workflows": [
+    {
+      "name": "billing-sweep",
+      "path": "workflows/billing-sweep.yaml",
+      "durable": false,
+      "description": "Pull failed NMI transactions, run smart retry engine, report results to Slack"
+    },
+    {
+      "name": "customer-360",
+      "path": "workflows/customer-360.yaml",
+      "durable": false,
+      "description": "Full customer analysis — profile, payments, communications, credit reports, AI summary"
+    },
+    {
+      "name": "dispute-pipeline",
+      "path": "workflows/dispute-pipeline.yaml",
+      "durable": false,
+      "description": "Process new credit dispute rounds — pull credit reports, AI classify items, update Base44, report results"
+    },
+    {
+      "name": "morning-pulse",
+      "path": "workflows/morning-pulse.yaml",
+      "durable": false,
+      "description": "\"Daily system health check — queries Base44 reports, summarizes with AI, posts to Slack"
+    },
+    {
+      "name": "new-hire-onboarding",
+      "path": "workflows/new-hire-onboarding.yaml",
+      "durable": false,
+      "description": "Onboard a new team member — create CRM contact, send welcome SMS, notify Slack, create Linear task"
+    }
+  ],
+  "tools": [
+    {
+      "name": "createWorkflow",
+      "path": "lib/ai/tools/create-workflow.ts",
+      "description": "Create a new workflow from a natural language description. The workflow will be built on the React Flow canvas with trigger, action, conditional, parallel, transform, AI, and output nodes. Use this wh"
+    },
+    {
+      "name": "getV2SessionTool",
+      "path": "lib/ai/tools/get-v2-session.ts",
+      "description": "Get detailed information about a specific neptune-v2 coding session, including status, progress, and any output."
+    },
+    {
+      "name": "getWeather",
+      "path": "lib/ai/tools/get-weather.ts",
+      "description": "Get the current weather at a location. You can provide either coordinates or a city name."
+    },
+    {
+      "name": "listV2SessionsTool",
+      "path": "lib/ai/tools/list-v2-sessions.ts",
+      "description": "List all active coding sessions on neptune-v2. Returns session IDs, statuses, and prompts."
+    },
+    {
+      "name": "loadPlaybook",
+      "path": "lib/ai/tools/progressive-disclosure.ts",
+      "description": "Load a domain playbook to discover SOPs and routines for a specific business domain."
+    },
+    {
+      "name": "loadSkill",
+      "path": "lib/ai/tools/load-skill.ts",
+      "description": "Load detailed skill content on-demand from the knowledge base."
+    },
+    {
+      "name": "planSession",
+      "path": "lib/ai/tools/plan-session.ts",
+      "description": "Enter formal PLANNING MODE. When the user wants to plan a feature, bug fix,"
+    },
+    {
+      "name": "queryKnowledge",
+      "path": "lib/ai/tools/query-knowledge.ts",
+      "description": "Query the Knowledge Graph to find what connectors, playbooks, skills, functions, workflows and their relationships actually exist in this system. CRITICAL: ALWAYS use this when describing system capab"
+    },
+    {
+      "name": "selfCode",
+      "path": "lib/ai/tools/self-code.ts",
+      "description": "Make a SMALL change to Neptune Chat"
+    },
+    {
+      "name": "spawnCodingAgent",
+      "path": "lib/ai/tools/spawn-coding-agent.ts",
+      "description": "Hand off a complex multi-step coding task. Two modes:"
+    },
+    {
+      "name": "streamV2ProgressTool",
+      "path": "lib/ai/tools/stream-v2-progress.ts",
+      "description": "Get the SSE stream URL for a neptune-v2 coding session to track live progress."
+    },
+    {
+      "name": "swarmDispatchTool",
+      "path": "lib/ai/tools/swarm-dispatch.ts",
+      "description": "Dispatch a swarm of 2-8 parallel AI agents to research, code, audit, or catalog."
+    }
+  ],
+  "apiRoutes": [
+    {
+      "method": "POST",
+      "route": "/api/admin/agent-sim",
+      "file": "app/api/admin/agent-sim/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/dashboard",
+      "file": "app/api/admin/dashboard/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/function-inventory",
+      "file": "app/api/admin/function-inventory/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/vps-health",
+      "file": "app/api/admin/vps-health/route.ts"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/annotations",
+      "file": "app/api/annotations/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/annotations",
+      "file": "app/api/annotations/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/annotations",
+      "file": "app/api/annotations/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/annotations/digest",
+      "file": "app/api/annotations/digest/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/annotations/digest",
+      "file": "app/api/annotations/digest/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/canvas/synthesize/:type/:name",
+      "file": "app/api/canvas/synthesize/[type]/[name]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/capabilities",
+      "file": "app/api/capabilities/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/chat/abort",
+      "file": "app/api/chat/abort/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/connector-graph",
+      "file": "app/api/connector-graph/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/connectors",
+      "file": "app/api/connectors/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/connectors/:name/playbook",
+      "file": "app/api/connectors/[name]/playbook/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/cron/refinement-loop",
+      "file": "app/api/cron/refinement-loop/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostics",
+      "file": "app/api/diagnostics/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/evals",
+      "file": "app/api/evals/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/evals/leaderboard",
+      "file": "app/api/evals/leaderboard/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/evals/run",
+      "file": "app/api/evals/run/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/file-tree",
+      "file": "app/api/file-tree/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/function-registry",
+      "file": "app/api/function-registry/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/function-trace",
+      "file": "app/api/function-trace/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/health",
+      "file": "app/api/health/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/integrations",
+      "file": "app/api/integrations/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/knowledge/extract",
+      "file": "app/api/knowledge/extract/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/knowledge/extract",
+      "file": "app/api/knowledge/extract/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/library/graph",
+      "file": "app/api/library/graph/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/library/load/:type/:name",
+      "file": "app/api/library/load/[type]/[name]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/library/log-usage",
+      "file": "app/api/library/log-usage/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/library/model-usage",
+      "file": "app/api/library/model-usage/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/library/model-usage",
+      "file": "app/api/library/model-usage/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/library/models",
+      "file": "app/api/library/models/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/library/models/:identifier",
+      "file": "app/api/library/models/[identifier]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/library/reverse-refs/:type/:name",
+      "file": "app/api/library/reverse-refs/[type]/[name]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/library/skill/:name",
+      "file": "app/api/library/skill/[name]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/library/tree",
+      "file": "app/api/library/tree/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/marketplace/adopt",
+      "file": "app/api/marketplace/adopt/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/marketplace/community-search",
+      "file": "app/api/marketplace/community-search/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/marketplace/sandbox-test",
+      "file": "app/api/marketplace/sandbox-test/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/marketplace/vercel-search",
+      "file": "app/api/marketplace/vercel-search/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/mcp",
+      "file": "app/api/mcp/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/mcp/tools",
+      "file": "app/api/mcp/tools/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/parallel-agents",
+      "file": "app/api/parallel-agents/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/plan-mode/approve",
+      "file": "app/api/plan-mode/approve/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/plan-mode/approve",
+      "file": "app/api/plan-mode/approve/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/plan-mode/propose",
+      "file": "app/api/plan-mode/propose/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/plan-mode/propose",
+      "file": "app/api/plan-mode/propose/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/playbooks/approve-mod",
+      "file": "app/api/playbooks/approve-mod/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/playbooks/approve-mod",
+      "file": "app/api/playbooks/approve-mod/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/playbooks/list",
+      "file": "app/api/playbooks/list/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/playbooks/load",
+      "file": "app/api/playbooks/load/route.ts"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/playbooks/propose-mod",
+      "file": "app/api/playbooks/propose-mod/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/playbooks/propose-mod",
+      "file": "app/api/playbooks/propose-mod/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/playbooks/propose-mod",
+      "file": "app/api/playbooks/propose-mod/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/playbooks/revert-mod",
+      "file": "app/api/playbooks/revert-mod/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/playbooks/revert-mod",
+      "file": "app/api/playbooks/revert-mod/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/prds",
+      "file": "app/api/prds/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/proxy/connector",
+      "file": "app/api/proxy/connector/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/raw-logs/query",
+      "file": "app/api/raw-logs/query/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/raw-logs/stats",
+      "file": "app/api/raw-logs/stats/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/research/execute",
+      "file": "app/api/research/execute/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/research/status",
+      "file": "app/api/research/status/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/sandbox/stream/:id",
+      "file": "app/api/sandbox/stream/[id]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/secrets/audit",
+      "file": "app/api/secrets/audit/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/secrets/audit",
+      "file": "app/api/secrets/audit/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/shared-skills",
+      "file": "app/api/shared-skills/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/skill/:name",
+      "file": "app/api/skill/[name]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/skill/:name",
+      "file": "app/api/skill/[name]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/skill/:name/:action",
+      "file": "app/api/skill/[name]/[action]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/skills",
+      "file": "app/api/skills/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/skills/:name",
+      "file": "app/api/skills/[name]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/telemetry",
+      "file": "app/api/telemetry/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/telemetry",
+      "file": "app/api/telemetry/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tools",
+      "file": "app/api/tools/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v2-bridge",
+      "file": "app/api/v2-bridge/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v2-bridge",
+      "file": "app/api/v2-bridge/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v2-bridge/cancel",
+      "file": "app/api/v2-bridge/cancel/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v2-bridge/stream/:sid",
+      "file": "app/api/v2-bridge/stream/[sid]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v2/sessions",
+      "file": "app/api/v2/sessions/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v2/sessions",
+      "file": "app/api/v2/sessions/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v2/sessions/:sessionId/control",
+      "file": "app/api/v2/sessions/[sessionId]/control/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v2/sessions/:sessionId/stream",
+      "file": "app/api/v2/sessions/[sessionId]/stream/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/vault",
+      "file": "app/api/vault/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/vault/test/:keyName",
+      "file": "app/api/vault/test/[keyName]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/vercel/events",
+      "file": "app/api/vercel/events/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/vercel/webhook",
+      "file": "app/api/vercel/webhook/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/webhooks/deploy",
+      "file": "app/api/webhooks/deploy/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/wiki",
+      "file": "app/api/wiki/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/wiki/entity/:id",
+      "file": "app/api/wiki/entity/[id]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/wiki/ingest",
+      "file": "app/api/wiki/ingest/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/wiki/search",
+      "file": "app/api/wiki/search/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/wizard/adopt",
+      "file": "app/api/wizard/adopt/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/wizard/check-mcp",
+      "file": "app/api/wizard/check-mcp/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/wizard/discover-api",
+      "file": "app/api/wizard/discover-api/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/wizard/generate-skill",
+      "file": "app/api/wizard/generate-skill/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/wizard/sandbox-test",
+      "file": "app/api/wizard/sandbox-test/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/workflow/:id",
+      "file": "app/api/workflow/[id]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflow/:id",
+      "file": "app/api/workflow/[id]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflow/generate",
+      "file": "app/api/workflow/generate/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflow/run",
+      "file": "app/api/workflow/run/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflows/code-refactor",
+      "file": "app/api/workflows/code-refactor/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflows/data-audit",
+      "file": "app/api/workflows/data-audit/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflows/research-swarm",
+      "file": "app/api/workflows/research-swarm/route.ts"
+    }
+  ],
+  "models": [
+    {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro (Direct)",
+      "provider": "deepseek",
+      "description": "Your own DeepSeek API key — bypasses Gateway",
+      "routeType": "direct"
+    },
+    {
+      "id": "deepseek-reasoner",
+      "name": "DeepSeek R1 (Direct)",
+      "provider": "deepseek",
+      "description": "Deep reasoning model via direct key",
+      "routeType": "direct"
+    },
+    {
+      "id": "deepseek/deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "provider": "deepseek",
+      "description": "Default — latest DeepSeek flagship through Vercel AI Gateway",
+      "routeType": "gateway"
+    },
+    {
+      "id": "deepseek/deepseek-v3.2",
+      "name": "DeepSeek V3.2",
+      "provider": "deepseek",
+      "description": "Fast and capable with tool use",
+      "routeType": "gateway"
+    },
+    {
+      "id": "deepseek/deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "provider": "deepseek",
+      "description": "Faster V4 variant with reasoning + vision",
+      "routeType": "gateway"
+    },
+    {
+      "id": "moonshotai/kimi-k2.5",
+      "name": "Kimi K2.5",
+      "provider": "moonshotai",
+      "description": "Moonshot AI flagship model",
+      "routeType": "gateway"
+    },
+    {
+      "id": "openai/gpt-oss-20b",
+      "name": "GPT OSS 20B",
+      "provider": "openai",
+      "description": "Compact reasoning model",
+      "routeType": "gateway"
+    },
+    {
+      "id": "openai/gpt-oss-120b",
+      "name": "GPT OSS 120B",
+      "provider": "openai",
+      "description": "Open-source 120B parameter model",
+      "routeType": "gateway"
+    },
+    {
+      "id": "xai/grok-4.1-fast-non-reasoning",
+      "name": "Grok 4.1 Fast",
+      "provider": "xai",
+      "description": "Fast non-reasoning model with tool use",
+      "routeType": "gateway"
+    },
+    {
+      "id": "anthropic/claude-sonnet-4-6",
+      "name": "Claude Sonnet 4.6",
+      "provider": "anthropic",
+      "description": "Anthropic",
+      "routeType": "gateway"
+    },
+    {
+      "id": "google/gemini-2-flash",
+      "name": "Gemini 2.0 Flash",
+      "provider": "google",
+      "description": "Google",
+      "routeType": "gateway"
+    },
+    {
+      "id": "zai/glm-5",
+      "name": "GLM 5",
+      "provider": "zai",
+      "description": "Zhipu AI (via Z.ai) — GLM-5 flagship, 202K context, agentic engineering",
+      "routeType": "gateway"
+    },
+    {
+      "id": "zai/glm-5.1",
+      "name": "GLM 5.1",
+      "provider": "zai",
+      "description": "Zhipu AI (via Z.ai) — latest GLM-5.1, 202K context, vision, long-horizon autonomous tasks (8h+), file input",
+      "routeType": "gateway"
+    },
+    {
+      "id": "moonshotai/kimi-k2.7-code",
+      "name": "Kimi K2.7 Code",
+      "provider": "moonshotai",
+      "description": "Moonshot AI — purpose-built code generation specialist, technical tasks, refactoring",
+      "routeType": "gateway"
+    },
+    {
+      "id": "alibaba/qwen-3-235b",
+      "name": "Qwen 3 235B",
+      "provider": "alibaba",
+      "description": "Alibaba Cloud — 235B parameters, multilingual (100+ languages), complex reasoning",
+      "routeType": "gateway"
+    }
+  ],
+  "uiComponents": [
+    {
+      "name": "animated-grid",
+      "file": "components/library/animated-grid.tsx"
+    },
+    {
+      "name": "artifact-tab-view",
+      "file": "components/library/artifact-tab-view.tsx"
+    },
+    {
+      "name": "breadcrumb-nav",
+      "file": "components/library/breadcrumb-nav.tsx"
+    },
+    {
+      "name": "category-grid",
+      "file": "components/library/category-grid.tsx"
+    },
+    {
+      "name": "command-palette",
+      "file": "components/library/command-palette.tsx"
+    },
+    {
+      "name": "cross-reference-link",
+      "file": "components/library/cross-reference-link.tsx"
+    },
+    {
+      "name": "dependency-graph",
+      "file": "components/library/dependency-graph.tsx"
+    },
+    {
+      "name": "detail-drawer",
+      "file": "components/library/detail-drawer.tsx"
+    },
+    {
+      "name": "empty-state",
+      "file": "components/library/empty-state.tsx"
+    },
+    {
+      "name": "entity-card",
+      "file": "components/library/entity-card.tsx"
+    },
+    {
+      "name": "entity-detail",
+      "file": "components/library/entity-detail.tsx"
+    },
+    {
+      "name": "file-tree-explorer",
+      "file": "components/library/file-tree-explorer.tsx"
+    },
+    {
+      "name": "filter-bar",
+      "file": "components/library/filter-bar.tsx"
+    },
+    {
+      "name": "glass-card",
+      "file": "components/library/glass-card.tsx"
+    },
+    {
+      "name": "glass-surface",
+      "file": "components/library/glass-surface.tsx"
+    },
+    {
+      "name": "hover-preview",
+      "file": "components/library/hover-preview.tsx"
+    },
+    {
+      "name": "library-card",
+      "file": "components/library/library-card.tsx"
+    },
+    {
+      "name": "library-grid",
+      "file": "components/library/library-grid.tsx"
+    },
+    {
+      "name": "library-sidebar",
+      "file": "components/library/library-sidebar.tsx"
+    },
+    {
+      "name": "library-table",
+      "file": "components/library/library-table.tsx"
+    },
+    {
+      "name": "library-toolbar",
+      "file": "components/library/library-toolbar.tsx"
+    },
+    {
+      "name": "manifest-viewer",
+      "file": "components/library/manifest-viewer.tsx"
+    },
+    {
+      "name": "markdown-renderer",
+      "file": "components/library/markdown-renderer.tsx"
+    },
+    {
+      "name": "page-transition",
+      "file": "components/library/page-transition.tsx"
+    },
+    {
+      "name": "search-input",
+      "file": "components/library/search-input.tsx"
+    },
+    {
+      "name": "twin-view-toggle",
+      "file": "components/library/twin-view-toggle.tsx"
+    }
+  ],
+  "manifestEdges": [
+    {
+      "from": "agent-orchestration",
+      "fromType": "playbook",
+      "to": "neptune",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "agent-orchestration",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "agent-orchestration",
+      "fromType": "playbook",
+      "to": "ai-agent-sdk",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "agent-orchestration",
+      "fromType": "playbook",
+      "to": "dispatch-task",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "agent-orchestration",
+      "fromType": "playbook",
+      "to": "multi-agent-coordinate",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "agent-orchestration",
+      "fromType": "playbook",
+      "to": "failure-recover",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "agent-orchestration",
+      "fromType": "playbook",
+      "to": "agent-status",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "agent-orchestration",
+      "fromType": "playbook",
+      "to": "agent-dispatch-pipeline",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "nmi",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "hyperswitch",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "nmi-connector",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "base44-connector",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "charge-customer",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "refund-customer",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "vault-health-check",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "subscription-manage",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "decline-recovery",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "payment-reminders",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "billing",
+      "fromType": "playbook",
+      "to": "nmi-slack-reconciliation",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "vapi",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "base44-connector",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "vapi-connector",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "customer-360",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "create-ticket",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "triage-ticket",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "resolve-ticket",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "customer-support",
+      "fromType": "playbook",
+      "to": "support-escalation",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "github",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "vercel",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "vercel-discipline",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "ship-feature",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "create-pr",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "rollback",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "diagnose-stale",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "deploy",
+      "fromType": "playbook",
+      "to": "deploy-pipeline",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "forth",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "affy",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "forth-connector",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "start-dispute",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "track-dispute",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "draft-letter",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "fcra-compliance-check",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "disputes",
+      "fromType": "playbook",
+      "to": "dispute-round-tracker",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "github",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "vercel",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "ai-agent-sdk",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "code-review",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "refactor",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "debug",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "feature-build",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "engineering",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "hr",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "hr",
+      "fromType": "playbook",
+      "to": "linear",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "hr",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "hr",
+      "fromType": "playbook",
+      "to": "team-status",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "hr",
+      "fromType": "playbook",
+      "to": "onboarding",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "hr",
+      "fromType": "playbook",
+      "to": "compliance-training",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "hr",
+      "fromType": "playbook",
+      "to": "team-status-check",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "index",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "index",
+      "fromType": "playbook",
+      "to": "playbook-skills",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "index",
+      "fromType": "playbook",
+      "to": "list-playbooks",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "index",
+      "fromType": "playbook",
+      "to": "domain-discovery",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "index",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "newleaf",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "newleaf",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "newleaf",
+      "fromType": "playbook",
+      "to": "github",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "newleaf",
+      "fromType": "playbook",
+      "to": "playbook-skills",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "newleaf",
+      "fromType": "playbook",
+      "to": "rule-enforce",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "newleaf",
+      "fromType": "playbook",
+      "to": "compliance-check",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "newleaf",
+      "fromType": "playbook",
+      "to": "compliance-audit",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "ghl",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "campaign-manage",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "lead-nurture",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "blast-send",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "dnc-check",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "marketing",
+      "fromType": "playbook",
+      "to": "campaign-scheduler",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "other",
+      "fromType": "playbook",
+      "to": "cat-facts",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "other",
+      "fromType": "playbook",
+      "to": "affy",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "other",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "other",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "other",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "github",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "wiki",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "neptune",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "deep-research",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "draft-prd",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "draft-trd",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "draft-impl-plan",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "gap-analysis",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "architecture-diagrammer",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "cardinal-rules-extract",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "source-synthesis",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "mission-dispatcher",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "workflow-designer",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "save-to-cortex",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "write-prd",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "draft-trd",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "create-impl-plan",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "deep-research",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "gap-analysis",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "plan-mode",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "mission-dispatch",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "architecture-diagram",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "deep-research",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "mission-dispatch",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "gap-analysis",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "plan-mode-propose",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "implementation-plan",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "master-prd",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "planning",
+      "fromType": "playbook",
+      "to": "tech-design-doc",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "reporting",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "reporting",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "reporting",
+      "fromType": "playbook",
+      "to": "spreadsheet-creator",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "reporting",
+      "fromType": "playbook",
+      "to": "reporting-hub-query",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "reporting",
+      "fromType": "playbook",
+      "to": "metrics-aggregate",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "reporting",
+      "fromType": "playbook",
+      "to": "morning-pulse",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "reporting",
+      "fromType": "playbook",
+      "to": "morning-pulse-report",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "sales",
+      "fromType": "playbook",
+      "to": "ghl",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "sales",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "sales",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "sales",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "sales",
+      "fromType": "playbook",
+      "to": "pipeline-manage",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "sales",
+      "fromType": "playbook",
+      "to": "lead-qualify",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "sales",
+      "fromType": "playbook",
+      "to": "enrollment-track",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "sales",
+      "fromType": "playbook",
+      "to": "sales-pipeline-monitor",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "vercel-discipline",
+      "fromType": "playbook",
+      "to": "vercel",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "vercel-discipline",
+      "fromType": "playbook",
+      "to": "github",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "vercel-discipline",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "vercel-discipline",
+      "fromType": "playbook",
+      "to": "vercel-deploy",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "vercel-discipline",
+      "fromType": "playbook",
+      "to": "build-status",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "vercel-discipline",
+      "fromType": "playbook",
+      "to": "env-audit",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "vercel-discipline",
+      "fromType": "playbook",
+      "to": "vercel-deploy-check",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "video-generation",
+      "fromType": "playbook",
+      "to": "neptune",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "video-generation",
+      "fromType": "playbook",
+      "to": "ai-agent-sdk",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "video-generation",
+      "fromType": "playbook",
+      "to": "video-generate",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "video-generation",
+      "fromType": "playbook",
+      "to": "video-edit",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "video-generation",
+      "fromType": "playbook",
+      "to": "script-to-video",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "video-generation",
+      "fromType": "playbook",
+      "to": "video-generation-pipeline",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "vps-ops",
+      "fromType": "playbook",
+      "to": "neptune",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "vps-ops",
+      "fromType": "playbook",
+      "to": "",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "vps-ops",
+      "fromType": "playbook",
+      "to": "vps-health-check",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "vps-ops",
+      "fromType": "playbook",
+      "to": "incident-response",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "vps-ops",
+      "fromType": "playbook",
+      "to": "log-inspect",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "vps-ops",
+      "fromType": "playbook",
+      "to": "ssl-check",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "vps-ops",
+      "fromType": "playbook",
+      "to": "vps-health-monitor",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "neptune",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "nmi",
+      "fromType": "connector",
+      "to": "hyperswitch",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "nmi",
+      "fromType": "connector",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "nmi",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "hyperswitch",
+      "fromType": "connector",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "hyperswitch",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "base44",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "base44",
+      "fromType": "connector",
+      "to": "vapi",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "slack",
+      "fromType": "connector",
+      "to": "vapi",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "github",
+      "fromType": "connector",
+      "to": "vercel",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "github",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "vercel",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "forth",
+      "fromType": "connector",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "forth",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "forth",
+      "fromType": "connector",
+      "to": "affy",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "base44",
+      "fromType": "connector",
+      "to": "affy",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "slack",
+      "fromType": "connector",
+      "to": "affy",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "github",
+      "fromType": "connector",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "vercel",
+      "fromType": "connector",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "slack",
+      "fromType": "connector",
+      "to": "linear",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "ghl",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "ghl",
+      "fromType": "connector",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "cat-facts",
+      "fromType": "connector",
+      "to": "affy",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "github",
+      "fromType": "connector",
+      "to": "wiki",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "github",
+      "fromType": "connector",
+      "to": "neptune",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "base44",
+      "fromType": "connector",
+      "to": "wiki",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "base44",
+      "fromType": "connector",
+      "to": "neptune",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "wiki",
+      "fromType": "connector",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "wiki",
+      "fromType": "connector",
+      "to": "neptune",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    }
+  ],
+  "truth_assertion": "This file is THE source of truth for system capabilities. Agent MUST read this when describing itself. NEVER hallucinate capabilities from training data."
+}
