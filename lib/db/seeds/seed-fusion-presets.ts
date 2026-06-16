@@ -1,5 +1,5 @@
 /**
- * Phase 23A: Seed 7 Fusion Panel Presets
+ * Phase 23B: Seed 11 Fusion Panel Presets
  *
  * Idempotent — uses ON CONFLICT (name) DO UPDATE for upsert.
  * Chinese Frontier is the DEFAULT preset (isDefault=true).
@@ -26,7 +26,7 @@ async function main() {
   const connection = postgres(process.env.POSTGRES_URL, { max: 1 });
   const db = drizzle(connection);
 
-  console.log("🌱 Seeding 7 Fusion Panel Presets...\n");
+  console.log("🌱 Seeding 11 Fusion Panel Presets...\n");
 
   let seeded = 0;
 
@@ -70,7 +70,7 @@ async function main() {
     seeded++;
   }
 
-  console.log(`\n✅ ${seeded}/7 Fusion Panel Presets seeded!`);
+  console.log(`\n✅ ${seeded}/11 Fusion Panel Presets seeded!`);
 
   await connection.end();
   process.exit(0);

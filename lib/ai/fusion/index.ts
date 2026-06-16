@@ -1,9 +1,9 @@
 /**
- * Phase 23A: Fusion Panel Orchestration — Main Entry Point
+ * Phase 23B: Fusion Panel Orchestration — Main Entry Point
  *
  * executePanel({preset, messages, onEvent, modeOverride}):
- *   1. Analyzes task → recommends mode (council for Phase 23A)
- *   2. Routes to council executor
+ *   1. Analyzes task → recommends mode (council/swarm/hybrid)
+ *   2. Routes to appropriate executor
  *   3. Logs telemetry
  *
  * Usage:
@@ -25,6 +25,11 @@ export {
 } from "./presets";
 export { analyzeTask, isQuestion } from "./task-analyzer";
 export { logPanelRun } from "./telemetry";
+
+// Phase 23B: Swarm + Hybrid executors (direct imports)
+export { executeSwarm } from "./swarm/execute";
+export { executeHybrid } from "./hybrid/execute";
+export { routeAndExecute } from "./mode-router";
 
 // Types
 export type {

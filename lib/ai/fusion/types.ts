@@ -167,7 +167,47 @@ export type PanelEvent =
       totalCost: number;
       totalLatency: number;
     }
-  | { type: "cost:update"; runningCost: number; runningLatency: number };
+  | { type: "cost:update"; runningCost: number; runningLatency: number }
+  // ── Phase 23B: Swarm events ──────────────────────────────────────────
+  | { type: "coordinator:start"; modelId: string }
+  | {
+      type: "coordinator:complete";
+      decomposition: { strategy: string; subTasks: Array<{ id: string; description: string; assignedTo: string; priority: number; reasoning: string }> };
+      latency: number;
+      cost: number;
+    }
+  | { type: "specialist:start"; modelId: string; subTask: string; description?: string }
+  | {
+      type: "specialist:complete";
+      modelId: string;
+      subTask: string;
+      latency: number;
+      tokensIn: number;
+      tokensOut: number;
+      response: string;
+      success: boolean;
+    }
+  | { type: "specialist:failed"; modelId: string; subTask: string; error: string }
+  | { type: "integrator:start"; modelId: string }
+  | {
+      type: "integrator:complete";
+      fullResponse: string;
+      totalCost: number;
+      totalLatency: number;
+    }
+  // ── Phase 23B: Hybrid events ─────────────────────────────────────────
+  | {
+      type: "hybrid:plan";
+      councilSubTasks: Array<{ id: string; question: string; why: string }>;
+      swarmSubTasks: Array<{ id: string; description: string; dependsOn: string[]; assignedTo: string }>;
+    }
+  | { type: "final-judge:start"; modelId: string }
+  | {
+      type: "final-judge:complete";
+      fullResponse: string;
+      totalCost: number;
+      totalLatency: number;
+    };
 
 // ── Panel Chooser UI ────────────────────────────────────────────────────────
 

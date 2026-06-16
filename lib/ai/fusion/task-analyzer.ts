@@ -1,12 +1,12 @@
 /**
- * Phase 23A: Task Analyzer
+ * Phase 23B: Task Analyzer (FULL)
  *
  * Analyzes the user's message + conversation context to determine:
  *   - Task type (question/task/project/investigation)
  *   - Scope (single/multi-step/multi-faceted)
- *   - Whether council (accuracy) or swarm (efficiency) or hybrid is best
+ *   - Recommended mode: council / swarm / hybrid
  *
- * Phase 23A: Always returns 'council' — full analyzer in Phase 23B.
+ * Uses heuristic pattern matching + keyword signals.
  */
 
 import type { PanelMode, TaskAnalysis, TaskScope, TaskType } from "./types";
@@ -35,8 +35,8 @@ const COUNCIL_SIGNALS = [
 
 const SWARM_SIGNALS = [
   /build\b/i,
-  /create\b/i,
-  /generate\s+complete/i,
+  /create\s+complete/i,
+  /generate\s+full/i,
   /refactor\s+(entire|all|whole)/i,
   /implement\b/i,
   /scaffold\b/i,
@@ -56,6 +56,7 @@ const HYBRID_SIGNALS = [
   /investigate\s+and\s+fix/i,
   /analyze\s+and\s+(implement|build|refactor)/i,
   /review\s+and\s+(improve|update)/i,
+  /choose\s+and\s+implement/i,
   /both\s+(design|plan|decide).*(?:and|&).*(?:build|implement|code)/i,
 ];
 
@@ -97,6 +98,28 @@ function detectType(prompt: string): TaskType {
   return "question";
 }
 
+// ── Mode Recommendation (Phase 23B: FULL) ─────────────────────────────
+
+function recommendMode(prompt: string, scope: TaskScope, type: TaskType): PanelMode {
+  // Hybrid: decision AND execution both needed
+  if (scope === "multi-faceted" || type === "investigation") {
+    return "hybrid";
+  }
+
+  // Swarm: decomposition needed (multi-step, multi-file, build/create)
+  if (
+    scope === "multi-step" ||
+    type === "task" ||
+    type === "project" ||
+    SWARM_SIGNALS.filter((r) => r.test(prompt)).length >= 2
+  ) {
+    return "swarm";
+  }
+
+  // Default: council for accuracy (single questions, reviews, decisions)
+  return "council";
+}
+
 // ── Main Analyzer ─────────────────────────────────────────────────────
 
 const LAST_USER_MESSAGE_REGEX = /(?:^|\n)(?:User|Human):\s*(.+?)(?:\n|$)/i;
@@ -111,20 +134,24 @@ export function analyzeTask(
   const type = detectType(userMessage);
   const scope = detectScope(userMessage);
 
-  // Phase 23A: Always recommend council
-  // Phase 23B: Full analyzer with swarm/hybrid detection
-  const recommendedMode: PanelMode = "council";
+  // Phase 23B: Full analyzer — recommend council/swarm/hybrid
+  const recommendedMode: PanelMode = recommendMode(userMessage, scope, type);
 
   const requiresAccuracy =
-    COUNCIL_SIGNALS.some((r) => r.test(userMessage)) || scope === "single";
+    COUNCIL_SIGNALS.some((r) => r.test(userMessage)) ||
+    scope === "single" ||
+    recommendedMode === "council";
 
   const requiresDecomposition =
-    SWARM_SIGNALS.some((r) => r.test(userMessage)) || scope === "multi-step";
+    SWARM_SIGNALS.some((r) => r.test(userMessage)) ||
+    scope === "multi-step" ||
+    recommendedMode === "swarm" ||
+    recommendedMode === "hybrid";
 
   const estimatedSubTasks =
-    scope === "multi-step" ? 3 : scope === "multi-faceted" ? 5 : 1;
+    scope === "multi-faceted" ? 5 : scope === "multi-step" ? 3 : 1;
 
-  const reasoning = `Phase 23A: council mode for all tasks. Type=${type} Scope=${scope}. Accuracy={requiresAccuracy}, Decomposition={requiresDecomposition}`;
+  const reasoning = `Detected: type=${type} scope=${scope} → recommended ${recommendedMode}. Accuracy needed: ${requiresAccuracy}. Decomposition needed: ${requiresDecomposition}. Estimated sub-tasks: ${estimatedSubTasks}.`;
 
   return {
     type,

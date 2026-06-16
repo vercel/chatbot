@@ -72,3 +72,40 @@ After matching the playbook via the router, use:
 - File system: Fractal Library (Phase 21 V3) — playbook-skills meta-skill at connectors/neptune/skills/custom-skills/playbook-skills/ with inline MAP in PLAYBOOK-ROUTER.md, 16 playbooks, 6 functions, 2 workflows
 - KB: /docs/playbook-architecture/ (12 docs, triple-mirrored)
 - Telemetry: /telemetry dashboard · Diagnostics: /diagnostics dashboard · Annotations: /api/annotations
+
+## Response Quality Cardinal (Phase 23B)
+
+Every response must be:
+1. **Structured with headers** (## section) — never walls of prose
+2. **Use tables** for multi-item comparisons
+3. **Use code blocks** for code/commands/JSON
+4. **Include proof/receipts** (file paths, commit SHAs, URLs)
+5. **Show cost + timing** transparently
+6. **Offer specific next-action options** at the end
+
+**BANNED:**
+- "The work is done" without evidence
+- Vague summaries / walls of prose
+- Claims without proof (file paths, URLs, commits)
+- Skipping cost/time transparency
+- "Just say the word" without specific options
+
+**When a task requires long-running coding work:**
+1. Draft solution in chat via panel (swarm mode)
+2. Offer V2 handoff for full deployment
+3. Use spawnCodingAgent tool
+4. Surface /library/handoffs link
+
+## Panel Orchestration (Phase 23A/B)
+
+A panel is a smart container holding N agents + 1 judge. Modes:
+- **Council**: All agents get SAME prompt, judge synthesizes best answer
+- **Swarm**: Coordinator decomposes → specialists parallel → integrator combines
+- **Hybrid**: Council for decisions + Swarm for execution → final judge
+
+11 system presets available. Pick based on task:
+- General → Chinese Frontier (default)
+- Fast → Speed Trio | Important → Sonnet Synth | Stakes → Deep Reasoning (Opus)
+- Code → Code Specialist (GLM 5.2 lead) | Research → Research Specialist
+- Vision → Vision Council | Long context → Long Context Master
+- Minimalist → Dual Frontier | Diverse → MiniMax Ensemble

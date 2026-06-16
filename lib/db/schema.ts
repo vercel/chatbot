@@ -534,3 +534,38 @@ export const libraryPanelTelemetry = pgTable("library_panel_telemetry", {
 });
 
 export type LibraryPanelTelemetry = InferSelectModel<typeof libraryPanelTelemetry>;
+
+// ── Phase 23B: V2 Handoffs + Swarm Decompositions (0012) ─────────────────────
+
+export const libraryV2Handoff = pgTable("library_v2_handoffs", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+  chatId: uuid("chat_id").references(() => chat.id, { onDelete: "set null" }),
+  v2SessionId: text("v2_session_id").notNull().unique(),
+  handoffMode: text("handoff_mode").notNull(),
+  targetRepo: text("target_repo"),
+  goal: text("goal").notNull(),
+  status: text("status").notNull().default("pending"),
+  streamUrl: text("stream_url"),
+  resultUrl: text("result_url"),
+  errorMessage: text("error_message"),
+  eventCount: integer("event_count").default(0),
+  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  metadata: jsonb("metadata"),
+});
+
+export type LibraryV2Handoff = InferSelectModel<typeof libraryV2Handoff>;
+
+export const librarySwarmDecomposition = pgTable("library_swarm_decompositions", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  panelRunId: uuid("panel_run_id").references(() => libraryPanelRun.id, { onDelete: "cascade" }),
+  coordinatorModel: text("coordinator_model").notNull(),
+  strategyText: text("strategy_text"),
+  subTasks: jsonb("sub_tasks").notNull().default([]),
+  coordinatorLatencyMs: integer("coordinator_latency_ms"),
+  coordinatorCostUsd: numeric("coordinator_cost_usd", { precision: 10, scale: 4 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export type LibrarySwarmDecomposition = InferSelectModel<typeof librarySwarmDecomposition>;

@@ -1,277 +1,181 @@
 /**
- * Phase 23A: 7 System Panel Presets
+ * Phase 23B: 11 System Panel Presets
  *
  * Each preset is a CONTAINER: agents[] + judge + capabilities[] + domainHint.
- * Mode (council/swarm/hybrid) is decided at runtime by the task analyzer.
- * All 7 presets support all 3 capabilities.
+ * Mode (council/swarm/hybrid) is auto-detected at runtime, user can override.
+ *
+ * Presets:
+ *   1. Chinese Frontier (DEFAULT) — updated with GLM 5.2
+ *   2. Speed Trio — updated with StepFun
+ *   3. Sonnet Synth — updated with MiniMax M3
+ *   4. Deep Reasoning — Opus 4.8 judge ONLY HERE
+ *   5. Code Specialist — GLM 5.2 PRIMARY coder
+ *   6. Research Specialist — GLM 5.2 lead, 1M context
+ *   7. Dual Frontier — minimalist
+ *   8. Vision Council — NEW multimodal
+ *   9. MiniMax Ensemble — NEW diverse reasoning
+ *  10. Long Context Master — NEW 1M context, hybrid default
+ *  11. Custom — user-defined placeholder
  */
 
 import type { PanelPreset } from "./types";
 
 export const SYSTEM_PRESETS: PanelPreset[] = [
-  // ── 1. Chinese Frontier (DEFAULT) ⭐ ──────────────────────────────────────────
+  // ── 1. Chinese Frontier (DEFAULT) ⭐ ────────────────────────────────────
   {
-    id: "", // filled at seed time
+    id: "",
     name: "Chinese Frontier",
     description:
-      "Best overall cost-performance. Three Chinese frontier models deliberate in parallel, GLM 5.1 judges. Great for general tasks, planning, and analysis.",
+      "Best overall cost-performance. DeepSeek V4 Pro + Kimi K2.7 Code + GLM 5.2 (1M context), judged by GLM 5.2. Perfect for general tasks, planning, and analysis.",
     agents: [
-      {
-        modelId: "deepseek/deepseek-v4-pro",
-        provider: "deepseek",
-        name: "DeepSeek V4 Pro",
-      },
-      {
-        modelId: "moonshotai/kimi-k2.7",
-        provider: "moonshotai",
-        name: "Kimi K2.7",
-      },
-      { modelId: "zai/glm-5.1", provider: "zai", name: "GLM 5.1" },
+      { modelId: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro" },
+      { modelId: "moonshotai/kimi-k2.7-code", provider: "moonshotai", name: "Kimi K2.7 Code" },
+      { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2" },
     ],
-    judge: {
-      modelId: "zai/glm-5.1",
-      provider: "zai",
-      name: "GLM 5.1",
-      role: "judge",
-    },
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "general",
     defaultMode: "council",
-    estCostMin: 0.04,
-    estCostMax: 0.1,
+    estCostMin: 0.05,
+    estCostMax: 0.12,
     isSystem: true,
     isDefault: true,
     sortOrder: 0,
     createdBy: null,
   },
 
-  // ── 2. Speed Trio ⚡ ──────────────────────────────────────────────────────────
+  // ── 2. Speed Trio ⚡ ───────────────────────────────────────────────────
   {
     id: "",
     name: "Speed Trio",
     description:
-      "Fastest responses. DeepSeek V4 Pro + Kimi K2.7 + Gemini 2.5 Flash with self-judge. Ideal for quick Q&A and real-time chat.",
+      "Fastest responses at lowest cost. DeepSeek V4 Flash + Kimi K2.7 Code Highspeed + StepFun Step 3.7 Flash with self-judge. Ideal for quick Q&A and real-time chat.",
     agents: [
-      {
-        modelId: "deepseek/deepseek-v4-pro",
-        provider: "deepseek",
-        name: "DeepSeek V4 Pro",
-      },
-      {
-        modelId: "moonshotai/kimi-k2.7",
-        provider: "moonshotai",
-        name: "Kimi K2.7",
-      },
-      {
-        modelId: "google/gemini-2.5-flash",
-        provider: "google",
-        name: "Gemini 2.5 Flash",
-      },
+      { modelId: "deepseek/deepseek-v4-flash", provider: "deepseek", name: "DeepSeek V4 Flash" },
+      { modelId: "moonshotai/kimi-k2.7-code-highspeed", provider: "moonshotai", name: "Kimi K2.7 Code HS" },
+      { modelId: "stepfun/step-3.7-flash", provider: "stepfun", name: "Step 3.7 Flash" },
     ],
-    judge: {
-      modelId: "deepseek/deepseek-v4-pro",
-      provider: "deepseek",
-      name: "DeepSeek V4 Pro",
-      role: "judge",
-    },
+    judge: { modelId: "deepseek/deepseek-v4-flash", provider: "deepseek", name: "DeepSeek V4 Flash", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "general",
     defaultMode: "council",
-    estCostMin: 0.02,
-    estCostMax: 0.05,
+    estCostMin: 0.01,
+    estCostMax: 0.03,
     isSystem: true,
     isDefault: false,
     sortOrder: 1,
     createdBy: null,
   },
 
-  // ── 3. Sonnet Synth 🎯 ────────────────────────────────────────────────────────
+  // ── 3. Sonnet Synth 🎯 ─────────────────────────────────────────────────
   {
     id: "",
     name: "Sonnet Synth",
     description:
-      "Balanced quality. Four Chinese frontier agents with Claude Sonnet 4.6 as judge. Strong reasoning with cost discipline. Great for important decisions.",
+      "Balanced quality with Western judge. 5 Chinese frontier agents: DeepSeek V4 Pro + Kimi K2.7 Code + GLM 5.2 + Qwen3 Max + MiniMax M3. Claude Sonnet 4.6 judges with polish and precision.",
     agents: [
-      {
-        modelId: "deepseek/deepseek-v4-pro",
-        provider: "deepseek",
-        name: "DeepSeek V4 Pro",
-      },
-      {
-        modelId: "moonshotai/kimi-k2.7",
-        provider: "moonshotai",
-        name: "Kimi K2.7",
-      },
-      { modelId: "zai/glm-5.1", provider: "zai", name: "GLM 5.1" },
-      {
-        modelId: "alibaba/qwen3-235b",
-        provider: "alibaba",
-        name: "Qwen 3 235B",
-      },
+      { modelId: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro" },
+      { modelId: "moonshotai/kimi-k2.7-code", provider: "moonshotai", name: "Kimi K2.7 Code" },
+      { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2" },
+      { modelId: "alibaba/qwen3-max", provider: "alibaba", name: "Qwen3 Max" },
+      { modelId: "minimax/minimax-m3", provider: "minimax", name: "MiniMax M3" },
     ],
-    judge: {
-      modelId: "anthropic/claude-sonnet-4-6",
-      provider: "anthropic",
-      name: "Claude Sonnet 4.6",
-      role: "judge",
-    },
+    judge: { modelId: "anthropic/claude-sonnet-4-6", provider: "anthropic", name: "Claude Sonnet 4.6", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "general",
     defaultMode: "hybrid",
     estCostMin: 0.1,
-    estCostMax: 0.18,
+    estCostMax: 0.2,
     isSystem: true,
     isDefault: false,
     sortOrder: 2,
     createdBy: null,
   },
 
-  // ── 4. Deep Reasoning 👑 (FLAGSHIP — OPUS ONLY HERE) ─────────────────────────
+  // ── 4. Deep Reasoning 👑 (FLAGSHIP — OPUS 4.8 ONLY HERE) ──────────────
   {
     id: "",
     name: "Deep Reasoning",
     description:
-      "Flagship. Five frontier agents + Opus 4.8 as judge. For highest-stakes decisions, complex reasoning, and critical analysis. 💎 Premium.",
+      "💎 Flagship. 5 frontier reasoning agents: DeepSeek R1 + DeepSeek V3.2 Thinking + Kimi K2 Thinking + GLM 5.2 + Qwen3 Max Thinking. Claude Opus 4.8 as judge. Highest-stakes decisions, complex reasoning, critical analysis.",
     agents: [
-      {
-        modelId: "deepseek/deepseek-v4-pro",
-        provider: "deepseek",
-        name: "DeepSeek V4 Pro",
-      },
-      {
-        modelId: "moonshotai/kimi-k2.7",
-        provider: "moonshotai",
-        name: "Kimi K2.7",
-      },
-      { modelId: "zai/glm-5.1", provider: "zai", name: "GLM 5.1" },
-      {
-        modelId: "alibaba/qwen3-235b",
-        provider: "alibaba",
-        name: "Qwen 3 235B",
-      },
-      {
-        modelId: "alibaba/qwen-3-coder",
-        provider: "alibaba",
-        name: "Qwen 3 Coder",
-      },
+      { modelId: "deepseek/deepseek-r1", provider: "deepseek", name: "DeepSeek R1" },
+      { modelId: "deepseek/deepseek-v3.2-thinking", provider: "deepseek", name: "DeepSeek V3.2 Thinking" },
+      { modelId: "moonshotai/kimi-k2-thinking", provider: "moonshotai", name: "Kimi K2 Thinking" },
+      { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2" },
+      { modelId: "alibaba/qwen3-max-thinking", provider: "alibaba", name: "Qwen3 Max Thinking" },
     ],
-    judge: {
-      modelId: "anthropic/claude-opus-4-8",
-      provider: "anthropic",
-      name: "Claude Opus 4.8",
-      role: "judge",
-    },
+    judge: { modelId: "anthropic/claude-opus-4-8", provider: "anthropic", name: "Claude Opus 4.8", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "reasoning",
     defaultMode: "council",
-    estCostMin: 0.2,
-    estCostMax: 0.4,
+    estCostMin: 0.25,
+    estCostMax: 0.50,
     isSystem: true,
     isDefault: false,
     sortOrder: 3,
     createdBy: null,
   },
 
-  // ── 5. Code Specialist 💻 ─────────────────────────────────────────────────────
+  // ── 5. Code Specialist 💻 (GLM 5.2 PRIMARY CODER) ─────────────────────
   {
     id: "",
     name: "Code Specialist",
     description:
-      "Built for software engineering. Kimi K2.7 Code + Qwen 3 Coder + DeepSeek V4 Pro, judged by Claude Sonnet 4.6. Best for multi-file coding tasks.",
+      "⭐ GLM 5.2 leads as PRIMARY coder (best individual coder + 1M context). Backed by Kimi K2.7 Code + Qwen3 Coder Next + DeepSeek V4 Pro. Claude Sonnet 4.6 judges. Default mode: Swarm.",
     agents: [
-      {
-        modelId: "moonshotai/kimi-k2.7-code",
-        provider: "moonshotai",
-        name: "Kimi K2.7 Code",
-      },
-      {
-        modelId: "alibaba/qwen-3-coder",
-        provider: "alibaba",
-        name: "Qwen 3 Coder",
-      },
-      {
-        modelId: "deepseek/deepseek-v4-pro",
-        provider: "deepseek",
-        name: "DeepSeek V4 Pro",
-      },
+      { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "lead-coder" },
+      { modelId: "moonshotai/kimi-k2.7-code", provider: "moonshotai", name: "Kimi K2.7 Code" },
+      { modelId: "alibaba/qwen3-coder-next", provider: "alibaba", name: "Qwen3 Coder Next" },
+      { modelId: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro" },
     ],
-    judge: {
-      modelId: "anthropic/claude-sonnet-4-6",
-      provider: "anthropic",
-      name: "Claude Sonnet 4.6",
-      role: "judge",
-    },
+    judge: { modelId: "anthropic/claude-sonnet-4-6", provider: "anthropic", name: "Claude Sonnet 4.6", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "coding",
     defaultMode: "swarm",
-    estCostMin: 0.08,
-    estCostMax: 0.18,
+    estCostMin: 0.12,
+    estCostMax: 0.25,
     isSystem: true,
     isDefault: false,
     sortOrder: 4,
     createdBy: null,
   },
 
-  // ── 6. Research Specialist 🔬 ──────────────────────────────────────────────────
+  // ── 6. Research Specialist 🔬 ──────────────────────────────────────────
   {
     id: "",
     name: "Research Specialist",
     description:
-      "Deep research. GLM 5.1 (200K context) + Gemini 2.5 Pro (web) + Kimi K2.7. Great for audits, multi-document analysis, and comprehensive reports.",
+      "Deep research with 1M context. GLM 5.2 (1M ctx) + Gemini 2.5 Pro (web) + Kimi K2.7 Code + DeepSeek R1. GLM 5.2 self-judges leveraging full context. Default mode: Swarm.",
     agents: [
-      { modelId: "zai/glm-5.1", provider: "zai", name: "GLM 5.1" },
-      {
-        modelId: "google/gemini-2.5-pro",
-        provider: "google",
-        name: "Gemini 2.5 Pro",
-      },
-      {
-        modelId: "moonshotai/kimi-k2.7",
-        provider: "moonshotai",
-        name: "Kimi K2.7",
-      },
+      { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2" },
+      { modelId: "google/gemini-2.5-pro", provider: "google", name: "Gemini 2.5 Pro" },
+      { modelId: "moonshotai/kimi-k2.7-code", provider: "moonshotai", name: "Kimi K2.7 Code" },
+      { modelId: "deepseek/deepseek-r1", provider: "deepseek", name: "DeepSeek R1" },
     ],
-    judge: {
-      modelId: "deepseek/deepseek-v4-pro",
-      provider: "deepseek",
-      name: "DeepSeek V4 Pro",
-      role: "judge",
-    },
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "research",
     defaultMode: "swarm",
-    estCostMin: 0.05,
-    estCostMax: 0.12,
+    estCostMin: 0.06,
+    estCostMax: 0.15,
     isSystem: true,
     isDefault: false,
     sortOrder: 5,
     createdBy: null,
   },
 
-  // ── 7. Dual Frontier 🪶 (MINIMALIST) ──────────────────────────────────────────
+  // ── 7. Dual Frontier 🪶 (MINIMALIST) ───────────────────────────────────
   {
     id: "",
     name: "Dual Frontier",
     description:
-      "Minimalist. Just DeepSeek V4 Pro + Kimi K2.7 with GLM 5.1 judge. Lowest cost panel for simple decisions.",
+      "Minimalist. Just DeepSeek V4 Pro + Kimi K2.7 Code with GLM 5.2 judge. Lowest cost panel for simple decisions. Default mode: Council.",
     agents: [
-      {
-        modelId: "deepseek/deepseek-v4-pro",
-        provider: "deepseek",
-        name: "DeepSeek V4 Pro",
-      },
-      {
-        modelId: "moonshotai/kimi-k2.7",
-        provider: "moonshotai",
-        name: "Kimi K2.7",
-      },
+      { modelId: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro" },
+      { modelId: "moonshotai/kimi-k2.7-code", provider: "moonshotai", name: "Kimi K2.7 Code" },
     ],
-    judge: {
-      modelId: "zai/glm-5.1",
-      provider: "zai",
-      name: "GLM 5.1",
-      role: "judge",
-    },
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "general",
     defaultMode: "council",
@@ -280,6 +184,94 @@ export const SYSTEM_PRESETS: PanelPreset[] = [
     isSystem: true,
     isDefault: false,
     sortOrder: 6,
+    createdBy: null,
+  },
+
+  // ── 8. Vision Council 👁️ (NEW — MULTIMODAL) ──────────────────────────
+  {
+    id: "",
+    name: "Vision Council",
+    description:
+      "Multimodal understanding. GLM 5V Turbo + Qwen3 VL 235B + Gemini 2.5 Pro for image analysis, charts, diagrams, and UI review. Claude Sonnet 4.6 judges.",
+    agents: [
+      { modelId: "zai/glm-5v-turbo", provider: "zai", name: "GLM 5V Turbo" },
+      { modelId: "alibaba/qwen3-vl-235b-a22b-instruct", provider: "alibaba", name: "Qwen3 VL 235B" },
+      { modelId: "google/gemini-2.5-pro", provider: "google", name: "Gemini 2.5 Pro" },
+    ],
+    judge: { modelId: "anthropic/claude-sonnet-4-6", provider: "anthropic", name: "Claude Sonnet 4.6", role: "judge" },
+    capabilities: ["council", "swarm", "hybrid"],
+    domainHint: "general",
+    defaultMode: "council",
+    estCostMin: 0.08,
+    estCostMax: 0.15,
+    isSystem: true,
+    isDefault: false,
+    sortOrder: 7,
+    createdBy: null,
+  },
+
+  // ── 9. MiniMax Ensemble 🌟 (NEW — DIVERSE REASONING) ──────────────────
+  {
+    id: "",
+    name: "MiniMax Ensemble",
+    description:
+      "Diverse reasoning ensemble. MiniMax M3 + MiniMax M2.7 + DeepSeek V4 Pro for multi-perspective analysis. GLM 5.2 judges. Default mode: Council.",
+    agents: [
+      { modelId: "minimax/minimax-m3", provider: "minimax", name: "MiniMax M3" },
+      { modelId: "minimax/minimax-m2.7", provider: "minimax", name: "MiniMax M2.7" },
+      { modelId: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro" },
+    ],
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
+    capabilities: ["council", "swarm", "hybrid"],
+    domainHint: "general",
+    defaultMode: "council",
+    estCostMin: 0.05,
+    estCostMax: 0.10,
+    isSystem: true,
+    isDefault: false,
+    sortOrder: 8,
+    createdBy: null,
+  },
+
+  // ── 10. Long Context Master 📚 (NEW — 1M CONTEXT, HYBRID DEFAULT) ────
+  {
+    id: "",
+    name: "Long Context Master",
+    description:
+      "1M context powerhouse. GLM 5.2 (1M ctx primary) + Kimi K2.7 Code + DeepSeek V4 Pro. GLM 5.2 self-judges. Perfect for whole-repo analysis, multi-doc synthesis, 500K+ token tasks. Default mode: Hybrid.",
+    agents: [
+      { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "primary" },
+      { modelId: "moonshotai/kimi-k2.7-code", provider: "moonshotai", name: "Kimi K2.7 Code" },
+      { modelId: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro" },
+    ],
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
+    capabilities: ["council", "swarm", "hybrid"],
+    domainHint: "general",
+    defaultMode: "hybrid",
+    estCostMin: 0.08,
+    estCostMax: 0.18,
+    isSystem: true,
+    isDefault: false,
+    sortOrder: 9,
+    createdBy: null,
+  },
+
+  // ── 11. Custom (USER-DEFINED PLACEHOLDER) ──────────────────────────────
+  {
+    id: "",
+    name: "Custom",
+    description:
+      "Build your own panel. Choose agents, judge, and default mode. All Chinese frontier models available via the custom builder.",
+    agents: [],
+    judge: { modelId: "", provider: "", name: "Choose a judge", role: "judge" },
+    capabilities: ["council", "swarm", "hybrid"],
+    domainHint: "general",
+    defaultMode: "council",
+    estCostMin: 0,
+    estCostMax: 0,
+    isSystem: true,
+    isDefault: false,
+    sortOrder: 10,
     createdBy: null,
   },
 ];
@@ -295,6 +287,5 @@ export function getPresetByName(name: string): PanelPreset | undefined {
 }
 
 export function getPresetById(id: string): PanelPreset | undefined {
-  // Used after seed populates IDs; for runtime, search by name
   return SYSTEM_PRESETS.find((p) => p.id === id);
 }

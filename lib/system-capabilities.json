@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2026-06-16T22:26:36.581Z",
+  "generatedAt": "2026-06-16T22:51:30.881Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "4f5ac87",
+  "commitSha": "62b55d4",
   "counts": {
     "connectors": 17,
     "playbooks": 17,
     "skills": 6,
     "functions": 12,
     "workflows": 5,
-    "tools": 12,
-    "apiRoutes": 104,
-    "models": 15,
+    "tools": 13,
+    "apiRoutes": 108,
+    "models": 35,
     "uiComponents": 26
   },
   "connectors": [
@@ -1006,7 +1006,7 @@
     {
       "name": "spawnCodingAgent",
       "path": "lib/ai/tools/spawn-coding-agent.ts",
-      "description": "Hand off a complex multi-step coding task. Two modes:"
+      "description": "Hand off a complex multi-step coding task to Neptune V2 long-running agent."
     },
     {
       "name": "streamV2ProgressTool",
@@ -1017,6 +1017,11 @@
       "name": "swarmDispatchTool",
       "path": "lib/ai/tools/swarm-dispatch.ts",
       "description": "Dispatch a swarm of 2-8 parallel AI agents to research, code, audit, or catalog."
+    },
+    {
+      "name": "viewFile",
+      "path": "lib/ai/tools/view-file.ts",
+      "description": "View the contents of a file in the repository. Supports relative or absolute paths with optional line slicing."
     }
   ],
   "apiRoutes": [
@@ -1417,6 +1422,26 @@
     },
     {
       "method": "GET",
+      "route": "/api/v2-handoffs",
+      "file": "app/api/v2-handoffs/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v2-handoffs/:id",
+      "file": "app/api/v2-handoffs/[id]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v2-handoffs/:id/stop",
+      "file": "app/api/v2-handoffs/[id]/stop/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v2-handoffs/:id/stream",
+      "file": "app/api/v2-handoffs/[id]/stream/route.ts"
+    },
+    {
+      "method": "GET",
       "route": "/api/v2/sessions",
       "file": "app/api/v2/sessions/route.ts"
     },
@@ -1560,7 +1585,21 @@
       "id": "deepseek/deepseek-v4-pro",
       "name": "DeepSeek V4 Pro",
       "provider": "deepseek",
-      "description": "Default — latest DeepSeek flagship through Vercel AI Gateway",
+      "description": "Latest DeepSeek flagship — best general-purpose Chinese model",
+      "routeType": "gateway"
+    },
+    {
+      "id": "deepseek/deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "provider": "deepseek",
+      "description": "Fast V4 variant — speed over depth, good for quick tasks",
+      "routeType": "gateway"
+    },
+    {
+      "id": "deepseek/deepseek-r1",
+      "name": "DeepSeek R1",
+      "provider": "deepseek",
+      "description": "Reasoning leader — chain-of-thought, math, logic",
       "routeType": "gateway"
     },
     {
@@ -1571,31 +1610,199 @@
       "routeType": "gateway"
     },
     {
-      "id": "deepseek/deepseek-v4-flash",
-      "name": "DeepSeek V4 Flash",
+      "id": "deepseek/deepseek-v3.2-thinking",
+      "name": "DeepSeek V3.2 Thinking",
       "provider": "deepseek",
-      "description": "Faster V4 variant with reasoning + vision",
+      "description": "V3.2 with chain-of-thought reasoning",
+      "routeType": "gateway"
+    },
+    {
+      "id": "moonshotai/kimi-k2.7-code",
+      "name": "Kimi K2.7 Code",
+      "provider": "moonshotai",
+      "description": "Purpose-built code generation specialist — technical tasks, refactoring",
+      "routeType": "gateway"
+    },
+    {
+      "id": "moonshotai/kimi-k2.7-code-highspeed",
+      "name": "Kimi K2.7 Code Highspeed",
+      "provider": "moonshotai",
+      "description": "Faster coding variant — lower latency for quick edits",
+      "routeType": "gateway"
+    },
+    {
+      "id": "moonshotai/kimi-k2-thinking",
+      "name": "Kimi K2 Thinking",
+      "provider": "moonshotai",
+      "description": "Kimi with chain-of-thought — deep reasoning tasks",
       "routeType": "gateway"
     },
     {
       "id": "moonshotai/kimi-k2.5",
       "name": "Kimi K2.5",
       "provider": "moonshotai",
-      "description": "Moonshot AI flagship model",
+      "description": "Previous Kimi flagship — still solid for general tasks",
       "routeType": "gateway"
     },
     {
-      "id": "openai/gpt-oss-20b",
-      "name": "GPT OSS 20B",
-      "provider": "openai",
-      "description": "Compact reasoning model",
+      "id": "zai/glm-5.2",
+      "name": "GLM 5.2",
+      "provider": "zai",
+      "description": "⭐ 1M context window — best coder, high/max thinking levels. Lead model in Code Specialist.",
       "routeType": "gateway"
     },
     {
-      "id": "openai/gpt-oss-120b",
-      "name": "GPT OSS 120B",
+      "id": "zai/glm-5.1",
+      "name": "GLM 5.1",
+      "provider": "zai",
+      "description": "200K context, vision, long-horizon autonomous tasks (8h+), file input, MIT licensed",
+      "routeType": "gateway"
+    },
+    {
+      "id": "zai/glm-5",
+      "name": "GLM 5",
+      "provider": "zai",
+      "description": "GLM-5 flagship, 202K context, agentic engineering",
+      "routeType": "gateway"
+    },
+    {
+      "id": "zai/glm-4.7-flash",
+      "name": "GLM 4.7 Flash",
+      "provider": "zai",
+      "description": "Fast flash variant — budget-friendly speed option",
+      "routeType": "gateway"
+    },
+    {
+      "id": "zai/glm-5v-turbo",
+      "name": "GLM 5V Turbo",
+      "provider": "zai",
+      "description": "Vision model — multimodal image understanding, charts, diagrams",
+      "routeType": "gateway"
+    },
+    {
+      "id": "alibaba/qwen3-max",
+      "name": "Qwen3 Max",
+      "provider": "alibaba",
+      "description": "Alibaba",
+      "routeType": "gateway"
+    },
+    {
+      "id": "alibaba/qwen3-max-thinking",
+      "name": "Qwen3 Max Thinking",
+      "provider": "alibaba",
+      "description": "Qwen3 Max with chain-of-thought — deep reasoning variant",
+      "routeType": "gateway"
+    },
+    {
+      "id": "alibaba/qwen3-coder-next",
+      "name": "Qwen3 Coder Next",
+      "provider": "alibaba",
+      "description": "Newest coding specialist from Alibaba — strong on generation + debugging",
+      "routeType": "gateway"
+    },
+    {
+      "id": "alibaba/qwen3-coder-plus",
+      "name": "Qwen3 Coder Plus",
+      "provider": "alibaba",
+      "description": "Proven coding model — reliable for code generation and review",
+      "routeType": "gateway"
+    },
+    {
+      "id": "alibaba/qwen3-vl-235b-a22b-instruct",
+      "name": "Qwen3 VL 235B",
+      "provider": "alibaba",
+      "description": "Vision-language model — 235B parameters, multimodal understanding",
+      "routeType": "gateway"
+    },
+    {
+      "id": "alibaba/qwen-3-235b",
+      "name": "Qwen 3 235B",
+      "provider": "alibaba",
+      "description": "235B parameters — complex reasoning, analysis",
+      "routeType": "gateway"
+    },
+    {
+      "id": "minimax/minimax-m3",
+      "name": "MiniMax M3",
+      "provider": "minimax",
+      "description": "Latest MiniMax flagship — strong reasoning, diverse perspective",
+      "routeType": "gateway"
+    },
+    {
+      "id": "minimax/minimax-m2.7",
+      "name": "MiniMax M2.7",
+      "provider": "minimax",
+      "description": "Proven MiniMax model — reliable generalist",
+      "routeType": "gateway"
+    },
+    {
+      "id": "minimax/minimax-m2.5-highspeed",
+      "name": "MiniMax M2.5 Highspeed",
+      "provider": "minimax",
+      "description": "Fastest MiniMax variant — budget speed",
+      "routeType": "gateway"
+    },
+    {
+      "id": "stepfun/step-3.7-flash",
+      "name": "StepFun Step 3.7 Flash",
+      "provider": "stepfun",
+      "description": "Ultra-fast — lowest latency, ideal for speed trio preset",
+      "routeType": "gateway"
+    },
+    {
+      "id": "anthropic/claude-sonnet-4-6",
+      "name": "Claude Sonnet 4.6",
+      "provider": "anthropic",
+      "description": "Balanced Western judge — code review, synthesis, polish",
+      "routeType": "gateway"
+    },
+    {
+      "id": "anthropic/claude-opus-4-8",
+      "name": "Claude Opus 4.8",
+      "provider": "anthropic",
+      "description": "💎 Premium judge — ONLY in Deep Reasoning preset. Highest quality synthesis.",
+      "routeType": "gateway"
+    },
+    {
+      "id": "anthropic/claude-haiku-4.0",
+      "name": "Claude Haiku 4.0",
+      "provider": "anthropic",
+      "description": "Cheap Western option — quick tasks, lightweight synthesis",
+      "routeType": "gateway"
+    },
+    {
+      "id": "google/gemini-2.5-pro",
+      "name": "Gemini 2.5 Pro",
+      "provider": "google",
+      "description": "Google",
+      "routeType": "gateway"
+    },
+    {
+      "id": "google/gemini-2.5-flash",
+      "name": "Gemini 2.5 Flash",
+      "provider": "google",
+      "description": "Fast Google model — cheap synth option",
+      "routeType": "gateway"
+    },
+    {
+      "id": "openai/gpt-5",
+      "name": "GPT-5",
       "provider": "openai",
-      "description": "Open-source 120B parameter model",
+      "description": "OpenAI latest — general fallback",
+      "routeType": "gateway"
+    },
+    {
+      "id": "openai/gpt-5-mini",
+      "name": "GPT-5 Mini",
+      "provider": "openai",
+      "description": "Cheap OpenAI — budget fallback option",
+      "routeType": "gateway"
+    },
+    {
+      "id": "openai/o3-mini",
+      "name": "O3 Mini",
+      "provider": "openai",
+      "description": "OpenAI reasoning model — STEM, math, logic",
       "routeType": "gateway"
     },
     {
@@ -1603,48 +1810,6 @@
       "name": "Grok 4.1 Fast",
       "provider": "xai",
       "description": "Fast non-reasoning model with tool use",
-      "routeType": "gateway"
-    },
-    {
-      "id": "anthropic/claude-sonnet-4-6",
-      "name": "Claude Sonnet 4.6",
-      "provider": "anthropic",
-      "description": "Anthropic",
-      "routeType": "gateway"
-    },
-    {
-      "id": "google/gemini-2-flash",
-      "name": "Gemini 2.0 Flash",
-      "provider": "google",
-      "description": "Google",
-      "routeType": "gateway"
-    },
-    {
-      "id": "zai/glm-5",
-      "name": "GLM 5",
-      "provider": "zai",
-      "description": "Zhipu AI (via Z.ai) — GLM-5 flagship, 202K context, agentic engineering",
-      "routeType": "gateway"
-    },
-    {
-      "id": "zai/glm-5.1",
-      "name": "GLM 5.1",
-      "provider": "zai",
-      "description": "Zhipu AI (via Z.ai) — latest GLM-5.1, 202K context, vision, long-horizon autonomous tasks (8h+), file input",
-      "routeType": "gateway"
-    },
-    {
-      "id": "moonshotai/kimi-k2.7-code",
-      "name": "Kimi K2.7 Code",
-      "provider": "moonshotai",
-      "description": "Moonshot AI — purpose-built code generation specialist, technical tasks, refactoring",
-      "routeType": "gateway"
-    },
-    {
-      "id": "alibaba/qwen-3-235b",
-      "name": "Qwen 3 235B",
-      "provider": "alibaba",
-      "description": "Alibaba Cloud — 235B parameters, multilingual (100+ languages), complex reasoning",
       "routeType": "gateway"
     }
   ],

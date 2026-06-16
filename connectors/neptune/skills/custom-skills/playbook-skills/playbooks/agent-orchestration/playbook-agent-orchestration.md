@@ -161,3 +161,82 @@ Mandatory steps:
 - 2026-06-11: U2.3 landed 169 total actions across 5 comprehensive connector packs.
 - 2026-06-12: U2.4 adds relational graph connecting playbooks, connectors, skills, and functions.
 - 2026-06-12: Phase 8 — annotation-collector + usage-telemetry close the self-healing feedback loop.
+- 2026-06-16: Phase 23B — Panel Orchestration, Swarm + Hybrid modes, GLM 5.2, 11 presets, V2 handoff visibility.
+
+## Panel Orchestration (Phase 23A/B)
+
+A panel is a smart container that holds:
+- **N agents**: Models that answer questions or execute sub-tasks
+- **1 judge/synthesizer**: Model that combines outputs into final answer
+- **Capabilities**: council, swarm, hybrid (auto-detected at runtime)
+
+### Modes
+
+**Council Mode** (accuracy through deliberation)
+- All agents get the SAME prompt
+- Parallel completions
+- Judge synthesizes best answer
+- Best for: deliberation, strategy, validation, planning, code review, single questions
+
+**Swarm Mode** (efficiency through decomposition)
+- Coordinator decomposes task into parallel sub-tasks
+- Each sub-task assigned to a specialist agent
+- Parallel execution via Promise.allSettled
+- Integrator combines into final deliverable
+- Best for: multi-step build, multi-file code, project execution, multi-source research
+
+**Hybrid Mode** (complex multi-faceted)
+- Coordinator maps which sub-tasks need council (decisions) vs swarm (execution)
+- Council group debates decisions first
+- Swarm group executes based on decisions (respects dependsOn)
+- Final judge integrates everything
+- Best for: 'audit and improve', 'investigate and fix', large architectural changes
+
+### Choosing a Preset
+
+| Task | Preset | Why |
+|------|--------|-----|
+| General deliberation | Chinese Frontier | Best cost-performance, GLM 5.2 judge |
+| Fast / real-time | Speed Trio | Flash models, $0.01-0.03/run |
+| Important decisions | Sonnet Synth | Western judge, balanced quality |
+| Highest stakes | Deep Reasoning | Opus 4.8 judge, $0.25-0.50/run |
+| Multi-file code | Code Specialist | GLM 5.2 lead coder, swarm default |
+| Research / audits | Research Specialist | GLM 5.2 1M ctx + Gemini web |
+| Vision / multimodal | Vision Council | GLM 5V Turbo + Qwen VL + Gemini |
+| Long context (>200K) | Long Context Master | GLM 5.2 1M ctx primary, hybrid |
+| Quick decisions | Dual Frontier | Minimalist 2-agent panel |
+| Diverse perspectives | MiniMax Ensemble | M3 + M2.7 + DeepSeek V4 Pro |
+
+### V2 Handoff Procedure
+
+When a task requires long-running coding work:
+1. **First**, use panel (swarm mode) to draft solution in chat
+2. **Offer** user: "Deploy this via V2 long-running agent?"
+3. **If yes**, call spawnCodingAgent({mode, goal, targetRepo})
+4. Tool returns sessionId + libraryUrl (/library/handoffs) + v2DirectUrl
+5. **Surface** the /library/handoffs link in your response
+6. User monitors live progress at /library/handoffs or opens V2 directly
+
+### Anti-Patterns (CARDINAL)
+
+1. ❌ NEVER use Opus as agent (only as judge in Deep Reasoning)
+2. ❌ NEVER use same model as agent AND judge (echo chamber)
+3. ❌ NEVER run swarm on simple Q (decomposition waste)
+4. ❌ NEVER run council on multi-step build (decomposition needed)
+5. ❌ NEVER run panel for trivial chat (cost waste)
+6. ✅ ALWAYS log telemetry post-run (library_panel_telemetry)
+7. ✅ ALWAYS show mode banner in UI
+8. ✅ ALWAYS allow cancel mid-run
+9. ❌ NEVER include American frontier models as agents (cost waste)
+10. ✅ Coordinator picks specialists ONLY from preset's agent pool
+
+### Tool Call Integration
+
+When panel mode is active and task needs tool execution:
+- Swarm preset + decomposable task → decompose, parallel specialists, integrate
+- Otherwise → standard single-model tool call
+
+Example: "Build me a PRD for X" with Code Specialist:
+- Coordinator decomposes: problem, goals, users, architecture, phases
+- Specialists each draft their section in parallel
+- Judge integrates into final PRD

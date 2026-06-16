@@ -1,11 +1,13 @@
 /**
- * Phase 23A: Mode Router
+ * Phase 23B: Mode Router (FULL)
  *
  * Routes to the appropriate executor based on execution mode.
- * Phase 23A: Only handles 'council'. Swarm + Hybrid in Phase 23B.
+ * Council → executeCouncil | Swarm → executeSwarm | Hybrid → executeHybrid
  */
 
 import { executeCouncil } from "./council/execute";
+import { executeSwarm } from "./swarm/execute";
+import { executeHybrid } from "./hybrid/execute";
 import { analyzeTask } from "./task-analyzer";
 import type {
   AgentResponse,
@@ -55,8 +57,25 @@ export async function routeAndExecute(input: RouteInput): Promise<RouteOutput> {
     };
   } else {
     taskAnalysis = analyzeTask(userPrompt);
-    // Phase 23A: Always council
-    mode = "council";
+    // Use recommended mode from analyzer (Phase 23B: full detection)
+    mode = taskAnalysis.recommendedMode;
+
+    // Fallback based on preset's defaultMode if analysis is ambiguous
+    if (!mode || mode === "council") {
+      // If task looks decomposable but analyzer recommended council,
+      // fall back to preset's default mode
+      if (
+        taskAnalysis.requiresDecomposition &&
+        preset.defaultMode !== "council"
+      ) {
+        mode = preset.defaultMode;
+        taskAnalysis = {
+          ...taskAnalysis,
+          recommendedMode: mode,
+          reasoning: `${taskAnalysis.reasoning} Overriding to preset default: ${mode}.`,
+        };
+      }
+    }
   }
 
   // Emit panel:start event
@@ -71,23 +90,45 @@ export async function routeAndExecute(input: RouteInput): Promise<RouteOutput> {
 
   // Route to executor
   switch (mode) {
-    case "council":
-      return executeCouncil({ preset, messages, onEvent, taskAnalysis });
-
-    case "swarm":
-      // Phase 23B
-      onEvent?.({
-        type: "panel:error",
-        message: "Swarm mode not available in Phase 23A",
+    case "council": {
+      const result = await executeCouncil({
+        preset,
+        messages,
+        onEvent,
+        taskAnalysis,
       });
-      throw new Error("Swarm mode not implemented yet. Coming in Phase 23B.");
+      return { ...result, mode, taskAnalysis };
+    }
 
-    case "hybrid":
-      // Phase 23B
-      onEvent?.({
-        type: "panel:error",
-        message: "Hybrid mode not available in Phase 23A",
+    case "swarm": {
+      const result = await executeSwarm({
+        preset,
+        messages,
+        onEvent,
+        taskAnalysis,
       });
-      throw new Error("Hybrid mode not implemented yet. Coming in Phase 23B.");
+      return { ...result, mode, taskAnalysis };
+    }
+
+    case "hybrid": {
+      const result = await executeHybrid({
+        preset,
+        messages,
+        onEvent,
+        taskAnalysis,
+      });
+      return { ...result, mode, taskAnalysis };
+    }
+
+    default: {
+      // Fallback to council
+      const result = await executeCouncil({
+        preset,
+        messages,
+        onEvent,
+        taskAnalysis,
+      });
+      return { ...result, mode: "council", taskAnalysis };
+    }
   }
 }

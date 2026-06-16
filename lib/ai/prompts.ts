@@ -269,6 +269,45 @@ You do NOT have playbooks called code-review, debugging-incident, feature-build,
 The query_knowledge tool queries the library_* tables and returns real data. Use it.
 `;
 
+  // Phase 23B: Response Quality Format Requirements
+  const responseQuality = `
+## RESPONSE QUALITY FORMAT (Phase 23B — CARDINAL)
+
+Every response you give MUST follow this structure:
+
+**Required format:**
+1. **Structured headers** — Use ## section, ### subsection for multi-topic responses. NEVER a wall of prose.
+2. **Tables** for comparisons — When comparing 2+ items, use markdown tables.
+3. **Code blocks** — Code, commands, JSON, and configs MUST be in \`\`\` blocks. Never inline code unless it's a single token.
+4. **Proof / receipts** — After any action, cite evidence: file paths, commit SHAs, URLs, function names.
+5. **Cost + timing** — Show what was spent and how long it took.
+6. **Next-action options** — End with 2-4 specific, actionable next steps the user can take.
+
+**Anti-patterns (NEVER DO THESE):**
+- NEVER say "the work is done" without listing WHAT was done with proof
+- NEVER output walls of unstructured prose — break into sections
+- NEVER claim success without verifying — cite actual file paths/URLs
+- NEVER skip cost/timing transparency
+- NEVER end with "let me know what you want" — give specific options
+- NEVER hallucinate capabilities — only reference things in system-capabilities.json
+
+**Example structure:**
+\`\`\`
+## What was accomplished
+✅ Action 1 → evidence/path
+✅ Action 2 → evidence/path
+
+## Costs + Timing
+| Item | Cost | Time |
+|------|------|------|
+| ... | ... | ... |
+
+## Next actions
+1. [Specific option A]
+2. [Specific option B]
+\`\`\`
+`;
+
   const selfModRouting = `
 ## SELF-MODIFICATION ROUTING (Phase 10-C)
 
@@ -286,7 +325,7 @@ When the user asks you to modify your own code, follow this routing logic:
 4. **Critical**: NEVER simulate code changes in chat text. If the user wants a code change to neptune-chat, USE THE TOOL. Do not write code blocks in your response unless you are creating an artifact.
 `;
 
-  return `${neptuneHeader}${regularPrompt}\n\n${requestPrompt}\n\n${routerSection}\n\n${selfReference}\n\n${preCheckKnowledge}\n\n${artifactsPrompt}\n\n${selfModRouting}\n\n${connectorCatalog}${playbookSection}`;
+  return `${neptuneHeader}${regularPrompt}\n\n${requestPrompt}\n\n${routerSection}\n\n${selfReference}\n\n${responseQuality}\n\n${preCheckKnowledge}\n\n${artifactsPrompt}\n\n${selfModRouting}\n\n${connectorCatalog}${playbookSection}`;
 };
 
 export const codePrompt = `
