@@ -92,6 +92,16 @@
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Liquid Glass OS — Phase 22 design tokens */
+  --glass-surface-1: oklch(0.985 0 0 / 0.6);
+  --glass-surface-2: oklch(0.99 0 0 / 0.45);
+  --glass-surface-3: oklch(1 0 0 / 0.3);
+  --glass-border: oklch(0 0 0 / 0.08);
+  --glass-highlight: oklch(1 0 0 / 0.4);
+  --glass-shadow-1: 0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px oklch(0 0 0 / 0.06);
+  --glass-shadow-2: 0 8px 32px oklch(0 0 0 / 0.12), 0 2px 6px oklch(0 0 0 / 0.08);
+  --glass-shadow-3: 0 16px 64px oklch(0 0 0 / 0.18), 0 4px 12px oklch(0 0 0 / 0.12);
 }
 
 .dark {
@@ -138,6 +148,16 @@
   --shadow-composer-focus:
     0 0 0 1px oklch(1 0 0 / 0.1), 0 4px 16px -4px oklch(0 0 0 / 0.3),
     inset 0 1px 0 oklch(1 0 0 / 0.04);
+
+  /* Liquid Glass OS — Phase 22 dark tokens */
+  --glass-surface-1: oklch(0.18 0 0 / 0.6);
+  --glass-surface-2: oklch(0.15 0 0 / 0.45);
+  --glass-surface-3: oklch(0.12 0 0 / 0.3);
+  --glass-border: oklch(1 0 0 / 0.08);
+  --glass-highlight: oklch(1 0 0 / 0.12);
+  --glass-shadow-1: 0 1px 2px oklch(0 0 0 / 0.2), 0 8px 24px oklch(0 0 0 / 0.35);
+  --glass-shadow-2: 0 8px 32px oklch(0 0 0 / 0.35), 0 2px 6px oklch(0 0 0 / 0.25);
+  --glass-shadow-3: 0 16px 64px oklch(0 0 0 / 0.45), 0 4px 12px oklch(0 0 0 / 0.3);
 }
 
 @layer base {
@@ -326,6 +346,111 @@ a:focus-visible {
 .dark .glass {
   background: oklch(0.15 0 0 / 0.6);
   border-color: oklch(1 0 0 / 0.08);
+}
+
+/* ── Liquid Glass OS Elevation Utilities ─────────────────────────────────── */
+
+/* Elevation 1 — Cards, list items (subtle float) */
+@utility glass-1 {
+  background: var(--glass-surface-1);
+  backdrop-filter: blur(12px) saturate(150%) brightness(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(150%) brightness(1.05);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-1);
+}
+
+/* Elevation 2 — Sheets, drawers, popovers (mid float) */
+@utility glass-2 {
+  background: var(--glass-surface-2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-2);
+}
+
+/* Elevation 3 — Sidebars, modals, command palette (highest float) */
+@utility glass-3 {
+  background: var(--glass-surface-3);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-3);
+}
+
+/* Glass border highlight — refractive top edge */
+@utility glass-highlight {
+  border-top: 1px solid var(--glass-highlight);
+}
+
+/* Refractive top-edge gradient for premium glass surfaces */
+.glass-refractive {
+  position: relative;
+}
+.glass-refractive::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--glass-highlight) 20%,
+    var(--glass-highlight) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Typography Utilities — Geist Premium Scale ──────────────────────────── */
+
+@utility text-display-1 {
+  font-size: 3.5rem;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 600;
+}
+@utility text-display-2 {
+  font-size: 2.5rem;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+@utility text-title-1 {
+  font-size: 1.75rem;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+@utility text-title-2 {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+@utility text-body-l {
+  font-size: 1rem;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+@utility text-body-m {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility text-caption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+@utility font-mono-display {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 /* Glass tool card */
