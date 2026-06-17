@@ -1,0 +1,163 @@
+[
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U001",
+    "userName": "Alice Agent",
+    "text": "Customer John Smith called — he says his payment declined and needs to update his card. Phone: +15551234567. He's been with us 3 months.",
+    "ts": "1734451200.000100",
+    "messageType": "support_ticket",
+    "extractedCustomers": [
+      {"raw": "John Smith", "type": "name", "value": "John Smith", "confidence": 0.5},
+      {"raw": "+15551234567", "type": "phone", "value": "+15551234567", "confidence": 0.9}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U002",
+    "userName": "Bob Billing",
+    "text": "@Alice Agent I'll follow up with Sarah Johnson about her billing issue. She emailed sarah.j@email.com about a wrong charge.",
+    "ts": "1734451300.000200",
+    "threadTs": "1734451200.000100",
+    "messageType": "billing_alert",
+    "extractedCustomers": [
+      {"raw": "Sarah Johnson", "type": "name", "value": "Sarah Johnson", "confidence": 0.5},
+      {"raw": "sarah.j@email.com", "type": "email", "value": "sarah.j@email.com", "confidence": 0.85}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U003",
+    "userName": "Charlie Support",
+    "text": "ESCALATION: Customer Mike Brown #CUST-8842 called — his subscription was supposed to be cancelled last week but he just got charged $499. This is urgent.",
+    "ts": "1734451400.000300",
+    "messageType": "escalation",
+    "extractedCustomers": [
+      {"raw": "Mike Brown", "type": "name", "value": "Mike Brown", "confidence": 0.5},
+      {"raw": "CUST-8842", "type": "customer_id", "value": "CUST-8842", "confidence": 0.75}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U001",
+    "userName": "Alice Agent",
+    "text": "New enrollment submission: Lisa Davis, phone 555-987-6543, wants the premium plan. I'll get her signed up today.",
+    "ts": "1734451500.000400",
+    "messageType": "enrollment_submission",
+    "extractedCustomers": [
+      {"raw": "Lisa Davis", "type": "name", "value": "Lisa Davis", "confidence": 0.5},
+      {"raw": "555-987-6543", "type": "phone", "value": "+15559876543", "confidence": 0.9}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U004",
+    "userName": "Diana Disputes",
+    "text": "Recovery update: Tom Wilson's payment retry went through on the 3rd attempt. His card was expiring. All good now.",
+    "ts": "1734451600.000500",
+    "messageType": "recovery_action",
+    "extractedCustomers": [
+      {"raw": "Tom Wilson", "type": "name", "value": "Tom Wilson", "confidence": 0.5}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U002",
+    "userName": "Bob Billing",
+    "text": "Can someone check on customer Emily Chen? Her last payment was 45 days ago and I don't see any recovery actions in the system.",
+    "ts": "1734451700.000600",
+    "messageType": "billing_alert",
+    "extractedCustomers": [
+      {"raw": "Emily Chen", "type": "name", "value": "Emily Chen", "confidence": 0.5}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U005",
+    "userName": "Eve Manager",
+    "text": "Team — I'm seeing a pattern. 3 customers this week saying they cancelled but are still being charged. Someone needs to audit this. #critical",
+    "ts": "1734451800.000700",
+    "messageType": "escalation",
+    "extractedCustomers": []
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U001",
+    "userName": "Alice Agent",
+    "text": "Just got off the phone with David Kim. He wants a full refund for the last 2 months — says services were never rendered. I'll escalate to manager.",
+    "ts": "1734451900.000800",
+    "messageType": "escalation",
+    "extractedCustomers": [
+      {"raw": "David Kim", "type": "name", "value": "David Kim", "confidence": 0.5}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U003",
+    "userName": "Charlie Support",
+    "text": "Ticket resolved: Rachel Green's billing portal access issue was fixed. She can now log in at https://portal.newleaf.com. Her email is rachel.g@email.com.",
+    "ts": "1734452000.000900",
+    "messageType": "support_ticket",
+    "extractedCustomers": [
+      {"raw": "Rachel Green", "type": "name", "value": "Rachel Green", "confidence": 0.5},
+      {"raw": "rachel.g@email.com", "type": "email", "value": "rachel.g@email.com", "confidence": 0.85}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U004",
+    "userName": "Diana Disputes",
+    "text": "Stale recovery alert: James Lee has been in recovery for 72 hours with NO action taken. Payment declined on card ending 4242. Amount: $399.",
+    "ts": "1734452100.001000",
+    "messageType": "recovery_action",
+    "extractedCustomers": [
+      {"raw": "James Lee", "type": "name", "value": "James Lee", "confidence": 0.5}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U006",
+    "userName": "Frank Finance",
+    "text": "MRR update: We're at $33,750 this month. 169 active subs, 159 on NMI. 11 payment declines this week need approval. Recovery queue is backed up.",
+    "ts": "1734452200.001100",
+    "messageType": "general_discussion",
+    "extractedCustomers": []
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U001",
+    "userName": "Alice Agent",
+    "text": "Handing off Jessica Martinez to Bob for billing review. She has 2 open tickets: #SUP-1001 and #SUP-1002. Phone: (213) 555-0199.",
+    "ts": "1734452300.001200",
+    "messageType": "agent_handoff",
+    "extractedCustomers": [
+      {"raw": "Jessica Martinez", "type": "name", "value": "Jessica Martinez", "confidence": 0.5},
+      {"raw": "(213) 555-0199", "type": "phone", "value": "+12135550199", "confidence": 0.9}
+    ]
+  },
+  {
+    "channelId": "C096PSS45Q9",
+    "channelName": "newleaf-admin",
+    "userId": "U002",
+    "userName": "Bob Billing",
+    "text": "@Alice Agent I checked — Mike Brown (CUST-8842) IS still being charged on NMI. Subscription ID sub_nmi_7734 active since March. He cancelled in Slack on May 1st. This is a CRITICAL misalignment.",
+    "ts": "1734452400.001300",
+    "threadTs": "1734451400.000300",
+    "messageType": "escalation",
+    "extractedCustomers": [
+      {"raw": "Mike Brown", "type": "name", "value": "Mike Brown", "confidence": 0.5},
+      {"raw": "CUST-8842", "type": "customer_id", "value": "CUST-8842", "confidence": 0.75}
+    ]
+  }
+]
