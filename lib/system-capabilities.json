@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-17T02:03:49.206Z",
+  "generatedAt": "2026-06-17T02:10:30.870Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "60076d9",
+  "commitSha": "115a143",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
@@ -10,7 +10,7 @@
     "functions": 12,
     "workflows": 5,
     "tools": 21,
-    "apiRoutes": 116,
+    "apiRoutes": 120,
     "models": 35,
     "uiComponents": 26
   },
@@ -1537,6 +1537,26 @@
       "method": "POST",
       "route": "/api/workflow/run",
       "file": "app/api/workflow/run/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/workflows",
+      "file": "app/api/workflows/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflows",
+      "file": "app/api/workflows/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/workflows/:id",
+      "file": "app/api/workflows/[id]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflows/:id/run",
+      "file": "app/api/workflows/[id]/run/route.ts"
     },
     {
       "method": "POST",
