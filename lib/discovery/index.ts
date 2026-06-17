@@ -56,3 +56,14 @@ export {
   sseEventStream,
 } from "./workflow-orchestrator";
 export type { SseCallback, RunResult } from "./workflow-orchestrator";
+
+// Report generator
+export {
+  generateReport,
+  generateMarkdownReport,
+  generateCsvReport,
+  generateJsonReport,
+  generatePdfReport,
+  quickReport,
+} from "./report-generator";
+export type { GenerateReportInput, GeneratedReports } from "./report-generator";
