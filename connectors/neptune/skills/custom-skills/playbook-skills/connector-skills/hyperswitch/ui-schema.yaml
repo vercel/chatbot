@@ -1,0 +1,14 @@
+name: HyperSwitch
+icon: shuffle
+accentColor: "#F59E0B"
+keyFields:
+  - { field: amount, type: currency }
+  - { field: gateway, type: text }
+  - { field: status, type: badge }
+expandedLayout:
+  - routingLog
+  - gatewayHealth
+functions:
+  - route_payment
+  - gateway_status
+  - health_check

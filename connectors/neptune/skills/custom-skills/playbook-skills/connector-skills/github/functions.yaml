@@ -1,0 +1,13 @@
+functions:
+  - name: create_pr
+    description: Create a pull request on the repository
+    parameters: [title, body, head, base]
+  - name: read_file
+    description: Read a file from the repository
+    parameters: [path, branch]
+  - name: list_dir
+    description: List files in a directory
+    parameters: [path]
+  - name: search_repo
+    description: Search repository code
+    parameters: [query, language]

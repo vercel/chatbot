@@ -1,0 +1,14 @@
+name: Forth DPP
+icon: file-text
+accentColor: "#EC4899"
+keyFields:
+  - { field: disputeId, type: text }
+  - { field: bureau, type: chip }
+  - { field: status, type: badge }
+expandedLayout:
+  - disputeRounds
+  - letters
+functions:
+  - start_dispute
+  - track_dispute
+  - draft_letter

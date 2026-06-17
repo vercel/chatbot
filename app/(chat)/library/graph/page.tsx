@@ -6,9 +6,8 @@
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { connection } from "next/server";
 import { GraphClient } from "./client";
-
-export const dynamic = "force-dynamic";
 
 async function getGraphData(focusId?: string) {
   if (!process.env.POSTGRES_URL) return { nodes: [], links: [] };
@@ -79,6 +78,7 @@ export default async function GraphPage({
 }: {
   searchParams: { focus?: string };
 }) {
+  await connection();
   const { focus } = searchParams;
   const data = await getGraphData(focus);
 

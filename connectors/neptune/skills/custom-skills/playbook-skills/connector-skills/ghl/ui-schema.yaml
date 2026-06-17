@@ -1,0 +1,14 @@
+name: GHL
+icon: building
+accentColor: "#0073E6"
+keyFields:
+  - { field: contactName, type: text }
+  - { field: pipeline, type: text }
+  - { field: status, type: badge }
+expandedLayout:
+  - contactHistory
+  - campaigns
+functions:
+  - create_contact
+  - update_pipeline
+  - send_campaign

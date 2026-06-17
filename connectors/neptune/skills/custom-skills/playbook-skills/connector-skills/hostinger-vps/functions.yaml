@@ -1,0 +1,13 @@
+functions:
+  - name: health_check
+    description: Run comprehensive VPS health check
+    parameters: []
+  - name: restart_service
+    description: Restart a system service
+    parameters: [serviceName]
+  - name: read_logs
+    description: Read application logs
+    parameters: [logFile, lines]
+  - name: ssl_check
+    description: Check SSL certificate status
+    parameters: [domain]

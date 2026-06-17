@@ -1,0 +1,14 @@
+name: Freshcaller
+icon: headset
+accentColor: "#FF6B35"
+keyFields:
+  - { field: callId, type: text }
+  - { field: agent, type: text }
+  - { field: disposition, type: badge }
+expandedLayout:
+  - callNotes
+  - recording
+functions:
+  - get_call
+  - list_calls
+  - update_disposition

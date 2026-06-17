@@ -1,0 +1,15 @@
+name: Hostinger VPS
+icon: server
+accentColor: "#6D28D9"
+keyFields:
+  - { field: hostname, type: text }
+  - { field: uptime, type: text }
+  - { field: status, type: badge }
+expandedLayout:
+  - services
+  - diskUsage
+functions:
+  - health_check
+  - restart_service
+  - read_logs
+  - ssl_check

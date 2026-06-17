@@ -1,0 +1,13 @@
+functions:
+  - name: deploy
+    description: Deploy a project to Vercel
+    parameters: [projectId, files, target]
+  - name: list_deployments
+    description: List recent deployments
+    parameters: [projectId, limit]
+  - name: add_domain
+    description: Add a custom domain to a project
+    parameters: [projectId, domain]
+  - name: health_check
+    description: Check deployment health
+    parameters: [deploymentId]

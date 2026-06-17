@@ -1,0 +1,15 @@
+name: GitHub
+icon: git-branch
+accentColor: "#24292F"
+keyFields:
+  - { field: repo, type: text }
+  - { field: prNumber, type: text }
+  - { field: status, type: badge }
+expandedLayout:
+  - diffView
+  - checks
+functions:
+  - create_pr
+  - read_file
+  - list_dir
+  - search_repo

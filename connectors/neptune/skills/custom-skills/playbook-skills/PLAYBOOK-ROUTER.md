@@ -218,17 +218,23 @@ playbook-skills/connector-skills/
 ├── hyperswitch/      (🔄 Alt Payment Gateway — P1)
 ├── freshcaller/      (🎧 Call Center — P2)
 ├── forth-dpp/        (⚖️ Credit Disputes — P0)
-└── base44/           (🗄️ Internal Data Platform — P0)
+├── base44/           (🗄️ Internal Data Platform — P0)
+├── github/           (🐙 Repository Operations — P1)
+├── vercel/           (☁️ Deployments — P1)
+├── hostinger-vps/    (🖥️ Server Management — P1)
+└── resend/           (✉️ Email Delivery — P2)
 ```
 
-### Per-Connector Files (5 files each)
+### Per-Connector Files (7 files each)
 | File | Purpose |
 |------|---------|
 | `skill.md` | Purpose, when-to-use, env vars, patterns, cross-refs |
-| `tools.yaml` | Available tool calls, parameters, return shapes |
+| `playbook.md` | Operational SOP, safeguards, self-healing notes |
+| `functions.yaml` | Available function calls, parameters, return shapes |
+| `ui-schema.yaml` | Universal Connector Card visual config (icon, accentColor, keyFields, expandedLayout) |
 | `patterns.md` | Always-check rules, success patterns |
 | `anti-patterns.md` | BANNED operations, common mistakes |
-| `layout.json` | UI rendering metadata (fields, badges, sections per card type) |
+| `tools.yaml` | Legacy tool definitions (deprecated in favor of functions.yaml) |
 
 ### Playbook → Connector-Skill Dependency Map
 | Playbook | Connector Skills Used |
@@ -243,10 +249,13 @@ playbook-skills/connector-skills/
 | reporting | base44, slack |
 | sales | ghl, base44, slack |
 | marketing | ghl, slack, base44 |
-| vps-ops | (shell-native) |
+| vps-ops | hostinger-vps |
 | vercel-discipline | vercel, github |
 | video-generation | (neptune-native) |
 | hr | slack |
+| lead-flow | ghl, base44, resend |
+| compliance-audit | base44, forth-dpp |
+| mcp-edits | github |
 
 ### How to Add a New Connector
 1. Create folder: `connector-skills/<name>/`

@@ -1,0 +1,16 @@
+name: NMI
+icon: credit-card
+accentColor: "#10b981"
+keyFields:
+  - { field: amount, type: currency }
+  - { field: cofIndicator, type: chip, colors: { stored: green, used: blue } }
+  - { field: status, type: badge }
+expandedLayout:
+  - sourceTransactionTrail
+  - cardLast4
+  - vaultId
+functions:
+  - create_vault
+  - charge
+  - refund
+  - validate

@@ -1,0 +1,10 @@
+functions:
+  - name: send_email
+    description: Send a transactional email
+    parameters: [to, subject, html, from]
+  - name: get_status
+    description: Get email delivery status
+    parameters: [emailId]
+  - name: list_emails
+    description: List sent emails
+    parameters: [limit, cursor]

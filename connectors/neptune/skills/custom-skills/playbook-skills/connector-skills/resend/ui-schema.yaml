@@ -1,0 +1,14 @@
+name: Resend
+icon: mail
+accentColor: "#000000"
+keyFields:
+  - { field: to, type: text }
+  - { field: subject, type: text }
+  - { field: status, type: badge }
+expandedLayout:
+  - emailBody
+  - deliveryLog
+functions:
+  - send_email
+  - get_status
+  - list_emails

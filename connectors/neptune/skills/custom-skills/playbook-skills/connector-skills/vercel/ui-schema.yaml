@@ -1,0 +1,15 @@
+name: Vercel
+icon: cloud
+accentColor: "#000000"
+keyFields:
+  - { field: project, type: text }
+  - { field: deploymentUrl, type: text }
+  - { field: status, type: badge }
+expandedLayout:
+  - buildLog
+  - envVars
+functions:
+  - deploy
+  - list_deployments
+  - add_domain
+  - health_check

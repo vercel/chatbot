@@ -1,0 +1,15 @@
+name: Slack
+icon: message-square
+accentColor: "#4A154B"
+keyFields:
+  - { field: channel, type: text }
+  - { field: ts, type: text }
+  - { field: user, type: text }
+expandedLayout:
+  - threadHistory
+  - reactions
+functions:
+  - post_message
+  - post_thread
+  - get_channel_history
+  - react
