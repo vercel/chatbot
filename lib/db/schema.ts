@@ -569,3 +569,71 @@ export const librarySwarmDecomposition = pgTable("library_swarm_decompositions",
 });
 
 export type LibrarySwarmDecomposition = InferSelectModel<typeof librarySwarmDecomposition>;
+
+// ── Phase 25: Mission Cards + Generative UI (0015) ───────────────────────
+
+export const libraryMission = pgTable("library_missions", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+  chatId: uuid("chat_id").references(() => chat.id, { onDelete: "set null" }),
+  title: text("title").notNull(),
+  status: text("status").notNull().default("pending"),
+  steps: jsonb("steps").notNull().default([]),
+  estimatedCost: numeric("estimated_cost", { precision: 10, scale: 4 }),
+  estimatedTimeMin: integer("estimated_time_min"),
+  actualCost: numeric("actual_cost", { precision: 10, scale: 4 }),
+  actualTimeSec: integer("actual_time_sec"),
+  v2SessionId: text("v2_session_id"),
+  panelRunId: uuid("panel_run_id"),
+  result: jsonb("result"),
+  currentState: text("current_state").notNull().default("inline"),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+});
+
+export type LibraryMission = InferSelectModel<typeof libraryMission>;
+
+export const libraryMissionEvent = pgTable("library_mission_events", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  missionId: uuid("mission_id").notNull().references(() => libraryMission.id, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(),
+  payload: jsonb("payload").default({}),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryMissionEvent = InferSelectModel<typeof libraryMissionEvent>;
+
+// ── Phase 25: Workflow Library (0016) ────────────────────────────────────
+
+export const libraryWorkflowTemplate = pgTable("library_workflow_templates", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  steps: jsonb("steps").notNull().default([]),
+  parameters: jsonb("parameters").default({}),
+  schedule: text("schedule"),
+  isShared: boolean("is_shared").notNull().default(false),
+  tags: jsonb("tags").default([]),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryWorkflowTemplate = InferSelectModel<typeof libraryWorkflowTemplate>;
+
+export const libraryWorkflowRun = pgTable("library_workflow_runs", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  workflowId: uuid("workflow_id").references(() => libraryWorkflowTemplate.id, { onDelete: "cascade" }),
+  missionId: uuid("mission_id").references(() => libraryMission.id, { onDelete: "set null" }),
+  userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+  status: text("status").notNull().default("pending"),
+  stepResults: jsonb("step_results").default([]),
+  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryWorkflowRun = InferSelectModel<typeof libraryWorkflowRun>;

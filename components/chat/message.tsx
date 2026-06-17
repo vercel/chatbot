@@ -24,6 +24,7 @@ import { StreamingIndicator, detectStreamPhase } from "./streaming-indicator";
 import { ToolResultRenderer } from "./tool-result-renderer";
 import { Weather } from "./weather";
 import { UniversalConnectorCard } from "@/components/generative/universal-connector-card";
+import { MissionCard } from "@/components/generative/mission-card";
 import {
   groupToolCalls,
   CollapsedToolGroup,
@@ -419,11 +420,32 @@ const PurePreviewMessage = ({
             ) : null}
             {isComplete && (
               <>
-                {/* Phase 24B: If output uses standard connector envelope { connectorType, data }, render UniversalConnectorCard fallback */}
-                {toolPart.output &&
+                {/* Phase 25+24B: Render MissionCard for createMission, UniversalConnectorCard for envelopes, else ToolResultRenderer */}
+                {toolName === "createMission" &&
+                toolPart.output &&
                 typeof toolPart.output === "object" &&
-                "connectorType" in toolPart.output &&
-                "data" in toolPart.output ? (
+                "missionId" in toolPart.output ? (
+                  <MissionCard
+                    mission={{
+                      missionId: (toolPart.output as Record<string, unknown>).missionId as string,
+                      title: (toolPart.output as Record<string, unknown>).title as string,
+                      status: ((toolPart.output as Record<string, unknown>).status as string) || "running",
+                      steps: ((toolPart.output as Record<string, unknown>).steps || []) as Array<{
+                        id: string;
+                        name: string;
+                        status: "pending" | "running" | "complete" | "failed";
+                        evidence: string[];
+                        childCards?: unknown[];
+                        type?: string;
+                      }>,
+                      estimatedCost: (toolPart.output as Record<string, unknown>).estimatedCost as number,
+                      estimatedTime: (toolPart.output as Record<string, unknown>).estimatedTime as number,
+                    }}
+                  />
+                ) : toolPart.output &&
+                  typeof toolPart.output === "object" &&
+                  "connectorType" in toolPart.output &&
+                  "data" in toolPart.output ? (
                   <UniversalConnectorCard
                     connector={(toolPart.output as Record<string, unknown>).connectorType as string}
                     type={
