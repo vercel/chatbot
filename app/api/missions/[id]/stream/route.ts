@@ -13,8 +13,6 @@ import { libraryMission } from "@/lib/db/schema";
 const dbClient = postgres(process.env.POSTGRES_URL ?? "");
 const db = drizzle(dbClient);
 
-export const dynamic = "force-dynamic";
-
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

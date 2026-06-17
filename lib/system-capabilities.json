@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-06-17T01:40:06.706Z",
+  "generatedAt": "2026-06-17T02:03:49.206Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "f8050e6",
+  "commitSha": "60076d9",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
     "skills": 6,
     "functions": 12,
     "workflows": 5,
-    "tools": 14,
-    "apiRoutes": 110,
+    "tools": 21,
+    "apiRoutes": 116,
     "models": 35,
     "uiComponents": 26
   },
@@ -867,14 +867,44 @@
   ],
   "tools": [
     {
+      "name": "createMission",
+      "path": "lib/ai/tools/create-mission.ts",
+      "description": "Create a multi-step mission tracker that appears as a visual MissionCard in chat. Use this for any complex multi-step task: code deployments, investigations, data audits, workflow runs. The mission wi"
+    },
+    {
       "name": "createWorkflow",
       "path": "lib/ai/tools/create-workflow.ts",
       "description": "Create a new workflow from a natural language description. The workflow will be built on the React Flow canvas with trigger, action, conditional, parallel, transform, AI, and output nodes. Use this wh"
     },
     {
+      "name": "getCustomerProfile",
+      "path": "lib/ai/tools/get-customer-profile.ts",
+      "description": "Get a customer profile from Base44. Returns entity type, customer details, and related records."
+    },
+    {
+      "name": "getGithubPr",
+      "path": "lib/ai/tools/get-github-pr.ts",
+      "description": "Get GitHub pull request status. Returns repo, branch, PR status, and checks."
+    },
+    {
+      "name": "getNmiTransaction",
+      "path": "lib/ai/tools/get-nmi-transaction.ts",
+      "description": "Get NMI transaction details. Returns amount, status, cofIndicator, and source transaction trail."
+    },
+    {
       "name": "getV2SessionTool",
       "path": "lib/ai/tools/get-v2-session.ts",
       "description": "Get detailed information about a specific neptune-v2 coding session, including status, progress, and any output."
+    },
+    {
+      "name": "getVapiCall",
+      "path": "lib/ai/tools/get-vapi-call.ts",
+      "description": "Get Vapi call details. Returns callSid, sentiment, duration, and transcript."
+    },
+    {
+      "name": "getVercelDeploy",
+      "path": "lib/ai/tools/get-vercel-deploy.ts",
+      "description": "Get Vercel deployment status. Returns project, deployment URL, build duration, and status."
     },
     {
       "name": "getWeather",
@@ -905,6 +935,11 @@
       "name": "planSession",
       "path": "lib/ai/tools/plan-session.ts",
       "description": "Enter formal PLANNING MODE. When the user wants to plan a feature, bug fix,"
+    },
+    {
+      "name": "pullSlackThread",
+      "path": "lib/ai/tools/pull-slack-thread.ts",
+      "description": "Pull a Slack thread from a channel. Returns channel, user, reactions, and reply count."
     },
     {
       "name": "queryKnowledge",
@@ -1152,6 +1187,36 @@
       "method": "GET",
       "route": "/api/mcp/tools",
       "file": "app/api/mcp/tools/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/missions",
+      "file": "app/api/missions/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/missions",
+      "file": "app/api/missions/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/missions/:id",
+      "file": "app/api/missions/[id]/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/missions/:id/events",
+      "file": "app/api/missions/[id]/events/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/missions/:id/events",
+      "file": "app/api/missions/[id]/events/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/missions/:id/stream",
+      "file": "app/api/missions/[id]/stream/route.ts"
     },
     {
       "method": "POST",
