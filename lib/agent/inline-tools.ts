@@ -22,6 +22,12 @@ import { loadSkill } from "@/lib/ai/tools/load-skill";
 import { queryKnowledge } from "@/lib/ai/tools/query-knowledge";
 import { graphQueryTool } from "@/lib/ai/tools/graph-query";
 
+// ── Phase 38.5 Wiring Fix: Bulk Discovery Tools ───────────────────────────
+import { pullSlackChannelHistory as pullSlackChannelHistoryV2 } from "@/lib/agents/tools/pullSlackChannelHistory";
+import { bulkNmiQuery as bulkNmiQueryV2 } from "@/lib/agents/tools/bulkNmiQuery";
+import { bulkBase44Pull as bulkBase44PullV2 } from "@/lib/agents/tools/bulkBase44Pull";
+import { runDiscoveryWorkflow as runDiscoveryWorkflowV2 } from "@/lib/agents/tools/runDiscoveryWorkflow";
+
 // ── Configuration ────────────────────────────────────────────────────────
 
 const VPS_FS_BRIDGE_URL =
@@ -1523,6 +1529,11 @@ export const inlineTools = {
   graphQuery: graphQueryTool,
   // ── Legacy Integration Discovery ──
   listIntegrations,
+  // ── Phase 38.5: Bulk Discovery Tools (V2 — cursor pagination + batch) ──
+  pullSlackChannelHistoryV2,
+  bulkNmiQueryV2,
+  bulkBase44PullV2,
+  runDiscoveryWorkflowV2,
 };
 
 /** Map of which tools require which env vars to function. */
@@ -1558,6 +1569,11 @@ export const TOOL_REQUIREMENTS: Record<string, string[]> = {
   graphQuery: ["POSTGRES_URL"],
   // ── Legacy Integration Discovery ──
   listIntegrations: [],
+  // ── Phase 38.5: Bulk Discovery Tools ──
+  pullSlackChannelHistoryV2: ["SLACK_BOT_TOKEN"],
+  bulkNmiQueryV2: ["VPS_BRIDGE_URL"],
+  bulkBase44PullV2: ["VPS_BRIDGE_URL"],
+  runDiscoveryWorkflowV2: [],
 };
 
 /**

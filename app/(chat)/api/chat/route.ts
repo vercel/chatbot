@@ -70,6 +70,7 @@ import {
   generateCheckpointSummary,
 } from "@/lib/ai/token-tracker";
 import { classifyIntentSync } from "@/lib/chat/intent-classifier";
+import { classifyMessage, dispatchToDiscovery } from "@/lib/chat/router";
 
 export const maxDuration = 300;
 
@@ -338,59 +339,46 @@ export async function POST(request: Request) {
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
-        // ── Phase 38.5: Discovery Engine Routing ──────────────────────────
+        // ── Phase 38.5: Discovery Engine Routing (via lib/chat/router) ──────
         // If intent classifier detected a bulk discovery operation,
         // route to the Phase 38 Discovery Engine instead of using streamText.
         if (discoveryClassification?.isBulkIntent && discoveryClassification.workflowId) {
           const workflowId = discoveryClassification.workflowId;
           const config = discoveryClassification.extractedConfig as Record<string, unknown>;
-          const baseUrl = process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}`
-            : "http://localhost:3000";
 
-          try {
-            const discoveryRes = await fetch(`${baseUrl}/api/discovery/run`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ workflowId, config }),
+          // Use the centralized router for dispatch
+          const dispatchResult = await dispatchToDiscovery(workflowId, config);
+
+          if (dispatchResult.success && dispatchResult.runId) {
+            // Stream back a discovery mission card message
+            const missionMessage = JSON.stringify({
+              type: "discovery_mission",
+              runId: dispatchResult.runId,
+              workflowId,
+              workflowName: dispatchResult.workflowName,
+              estimatedDuration: dispatchResult.estimatedDuration,
+              sseUrl: dispatchResult.sseUrl,
+              confidence: discoveryClassification.confidence,
+              reasoning: discoveryClassification.reasoning,
             });
 
-            if (discoveryRes.ok) {
-              const { runId, workflowName, estimatedDuration } = await discoveryRes.json();
-
-              // Stream back a discovery mission card message
-              const missionMessage = JSON.stringify({
-                type: "discovery_mission",
-                runId,
-                workflowId,
-                workflowName,
-                estimatedDuration,
-                sseUrl: `/api/discovery/sse?runId=${encodeURIComponent(runId)}`,
-                confidence: discoveryClassification.confidence,
-                reasoning: discoveryClassification.reasoning,
-              });
-
-              dataStream.write({
-                type: "data-textDelta",
-                data: `\n\n🔄 **Routing to Discovery Engine...**\n\n` +
-                  `Workflow: **${workflowName}**\n` +
-                  `Run ID: \`${runId}\`\n` +
-                  `Estimated: ${estimatedDuration}\n\n` +
-                  `<!--DISCOVERY_MISSION:${missionMessage}-->\n\n`,
-                transient: false,
-              } as never);
-            } else {
-              // Discovery API failed — fall through to normal LLM flow
-              dataStream.write({
-                type: "data-textDelta",
-                data: `\n\n⚠️ Discovery Engine unavailable — falling back to standard analysis.\n\n`,
-                transient: false,
-              } as never);
-              // Continue to normal LLM flow below
-            }
-          } catch (err) {
-            console.warn("[discovery-routing] Failed to start discovery run:", err);
-            // Fall through to normal LLM flow
+            dataStream.write({
+              type: "data-textDelta",
+              data: `\n\n🔄 **Routing to Discovery Engine...**\n\n` +
+                `Workflow: **${dispatchResult.workflowName}**\n` +
+                `Run ID: \`${dispatchResult.runId}\`\n` +
+                `Estimated: ${dispatchResult.estimatedDuration}\n\n` +
+                `<!--DISCOVERY_MISSION:${missionMessage}-->\n\n`,
+              transient: false,
+            } as never);
+          } else {
+            // Discovery API failed — fall through to normal LLM flow
+            dataStream.write({
+              type: "data-textDelta",
+              data: `\n\n⚠️ Discovery Engine unavailable — falling back to standard analysis.\n\n`,
+              transient: false,
+            } as never);
+            // Continue to normal LLM flow below
           }
 
           // If we successfully routed, finish here
