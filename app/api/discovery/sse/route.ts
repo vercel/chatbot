@@ -8,9 +8,6 @@
 import { NextRequest } from "next/server";
 import { subscribeToRun } from "../run/route";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const runId = searchParams.get("runId");

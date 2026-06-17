@@ -29,6 +29,11 @@ import { editDocument } from "@/lib/ai/tools/edit-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { getNmiTransaction } from "@/lib/ai/tools/get-nmi-transaction";
 import { pullSlackThread } from "@/lib/ai/tools/pull-slack-thread";
+import { pullSlackChannelHistory } from "@/lib/ai/tools/pull-slack-channel-history";
+import { searchSlackMessages, listSlackChannels } from "@/lib/ai/tools/search-slack-messages";
+import { runDiscoveryWorkflow } from "@/lib/ai/tools/run-discovery-workflow";
+import { bulkNmiQuery } from "@/lib/ai/tools/bulk-nmi-query";
+import { bulkBase44Pull } from "@/lib/ai/tools/bulk-base44-pull";
 import { getCustomerProfile } from "@/lib/ai/tools/get-customer-profile";
 import { getVapiCall } from "@/lib/ai/tools/get-vapi-call";
 import { getGithubPr } from "@/lib/ai/tools/get-github-pr";
@@ -64,6 +69,7 @@ import {
   estimateMessageTokens,
   generateCheckpointSummary,
 } from "@/lib/ai/token-tracker";
+import { classifyIntentSync } from "@/lib/chat/intent-classifier";
 
 export const maxDuration = 300;
 
@@ -104,6 +110,13 @@ export async function POST(request: Request) {
       ?.filter((p) => p.type === "text")
       ?.map((p) => p.text)
       ?.join(" ") ?? "";
+
+    // ── Phase 38.5: Discovery Routing ──────────────────────────────────
+    // Check if this is a bulk discovery operation BEFORE dispatching to LLM.
+    // If so, route to the Phase 38 Discovery Engine instead of streamText.
+    const discoveryClassification = message?.role === "user"
+      ? classifyIntentSync(messageText)
+      : null;
 
     const chatModel = allowedModelIds.has(selectedChatModel)
       ? selectedChatModel
@@ -325,6 +338,66 @@ export async function POST(request: Request) {
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
+        // ── Phase 38.5: Discovery Engine Routing ──────────────────────────
+        // If intent classifier detected a bulk discovery operation,
+        // route to the Phase 38 Discovery Engine instead of using streamText.
+        if (discoveryClassification?.isBulkIntent && discoveryClassification.workflowId) {
+          const workflowId = discoveryClassification.workflowId;
+          const config = discoveryClassification.extractedConfig as Record<string, unknown>;
+          const baseUrl = process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : "http://localhost:3000";
+
+          try {
+            const discoveryRes = await fetch(`${baseUrl}/api/discovery/run`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ workflowId, config }),
+            });
+
+            if (discoveryRes.ok) {
+              const { runId, workflowName, estimatedDuration } = await discoveryRes.json();
+
+              // Stream back a discovery mission card message
+              const missionMessage = JSON.stringify({
+                type: "discovery_mission",
+                runId,
+                workflowId,
+                workflowName,
+                estimatedDuration,
+                sseUrl: `/api/discovery/sse?runId=${encodeURIComponent(runId)}`,
+                confidence: discoveryClassification.confidence,
+                reasoning: discoveryClassification.reasoning,
+              });
+
+              dataStream.write({
+                type: "data-textDelta",
+                data: `\n\n🔄 **Routing to Discovery Engine...**\n\n` +
+                  `Workflow: **${workflowName}**\n` +
+                  `Run ID: \`${runId}\`\n` +
+                  `Estimated: ${estimatedDuration}\n\n` +
+                  `<!--DISCOVERY_MISSION:${missionMessage}-->\n\n`,
+                transient: false,
+              } as never);
+            } else {
+              // Discovery API failed — fall through to normal LLM flow
+              dataStream.write({
+                type: "data-textDelta",
+                data: `\n\n⚠️ Discovery Engine unavailable — falling back to standard analysis.\n\n`,
+                transient: false,
+              } as never);
+              // Continue to normal LLM flow below
+            }
+          } catch (err) {
+            console.warn("[discovery-routing] Failed to start discovery run:", err);
+            // Fall through to normal LLM flow
+          }
+
+          // If we successfully routed, finish here
+          dataStream.write({ type: "data-finish", finishReason: "stop" } as never);
+          return;
+        }
+
         // Phase 10-D: Send warning if >80% context window used
         if (tokenTracker.shouldWarn()) {
           dataStream.write({
@@ -363,6 +436,8 @@ export async function POST(request: Request) {
               "viewFile",
               "getNmiTransaction",
               "pullSlackThread",
+              "pullSlackChannelHistory",
+              "searchSlackMessages",
               "getCustomerProfile",
               "getVapiCall",
               "getGithubPr",
@@ -374,6 +449,9 @@ export async function POST(request: Request) {
               "spawnCodingAgent",
               "planSession",
               "swarmDispatch",
+              "runDiscoveryWorkflow",
+              "bulkNmiQuery",
+              "bulkBase44Pull",
               "graphQuery",
               ...mcpToolNames,
             ];
@@ -391,11 +469,16 @@ export async function POST(request: Request) {
           createMission,
           getNmiTransaction,
           pullSlackThread,
+          pullSlackChannelHistory,
+          searchSlackMessages,
           getCustomerProfile,
           getVapiCall,
           getGithubPr,
           getVercelDeploy,
           swarmDispatch: swarmDispatchTool,
+          runDiscoveryWorkflow,
+          bulkNmiQuery,
+          bulkBase44Pull,
           ...getAvailableTools(),
           ...sandboxTools,
           ...mcpTools,

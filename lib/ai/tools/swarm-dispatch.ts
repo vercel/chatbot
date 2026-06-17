@@ -19,10 +19,11 @@
  *   })
  */
 
-import { generateText, tool } from "ai";
+import { generateText, streamText, tool } from "ai";
 import { z } from "zod";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { SYSTEM_PRESETS, getPresetByName } from "@/lib/ai/fusion/presets";
+import type { PanelEvent } from "@/lib/ai/fusion/types";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -37,10 +38,14 @@ export interface SwarmAgent {
   prompt: string;
   /** Optional tool names this agent can use */
   tools?: string[];
+  /** Optional tool implementations (pass real tools to agents!) */
+  toolImplementations?: Record<string, unknown>;
   /** Max tokens for this agent's response */
   maxTokens?: number;
   /** Temperature override */
   temperature?: number;
+  /** Whether to use streaming (enables tool call visibility + SSE) */
+  streaming?: boolean;
 }
 
 export interface SwarmSynthesizer {
@@ -72,7 +77,22 @@ export interface SwarmDispatchInput {
    *   "MiniMax Ensemble" | "Long Context Master" | "Custom"
    */
   presetId?: string;
+  /** Optional event emitter for SSE streaming (Phase 38.5) */
+  onSwarmEvent?: (event: SwarmSseEvent) => void;
 }
+
+// ── Phase 38.5: Swarm SSE Event Types ─────────────────────────────────
+
+export type SwarmSseEvent =
+  | { type: "swarm_start"; swarmId: string; agentCount: number }
+  | { type: "agent_start"; agentId: string; model: string; role: string }
+  | { type: "tool_call_start"; agentId: string; tool: string; args: Record<string, unknown> }
+  | { type: "tool_call_end"; agentId: string; tool: string; result: unknown; durationMs: number }
+  | { type: "agent_thinking"; agentId: string; preview: string }
+  | { type: "agent_done"; agentId: string; success: boolean; finalText: string; tokens: number; durationMs: number; error?: string }
+  | { type: "swarm_synthesis_start"; judgeModel: string }
+  | { type: "swarm_synthesis_end"; synthesis: string; totalTokens: number; totalDurationMs: number }
+  | { type: "swarm_error"; error: string };
 
 export interface AgentResult {
   role: string;
@@ -105,22 +125,133 @@ export interface SwarmDispatchResult {
 async function runAgent(
   agent: SwarmAgent,
   index: number,
-  goal: string
+  goal: string,
+  onEvent?: (event: SwarmSseEvent) => void,
 ): Promise<AgentResult> {
+  const agentId = `agent_${index}_${agent.role.replace(/[^a-zA-Z0-9]/g, "_")}`;
   const startTime = Date.now();
+
+  onEvent?.({
+    type: "agent_start",
+    agentId,
+    model: agent.model,
+    role: agent.role,
+  });
 
   try {
     const model = getLanguageModel(agent.model);
+    const systemPrompt = `[SWARM AGENT #${index + 1}: ${agent.role}]\n\n` +
+      `Swarm Goal: ${goal}\n\n` +
+      `Your Role: ${agent.role}\n\n` +
+      `Task:\n${agent.prompt}\n\n` +
+      `Return your findings as structured markdown. Be thorough and specific.`;
 
+    // Use streaming if agent has tools or streaming enabled
+    if (agent.streaming || agent.toolImplementations) {
+      let fullText = "";
+      const toolCallLogs: Array<{ tool: string; args: unknown; result: unknown; startTime: number }> = [];
+
+      const streamResult = await streamText({
+        model,
+        system: systemPrompt,
+        prompt: systemPrompt,
+        maxOutputTokens: agent.maxTokens ?? 4096,
+        temperature: agent.temperature ?? 0.3,
+        tools: (agent.toolImplementations as Record<string, unknown>) || {},
+        onStepFinish: (step) => {
+          // Emit tool call events
+          if (step.toolCalls) {
+            for (const tc of step.toolCalls) {
+              const tcStart = Date.now();
+              toolCallLogs.push({
+                tool: tc.toolName,
+                args: tc.args,
+                result: null,
+                startTime: tcStart,
+              });
+
+              onEvent?.({
+                type: "tool_call_start",
+                agentId,
+                tool: tc.toolName,
+                args: (tc.args as Record<string, unknown>) || {},
+              });
+            }
+          }
+
+          if (step.toolResults) {
+            for (const tr of step.toolResults) {
+              const log = toolCallLogs.find(
+                (l) => l.tool === tr.toolName && l.result === null
+              );
+              if (log) {
+                log.result = tr.result;
+                onEvent?.({
+                  type: "tool_call_end",
+                  agentId,
+                  tool: tr.toolName,
+                  result: tr.result,
+                  durationMs: Date.now() - log.startTime,
+                });
+              }
+            }
+          }
+        },
+      });
+
+      // Consume the stream to get full text
+      for await (const chunk of streamResult.textStream) {
+        fullText += chunk;
+        // Emit thinking preview periodically
+        if (fullText.length % 200 < (chunk?.length || 0)) {
+          onEvent?.({
+            type: "agent_thinking",
+            agentId,
+            preview: fullText.slice(-200),
+          });
+        }
+      }
+
+      const tokensUsed = (await streamResult.usage)?.totalTokens ?? fullText.length / 4;
+      const durationMs = Date.now() - startTime;
+
+      onEvent?.({
+        type: "agent_done",
+        agentId,
+        success: true,
+        finalText: fullText,
+        tokens: Math.round(tokensUsed),
+        durationMs,
+      });
+
+      return {
+        role: agent.role,
+        model: agent.model,
+        success: true,
+        text: fullText,
+        durationMs,
+        tokensUsed: Math.round(tokensUsed),
+      };
+    }
+
+    // Non-streaming: use generateText (original behavior, no tools)
     const result = await generateText({
       model,
-      prompt: `[SWARM AGENT #${index + 1}: ${agent.role}]\n\n` +
-        `Swarm Goal: ${goal}\n\n` +
-        `Your Role: ${agent.role}\n\n` +
-        `Task:\n${agent.prompt}\n\n` +
-        `Return your findings as structured markdown. Be thorough and specific.`,
+      prompt: systemPrompt,
       maxOutputTokens: agent.maxTokens ?? 4096,
       temperature: agent.temperature ?? 0.3,
+    });
+
+    const durationMs = Date.now() - startTime;
+    const tokensUsed = result.usage?.totalTokens ?? 0;
+
+    onEvent?.({
+      type: "agent_done",
+      agentId,
+      success: true,
+      finalText: result.text,
+      tokens: tokensUsed,
+      durationMs,
     });
 
     return {
@@ -128,18 +259,31 @@ async function runAgent(
       model: agent.model,
       success: true,
       text: result.text,
-      durationMs: Date.now() - startTime,
-      tokensUsed: result.usage?.totalTokens ?? 0,
+      durationMs,
+      tokensUsed,
     };
   } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown agent error";
+    const durationMs = Date.now() - startTime;
+
+    onEvent?.({
+      type: "agent_done",
+      agentId,
+      success: false,
+      finalText: "",
+      tokens: 0,
+      durationMs,
+      error: errorMsg,
+    });
+
     return {
       role: agent.role,
       model: agent.model,
       success: false,
       text: "",
-      durationMs: Date.now() - startTime,
+      durationMs,
       tokensUsed: 0,
-      error: err instanceof Error ? err.message : "Unknown agent error",
+      error: errorMsg,
     };
   }
 }
@@ -273,7 +417,7 @@ export async function swarmDispatch(
     );
   }
 
-  const { goal, swarmType, timeoutMs = 300_000 } = input;
+  const { goal, swarmType, timeoutMs = 300_000, onSwarmEvent } = input;
   const agents = effectiveAgents;
   const synthesizer = effectiveSynthesizer;
   const swarmId = `swarm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -316,9 +460,12 @@ export async function swarmDispatch(
     };
   }
 
+  // Phase 38.5: Emit swarm_start
+  onSwarmEvent?.({ type: "swarm_start", swarmId, agentCount: agents.length });
+
   // Dispatch all agents in parallel
   const agentPromises = agents.map((agent, i) =>
-    runAgent(agent, i, goal)
+    runAgent(agent, i, goal, onSwarmEvent)
   );
 
   // Timeout protection
@@ -356,11 +503,24 @@ export async function swarmDispatch(
   // Run synthesizer (only if at least 1 agent succeeded)
   let synthesis: string | null = null;
   if (agentsSucceeded > 0) {
+    onSwarmEvent?.({ type: "swarm_synthesis_start", judgeModel: synthesizer.model });
     synthesis = await runSynthesizer(synthesizer, agentResults, goal);
   }
 
   const totalDurationMs = Date.now() - startTime;
   const totalTokensUsed = agentResults.reduce((sum, r) => sum + r.tokensUsed, 0);
+
+  // Phase 38.5: Emit final event
+  if (synthesis) {
+    onSwarmEvent?.({
+      type: "swarm_synthesis_end",
+      synthesis,
+      totalTokens: totalTokensUsed,
+      totalDurationMs,
+    });
+  } else if (agentsFailed === agents.length) {
+    onSwarmEvent?.({ type: "swarm_error", error: "All agents failed" });
+  }
 
   return {
     swarmId,
