@@ -44,3 +44,15 @@ export {
   validateAll,
   summarizeValidations,
 } from "./alignment-validators";
+
+// Workflow orchestrator
+export {
+  createRun,
+  getRun,
+  getAllRuns,
+  executeWorkflow,
+  resumeRun,
+  serializeSseEvent,
+  sseEventStream,
+} from "./workflow-orchestrator";
+export type { SseCallback, RunResult } from "./workflow-orchestrator";
