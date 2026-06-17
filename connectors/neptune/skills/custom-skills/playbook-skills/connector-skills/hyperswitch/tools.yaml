@@ -1,0 +1,32 @@
+connector: hyperswitch
+tools:
+  - name: create_payment
+    action: payments/create
+    description: Create a payment intent
+    params:
+      - amount: number (required)
+      - currency: string (default USD)
+      - customer_id: string
+    returns:
+      payment_id: string
+
+  - name: create_refund
+    action: refunds/create
+    description: Refund a payment
+    params:
+      - payment_id: string (required)
+      - amount: number (optional)
+    returns:
+      refund_id: string
+
+  - name: create_payment_link
+    action: payment_links/create
+    description: Generate a shareable payment link
+    params:
+      - amount: number (required)
+      - description: string
+      - customer_id: string
+      - expiry: string (ISO)
+    returns:
+      link: string
+      payment_link_id: string

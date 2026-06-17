@@ -1,0 +1,48 @@
+connector: ghl
+tools:
+  - name: get_contact
+    action: contacts/get
+    description: Get contact details by ID
+    params:
+      - contact_id: string (required)
+    returns:
+      contact: object
+
+  - name: search_contacts
+    action: contacts/search
+    description: Search contacts by query
+    params:
+      - query: string (required)
+      - limit: number (default 20)
+    returns:
+      contacts: array
+
+  - name: get_pipeline
+    action: pipelines/get
+    description: Get pipeline stages and opportunities
+    params:
+      - pipeline_id: string (optional)
+    returns:
+      pipeline: object
+
+  - name: create_opportunity
+    action: opportunities/create
+    description: Create new sales opportunity
+    params:
+      - contact_id: string (required)
+      - pipeline_id: string
+      - stage_id: string
+      - name: string
+      - value: number
+    returns:
+      opportunity_id: string
+
+  - name: send_message
+    action: conversations/send
+    description: Send message to contact
+    params:
+      - contact_id: string (required)
+      - message: string (required)
+      - type: string (SMS/email/voice)
+    returns:
+      message_id: string

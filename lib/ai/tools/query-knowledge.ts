@@ -52,6 +52,50 @@ interface KnowledgeEdge {
   toType: string;
   type: string;
   weight: number;
+  // Phase 24: Migration 0013 fields
+  successCount?: number;
+  failureCount?: number;
+  confidenceScore?: number;
+  lastUsedAt?: string;
+  costPerUse?: number;
+  latencyMsAvg?: number;
+}
+
+interface PlaybookIntentMatch {
+  slug: string;
+  confidence: number;
+  source: string;
+  evidence: string;
+  similarIntents?: string[];
+}
+
+interface PastRunMatch {
+  id: string;
+  presetName: string;
+  status: string;
+  mode: string;
+  promptPreview: string;
+  createdAt: string;
+  similarity: number;
+}
+
+interface OptimalPanelResult {
+  presetId: string;
+  presetName: string;
+  totalRuns: number;
+  successRate: number;
+  avgLatencyMs: number;
+  avgCost: number;
+}
+
+interface EnhancedKnowledgeResult {
+  playbookMatches?: PlaybookIntentMatch[];
+  connectors?: KnowledgeEntity[];
+  pastRuns?: PastRunMatch[];
+  optimalPanel?: OptimalPanelResult[];
+  entities?: KnowledgeEntity[];
+  edges?: KnowledgeEdge[];
+  counts?: Record<string, number>;
 }
 
 interface KnowledgeResult {
@@ -98,10 +142,22 @@ Examples:
 - "What's connected to NMI?" → queryKnowledge({ related_to: "nmi" })`,
 
   inputSchema: z.object({
+    queryType: z
+      .enum([
+        ...ENTITY_TYPES,
+        "findPlaybooksByIntent",
+        "findConnectorsByPlaybook",
+        "findSimilarPastRuns",
+        "findOptimalPanel",
+      ] as const)
+      .optional()
+      .describe(
+        "Query type: entity filters (connector|skill|function|playbook|workflow|edge) OR enhanced queries (findPlaybooksByIntent|findConnectorsByPlaybook|findSimilarPastRuns|findOptimalPanel)"
+      ),
     entity_type: z
       .enum(ENTITY_TYPES)
       .optional()
-      .describe("Filter to specific entity type"),
+      .describe("Filter to specific entity type (legacy, use queryType)"),
     name: z
       .string()
       .optional()
@@ -120,9 +176,42 @@ Examples:
       .max(100)
       .default(50)
       .describe("Max results to return"),
+    // Phase 24: Enhanced query parameters
+    intentText: z
+      .string()
+      .optional()
+      .describe("User intent text for findPlaybooksByIntent"),
+    playbookSlug: z
+      .string()
+      .optional()
+      .describe("Playbook slug for findConnectorsByPlaybook"),
+    promptText: z
+      .string()
+      .optional()
+      .describe("Prompt text for findSimilarPastRuns (fuzzy match)"),
+    intentType: z
+      .string()
+      .optional()
+      .describe("Intent type for findOptimalPanel (e.g. 'billing', 'support')"),
+    sessionId: z
+      .string()
+      .optional()
+      .describe("Session ID for telemetry logging"),
   }),
 
-  execute: async ({ entity_type, name, domain, related_to, limit }): Promise<KnowledgeResult> => {
+  execute: async ({
+    queryType,
+    entity_type,
+    name,
+    domain,
+    related_to,
+    limit,
+    intentText,
+    playbookSlug,
+    promptText,
+    intentType,
+    sessionId,
+  }): Promise<KnowledgeResult | EnhancedKnowledgeResult> => {
     const result: KnowledgeResult = {
       entities: [],
       edges: [],
@@ -141,6 +230,224 @@ Examples:
 
     try {
       const db = getDb();
+
+      // ── Phase 24: Enhanced Query Types ──────────────────────────────
+
+      // findPlaybooksByIntent: Use KG router to find matching playbooks
+      if (queryType === "findPlaybooksByIntent" && intentText) {
+        const { routeIntent } = await import("@/lib/ai/routing/kg-router");
+        const routing = await routeIntent(intentText, sessionId);
+        return {
+          playbookMatches: routing.matches.map((m) => ({
+            slug: m.slug,
+            confidence: m.confidence,
+            source: m.source,
+            evidence: m.evidence,
+            similarIntents: m.similarIntents,
+          })),
+        };
+      }
+
+      // findConnectorsByPlaybook: Find connectors linked to a playbook
+      if (queryType === "findConnectorsByPlaybook" && playbookSlug) {
+        const edgeRows = await db.execute(sql`
+          SELECT e.id, e.from_node, e.from_type, e.to_node, e.to_type,
+                 e.edge_type, e.weight,
+                 e.success_count, e.failure_count, e.confidence_score,
+                 e.last_used_at, e.cost_per_use, e.latency_ms_avg
+          FROM library_edges e
+          WHERE e.from_type = 'playbook'
+            AND e.from_node = ${playbookSlug}
+            AND e.edge_type = 'uses'
+          LIMIT ${limit}
+        `);
+
+        const connectorNames: string[] = [];
+        const edges: KnowledgeEdge[] = [];
+        for (const row of edgeRows.rows) {
+          connectorNames.push(row.to_node as string);
+          edges.push({
+            id: row.id as string,
+            from: row.from_node as string,
+            fromType: row.from_type as string,
+            to: row.to_node as string,
+            toType: row.to_type as string,
+            type: row.edge_type as string,
+            weight: (row.weight as number) || 1,
+            successCount: (row.success_count as number) || 0,
+            failureCount: (row.failure_count as number) || 0,
+            confidenceScore: (row.confidence_score as number) || 0.5,
+            lastUsedAt: row.last_used_at as string | undefined,
+            costPerUse: row.cost_per_use as number | undefined,
+            latencyMsAvg: row.latency_ms_avg as number | undefined,
+          });
+        }
+
+        // Fetch the connector entities
+        let entities: KnowledgeEntity[] = [];
+        if (connectorNames.length > 0) {
+          const placeholders = connectorNames
+            .map((_, i) => `$${i + 1}`)
+            .join(", ");
+          const connRows = await db.execute(
+            sql.raw(
+              `SELECT * FROM library_connectors WHERE name IN (${placeholders})`,
+              ...connectorNames
+            )
+          );
+
+          // Can't easily use parameterized IN clauses with drizzle sql template,
+          // so fetch all matching connectors individually
+          for (const name of connectorNames) {
+            const matchRows = await db.execute(sql`
+              SELECT * FROM library_connectors WHERE name = ${name} LIMIT 1
+            `);
+            for (const r of matchRows.rows) {
+              entities.push({
+                id: `connector:${r.name}`,
+                type: "connector",
+                name: r.name as string,
+                label: (r.name as string)
+                  .replace(/-/g, " ")
+                  .replace(/\b\w/g, (ch: string) => ch.toUpperCase()),
+                metadata: {
+                  description: r.description as string,
+                  mcpEnabled: r.mcp_enabled as boolean,
+                  tools: r.tools as number,
+                  toolNames: r.tool_names as string[],
+                  alsoIn: r.also_in as string[],
+                  domain: r.primary_domain as string,
+                },
+              });
+            }
+          }
+        }
+
+        return { connectors: entities, edges };
+      }
+
+      // findSimilarPastRuns: Fuzzy match on prompt text
+      if (queryType === "findSimilarPastRuns" && promptText) {
+        const searchTerms = promptText
+          .split(/\s+/)
+          .filter((t) => t.length > 2)
+          .map((t) => t.replace(/[%_]/g, "\\$&"))
+          .slice(0, 5);
+
+        const pastRuns: PastRunMatch[] = [];
+
+        // Query panel runs with LIKE matching
+        if (searchTerms.length > 0) {
+          const likeConditions = searchTerms
+            .map((term) => `ta_text ILIKE '%${term}%'`)
+            .join(" OR ");
+
+          const runRows = await db.execute(sql.raw(`
+            SELECT pr.id, pr.preset_name, pr.status, pr.execution_mode,
+                   pr.task_analysis->>'reasoning' AS ta_text,
+                   pr.created_at
+            FROM library_panel_runs pr
+            WHERE pr.task_analysis IS NOT NULL
+              AND (${likeConditions})
+            ORDER BY pr.created_at DESC
+            LIMIT ${limit}
+          `));
+
+          for (const row of runRows.rows) {
+            const taText = (row.ta_text as string) || "";
+            const similarity = searchTerms.filter((t) =>
+              taText.toLowerCase().includes(t.toLowerCase())
+            ).length / searchTerms.length;
+
+            pastRuns.push({
+              id: row.id as string,
+              presetName: row.preset_name as string,
+              status: row.status as string,
+              mode: row.execution_mode as string,
+              promptPreview: taText.slice(0, 200),
+              createdAt: row.created_at as string,
+              similarity,
+            });
+          }
+        }
+
+        // Also query playbook usage for similar intents
+        if (searchTerms.length > 0) {
+          const usageRows = await db.execute(sql`
+            SELECT id::text, playbook_slug, intent_text, success, created_at
+            FROM library_playbook_usage
+            WHERE intent_text IS NOT NULL
+            ORDER BY created_at DESC
+            LIMIT ${limit}
+          `);
+
+          for (const row of usageRows.rows) {
+            const intent = (row.intent_text as string) || "";
+            const similarity = searchTerms.filter((t) =>
+              intent.toLowerCase().includes(t.toLowerCase())
+            ).length / searchTerms.length;
+
+            if (similarity > 0.1) {
+              pastRuns.push({
+                id: `usage:${row.id}`,
+                presetName: row.playbook_slug as string,
+                status: row.success ? "success" : "failed",
+                mode: "playbook_usage",
+                promptPreview: intent.slice(0, 200),
+                createdAt: row.created_at as string,
+                similarity,
+              });
+            }
+          }
+        }
+
+        // Sort by similarity descending
+        pastRuns.sort((a, b) => b.similarity - a.similarity);
+
+        return { pastRuns: pastRuns.slice(0, limit) };
+      }
+
+      // findOptimalPanel: Find best panel preset by success rate
+      if (queryType === "findOptimalPanel") {
+        const runRows = await db.execute(sql`
+          SELECT
+            pr.preset_id,
+            pr.preset_name,
+            COUNT(*) AS total_runs,
+            SUM(CASE WHEN pr.status = 'completed' THEN 1 ELSE 0 END) AS completed_count,
+            SUM(CASE WHEN pr.status = 'failed' THEN 1 ELSE 0 END) AS failed_count,
+            AVG(pr.total_latency_ms) AS avg_latency_ms,
+            AVG(pr.total_cost) AS avg_cost
+          FROM library_panel_runs pr
+          WHERE pr.preset_id IS NOT NULL
+            ${intentType ? sql`AND pr.execution_mode = ${intentType}` : sql``}
+          GROUP BY pr.preset_id, pr.preset_name
+          ORDER BY
+            CASE WHEN COUNT(*) > 0
+              THEN SUM(CASE WHEN pr.status = 'completed' THEN 1 ELSE 0 END)::float / COUNT(*)
+              ELSE 0
+            END DESC
+          LIMIT ${limit}
+        `);
+
+        const optimalPanels: OptimalPanelResult[] = [];
+        for (const row of runRows.rows) {
+          const total = (row.total_runs as number) || 0;
+          const completed = (row.completed_count as number) || 0;
+          optimalPanels.push({
+            presetId: row.preset_id as string,
+            presetName: row.preset_name as string,
+            totalRuns: total,
+            successRate: total > 0 ? completed / total : 0,
+            avgLatencyMs: (row.avg_latency_ms as number) || 0,
+            avgCost: (row.avg_cost as number) || 0,
+          });
+        }
+
+        return { optimalPanel: optimalPanels };
+      }
+
+      // ── Existing entity queries ────────────────────────────────────────
       const entities: KnowledgeEntity[] = [];
       const edges: KnowledgeEdge[] = [];
 

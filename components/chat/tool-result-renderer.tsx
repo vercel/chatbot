@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { CodeBlock } from "@/components/ai-elements/code-block";
 import { initConnectors } from "@/lib/connectors/init";
 import { getConnector } from "@/lib/connectors/registry";
+import { CardRouter } from "@/components/generative/card-router";
 
 interface ToolPart {
   type: string;
@@ -41,6 +42,20 @@ export function ToolResultRenderer({ part }: ToolResultRendererProps) {
 
     if (Renderer) {
       return <Renderer output={output} />;
+    }
+  }
+
+  // Phase 24: Route connector card outputs through UniversalConnectorCard
+  if (typeof output === "object" && output !== null) {
+    const cardOutput = output as Record<string, unknown>;
+    if (cardOutput.connector && cardOutput.type && cardOutput.data) {
+      const card = (
+        <CardRouter
+          toolName={toolName}
+          output={cardOutput as { connector: string; type: string; data: Record<string, unknown> }}
+        />
+      );
+      if (card) return card;
     }
   }
 

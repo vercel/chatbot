@@ -1,6 +1,7 @@
 playbook: billing
 organization: newleaf-financial
 version: "2.0.0"
+description: Payment processing, subscription management, decline recovery, and NMI vault operations
 requires:
   connectors: [nmi, hyperswitch, base44, slack]
   skills: [nmi-connector, base44-connector]

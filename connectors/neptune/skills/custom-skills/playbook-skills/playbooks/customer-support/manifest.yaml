@@ -1,6 +1,7 @@
-playbook: support
+playbook: customer-support
 organization: newleaf-financial
 version: "2.0.0"
+description: Customer 360 lookup, ticket triage, escalation management, and Vapi call routing
 requires:
   connectors: [base44, slack, vapi]
   skills: [base44-connector, vapi-connector]

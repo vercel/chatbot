@@ -1,0 +1,33 @@
+{
+  "connector": "vapi",
+  "icon": "📞",
+  "accentColor": "#8b5cf6",
+  "cardTypes": {
+    "call": {
+      "inline": {
+        "fields": ["customer", "status", "duration", "outcome"],
+        "badges": ["status", "outcome"],
+        "layout": "compact-call"
+      },
+      "expanded": {
+        "sections": ["details", "transcript", "outcome", "cost"]
+      },
+      "canvas": {
+        "sections": ["fullTranscript", "analysis", "customer", "timeline"]
+      }
+    },
+    "assistant": {
+      "inline": {
+        "fields": ["name", "model", "voice"],
+        "badges": ["model"],
+        "layout": "compact-assistant"
+      },
+      "expanded": {
+        "sections": ["configuration", "prompts", "recentCalls"]
+      },
+      "canvas": {
+        "sections": ["fullConfig", "analytics", "calls"]
+      }
+    }
+  }
+}

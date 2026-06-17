@@ -1,0 +1,97 @@
+connector: nmi
+tools:
+  - name: charge
+    action: sale
+    description: Execute a sale transaction (CIT or MIT)
+    params:
+      - customer_vault_id: string (required)
+      - amount: number (required)
+      - card_auth: number (1 for CIT, 0 for MIT)
+      - dup_seconds: number (0 for validate, omit for MIT)
+    returns:
+      transaction_id: string
+      response_code: number
+      response_text: string
+
+  - name: validate
+    action: validate
+    description: Validate card without charging
+    params:
+      - customer_vault_id: string (required)
+      - card_auth: number (must be 1)
+      - dup_seconds: number (must be 0)
+    returns:
+      valid: boolean
+      response_code: number
+
+  - name: refund
+    action: refund
+    description: Refund a prior transaction
+    params:
+      - transaction_id: string (required)
+      - amount: number (optional, full refund if omitted)
+    returns:
+      refund_id: string
+      response_code: number
+
+  - name: void
+    action: void
+    description: Void a same-day unsettled transaction
+    params:
+      - transaction_id: string (required)
+    returns:
+      response_code: number
+
+  - name: vault_create
+    action: vault_create
+    description: Create a new customer vault entry
+    params:
+      - customer_id: string (required)
+      - card_number: string (required)
+      - cvv: string (required for CIT)
+    returns:
+      customer_vault_id: string
+
+  - name: vault_update
+    action: vault_update
+    description: Update vault card details
+    params:
+      - customer_vault_id: string (required)
+      - fields: object (card_number, expiry, etc.)
+    returns:
+      updated: boolean
+
+  - name: vault_query
+    action: customer_vault_query
+    description: Query customer vault status
+    params:
+      - customer_vault_id: string (required)
+    returns:
+      vault_status: object
+      cards_on_file: array
+
+  - name: subscription_create
+    action: subscription_create
+    description: Create recurring subscription
+    params:
+      - customer_vault_id: string
+      - amount: number
+      - interval: string (monthly/weekly/yearly)
+    returns:
+      subscription_id: string
+
+  - name: subscription_cancel
+    action: subscription_cancel
+    description: Cancel active subscription
+    params:
+      - subscription_id: string (required)
+    returns:
+      cancelled: boolean
+
+  - name: transaction_query
+    action: transaction_query
+    description: Query transaction details
+    params:
+      - transaction_id: string
+    returns:
+      transaction: object

@@ -359,6 +359,7 @@ export async function POST(request: Request) {
               "spawnCodingAgent",
               "planSession",
               "swarmDispatch",
+              "graphQuery",
               ...mcpToolNames,
             ];
 

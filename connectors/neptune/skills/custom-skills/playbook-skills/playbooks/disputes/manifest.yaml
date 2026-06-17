@@ -1,6 +1,7 @@
 playbook: disputes
 organization: newleaf-financial
 version: "2.0.0"
+description: Credit report dispute management, FCRA compliance, bureau letters, and round tracking
 requires:
   connectors: [forth, base44, slack, affy]
   skills: [forth-connector]

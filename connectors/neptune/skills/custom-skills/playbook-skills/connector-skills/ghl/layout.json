@@ -1,0 +1,46 @@
+{
+  "connector": "ghl",
+  "icon": "📊",
+  "accentColor": "#0073e6",
+  "cardTypes": {
+    "message": {
+      "inline": {
+        "fields": ["contact", "type", "preview", "sentAt"],
+        "badges": ["type", "status"],
+        "layout": "compact-message"
+      },
+      "expanded": {
+        "sections": ["fullMessage", "contactDetails", "history"]
+      },
+      "canvas": {
+        "sections": ["conversation", "contact", "timeline"]
+      }
+    },
+    "contact": {
+      "inline": {
+        "fields": ["name", "email", "phone", "tags"],
+        "badges": ["tags", "leadScore"],
+        "layout": "compact-contact"
+      },
+      "expanded": {
+        "sections": ["details", "pipeline", "interactions", "notes"]
+      },
+      "canvas": {
+        "sections": ["profile", "pipeline", "history", "automations"]
+      }
+    },
+    "conversation": {
+      "inline": {
+        "fields": ["contact", "channel", "lastMessage", "unread"],
+        "badges": ["channel", "unread"],
+        "layout": "compact-conversation"
+      },
+      "expanded": {
+        "sections": ["messages", "contact", "attachments"]
+      },
+      "canvas": {
+        "sections": ["fullThread", "contact", "timeline"]
+      }
+    }
+  }
+}

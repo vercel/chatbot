@@ -1,0 +1,33 @@
+{
+  "connector": "freshcaller",
+  "icon": "🎧",
+  "accentColor": "#06b6d4",
+  "cardTypes": {
+    "call": {
+      "inline": {
+        "fields": ["customer", "agent", "duration", "disposition"],
+        "badges": ["disposition"],
+        "layout": "compact-call"
+      },
+      "expanded": {
+        "sections": ["details", "recording", "notes", "followUp"]
+      },
+      "canvas": {
+        "sections": ["transcript", "customer", "agent", "timeline"]
+      }
+    },
+    "agent": {
+      "inline": {
+        "fields": ["name", "status", "queue"],
+        "badges": ["status"],
+        "layout": "compact-agent"
+      },
+      "expanded": {
+        "sections": ["details", "recentCalls", "performance"]
+      },
+      "canvas": {
+        "sections": ["profile", "metrics", "schedule"]
+      }
+    }
+  }
+}

@@ -9,7 +9,13 @@
  * Uses heuristic pattern matching + keyword signals.
  */
 
-import type { PanelMode, TaskAnalysis, TaskScope, TaskType } from "./types";
+import type {
+  ConsensusInfo,
+  PanelMode,
+  TaskAnalysis,
+  TaskScope,
+  TaskType,
+} from "./types";
 
 // ── Heuristic Detection ──────────────────────────────────────────────
 
@@ -179,4 +185,107 @@ export function isQuestion(prompt: string): boolean {
       prompt
     )
   );
+}
+
+// ── Phase 24: 3-Source Consensus Task Analysis ───────────────────────────
+
+/**
+ * Phase 24: 3-Source Consensus Task Analysis
+ *
+ * Source 1: Heuristic regex (existing analyzeTask)
+ * Source 2: KG router query (routeIntent)
+ * Source 3: LLM classifier (optional, cheap model via gateway)
+ *
+ * Returns consensus with confidence weighted by source agreement.
+ */
+export async function analyzeTaskWithKG(
+  message: string,
+  sessionId?: string,
+  options?: { useLLM?: boolean }
+): Promise<TaskAnalysis & { consensus: ConsensusInfo }> {
+  // Source 1: Heuristic
+  const heuristicResult = analyzeTask(message);
+
+  // Source 2: KG router
+  let kgResult: { primaryMode?: PanelMode; confidence: number } = {
+    confidence: 0,
+  };
+  try {
+    const { routeIntent } = await import("@/lib/ai/routing/kg-router");
+    const routing = await routeIntent(message, sessionId);
+    // Map playbook to mode based on playbook type
+    if (routing.primary) {
+      const slug = routing.primary.slug;
+      // Execution-heavy playbooks -> swarm, analysis-heavy -> council, mixed -> hybrid
+      if (["engineering", "deploy", "vps-ops", "billing"].includes(slug)) {
+        kgResult.primaryMode = "swarm";
+      } else if (
+        ["planning", "reporting", "research"].includes(slug)
+      ) {
+        kgResult.primaryMode = "council";
+      } else if (
+        ["disputes", "customer-support"].includes(slug)
+      ) {
+        kgResult.primaryMode = "hybrid";
+      }
+      kgResult.confidence = routing.primary.confidence;
+    }
+  } catch (err) {
+    console.warn(
+      "[task-analyzer] KG routing failed, using heuristic only:",
+      (err as Error).message
+    );
+  }
+
+  // Consensus: if KG agrees with heuristic, boost confidence
+  let consensusMode = heuristicResult.recommendedMode;
+  let consensusConfidence = heuristicResult.confidence ?? 0.7;
+
+  if (
+    kgResult.primaryMode &&
+    kgResult.primaryMode === heuristicResult.recommendedMode
+  ) {
+    // Agreement: boost confidence
+    consensusConfidence = Math.min(
+      (consensusConfidence + kgResult.confidence) / 2 + 0.1,
+      1.0
+    );
+  } else if (kgResult.primaryMode && kgResult.confidence > 0.6) {
+    // KG overrides heuristic with high confidence
+    consensusMode = kgResult.primaryMode;
+    consensusConfidence = kgResult.confidence;
+  }
+
+  const agreement: "full" | "partial" | "none" =
+    kgResult.primaryMode === heuristicResult.recommendedMode
+      ? "full"
+      : kgResult.primaryMode
+        ? "partial"
+        : "none";
+
+  return {
+    ...heuristicResult,
+    recommendedMode: consensusMode,
+    confidence: consensusConfidence,
+    consensus: {
+      sources: {
+        heuristic: {
+          mode: heuristicResult.recommendedMode,
+          confidence: heuristicResult.confidence ?? 0.7,
+        },
+        kg: {
+          mode: kgResult.primaryMode || null,
+          confidence: kgResult.confidence,
+        },
+        llm: null, // LLM classifier deferred (expensive)
+      },
+      agreement,
+      reasoning:
+        agreement === "full"
+          ? "KG and heuristic agree on mode"
+          : kgResult.confidence > 0.6
+            ? "KG routing overrides heuristic with higher confidence"
+            : "Heuristic used (KG confidence too low)",
+    },
+  };
 }

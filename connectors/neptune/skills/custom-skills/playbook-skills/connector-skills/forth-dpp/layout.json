@@ -1,0 +1,46 @@
+{
+  "connector": "forth-dpp",
+  "icon": "⚖️",
+  "accentColor": "#ef4444",
+  "cardTypes": {
+    "contact": {
+      "inline": {
+        "fields": ["name", "type", "status"],
+        "badges": ["type", "status"],
+        "layout": "compact-contact"
+      },
+      "expanded": {
+        "sections": ["details", "disputes", "communications"]
+      },
+      "canvas": {
+        "sections": ["profile", "disputeHistory", "documents"]
+      }
+    },
+    "plan": {
+      "inline": {
+        "fields": ["name", "status", "activeDisputes"],
+        "badges": ["status"],
+        "layout": "compact-plan"
+      },
+      "expanded": {
+        "sections": ["details", "disputes", "timeline"]
+      },
+      "canvas": {
+        "sections": ["overview", "disputes", "metrics"]
+      }
+    },
+    "payment": {
+      "inline": {
+        "fields": ["amount", "status", "type"],
+        "badges": ["status"],
+        "layout": "compact-payment"
+      },
+      "expanded": {
+        "sections": ["details", "plan", "receipt"]
+      },
+      "canvas": {
+        "sections": ["payment", "plan", "history"]
+      }
+    }
+  }
+}

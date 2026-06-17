@@ -20,6 +20,7 @@ import {
 import { selfCode } from "@/lib/ai/tools/self-code";
 import { loadSkill } from "@/lib/ai/tools/load-skill";
 import { queryKnowledge } from "@/lib/ai/tools/query-knowledge";
+import { graphQueryTool } from "@/lib/ai/tools/graph-query";
 
 // ── Configuration ────────────────────────────────────────────────────────
 
@@ -1518,6 +1519,8 @@ export const inlineTools = {
   controlV2Session,
   // ── U7.4 Knowledge Graph Gatekeeper (Pattern A+2, 8th tool) ──
   queryKnowledge,
+  // ── Phase 24: Visual KG Explorer slash command ──
+  graphQuery: graphQueryTool,
   // ── Legacy Integration Discovery ──
   listIntegrations,
 };
@@ -1551,6 +1554,8 @@ export const TOOL_REQUIREMENTS: Record<string, string[]> = {
   controlV2Session: [],
   // ── U7.4 Knowledge Graph Gatekeeper ──
   queryKnowledge: ["POSTGRES_URL"],
+  // ── Phase 24: Visual KG Explorer slash command ──
+  graphQuery: ["POSTGRES_URL"],
   // ── Legacy Integration Discovery ──
   listIntegrations: [],
 };
@@ -1619,6 +1624,7 @@ export const GATEKEEPER_TOOL_NAMES = [
   "selfCode",
   "runWorkflow",   // U2.1.D: 7th gatekeeper tool — U3.6 Workflow Engine
   "queryKnowledge", // U7.4: 8th gatekeeper tool — Postgres KG query (Pattern A+2 documented exception)
+  "graphQuery",     // Phase 24: 9th gatekeeper tool — Visual KG explorer slash command
 ];
 
 /**

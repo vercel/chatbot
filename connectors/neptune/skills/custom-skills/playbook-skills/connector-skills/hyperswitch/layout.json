@@ -1,0 +1,46 @@
+{
+  "connector": "hyperswitch",
+  "icon": "🔄",
+  "accentColor": "#f59e0b",
+  "cardTypes": {
+    "payment": {
+      "inline": {
+        "fields": ["amount", "status", "method"],
+        "badges": ["status", "method"],
+        "layout": "compact-payment"
+      },
+      "expanded": {
+        "sections": ["details", "customer", "timeline"]
+      },
+      "canvas": {
+        "sections": ["lifecycle", "customer", "related"]
+      }
+    },
+    "refund": {
+      "inline": {
+        "fields": ["amount", "status", "originalPayment"],
+        "badges": ["status"],
+        "layout": "compact-refund"
+      },
+      "expanded": {
+        "sections": ["details", "originalPayment", "reason"]
+      },
+      "canvas": {
+        "sections": ["details", "payment", "timeline"]
+      }
+    },
+    "payment_link": {
+      "inline": {
+        "fields": ["amount", "status", "expiry", "description"],
+        "badges": ["status"],
+        "layout": "compact-link"
+      },
+      "expanded": {
+        "sections": ["link", "details", "customer", "expiry"]
+      },
+      "canvas": {
+        "sections": ["linkPreview", "customer", "analytics"]
+      }
+    }
+  }
+}

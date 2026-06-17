@@ -30,8 +30,10 @@ let _playbookOS: any = null;
 async function getPlaybookOS(): Promise<any> {
   if (_playbookOS) return _playbookOS;
   try {
-    // @ts-expect-error - optional @playbook-os/sdk package, linked via pnpm
-    const { PlaybookOS } = await import('@playbook-os/sdk');
+    // Runtime eval import to prevent Turbopack from tracing @playbook-os/sdk (not in npm)
+    const sdkUrl = '@playbook-os/sdk';
+    const sdkModule = await (0, eval)(`import('${sdkUrl}')`);
+    const { PlaybookOS } = sdkModule;
     _playbookOS = new PlaybookOS({
       repoPath: process.env.PLAYBOOK_OS_REPO_PATH || '/home/neptune/playbook-os',
       agent: 'neptune-chat',

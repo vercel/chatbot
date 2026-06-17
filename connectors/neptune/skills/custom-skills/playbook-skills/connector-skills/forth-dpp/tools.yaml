@@ -1,0 +1,31 @@
+connector: forth-dpp
+tools:
+  - name: generate_letter
+    action: letters/generate
+    description: Generate dispute letter for bureau
+    params:
+      - customer_id: string (required)
+      - dispute_round_id: string (required)
+      - bureau: string (equifax/experian/transunion)
+      - items: array of negative items
+      - reason_code: string
+    returns:
+      letter_id: string
+
+  - name: get_letter_status
+    action: letters/status
+    description: Check letter generation/delivery status
+    params:
+      - letter_id: string (required)
+    returns:
+      status: string
+      tracking: object
+
+  - name: track_dispute
+    action: disputes/track
+    description: Track dispute round progress
+    params:
+      - dispute_round_id: string (required)
+    returns:
+      round: object
+      bureau_responses: array

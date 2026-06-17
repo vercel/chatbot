@@ -1,0 +1,92 @@
+connector: base44
+tools:
+  - name: entity_query
+    action: b44_query
+    description: Query entities with MongoDB-style filter
+    params:
+      - entity: string (required)
+      - filter: object
+      - sort: string
+      - limit: number
+    returns:
+      results: array
+
+  - name: entity_get
+    action: b44_get
+    description: Get single entity by ID
+    params:
+      - entity: string (required)
+      - id: string (required)
+    returns:
+      record: object
+
+  - name: entity_create
+    action: b44_create
+    description: Create entity record
+    params:
+      - entity: string (required)
+      - data: object (required)
+    returns:
+      id: string
+
+  - name: entity_update
+    action: b44_update
+    description: Update entity by ID
+    params:
+      - entity: string (required)
+      - id: string (required)
+      - data: object (required)
+    returns:
+      updated: boolean
+
+  - name: customer_360
+    action: b44_customer_360
+    description: Complete customer dossier
+    params:
+      - customerId: string
+      - email: string
+      - phone: string
+    returns:
+      profile: object
+      payments: array
+      tickets: array
+
+  - name: cross_system_lookup
+    action: cross_system_lookup
+    description: Full cross-system customer lookup
+    params:
+      - identifier: string (required)
+      - identifier_type: string (required)
+    returns:
+      profile: object
+      nmi_txns: array
+      slack: array
+      tickets: array
+
+  - name: reporting_hub
+    action: reportingHubQuery
+    description: Operational reporting
+    params:
+      - action: string (required)
+      - params: object
+    returns:
+      report: object
+
+  - name: b44_aggregate
+    action: b44_aggregate
+    description: Server-side aggregation
+    params:
+      - entity: string (required)
+      - groupByField: string (required)
+      - filter: object
+    returns:
+      groups: array
+
+  - name: b44_count
+    action: b44_count
+    description: True paginated count
+    params:
+      - entity: string (required)
+      - filter: object
+    returns:
+      count: number

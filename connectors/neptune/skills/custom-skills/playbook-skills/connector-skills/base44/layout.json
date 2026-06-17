@@ -1,0 +1,20 @@
+{
+  "connector": "base44",
+  "icon": "🗄️",
+  "accentColor": "#6366f1",
+  "cardTypes": {
+    "entity": {
+      "inline": {
+        "fields": ["entityType", "id", "summary"],
+        "badges": ["entityType"],
+        "layout": "compact-entity"
+      },
+      "expanded": {
+        "sections": ["details", "relations", "timeline"]
+      },
+      "canvas": {
+        "sections": ["fullRecord", "relations", "history"]
+      }
+    }
+  }
+}

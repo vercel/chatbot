@@ -1,0 +1,46 @@
+{
+  "connector": "nmi",
+  "icon": "💳",
+  "accentColor": "#10b981",
+  "cardTypes": {
+    "transaction": {
+      "inline": {
+        "fields": ["amount", "status", "cofIndicator", "type"],
+        "badges": ["status", "cofIndicator", "type"],
+        "layout": "compact-payment"
+      },
+      "expanded": {
+        "sections": ["details", "vault", "sourceTrail", "timeline"]
+      },
+      "canvas": {
+        "sections": ["lifecycle", "relatedTxns", "customer", "subscription"]
+      }
+    },
+    "subscription": {
+      "inline": {
+        "fields": ["amount", "interval", "status", "nextBillingDate"],
+        "badges": ["status", "interval"],
+        "layout": "compact-subscription"
+      },
+      "expanded": {
+        "sections": ["details", "history", "paymentMethod", "upcoming"]
+      },
+      "canvas": {
+        "sections": ["lifecycle", "payments", "customer", "metrics"]
+      }
+    },
+    "vault": {
+      "inline": {
+        "fields": ["cardType", "lastFour", "expiry", "status"],
+        "badges": ["cardType", "status", "cofIndicator"],
+        "layout": "compact-vault"
+      },
+      "expanded": {
+        "sections": ["cardDetails", "consentHistory", "linkedSubscriptions", "recentCharges"]
+      },
+      "canvas": {
+        "sections": ["fullCardInfo", "transactionHistory", "customer", "subscriptions"]
+      }
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "connector": "slack",
+  "icon": "💬",
+  "accentColor": "#4A154B",
+  "cardTypes": {
+    "thread": {
+      "inline": {
+        "fields": ["channel", "author", "preview", "timestamp"],
+        "badges": ["channel"],
+        "layout": "compact-message"
+      },
+      "expanded": {
+        "sections": ["fullMessage", "replies", "reactions", "attachments"]
+      },
+      "canvas": {
+        "sections": ["context", "participants", "timeline"]
+      }
+    },
+    "message": {
+      "inline": {
+        "fields": ["channel", "author", "preview", "timestamp"],
+        "badges": ["channel", "reactions"],
+        "layout": "compact-message"
+      },
+      "expanded": {
+        "sections": ["fullMessage", "reactions", "threadReplies", "attachments"]
+      },
+      "canvas": {
+        "sections": ["message", "related", "timeline"]
+      }
+    },
+    "channel": {
+      "inline": {
+        "fields": ["name", "topic", "memberCount", "lastActivity"],
+        "badges": ["isPrivate"],
+        "layout": "compact-channel"
+      },
+      "expanded": {
+        "sections": ["topic", "purpose", "recentMessages", "members"]
+      },
+      "canvas": {
+        "sections": ["activity", "members", "integrations"]
+      }
+    }
+  }
+}

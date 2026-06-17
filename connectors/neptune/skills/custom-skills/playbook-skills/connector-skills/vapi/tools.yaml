@@ -1,0 +1,36 @@
+connector: vapi
+tools:
+  - name: start_call
+    action: call/start
+    description: Initiate an outbound AI call
+    params:
+      - customer_id: string (required)
+      - phone: string (required)
+      - assistant_id: string
+      - first_message: string
+    returns:
+      call_id: string
+
+  - name: get_call
+    action: call/get
+    description: Get call details and status
+    params:
+      - call_id: string (required)
+    returns:
+      call: object
+
+  - name: get_transcript
+    action: call/transcript
+    description: Retrieve call transcript
+    params:
+      - call_id: string (required)
+    returns:
+      transcript: string
+
+  - name: end_call
+    action: call/end
+    description: End active call
+    params:
+      - call_id: string (required)
+    returns:
+      ended: boolean

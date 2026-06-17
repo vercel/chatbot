@@ -1,6 +1,7 @@
 playbook: planning
 organization: newleaf-financial
 version: "2.0.0"
+description: PRD drafting, architecture design, mission dispatch, gap analysis, and deep research workflows
 requires:
   connectors: [github, base44, wiki, slack, neptune]
   skills: [deep-research, draft-prd, draft-trd, draft-impl-plan, gap-analysis, architecture-diagrammer, cardinal-rules-extract, source-synthesis, mission-dispatcher, workflow-designer, save-to-cortex]

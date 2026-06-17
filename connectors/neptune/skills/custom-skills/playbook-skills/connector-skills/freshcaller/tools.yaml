@@ -1,0 +1,26 @@
+connector: freshcaller
+tools:
+  - name: get_call
+    action: calls/get
+    description: Get call details
+    params:
+      - call_id: string (required)
+    returns:
+      call: object
+
+  - name: list_calls
+    action: calls/list
+    description: List recent calls
+    params:
+      - customer_id: string
+      - limit: number (default 50)
+    returns:
+      calls: array
+
+  - name: get_agent
+    action: agents/get
+    description: Get agent details and status
+    params:
+      - agent_id: string (required)
+    returns:
+      agent: object

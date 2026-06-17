@@ -15,6 +15,7 @@ import {
   FileTextIcon,
   FolderGit2Icon,
   LayersIcon,
+  NetworkIcon,
   PlugIcon,
   SparklesIcon,
   TargetIcon,
@@ -118,6 +119,12 @@ const LIBRARY_SECTIONS = [
     label: "Knowledge",
     icon: BookOpenIcon,
     href: "/knowledge",
+  },
+  {
+    id: "graph",
+    label: "Knowledge Graph",
+    icon: NetworkIcon,
+    href: "/library/graph",
   },
 ];
 

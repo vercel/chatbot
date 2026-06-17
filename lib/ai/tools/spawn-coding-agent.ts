@@ -20,6 +20,7 @@ import { handoffToV2 } from "@/lib/v2/bridge";
 import { libraryV2Handoff } from "@/lib/db/schema";
 import { spawnV2Session } from "@/lib/v2/handoff-client";
 import { generateUUID } from "@/lib/utils";
+import { routeIntent } from "@/lib/ai/routing/kg-router";
 
 const dbClient = postgres(process.env.POSTGRES_URL ?? "");
 const db = drizzle(dbClient);
@@ -130,7 +131,8 @@ export const spawnCodingAgent = tool({
   description:
     "Hand off a complex multi-step coding task to Neptune V2 long-running agent. " +
     "Modes: 'modify_existing' (V2 sandbox), 'new_project' (GitHub + Vercel), 'investigation' (deep analysis). " +
-    "Sessions are visible at /library/handoffs.",
+    "Enriches context with KG playbook insights, conversation history, and panel preset metadata. " +
+    "Retries with 2s backoff on transient V2 failures. Sessions are visible at /library/handoffs.",
   inputSchema: z.object({
     mode: z.enum(["modify_existing", "new_project", "investigation"]).default("modify_existing")
       .describe("Operation mode"),
@@ -147,9 +149,42 @@ export const spawnCodingAgent = tool({
     sessionId: z.string().optional().describe("Existing v2 session ID to resume"),
     skills: z.array(z.string()).optional().describe("Skill names to inject into V2 prompt"),
   }),
-  execute: async (params) => {
+  execute: async (params, { toolCallId, messages }) => {
     try {
       const mode = params.mode || "modify_existing";
+      const userGoal = params.goal;
+
+      // Phase 24: KG Insights — enrich handoff with playbook routing context
+      let kgInsights: {
+        primaryPlaybook: string | null;
+        confidence: number;
+        topMatches: string[];
+        queryTimeMs: number;
+      } | null = null;
+      try {
+        const routing = await routeIntent(userGoal, params.sessionId);
+        kgInsights = {
+          primaryPlaybook: routing.primary?.slug ?? null,
+          confidence: routing.primary?.confidence ?? 0,
+          topMatches: routing.matches.slice(0, 3).map((m) => m.slug),
+          queryTimeMs: routing.queryTimeMs,
+        };
+        console.log(`[spawnCodingAgent] KG insights: primary=${kgInsights.primaryPlaybook} confidence=${kgInsights.confidence}`);
+      } catch (kgErr) {
+        console.warn("[spawnCodingAgent] KG insights unavailable (non-critical):", (kgErr as Error).message);
+      }
+
+      // Phase 24: Last 5 messages from conversation context
+      let lastMessages: unknown[] = [];
+      try {
+        const allMessages = messages || [];
+        lastMessages = allMessages.slice(-5).map((m: { role: string; content: string }) => ({
+          role: m.role,
+          content: typeof m.content === "string" ? m.content.slice(0, 500) : "[complex content]",
+        }));
+      } catch {
+        lastMessages = [];
+      }
 
       // Validate tokens
       const tokenStatus = checkTokens(mode);
@@ -176,44 +211,103 @@ export const spawnCodingAgent = tool({
           };
         }
 
-        // Try V2 handoff via direct client
+        // Phase 24: Build enriched handoff context
+        const handoffContext = {
+          goal,
+          mode,
+          targetRepo: `${repoOwner}/${repoName || "unknown"}`,
+          branch: baseBranch || "main",
+          baseCommit: (params as Record<string, unknown>).baseCommit || null,
+          conversationContext: lastMessages,
+          panelPreset: (params as Record<string, unknown>).panelPreset || null,
+          kgInsights,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Phase 24: V2 handoff with retry (1 retry with 2s backoff)
         let v2SessionId = "";
         let streamUrl = "";
+        let handoffAttempts = 0;
 
-        try {
-          const v2Result = await spawnV2Session({
-            goal,
-            mode,
-            targetRepo: repoName ? `${repoOwner}/${repoName}` : undefined,
-            context: { baseBranch, createPR, deployToVercel },
-          });
+        const attemptHandoff = async (): Promise<{ sessionId: string; streamUrl: string } | null> => {
+          handoffAttempts++;
 
-          if (v2Result.success && v2Result.sessionId) {
-            v2SessionId = v2Result.sessionId;
-            streamUrl = v2Result.streamUrl || "";
-          }
-        } catch (v2Err) {
-          console.warn("[spawnCodingAgent] Direct V2 client failed, trying bridge:", (v2Err as Error).message);
-        }
-
-        // Fallback: V2 bridge
-        if (!v2SessionId) {
-          const context = `Repository: ${repoOwner}/${repoName || "unknown"}\nBase branch: ${baseBranch || "main"}`;
-          const handoffResult = await handoffToV2(goal, context, "deepseek-v4-pro", sessionId);
-          if (!handoffResult.success) {
-            return {
-              success: false,
-              error: {
-                code: "V2_HANDOFF_FAILED",
-                message: handoffResult.error || "V2 unreachable",
-                retryable: true,
-                suggestion: "V2 backend may be temporarily down. Try again or use sandbox tools.",
+          // Try direct V2 client
+          try {
+            const v2Result = await spawnV2Session({
+              goal,
+              mode,
+              targetRepo: repoName ? `${repoOwner}/${repoName}` : undefined,
+              context: {
+                baseBranch,
+                createPR,
+                deployToVercel,
+                handoffContext,
               },
-            };
+            });
+
+            if (v2Result.success && v2Result.sessionId) {
+              console.log(`[spawnCodingAgent] Direct V2 client success (attempt ${handoffAttempts})`);
+              return { sessionId: v2Result.sessionId, streamUrl: v2Result.streamUrl || "" };
+            }
+
+            if (v2Result.code === "V2_UNREACHABLE" && handoffAttempts < 2) {
+              console.warn(`[spawnCodingAgent] V2 unreachable, will retry with backoff...`);
+              return null;
+            }
+          } catch (v2Err) {
+            console.warn("[spawnCodingAgent] Direct V2 client threw:", (v2Err as Error).message);
           }
-          v2SessionId = handoffResult.sessionId || "";
-          streamUrl = handoffResult.sseUrl || "";
+
+          // Fallback: V2 bridge
+          try {
+            const contextStr = `Repository: ${repoOwner}/${repoName || "unknown"}
+Base branch: ${baseBranch || "main"}
+KG Insights: ${kgInsights?.primaryPlaybook || "none"} (confidence: ${kgInsights?.confidence ?? 0})
+Last messages: ${lastMessages.length} messages in context`;
+
+            const handoffResult = await handoffToV2(goal, contextStr, "deepseek-v4-pro", sessionId);
+            if (handoffResult.success) {
+              console.log(`[spawnCodingAgent] V2 bridge success (attempt ${handoffAttempts})`);
+              return { sessionId: handoffResult.sessionId || "", streamUrl: handoffResult.sseUrl || "" };
+            }
+
+            if (handoffAttempts < 2) {
+              console.warn(`[spawnCodingAgent] V2 bridge failed, retrying in 2s...`);
+              return null;
+            }
+
+            console.error(`[spawnCodingAgent] All handoff attempts exhausted`);
+            return null;
+          } catch (bridgeErr) {
+            console.error("[spawnCodingAgent] Bridge threw:", (bridgeErr as Error).message);
+            return null;
+          }
+        };
+
+        // First attempt
+        let handoffResult = await attemptHandoff();
+
+        // Retry with 2s backoff
+        if (!handoffResult && handoffAttempts < 2) {
+          await new Promise((r) => setTimeout(r, 2000));
+          handoffResult = await attemptHandoff();
         }
+
+        if (!handoffResult) {
+          return {
+            success: false,
+            error: {
+              code: "V2_HANDOFF_FAILED",
+              message: `V2 unreachable after ${handoffAttempts} attempt(s)`,
+              retryable: true,
+              suggestion: "V2 backend may be temporarily down. Try again or use sandbox tools.",
+            },
+          };
+        }
+
+        v2SessionId = handoffResult.sessionId;
+        streamUrl = handoffResult.streamUrl;
 
         // Persist to library_v2_handoffs
         const dbId = generateUUID();

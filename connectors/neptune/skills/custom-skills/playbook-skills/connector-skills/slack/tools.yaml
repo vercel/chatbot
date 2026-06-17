@@ -1,0 +1,55 @@
+connector: slack
+tools:
+  - name: post_message
+    action: post_message
+    description: Post a message to a Slack channel
+    params:
+      - channel: string (required)
+      - text: string (required)
+      - blocks: array (optional, Block Kit format)
+    returns:
+      ts: string
+      channel: string
+
+  - name: post_thread
+    action: post_thread
+    description: Reply in a thread
+    params:
+      - channel: string (required)
+      - thread_ts: string (required)
+      - text: string (required)
+    returns:
+      ts: string
+
+  - name: get_channel_history
+    action: get_channel_history
+    description: Read recent messages from a channel
+    params:
+      - channel: string (required)
+      - limit: number (default 100)
+    returns:
+      messages: array
+
+  - name: get_user_info
+    action: get_user_info
+    description: Get Slack user profile
+    params:
+      - user: string (required)
+    returns:
+      user: object
+
+  - name: react
+    action: react
+    description: Add emoji reaction to message
+    params:
+      - channel: string (required)
+      - ts: string (required)
+      - reaction: string (required)
+
+  - name: update_message
+    action: update_message
+    description: Edit a previously posted message
+    params:
+      - channel: string (required)
+      - ts: string (required)
+      - text: string (required)

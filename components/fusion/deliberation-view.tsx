@@ -1,14 +1,19 @@
 "use client";
 
 /**
- * Phase 23A: Live Deliberation View
+ * Phase 24: Live Deliberation View
  *
  * Shows during active panel execution:
- *   1. Mode Banner (council/swarm/hybrid)
+ *   1. Mode Banner (ALWAYS visible — council/swarm/hybrid/single)
  *   2. Agent Status Cards (per-agent progress)
  *   3. Judge Card (synthesis status)
  *   4. Cost Meter (running cost)
  *   5. Cancel Button
+ *
+ * Phase 24 enhancements:
+ *   - ModeBanner is ALWAYS rendered (not conditionally)
+ *   - Passes confidence + reasoning from task analysis
+ *   - Handles onOverride callback for mode switching
  *
  * Subscribes to SSE events from the panel execution.
  * Animates with SPRING physics.
@@ -31,7 +36,10 @@ interface DeliberationViewProps {
   preset: PanelPreset;
   mode: PanelMode;
   onCancel?: () => void;
+  onModeOverride?: (mode: PanelMode | "single") => void;
   className?: string;
+  taskReasoning?: string;
+  taskConfidence?: number;
 }
 
 interface AgentState {
@@ -57,7 +65,10 @@ export function DeliberationView({
   preset,
   mode,
   onCancel,
+  onModeOverride,
   className,
+  taskReasoning,
+  taskConfidence,
 }: DeliberationViewProps) {
   const [agentStates, setAgentStates] = useState<AgentState[]>(
     preset.agents.map((a) => ({
@@ -73,11 +84,19 @@ export function DeliberationView({
     status: "waiting",
   });
   const [runningCost, setRunningCost] = useState(0);
+  const [currentMode, setCurrentMode] = useState<PanelMode | "single">(mode);
   const [allComplete, setAllComplete] = useState(false);
 
   // Handle panel events
   const handleEvent = useCallback((event: PanelEvent) => {
     switch (event.type) {
+      case "panel:start":
+        // Phase 24: extract confidence + reasoning from task analysis if provided
+        if (event.taskAnalysis) {
+          // confidence and reasoning are consumed via props or overridden
+        }
+        break;
+
       case "agent:start":
         setAgentStates((prev) =>
           prev.map((a) =>
@@ -144,6 +163,11 @@ export function DeliberationView({
     return () => window.removeEventListener("message", handler);
   }, [handleEvent]);
 
+  const handleOverride = useCallback((newMode: PanelMode | "single") => {
+    setCurrentMode(newMode);
+    onModeOverride?.(newMode);
+  }, [onModeOverride]);
+
   return (
     <motion.div
       className={cn(
@@ -153,11 +177,14 @@ export function DeliberationView({
       )}
       {...FADE_UP}
     >
-      {/* Mode Banner */}
+      {/* Phase 24: Mode Banner — ALWAYS visible, not conditionally */}
       <ModeBanner
-        agentCount={preset.agents.length}
-        mode={mode}
+        mode={currentMode}
         presetName={preset.name}
+        agentCount={preset.agents.length}
+        confidence={taskConfidence ?? (currentMode === mode ? undefined : 1.0)}
+        reasoning={taskReasoning}
+        onOverride={handleOverride}
       />
 
       {/* Agent Cards */}

@@ -57,6 +57,7 @@ export interface TaskAnalysis {
   requiresDecomposition: boolean;
   estimatedSubTasks: number;
   recommendedMode: PanelMode;
+  confidence?: number; // Phase 24: 0.0–1.0 confidence from source consensus
   reasoning: string;
 }
 
@@ -225,4 +226,21 @@ export interface FusionUserPreferences {
   mode: "model" | "panel";
   selectedPresetId: string;
   modeOverride: PanelMode | "auto";
+}
+
+// ── Phase 24: 3-Source Consensus Types ───────────────────────────────────
+
+export interface ConsensusSource {
+  mode: PanelMode | null;
+  confidence: number;
+}
+
+export interface ConsensusInfo {
+  sources: {
+    heuristic: ConsensusSource;
+    kg: ConsensusSource;
+    llm: ConsensusSource | null;
+  };
+  agreement: "full" | "partial" | "none";
+  reasoning: string;
 }
