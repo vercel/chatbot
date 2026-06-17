@@ -1,0 +1,180 @@
+[
+  {
+    "customerId": "cust_001",
+    "name": "John Smith",
+    "phone": "+15551234567",
+    "email": "john.smith@email.com",
+    "base44": {
+      "profile": {"id": "cust_001", "firstName": "John", "lastName": "Smith", "phone": "+15551234567", "email": "john.smith@email.com"},
+      "enrollmentStatus": "active",
+      "billingStatus": "active",
+      "paymentAmount": 399,
+      "lastPayment": {"id": "pay_001", "amount": 399, "status": "success", "createdAt": "2026-06-10T00:00:00Z"},
+      "openTickets": [{"id": "ticket_001", "title": "Payment declined", "status": "open", "createdAt": "2026-06-15T00:00:00Z"}],
+      "recentCalls": [{"id": "call_001", "direction": "inbound", "duration": 420, "disposition": "follow_up_needed"}]
+    },
+    "nmi": {
+      "subscriptionId": "sub_nmi_1234",
+      "subscriptionStatus": "active",
+      "lastTransaction": {"transactionId": "txn_001", "amount": 399, "status": "success", "createdAt": "2026-06-10T00:00:00Z"},
+      "nextChargeDate": "2026-07-10T00:00:00Z",
+      "cofCompliant": true
+    },
+    "slack": {
+      "mentions": [],
+      "latestMention": null,
+      "agentsWhoMentioned": ["Alice Agent"],
+      "inferredActionRequested": "Update payment method"
+    },
+    "alignment": {
+      "base44_vs_nmi": "aligned",
+      "slack_vs_base44": "unknown",
+      "slack_vs_nmi": "unknown",
+      "flags": []
+    }
+  },
+  {
+    "customerId": "cust_002",
+    "name": "Sarah Johnson",
+    "phone": "+15559876543",
+    "email": "sarah.j@email.com",
+    "base44": {
+      "profile": {"id": "cust_002", "firstName": "Sarah", "lastName": "Johnson", "phone": "+15559876543", "email": "sarah.j@email.com"},
+      "enrollmentStatus": "active",
+      "billingStatus": "active",
+      "paymentAmount": 499,
+      "lastPayment": {"id": "pay_002", "amount": 499, "status": "success", "createdAt": "2026-06-01T00:00:00Z"},
+      "openTickets": [{"id": "ticket_002", "title": "Wrong charge amount", "status": "open", "createdAt": "2026-06-14T00:00:00Z"}],
+      "recentCalls": []
+    },
+    "nmi": {
+      "subscriptionId": "sub_nmi_5678",
+      "subscriptionStatus": "active",
+      "lastTransaction": {"transactionId": "txn_002", "amount": 499, "status": "success", "createdAt": "2026-06-01T00:00:00Z"},
+      "nextChargeDate": "2026-07-01T00:00:00Z",
+      "cofCompliant": true
+    },
+    "slack": {
+      "mentions": [],
+      "latestMention": null,
+      "agentsWhoMentioned": ["Bob Billing"],
+      "inferredActionRequested": "Billing inquiry"
+    },
+    "alignment": {
+      "base44_vs_nmi": "aligned",
+      "slack_vs_base44": "unknown",
+      "slack_vs_nmi": "unknown",
+      "flags": []
+    }
+  },
+  {
+    "customerId": "cust_003",
+    "name": "Mike Brown",
+    "phone": "+15555558842",
+    "email": "mike.brown@email.com",
+    "base44": {
+      "profile": {"id": "cust_003", "firstName": "Mike", "lastName": "Brown", "phone": "+15555558842", "email": "mike.brown@email.com"},
+      "enrollmentStatus": "cancelled",
+      "billingStatus": "cancelled",
+      "paymentAmount": 499,
+      "lastPayment": {"id": "pay_003", "amount": 499, "status": "success", "createdAt": "2026-06-03T00:00:00Z"},
+      "openTickets": [],
+      "recentCalls": []
+    },
+    "nmi": {
+      "subscriptionId": "sub_nmi_7734",
+      "subscriptionStatus": "active",
+      "lastTransaction": {"transactionId": "txn_003", "amount": 499, "status": "success", "createdAt": "2026-06-17T00:00:00Z"},
+      "nextChargeDate": "2026-07-17T00:00:00Z",
+      "cofCompliant": true
+    },
+    "slack": {
+      "mentions": [],
+      "latestMention": null,
+      "agentsWhoMentioned": ["Charlie Support", "Bob Billing", "Alice Agent"],
+      "inferredActionRequested": "Cancel subscription"
+    },
+    "alignment": {
+      "base44_vs_nmi": "misaligned",
+      "slack_vs_base44": "unknown",
+      "slack_vs_nmi": "unknown",
+      "flags": [
+        {
+          "dimension": "billing",
+          "severity": "critical",
+          "description": "Base44 shows cancelled but NMI still charging. Customer cancelled May 1st, charged $499 on June 17.",
+          "evidence": "Base44 enrollmentStatus=cancelled, NMI subscriptionStatus=active, last charge June 17",
+          "recommendation": "Immediately cancel NMI subscription sub_nmi_7734 and issue refund for June 17 charge"
+        }
+      ]
+    }
+  },
+  {
+    "customerId": "cust_004",
+    "name": "Lisa Davis",
+    "phone": "+15559876543-wrong",
+    "email": "",
+    "base44": null,
+    "nmi": {
+      "subscriptionId": null,
+      "subscriptionStatus": "none",
+      "lastTransaction": null,
+      "nextChargeDate": null,
+      "cofCompliant": false
+    },
+    "slack": {
+      "mentions": [],
+      "latestMention": null,
+      "agentsWhoMentioned": ["Alice Agent"],
+      "inferredActionRequested": "Enrollment needed"
+    },
+    "alignment": {
+      "base44_vs_nmi": "unknown",
+      "slack_vs_base44": "unknown",
+      "slack_vs_nmi": "unknown",
+      "flags": []
+    }
+  },
+  {
+    "customerId": "cust_005",
+    "name": "James Lee",
+    "phone": "+15555554242",
+    "email": "james.lee@email.com",
+    "base44": {
+      "profile": {"id": "cust_005", "firstName": "James", "lastName": "Lee", "phone": "+15555554242", "email": "james.lee@email.com"},
+      "enrollmentStatus": "active",
+      "billingStatus": "declining",
+      "paymentAmount": 399,
+      "lastPayment": {"id": "pay_005", "amount": 399, "status": "declined", "createdAt": "2026-06-14T00:00:00Z"},
+      "openTickets": [{"id": "ticket_005", "title": "Payment declined recovery", "status": "open", "createdAt": "2026-06-14T00:00:00Z", "updatedAt": "2026-06-14T00:00:00Z"}],
+      "recentCalls": []
+    },
+    "nmi": {
+      "subscriptionId": "sub_nmi_9101",
+      "subscriptionStatus": "declining",
+      "lastTransaction": {"transactionId": "txn_005", "amount": 399, "status": "declined", "createdAt": "2026-06-14T00:00:00Z"},
+      "nextChargeDate": "2026-06-21T00:00:00Z",
+      "cofCompliant": true
+    },
+    "slack": {
+      "mentions": [],
+      "latestMention": null,
+      "agentsWhoMentioned": ["Diana Disputes"],
+      "inferredActionRequested": "Update payment method"
+    },
+    "alignment": {
+      "base44_vs_nmi": "aligned",
+      "slack_vs_base44": "unknown",
+      "slack_vs_nmi": "unknown",
+      "flags": [
+        {
+          "dimension": "agent_promise",
+          "severity": "high",
+          "description": "Payment declined 72h ago, recovery task created but no action taken. Ticket still open with no updates.",
+          "evidence": "Last payment June 14 declined, ticket created June 14, no updates since",
+          "recommendation": "Escalate recovery task, attempt retry or contact customer for updated payment method"
+        }
+      ]
+    }
+  }
+]

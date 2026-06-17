@@ -12,3 +12,21 @@ export { extractCustomerMentions, normalizePhone, matchCustomer, batchMatchCusto
 
 // Caching
 export { getCached, setCache, clearCache, getCacheStats } from "./caching";
+
+// Multi-source puller
+export {
+  pullCustomerData,
+  pullBase44Customers,
+  pullNmiCustomers,
+  pullCustomerComms,
+  pullCustomerTickets,
+} from "./multi-source-puller";
+
+// Cross-reference
+export {
+  buildCustomerContext,
+  crossReference,
+  inferRequestedAction,
+  extractProfilesFromPulled,
+} from "./cross-reference";
+export type { CrossReferenceResult } from "./cross-reference";
