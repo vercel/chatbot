@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-17T01:36:05.490Z",
+  "generatedAt": "2026-06-17T01:40:06.706Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "6115805",
+  "commitSha": "f8050e6",
   "counts": {
     "connectors": 17,
-    "playbooks": 17,
+    "playbooks": 14,
     "skills": 6,
     "functions": 12,
     "workflows": 5,
@@ -145,11 +145,9 @@
       "hasPlaybookMd": true,
       "hasSkillMd": true,
       "playbooksReferencing": [
-        "deploy",
         "engineering",
         "newleaf",
-        "planning",
-        "vercel-discipline"
+        "planning"
       ]
     },
     {
@@ -213,8 +211,7 @@
       "playbooksReferencing": [
         "agent-orchestration",
         "planning",
-        "video-generation",
-        "vps-ops"
+        "video-generation"
       ]
     },
     {
@@ -258,7 +255,6 @@
         "agent-orchestration",
         "billing",
         "customer-support",
-        "deploy",
         "disputes",
         "hr",
         "newleaf",
@@ -295,9 +291,7 @@
       "hasPlaybookMd": true,
       "hasSkillMd": true,
       "playbooksReferencing": [
-        "deploy",
-        "engineering",
-        "vercel-discipline"
+        "engineering"
       ]
     },
     {
@@ -407,36 +401,6 @@
         ],
         "workflows": [
           "support-escalation"
-        ]
-      },
-      "isMeta": false
-    },
-    {
-      "name": "deploy",
-      "slug": "deploy",
-      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/deploy/",
-      "domain": "deploy",
-      "version": "\"1.0.0\"",
-      "description": "Ship features, create PRs, rollback, and diagnose stale UI",
-      "hasManifest": true,
-      "hasPlaybookMd": true,
-      "requires": {
-        "connectors": [
-          "github",
-          "vercel",
-          "slack"
-        ],
-        "skills": [
-          "vercel-discipline"
-        ],
-        "functions": [
-          "ship-feature",
-          "create-pr",
-          "rollback",
-          "diagnose-stale"
-        ],
-        "workflows": [
-          "deploy-pipeline"
         ]
       },
       "isMeta": false
@@ -748,34 +712,6 @@
       "isMeta": false
     },
     {
-      "name": "vercel-discipline",
-      "slug": "vercel-discipline",
-      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/vercel-discipline/",
-      "domain": "vercel-discipline",
-      "version": "1.0.0",
-      "description": "\"Vercel deployment SOP — deploy standards, security patterns, preview environments, and production shipping. Routes to Vercel, GitHub, and Slack connectors.\"",
-      "hasManifest": true,
-      "hasPlaybookMd": true,
-      "requires": {
-        "connectors": [
-          "vercel",
-          "github"
-        ],
-        "skills": [
-          ""
-        ],
-        "functions": [
-          "vercel-deploy",
-          "build-status",
-          "env-audit"
-        ],
-        "workflows": [
-          "vercel-deploy-check"
-        ]
-      },
-      "isMeta": false
-    },
-    {
       "name": "video-generation",
       "slug": "video-generation",
       "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/video-generation/",
@@ -798,34 +734,6 @@
         ],
         "workflows": [
           "video-generation-pipeline"
-        ]
-      },
-      "isMeta": false
-    },
-    {
-      "name": "vps-ops",
-      "slug": "vps-ops",
-      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/vps-ops/",
-      "domain": "vps-ops",
-      "version": "1.0.0",
-      "description": "\"VPS ops SOP — server management, pm2 process control, nginx config, Cloudflare DNS, and system health monitoring. Routes to Slack and Wiki connectors.\"",
-      "hasManifest": true,
-      "hasPlaybookMd": true,
-      "requires": {
-        "connectors": [
-          "neptune"
-        ],
-        "skills": [
-          ""
-        ],
-        "functions": [
-          "vps-health-check",
-          "incident-response",
-          "log-inspect",
-          "ssl-check"
-        ],
-        "workflows": [
-          "vps-health-monitor"
         ]
       },
       "isMeta": false
@@ -2153,69 +2061,6 @@
       "edgeType": "runs"
     },
     {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "github",
-      "toType": "connector",
-      "edgeType": "requires"
-    },
-    {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "vercel",
-      "toType": "connector",
-      "edgeType": "requires"
-    },
-    {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "slack",
-      "toType": "connector",
-      "edgeType": "requires"
-    },
-    {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "vercel-discipline",
-      "toType": "skill",
-      "edgeType": "uses"
-    },
-    {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "ship-feature",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "create-pr",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "rollback",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "diagnose-stale",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "deploy",
-      "fromType": "playbook",
-      "to": "deploy-pipeline",
-      "toType": "workflow",
-      "edgeType": "runs"
-    },
-    {
       "from": "disputes",
       "fromType": "playbook",
       "to": "forth",
@@ -2902,55 +2747,6 @@
       "edgeType": "runs"
     },
     {
-      "from": "vercel-discipline",
-      "fromType": "playbook",
-      "to": "vercel",
-      "toType": "connector",
-      "edgeType": "requires"
-    },
-    {
-      "from": "vercel-discipline",
-      "fromType": "playbook",
-      "to": "github",
-      "toType": "connector",
-      "edgeType": "requires"
-    },
-    {
-      "from": "vercel-discipline",
-      "fromType": "playbook",
-      "to": "",
-      "toType": "skill",
-      "edgeType": "uses"
-    },
-    {
-      "from": "vercel-discipline",
-      "fromType": "playbook",
-      "to": "vercel-deploy",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "vercel-discipline",
-      "fromType": "playbook",
-      "to": "build-status",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "vercel-discipline",
-      "fromType": "playbook",
-      "to": "env-audit",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "vercel-discipline",
-      "fromType": "playbook",
-      "to": "vercel-deploy-check",
-      "toType": "workflow",
-      "edgeType": "runs"
-    },
-    {
       "from": "video-generation",
       "fromType": "playbook",
       "to": "neptune",
@@ -2989,55 +2785,6 @@
       "from": "video-generation",
       "fromType": "playbook",
       "to": "video-generation-pipeline",
-      "toType": "workflow",
-      "edgeType": "runs"
-    },
-    {
-      "from": "vps-ops",
-      "fromType": "playbook",
-      "to": "neptune",
-      "toType": "connector",
-      "edgeType": "requires"
-    },
-    {
-      "from": "vps-ops",
-      "fromType": "playbook",
-      "to": "",
-      "toType": "skill",
-      "edgeType": "uses"
-    },
-    {
-      "from": "vps-ops",
-      "fromType": "playbook",
-      "to": "vps-health-check",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "vps-ops",
-      "fromType": "playbook",
-      "to": "incident-response",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "vps-ops",
-      "fromType": "playbook",
-      "to": "log-inspect",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "vps-ops",
-      "fromType": "playbook",
-      "to": "ssl-check",
-      "toType": "function",
-      "edgeType": "invokes"
-    },
-    {
-      "from": "vps-ops",
-      "fromType": "playbook",
-      "to": "vps-health-monitor",
       "toType": "workflow",
       "edgeType": "runs"
     },
@@ -3105,27 +2852,6 @@
       "edgeType": "pairs_with"
     },
     {
-      "from": "github",
-      "fromType": "connector",
-      "to": "vercel",
-      "toType": "connector",
-      "edgeType": "pairs_with"
-    },
-    {
-      "from": "github",
-      "fromType": "connector",
-      "to": "slack",
-      "toType": "connector",
-      "edgeType": "pairs_with"
-    },
-    {
-      "from": "vercel",
-      "fromType": "connector",
-      "to": "slack",
-      "toType": "connector",
-      "edgeType": "pairs_with"
-    },
-    {
       "from": "forth",
       "fromType": "connector",
       "to": "base44",
@@ -3163,6 +2889,13 @@
     {
       "from": "github",
       "fromType": "connector",
+      "to": "vercel",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "github",
+      "fromType": "connector",
       "to": "base44",
       "toType": "connector",
       "edgeType": "pairs_with"
@@ -3178,6 +2911,13 @@
       "from": "slack",
       "fromType": "connector",
       "to": "linear",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "slack",
+      "fromType": "connector",
+      "to": "github",
       "toType": "connector",
       "edgeType": "pairs_with"
     },
