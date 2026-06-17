@@ -341,6 +341,7 @@ export async function POST(request: Request) {
           requestHints,
           supportsTools,
           progressive: progressiveEnabled,
+          presetName: fusionPresetName, // Phase 23B fix: pass preset to system prompt
         });
         const systemWithContext = progressiveEnabled
           ? baseSystem // Progressive mode: no connector catalog or action group context

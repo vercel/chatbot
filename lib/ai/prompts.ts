@@ -186,11 +186,13 @@ export const systemPrompt = ({
   supportsTools,
   playbookContext,
   progressive,
+  presetName,
 }: {
   requestHints: RequestHints;
   supportsTools: boolean;
   playbookContext?: PlaybookContext;
   progressive?: boolean;
+  presetName?: string;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
@@ -325,7 +327,44 @@ When the user asks you to modify your own code, follow this routing logic:
 4. **Critical**: NEVER simulate code changes in chat text. If the user wants a code change to neptune-chat, USE THE TOOL. Do not write code blocks in your response unless you are creating an artifact.
 `;
 
-  return `${neptuneHeader}${regularPrompt}\n\n${requestPrompt}\n\n${routerSection}\n\n${selfReference}\n\n${responseQuality}\n\n${preCheckKnowledge}\n\n${artifactsPrompt}\n\n${selfModRouting}\n\n${connectorCatalog}${playbookSection}`;
+  // Phase 23B fix: Swarm Dispatch Preset Routing
+  // When a panel preset is selected, instruct the LLM to use presetId instead of
+  // freeform model selection. This fixes the bug where Claude Sonnet was used
+  // across all agents instead of the user's chosen Chinese models.
+  const presetRouting = presetName && presetName !== "Custom"
+    ? `
+## 🔒 PANEL PRESET ROUTING (Phase 23B — CARDINAL)
+
+The user has selected panel preset **"${presetName}"**. This preset LOCKS the model selection.
+
+### When using swarmDispatch:
+- **ALWAYS pass presetId: "${presetName}"** — NOT freeform agents[]
+- The presetId enforces the correct models. Do NOT override it by inventing agents[].
+- The preset's judge is used as the synthesizer. Do NOT change it.
+
+### Preset model expectations by name:
+| Preset | Expected Agents | Judge |
+|--------|----------------|-------|
+| Long Context Master | GLM 5.2, DeepSeek V4 Pro, Kimi K2.7 Code | GLM 5.2 |
+| Chinese Frontier | DeepSeek V4 Pro, Kimi K2.7 Code, GLM 5.2 | GLM 5.2 |
+| Deep Reasoning | DeepSeek R1, V3.2 Thinking, Kimi K2 Thinking, GLM 5.2, Qwen3 Max Thinking | Opus 4.8 |
+| Code Specialist | GLM 5.2, Kimi K2.7 Code, Qwen3 Coder Next, DeepSeek V4 Pro | Claude Sonnet 4.6 |
+| Research Specialist | GLM 5.2, Gemini 2.5 Pro, Kimi K2.7 Code, DeepSeek R1 | GLM 5.2 |
+| Speed Trio | DeepSeek V4 Flash, Kimi K2.7 Code HS, Step 3.7 Flash | DeepSeek V4 Flash |
+| Sonnet Synth | DeepSeek V4 Pro, Kimi K2.7 Code, GLM 5.2, Qwen3 Max, MiniMax M3 | Claude Sonnet 4.6 |
+| Dual Frontier | DeepSeek V4 Pro, Kimi K2.7 Code | GLM 5.2 |
+| Vision Council | GLM 5V Turbo, Qwen3 VL 235B, Gemini 2.5 Pro | Claude Sonnet 4.6 |
+| MiniMax Ensemble | MiniMax M3, M2.7, DeepSeek V4 Pro | GLM 5.2 |
+
+### Key rules:
+- "Long Context Master" uses **ONLY Chinese models** — NO Claude anywhere (agents or judge)
+- "Deep Reasoning" uses Opus 4.8 as judge ONLY (not as an agent)
+- When in doubt: **presetId first, agents[] NEVER overrides presetId**
+- The preset configuration is authoritative. Do not improvise model selection.
+`
+    : "";
+
+  return `${neptuneHeader}${regularPrompt}\n\n${requestPrompt}\n\n${routerSection}\n\n${selfReference}\n\n${responseQuality}\n\n${preCheckKnowledge}\n\n${artifactsPrompt}\n\n${selfModRouting}\n\n${connectorCatalog}${playbookSection}${presetRouting}`;
 };
 
 export const codePrompt = `

@@ -22,6 +22,7 @@
 import { generateText, tool } from "ai";
 import { z } from "zod";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { SYSTEM_PRESETS, getPresetByName } from "@/lib/ai/fusion/presets";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -62,6 +63,15 @@ export interface SwarmDispatchInput {
   synthesizer: SwarmSynthesizer;
   /** Optional: max time in ms for the entire swarm (default: 5min) */
   timeoutMs?: number;
+  /**
+   * PRESET ENFORCEMENT (Phase 23B fix):
+   * When provided, OVERRIDES agents[] and synthesizer with the preset's locked configuration.
+   * Preferred over freeform agents[] when a domain matches a known preset.
+   * Supported values: "Chinese Frontier" | "Speed Trio" | "Sonnet Synth" | "Deep Reasoning" |
+   *   "Code Specialist" | "Research Specialist" | "Dual Frontier" | "Vision Council" |
+   *   "MiniMax Ensemble" | "Long Context Master" | "Custom"
+   */
+  presetId?: string;
 }
 
 export interface AgentResult {
@@ -177,7 +187,95 @@ async function runSynthesizer(
 export async function swarmDispatch(
   input: SwarmDispatchInput
 ): Promise<SwarmDispatchResult> {
-  const { goal, swarmType, agents, synthesizer, timeoutMs = 300_000 } = input;
+  // ── PRESET ENFORCEMENT (Phase 23B fix) ───────────────────────────────────
+  // If presetId is provided, OVERRIDE agents[] and synthesizer with the
+  // preset's locked configuration. This prevents the LLM from freely picking
+  // models (e.g., Claude Sonnet) when the user selected a Chinese model preset.
+  let effectiveAgents = input.agents;
+  let effectiveSynthesizer = input.synthesizer;
+
+  if (input.presetId) {
+    const preset = getPresetByName(input.presetId);
+    if (!preset) {
+      return {
+        swarmId: `swarm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        goal: input.goal,
+        swarmType: input.swarmType,
+        agentsDispatched: 0,
+        agentsSucceeded: 0,
+        agentsFailed: 0,
+        agentResults: [],
+        synthesis: null,
+        synthesisModel: input.synthesizer.model,
+        totalDurationMs: 0,
+        totalTokensUsed: 0,
+        success: false,
+        error: `Preset "${input.presetId}" not found. Available: ${SYSTEM_PRESETS.map(p => `"${p.name}"`).join(", ")}`,
+      };
+    }
+
+    // Validate: Long Context Master must use Chinese frontier models (NO Claude)
+    // Preset #10: GLM 5.2 + Kimi K2.7 Code + DeepSeek V4 Pro — GLM 5.2 judges
+    const FORBIDDEN_PROVIDERS: Record<string, string[]> = {
+      // "Long Context Master" requires Chinese models only; Claude is forbidden
+      "Long Context Master": ["anthropic"],
+      // "Deep Reasoning" uses Opus 4.8 as judge but never as an agent
+      "Deep Reasoning": [],
+      // "Sonnet Synth" uses Claude Sonnet as judge only, never as agent
+      // (agents are ALL Chinese: DeepSeek, Kimi, GLM, Qwen, MiniMax)
+    };
+
+    if (input.presetId in FORBIDDEN_PROVIDERS) {
+      const forbiddenList = FORBIDDEN_PROVIDERS[input.presetId];
+      for (const agent of input.agents) {
+        const provider = agent.model.toLowerCase();
+        for (const forbidden of forbiddenList) {
+          if (provider.includes(forbidden)) {
+            console.error(
+              `[swarm-dispatch] REJECTED: Preset "${input.presetId}" forbids ${forbidden} models. ` +
+              `Agent "${agent.role}" requested ${agent.model}. Using preset agents instead.`
+            );
+            break;
+          }
+        }
+      }
+      // Also check the synthesizer
+      for (const forbidden of forbiddenList) {
+        if (input.synthesizer.model.toLowerCase().includes(forbidden)) {
+          console.warn(
+            `[swarm-dispatch] OVERRIDE: Preset "${input.presetId}" synthesizer should use ` +
+            `preset's judge "${preset.judge.name}" (${preset.judge.modelId}), not ${input.synthesizer.model}`
+          );
+        }
+      }
+    }
+
+    // OVERRIDE agents[] with preset's locked agents
+    effectiveAgents = preset.agents.map((agent, i) => ({
+      role: agent.role ?? `agent_${i + 1}`,
+      model: agent.modelId,
+      prompt: input.agents[i]?.prompt ?? `Analyze the goal: ${input.goal}`,
+      maxTokens: input.agents[i]?.maxTokens,
+      temperature: input.agents[i]?.temperature,
+    }));
+
+    // OVERRIDE synthesizer with preset's locked judge
+    effectiveSynthesizer = {
+      model: preset.judge.modelId,
+      prompt: input.synthesizer.prompt,
+      maxTokens: input.synthesizer.maxTokens,
+    };
+
+    console.log(
+      `[swarm-dispatch] 🔒 Preset "${input.presetId}" applied — ` +
+      `agents: [${effectiveAgents.map(a => `${a.role} (${a.model})`).join(", ")}] · ` +
+      `synthesizer: ${preset.judge.name} (${preset.judge.modelId})`
+    );
+  }
+
+  const { goal, swarmType, timeoutMs = 300_000 } = input;
+  const agents = effectiveAgents;
+  const synthesizer = effectiveSynthesizer;
   const swarmId = `swarm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startTime = Date.now();
 
@@ -287,18 +385,40 @@ export const swarmDispatchTool = tool({
     "Dispatch a swarm of 2-8 parallel AI agents to research, code, audit, or catalog. " +
     "Each agent runs independently with its own model and prompt. " +
     "A synthesizer merges all results after all agents complete. " +
-    "Use for complex multi-perspective tasks. Swarm types: research, coding, audit, catalog, analysis.",
+    "Use for complex multi-perspective tasks. Swarm types: research, coding, audit, catalog, analysis.\n\n" +
+    "🔒 PRESET ROUTING (Phase 23B): When a panel preset is active (user selected a preset), " +
+    "ALWAYS use presetId instead of freeform agents[]. The presetId LOCKS the model selection to " +
+    "the preset's configured models. Available presets:\n" +
+    "- \"Long Context Master\": GLM 5.2 + DeepSeek V4 Pro + Kimi K2.7 Code (NO Claude)\n" +
+    "- \"Chinese Frontier\": DeepSeek V4 Pro + Kimi K2.7 Code + GLM 5.2\n" +
+    "- \"Deep Reasoning\": DeepSeek R1 + V3.2 Thinking + Kimi K2 Thinking + GLM 5.2 + Qwen3 Max Thinking\n" +
+    "- \"Code Specialist\": GLM 5.2 lead + Kimi K2.7 Code + Qwen3 Coder Next + DeepSeek V4 Pro\n" +
+    "- \"Research Specialist\": GLM 5.2 + Gemini 2.5 Pro + Kimi K2.7 Code + DeepSeek R1\n" +
+    "- \"Speed Trio\": DeepSeek V4 Flash + Kimi K2.7 Code HS + Step 3.7 Flash\n" +
+    "- \"Sonnet Synth\": 5 Chinese agents + Claude Sonnet judge\n" +
+    "- \"Dual Frontier\": DeepSeek V4 Pro + Kimi K2.7 Code\n" +
+    "- \"Vision Council\": GLM 5V Turbo + Qwen3 VL 235B + Gemini 2.5 Pro\n" +
+    "- \"MiniMax Ensemble\": MiniMax M3 + M2.7 + DeepSeek V4 Pro\n\n" +
+    "RULE: When the user's domain matches a known preset, use presetId. " +
+    "When BOTH presetId and agents[] are provided, presetId WINS and agents[] is overridden.",
   inputSchema: z.object({
     goal: z.string().describe("High-level goal of the swarm"),
     swarmType: z.enum(["research", "coding", "audit", "catalog", "analysis"]).describe("Type of swarm operation"),
+    presetId: z.string().describe(
+      "Panel preset name to enforce model selection. PREFERRED over agents[] when provided. " +
+      "Use when a panel preset is active (user selected one). " +
+      "Available: \"Chinese Frontier\" | \"Speed Trio\" | \"Sonnet Synth\" | \"Deep Reasoning\" | " +
+      "\"Code Specialist\" | \"Research Specialist\" | \"Dual Frontier\" | \"Vision Council\" | " +
+      "\"MiniMax Ensemble\" | \"Long Context Master\" | \"Custom\""
+    ).optional(),
     agents: z.array(z.object({
       role: z.string().describe("Agent role name (e.g., 'connector_cataloger')"),
-      model: z.string().describe("Model ID to use"),
+      model: z.string().describe("Model ID to use (OVERRIDDEN by presetId when provided)"),
       prompt: z.string().describe("Individual prompt for this agent"),
       maxTokens: z.number().optional().describe("Max tokens (default 4096)"),
-    })).min(2).max(8).describe("2-8 parallel agents"),
+    })).min(2).max(8).describe("2-8 parallel agents (overridden by presetId when provided)"),
     synthesizer: z.object({
-      model: z.string().describe("Synthesizer model ID"),
+      model: z.string().describe("Synthesizer model ID (overridden by presetId when provided)"),
       prompt: z.string().describe("Synthesis prompt"),
       maxTokens: z.number().optional().describe("Max tokens (default 8192)"),
     }).describe("Synthesizer configuration"),
@@ -307,6 +427,7 @@ export const swarmDispatchTool = tool({
     return swarmDispatch({
       goal: input.goal,
       swarmType: input.swarmType,
+      presetId: input.presetId,
       agents: input.agents.map(a => ({
         role: a.role,
         model: a.model,
