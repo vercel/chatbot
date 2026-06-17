@@ -23,8 +23,9 @@
  *  - Closed: hidden entirely
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import type { DefaultSession } from "next-auth";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   ChevronRight,
@@ -142,20 +143,31 @@ export function ChatDrawer({
     [handleSend]
   );
 
-  // ── Mobile: bottom sheet variant ────────────────────────────────
+  // ── Mobile: bottom sheet variant (framer-motion animated) ──────
   if (isMobile) {
-    if (!open) return null;
-
     return (
-      <>
-        {/* Backdrop */}
-        <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          onClick={onToggle}
-        />
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              onClick={onToggle}
+            />
 
-        {/* Bottom Sheet */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col rounded-t-2xl bg-[var(--glass-surface-1)] shadow-[var(--glass-shadow-3)] backdrop-blur-[16px] saturate-[120%] border border-[var(--glass-border)]">
+            {/* Bottom Sheet */}
+            <motion.div
+              key="mobile-sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.9 }}
+              className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col rounded-t-2xl bg-[var(--glass-surface-1)] shadow-[var(--glass-shadow-3)] backdrop-blur-[16px] saturate-[120%] border border-[var(--glass-border)]">
           {/* Drag Handle */}
           <div className="flex justify-center pt-2 pb-1">
             <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
@@ -203,97 +215,111 @@ export function ChatDrawer({
               <Send className="h-3.5 w-3.5" />
             </button>
           </div>
-        </div>
-      </>
+          </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     );
   }
 
-  // ── Desktop: slide-out panel ────────────────────────────────────
-  if (collapsed || !open) {
-    // Collapsed state — just the expand handle
-    return (
-      <div className="relative flex items-center border-l border-[var(--glass-border)] bg-[var(--glass-surface-1)]">
-        <button
-          type="button"
-          onClick={onExpand}
-          className="flex h-10 w-6 items-center justify-center rounded-l-md bg-[var(--glass-surface-2)] text-muted-foreground hover:bg-[var(--glass-surface-1)] hover:text-foreground transition-colors"
-          title="Expand Chat Drawer"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-      </div>
-    );
-  }
-
-  // ── Full open state ─────────────────────────────────────────────
+  // ── Desktop: slide-out panel (framer-motion animated) ──────────
   return (
-    <aside className="flex w-[30%] min-w-[320px] flex-col border-l border-[var(--glass-border)] bg-[var(--glass-surface-1)] shadow-[var(--glass-shadow-1)] backdrop-blur-[16px] saturate-[120%]">
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <div className="flex shrink-0 items-center justify-between border-b border-[var(--glass-border)] px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">
-            Neptune Chat
-          </h3>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-            {role.label}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-1">
+    <AnimatePresence mode="wait">
+      {collapsed || !open ? (
+        <motion.div
+          key="drawer-collapsed"
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: "auto", opacity: 1 }}
+          exit={{ width: 0, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className="relative flex items-center border-l border-[var(--glass-border)] bg-[var(--glass-surface-1)]"
+        >
           <button
             type="button"
-            onClick={onCollapse}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
-            title="Collapse drawer"
+            onClick={onExpand}
+            className="flex h-10 w-6 items-center justify-center rounded-l-md bg-[var(--glass-surface-2)] text-muted-foreground hover:bg-[var(--glass-surface-1)] hover:text-foreground transition-colors"
+            title="Expand Chat Drawer"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={onToggle}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
-            title="Close drawer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+        </motion.div>
+      ) : (
+        <motion.aside
+          key="drawer-open"
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: "30%", minWidth: 320, opacity: 1 }}
+          exit={{ width: 0, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.8 }}
+          className="flex flex-col border-l border-[var(--glass-border)] bg-[var(--glass-surface-1)] shadow-[var(--glass-shadow-1)] backdrop-blur-[16px] saturate-[120%] overflow-hidden"
+        >
+          {/* ── Header ──────────────────────────────────────────────── */}
+          <div className="flex shrink-0 items-center justify-between border-b border-[var(--glass-border)] px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">
+                Neptune Chat
+              </h3>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                {role.label}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={onCollapse}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                title="Collapse drawer"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onToggle}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                title="Close drawer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
 
-      {/* ── Context Banner ───────────────────────────────────────── */}
-      {currentContext && <ContextBanner context={currentContext} />}
+          {/* ── Context Banner ───────────────────────────────────────── */}
+          {currentContext && <ContextBanner context={currentContext} />}
 
-      {/* ── Messages Area ────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
-        <MessageList messages={messages} />
-        <div ref={messagesEndRef} />
-      </div>
+          {/* ── Messages Area ────────────────────────────────────────── */}
+          <div className="flex-1 overflow-y-auto">
+            <MessageList messages={messages} />
+            <div ref={messagesEndRef} />
+          </div>
 
-      {/* ── Bottom Input ─────────────────────────────────────────── */}
-      <div className="shrink-0 border-t border-[var(--glass-border)] p-3">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type /navigate, /find, /refresh..."
-            className="flex-1 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-colors"
-          />
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!inputValue.trim()}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 transition-opacity"
-            aria-label="Send message"
-          >
-            <Send className="h-3.5 w-3.5" />
-          </button>
-        </div>
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          Cmd+/ toggle · /navigate · /find · /refresh
-        </p>
-      </div>
-    </aside>
+          {/* ── Bottom Input ─────────────────────────────────────────── */}
+          <div className="shrink-0 border-t border-[var(--glass-border)] p-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type /navigate, /find, /refresh..."
+                className="flex-1 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={!inputValue.trim()}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 transition-opacity"
+                aria-label="Send message"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Cmd+/ toggle · /navigate · /find · /refresh
+            </p>
+          </div>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }
 

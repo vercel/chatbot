@@ -26,6 +26,7 @@ import type { DefaultSession } from "next-auth";
 import { TwentyIframe } from "@/components/harness/twenty-iframe";
 import { ChatDrawer } from "@/components/harness/chat-drawer";
 import { QuickActionsToolbar } from "@/components/harness/quick-actions-toolbar";
+import { QuickActionModals, type QuickActionType } from "@/components/harness/quick-action-modals";
 import { UserBar } from "@/components/harness/user-bar";
 import { PostMessageBus, type TwentyEvent } from "@/lib/harness/postmessage-bus";
 import { getRoleConfig, type UserRole } from "@/lib/harness/roles";
@@ -46,6 +47,7 @@ export function CommandCenterClient({ user }: CommandCenterClientProps) {
   const [iframeError, setIframeError] = useState(false);
   const [connectionLost, setConnectionLost] = useState(false);
   const [currentContext, setCurrentContext] = useState<TwentyEvent | null>(null);
+  const [quickActionModal, setQuickActionModal] = useState<QuickActionType | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Get role config from user metadata or default to sales_agent
@@ -155,12 +157,32 @@ export function CommandCenterClient({ user }: CommandCenterClientProps) {
   // ── Quick Action Handler ────────────────────────────────────────
   const handleQuickAction = useCallback(
     (action: string, payload?: Record<string, unknown>) => {
-      // Open drawer and show action context
+      // Phase 32: Open dedicated modal for each quick action
+      setQuickActionModal(action as QuickActionType);
+      // Also open drawer and show action context
       setDrawerOpen(true);
       setDrawerCollapsed(false);
       setCurrentContext({
         type: "actionRequested",
         payload: { action, ...payload },
+      } as TwentyEvent);
+    },
+    []
+  );
+
+  const handleQuickActionSubmit = useCallback(
+    (action: QuickActionType, data: Record<string, unknown>) => {
+      // Close modal
+      setQuickActionModal(null);
+      // Log to chat drawer as a system message
+      setCurrentContext({
+        type: "actionRequested",
+        payload: {
+          action,
+          ...data,
+          status: "submitted",
+          timestamp: new Date().toISOString(),
+        },
       } as TwentyEvent);
     },
     []
@@ -301,6 +323,15 @@ export function CommandCenterClient({ user }: CommandCenterClientProps) {
         role={roleConfig}
         currentContext={currentContext}
         onAction={handleQuickAction}
+      />
+
+      {/* ── Quick Action Modals (Phase 32) ───────────────────────── */}
+      <QuickActionModals
+        action={quickActionModal}
+        open={quickActionModal !== null}
+        onClose={() => setQuickActionModal(null)}
+        onSubmit={handleQuickActionSubmit}
+        context={currentContext}
       />
     </div>
   );

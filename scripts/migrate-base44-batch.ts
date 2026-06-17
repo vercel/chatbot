@@ -154,15 +154,51 @@ async function fetchCustomerProfiles(
 
   console.log(`📡 Fetching Base44 customers...`, filterPayload);
 
+  // Phase 32: Use jarvisDataEngine for entity queries (was broken endpoint)
   try {
-    const res = await fetch(`${base44Url}/queryCustomerProfiles`, {
+    if (customerIds && customerIds.length > 0) {
+      // Fetch individually via entity_get
+      const profiles: CustomerProfile[] = [];
+      for (const cid of customerIds) {
+        try {
+          const res = await fetch(`${base44Url}/jarvisDataEngine`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+              ...(internalToken ? { "x-internal-token": internalToken } : {}),
+            },
+            body: JSON.stringify({ entity: "CustomerProfile", id: cid }),
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const profile: CustomerProfile = json.record ?? json.data ?? json;
+            if (profile?.id) profiles.push(profile);
+          } else {
+            console.error(`  ⚠️ Failed to fetch ${cid.slice(0,12)}...: ${res.status}`);
+          }
+        } catch (e) {
+          console.error(`  ⚠️ Error fetching ${cid.slice(0,12)}...:`, e);
+        }
+      }
+      console.log(`✅ Fetched ${profiles.length}/${customerIds.length} customer profiles`);
+      return profiles;
+    }
+
+    // Batch query fallback: use jarvisDataEngine with filter
+    const res = await fetch(`${base44Url}/jarvisDataEngine`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
         ...(internalToken ? { "x-internal-token": internalToken } : {}),
       },
-      body: JSON.stringify({ ...filterPayload, limit: 5000 }),
+      body: JSON.stringify({
+        entity: "CustomerProfile",
+        filter: filter ? JSON.parse(filter) : {},
+        limit: 5000,
+        fetchAll: true,
+      }),
     });
 
     if (!res.ok) {

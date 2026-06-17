@@ -79,6 +79,10 @@ const INTENT_PATTERNS: Array<{
       /\b(show|display|fetch|pull|get|retrieve)\s+(me\s+)?(the|a|all|my)\s+(data|info|file|record|log|customer|transaction)\b/i,
       /\b(check|verify|confirm|validate)\s+(the|if|whether|that)\b/i,
       /\b(what|which|who|where|when)\s+(is|are|was|were)\s+(the|my|our)\b/i,
+      // Phase 32: Sales agent natural language — CRM lookup patterns
+      /\b(show|display)\s+(me\s+)?(.+)/i,
+      /\bfind\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,  // "Find Lisa Heiss"
+      /\b(go\s+to|navigate\s+to|open)\s+(the\s+)?(.+)/i,
     ],
   },
   {
@@ -88,6 +92,11 @@ const INTENT_PATTERNS: Array<{
       /\b(list|enumerate|catalog|audit)\s+(all|the|my|our)\b/i,
       /\b(what'?s|what\s+is)\s+(the|my|our)\s+(status|state|balance|count|total)\b/i,
       /\b(how\s+many|how\s+much)\b/i,
+      // Phase 32: CRM action natural language
+      /\b(send|text)\s+(a\s+)?(payment|sms|message|email|link)\b/i,
+      /\b(add|write|create|make)\s+(a\s+)?(note|ticket|comment)\b/i,
+      /\b(update|change|set|modify)\s+\w+(?:'s)?\s+(status|profile|info|record)\b/i,
+      /\b(open|view)\s+(\w+(?:\s+\w+)?)(?:'s)?\s+(record|profile|page)\b/i,
     ],
   },
 
@@ -97,7 +106,7 @@ const INTENT_PATTERNS: Array<{
     confidence: "high",
     patterns: [
       /\b(analy[sz]e|diagnose|investigate|troubleshoot|audit)\s+(the|this|why|how)\b/i,
-      /\b(compare|contrast|diff|versus|vs\.?)\s+(the|this|a|an)\b/i,
+      /\b(compare|contrast|diff|versus|vs\.?)\s+(the|this|a|an|\w)/i,
       /\b(explain|elaborate|clarify|break\s*down)\s+(the|this|why|how)\b/i,
       /\b(what\s+would|what\s+if|what\s+happens|is\s+it\s+possible)\b/i,
       /\b(pros\s+and\s+cons|trade[\s-]offs|advantages|disadvantages)\b/i,

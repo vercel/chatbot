@@ -38,6 +38,7 @@ import {
   AlertTriangle,
   ExternalLink,
   Save,
+  RefreshCw,
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,11 @@ export interface MissionCardData {
   currentState?: MissionState;
   v2SessionId?: string;
   sandboxUrl?: string;
+  /** Phase 32: Link to CRM record on completion */
+  crmRecordId?: string;
+  crmRecordType?: string;
+  /** Phase 32: Error details for failed steps */
+  lastError?: string;
 }
 
 interface MissionCardProps {
@@ -71,6 +77,10 @@ interface MissionCardProps {
   className?: string;
   onStateChange?: (state: MissionState) => void;
   onSaveAsWorkflow?: () => void;
+  /** Phase 32: Navigate the Twenty iframe to a CRM record */
+  onViewInCRM?: (recordType: string, recordId: string) => void;
+  /** Phase 32: Retry the mission */
+  onRetry?: () => void;
 }
 
 // ── Action Types ────────────────────────────────────────────────────────────
@@ -225,6 +235,8 @@ export function MissionCard({
   className,
   onStateChange,
   onSaveAsWorkflow,
+  onViewInCRM,
+  onRetry,
 }: MissionCardProps) {
   const [ctx, dispatch] = useReducer(missionReducer, {
     state: (initialMission.currentState as MissionState) || "inline",
@@ -406,7 +418,7 @@ export function MissionCard({
                       </motion.div>
 
                       {/* Action bar */}
-                      <div className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.06]">
+                      <div className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.06] flex-wrap">
                         <button
                           onClick={() => dispatch({ type: "OPEN_CANVAS" })}
                           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-white/60 hover:bg-white/[0.08] transition-colors"
@@ -421,6 +433,26 @@ export function MissionCard({
                           >
                             <ExternalLink className="size-3" />
                             Sandbox Preview
+                          </button>
+                        )}
+                        {/* Phase 32: Retry on failed */}
+                        {mission.status === "failed" && onRetry && (
+                          <button
+                            onClick={onRetry}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-[11px] text-red-400 hover:bg-red-500/20 transition-colors"
+                          >
+                            <RefreshCw className="size-3" />
+                            Retry
+                          </button>
+                        )}
+                        {/* Phase 32: View in CRM */}
+                        {mission.status === "completed" && mission.crmRecordId && onViewInCRM && (
+                          <button
+                            onClick={() => onViewInCRM(mission.crmRecordType || "Person", mission.crmRecordId!)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                          >
+                            <ExternalLink className="size-3" />
+                            View in CRM
                           </button>
                         )}
                         <button
@@ -534,8 +566,37 @@ export function MissionCard({
                   </motion.div>
                 </div>
 
+                {/* Phase 32: Error details */}
+                {mission.status === "failed" && mission.lastError && (
+                  <div className="mt-3 p-3 rounded-lg bg-red-500/[0.04] border border-red-500/15">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <AlertTriangle className="size-3.5 text-red-400" />
+                      <span className="text-[11px] font-medium text-red-400">Error</span>
+                    </div>
+                    <p className="text-[10px] text-red-400/70 font-mono">{mission.lastError}</p>
+                  </div>
+                )}
+
                 {/* Canvas footer */}
-                <div className="flex gap-2 pt-3 border-t border-white/[0.06] mt-3">
+                <div className="flex gap-2 pt-3 border-t border-white/[0.06] mt-3 flex-wrap">
+                  {mission.status === "failed" && onRetry && (
+                    <button
+                      onClick={onRetry}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[12px] text-red-400 hover:bg-red-500/20 transition-colors"
+                    >
+                      <RefreshCw className="size-3.5" />
+                      Retry Mission
+                    </button>
+                  )}
+                  {mission.status === "completed" && mission.crmRecordId && onViewInCRM && (
+                    <button
+                      onClick={() => onViewInCRM(mission.crmRecordType || "Person", mission.crmRecordId!)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[12px] text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                    >
+                      <ExternalLink className="size-3.5" />
+                      View in CRM
+                    </button>
+                  )}
                   <button
                     onClick={onSaveAsWorkflow}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[12px] text-white/60 hover:bg-white/[0.08] transition-colors"
@@ -611,12 +672,30 @@ export function MissionCard({
                 )}
 
                 {/* Footer actions */}
-                <div className="flex gap-2 px-4 py-3 border-t border-white/[0.06]">
+                <div className="flex gap-2 px-4 py-3 border-t border-white/[0.06] flex-wrap">
                   <button
                     className="flex-1 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[12px] text-emerald-400 hover:bg-emerald-500/20 transition-colors font-medium"
                   >
                     Merge &amp; Deploy
                   </button>
+                  {mission.status === "failed" && onRetry && (
+                    <button
+                      onClick={onRetry}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[12px] text-red-400 hover:bg-red-500/20 transition-colors"
+                    >
+                      <RefreshCw className="size-3.5" />
+                      Retry
+                    </button>
+                  )}
+                  {mission.status === "completed" && mission.crmRecordId && onViewInCRM && (
+                    <button
+                      onClick={() => onViewInCRM(mission.crmRecordType || "Person", mission.crmRecordId!)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[12px] text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                    >
+                      <ExternalLink className="size-3.5" />
+                      View in CRM
+                    </button>
+                  )}
                   <button
                     onClick={() => dispatch({ type: "COLLAPSE" })}
                     className="px-4 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[12px] text-white/60 hover:bg-white/[0.08] transition-colors"
