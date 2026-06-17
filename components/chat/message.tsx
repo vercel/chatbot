@@ -25,6 +25,7 @@ import { ToolResultRenderer } from "./tool-result-renderer";
 import { Weather } from "./weather";
 import { UniversalConnectorCard } from "@/components/generative/universal-connector-card";
 import { MissionCard } from "@/components/generative/mission-card";
+import { HandoffCard } from "@/components/generative/handoff-card";
 import {
   groupToolCalls,
   CollapsedToolGroup,
@@ -440,6 +441,27 @@ const PurePreviewMessage = ({
                       }>,
                       estimatedCost: (toolPart.output as Record<string, unknown>).estimatedCost as number,
                       estimatedTime: (toolPart.output as Record<string, unknown>).estimatedTime as number,
+                    }}
+                  />
+                ) : (toolName === "spawnCodingAgent" || toolName === "spawnCodingAgent") &&
+                  toolPart.output &&
+                  typeof toolPart.output === "object" &&
+                  "handoff" in toolPart.output ? (
+                  <HandoffCard
+                    handoff={(toolPart.output as Record<string, unknown>).handoff as {
+                      sessionId: string;
+                      mode: string;
+                      goal: string;
+                      status: "spawning" | "running" | "ready_for_preview" | "ready_to_merge" | "completed" | "failed";
+                      branch?: string;
+                      prUrl?: string;
+                      deployUrl?: string;
+                      sandboxUrl?: string;
+                      repo?: string;
+                      progress?: number;
+                      errorMessage?: string;
+                      v2DirectUrl?: string;
+                      libraryUrl?: string;
                     }}
                   />
                 ) : toolPart.output &&

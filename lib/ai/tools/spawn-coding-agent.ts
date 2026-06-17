@@ -335,6 +335,18 @@ Last messages: ${lastMessages.length} messages in context`;
           libraryUrl: "/library/handoffs",
           v2DirectUrl: `https://neptune-v2.vercel.app/agent-sessions/${v2SessionId}`,
           message: `V2 coding agent spawned. Track at /library/handoffs or open in V2. Session: ${v2SessionId?.slice(0, 12)}...`,
+          // Phase 25: HandoffCard metadata for generative UI rendering
+          handoff: {
+            sessionId: v2SessionId,
+            mode,
+            goal,
+            status: "spawning" as const,
+            repo: repoName ? `${repoOwner}/${repoName}` : undefined,
+            branch: baseBranch || "main",
+            progress: 0,
+            v2DirectUrl: `https://neptune-v2.vercel.app/agent-sessions/${v2SessionId}`,
+            libraryUrl: "/library/handoffs",
+          },
         };
       }
 
@@ -409,6 +421,18 @@ Last messages: ${lastMessages.length} messages in context`;
         projectName: safeProjectName,
         libraryUrl: "/library/handoffs",
         message: `New project "${safeTitle}" created!\n📁 GitHub: ${repo.htmlUrl}\n${vercelProjectId ? `🚀 Vercel: ${deploymentUrl || "deploying..."}` : ""}`,
+        // Phase 25: HandoffCard metadata
+        handoff: {
+          sessionId: v2SessionId,
+          mode: "new_project",
+          goal,
+          status: "completed" as const,
+          repo: `${repo.owner}/${repo.name}`,
+          branch: "main",
+          deployUrl: deploymentUrl || undefined,
+          prUrl: repo.htmlUrl,
+          progress: 100,
+        },
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

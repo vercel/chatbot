@@ -42,7 +42,7 @@ export const pullSlackThread = tool({
           replyCount: replies.length,
           threadTs: threadTs,
           threadHistory: messages.map((m) => ({
-            user: m.user || m.username || "unknown",
+            user: (m as Record<string, unknown>).user || "unknown",
             text: (m.text || "").slice(0, 200),
             ts: m.ts,
           })),
