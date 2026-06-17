@@ -27,6 +27,12 @@ import { createDocument } from "@/lib/ai/tools/create-document";
 import { createMission } from "@/lib/ai/tools/create-mission";
 import { editDocument } from "@/lib/ai/tools/edit-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
+import { getNmiTransaction } from "@/lib/ai/tools/get-nmi-transaction";
+import { pullSlackThread } from "@/lib/ai/tools/pull-slack-thread";
+import { getCustomerProfile } from "@/lib/ai/tools/get-customer-profile";
+import { getVapiCall } from "@/lib/ai/tools/get-vapi-call";
+import { getGithubPr } from "@/lib/ai/tools/get-github-pr";
+import { getVercelDeploy } from "@/lib/ai/tools/get-vercel-deploy";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
@@ -354,6 +360,12 @@ export async function POST(request: Request) {
               "requestSuggestions",
               "createMission",
               "viewFile",
+              "getNmiTransaction",
+              "pullSlackThread",
+              "getCustomerProfile",
+              "getVapiCall",
+              "getGithubPr",
+              "getVercelDeploy",
               "executeSkill",
               "listPlaybooks",
               "loadSkill",
@@ -376,6 +388,12 @@ export async function POST(request: Request) {
           updateDocument: updateDocument({ session, dataStream, modelId: chatModel }),
           requestSuggestions: requestSuggestions({ session, dataStream, modelId: chatModel }),
           createMission,
+          getNmiTransaction,
+          pullSlackThread,
+          getCustomerProfile,
+          getVapiCall,
+          getGithubPr,
+          getVercelDeploy,
           swarmDispatch: swarmDispatchTool,
           ...getAvailableTools(),
           ...sandboxTools,

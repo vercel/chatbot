@@ -3,12 +3,14 @@ icon: phone
 accentColor: "#8B5CF6"
 keyFields:
   - { field: callSid, type: text }
-  - { field: disposition, type: badge }
+  - { field: sentiment, type: chip, colors: { positive: emerald, neutral: amber, negative: red } }
   - { field: duration, type: text }
 expandedLayout:
   - transcript
+  - waveform
   - cost
 functions:
   - make_call
   - get_transcript
   - list_calls
+  - get_vapi_call

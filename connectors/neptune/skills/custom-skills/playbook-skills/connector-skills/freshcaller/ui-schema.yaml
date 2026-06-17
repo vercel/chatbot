@@ -4,7 +4,7 @@ accentColor: "#FF6B35"
 keyFields:
   - { field: callId, type: text }
   - { field: agent, type: text }
-  - { field: disposition, type: badge }
+  - { field: outcome, type: badge, colors: { resolved: emerald, follow_up: amber, escalated: red } }
 expandedLayout:
   - callNotes
   - recording

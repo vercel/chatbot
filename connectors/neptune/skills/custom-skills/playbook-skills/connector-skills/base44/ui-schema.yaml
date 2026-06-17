@@ -3,8 +3,8 @@ icon: database
 accentColor: "#6366F1"
 keyFields:
   - { field: entity, type: text }
+  - { field: entityType, type: chip, colors: { CustomerProfile: indigo, PaymentLog: emerald, SupportTicket: amber, CallLog: purple } }
   - { field: recordCount, type: text }
-  - { field: status, type: badge }
 expandedLayout:
   - queryResults
   - relatedEntities
@@ -12,4 +12,5 @@ functions:
   - entity_query
   - entity_get
   - customer_360
+  - get_customer_profile
   - reporting_hub

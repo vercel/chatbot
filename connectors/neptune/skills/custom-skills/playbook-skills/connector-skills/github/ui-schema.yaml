@@ -3,8 +3,8 @@ icon: git-branch
 accentColor: "#24292F"
 keyFields:
   - { field: repo, type: text }
-  - { field: prNumber, type: text }
-  - { field: status, type: badge }
+  - { field: branch, type: text }
+  - { field: prStatus, type: badge, colors: { open: emerald, merged: purple, closed: red } }
 expandedLayout:
   - diffView
   - checks
@@ -13,3 +13,4 @@ functions:
   - read_file
   - list_dir
   - search_repo
+  - get_pr_status

@@ -2,14 +2,15 @@ name: Slack
 icon: message-square
 accentColor: "#4A154B"
 keyFields:
-  - { field: channel, type: text }
-  - { field: ts, type: text }
+  - { field: channel, type: chip, colors: { "#jarvis-admin": blue, "#newleaf-admin": purple, "#billing-alerts": red, "#general": gray } }
   - { field: user, type: text }
+  - { field: reactions, type: badge }
 expandedLayout:
   - threadHistory
-  - reactions
+  - replies
 functions:
   - post_message
   - post_thread
   - get_channel_history
   - react
+  - pull_slack_thread

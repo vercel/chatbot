@@ -3,8 +3,8 @@ icon: file-text
 accentColor: "#EC4899"
 keyFields:
   - { field: disputeId, type: text }
-  - { field: bureau, type: chip }
-  - { field: status, type: badge }
+  - { field: dppBalance, type: currency }
+  - { field: creditScore, type: badge, colors: { 700: emerald, 600: amber, 500: red } }
 expandedLayout:
   - disputeRounds
   - letters
@@ -12,3 +12,4 @@ functions:
   - start_dispute
   - track_dispute
   - draft_letter
+  - get_dpp_balance

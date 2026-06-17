@@ -4,7 +4,7 @@ accentColor: "#000000"
 keyFields:
   - { field: project, type: text }
   - { field: deploymentUrl, type: text }
-  - { field: status, type: badge }
+  - { field: buildDuration, type: text }
 expandedLayout:
   - buildLog
   - envVars

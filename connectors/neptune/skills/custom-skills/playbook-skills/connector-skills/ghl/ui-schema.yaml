@@ -1,14 +1,16 @@
 name: GHL
-icon: building
+icon: message-circle
 accentColor: "#0073E6"
 keyFields:
   - { field: contactName, type: text }
-  - { field: pipeline, type: text }
-  - { field: status, type: badge }
+  - { field: direction, type: chip, colors: { inbound: emerald, outbound: cyan } }
+  - { field: channel, type: chip, colors: { SMS: cyan, Email: purple, Call: amber } }
 expandedLayout:
+  - conversation
   - contactHistory
   - campaigns
 functions:
   - create_contact
+  - send_sms
+  - get_conversation
   - update_pipeline
-  - send_campaign

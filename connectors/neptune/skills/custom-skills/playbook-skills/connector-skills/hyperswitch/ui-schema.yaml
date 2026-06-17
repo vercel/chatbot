@@ -3,7 +3,7 @@ icon: shuffle
 accentColor: "#F59E0B"
 keyFields:
   - { field: amount, type: currency }
-  - { field: gateway, type: text }
+  - { field: routingGateway, type: chip, colors: { stripe: blue, nmi: emerald, adyen: green } }
   - { field: status, type: badge }
 expandedLayout:
   - routingLog
