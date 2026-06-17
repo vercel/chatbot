@@ -1,0 +1,187 @@
+{
+  "name": "WF3: Linear Issue Update → Twenty SupportTicket Status + Activity",
+  "nodes": [
+    {
+      "name": "Linear Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "linear-issue-updated",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "Verify Linear HMAC",
+      "type": "n8n-nodes-base.code",
+      "position": [450, 300],
+      "parameters": {
+        "jsCode": "// Verify Linear webhook signature (HMAC-SHA256)\nconst crypto = require('crypto');\nconst rawBody = JSON.stringify($input.first().body);\nconst receivedSig = $input.first().headers['linear-signature'];\nconst secret = $env.LINEAR_WEBHOOK_SECRET;\n\nconst expectedSig = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');\n\nif (!crypto.timingSafeEqual(Buffer.from(receivedSig), Buffer.from(expectedSig))) {\n  throw new Error('Linear HMAC signature mismatch');\n}\n\nreturn $input.first().body;"
+      }
+    },
+    {
+      "name": "Check Issue Update Event",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.type }}",
+              "operation": "equals",
+              "value2": "Issue"
+            },
+            {
+              "value1": "={{ $json.action }}",
+              "operation": "equals",
+              "value2": "update"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Has Linear Identifier",
+      "type": "n8n-nodes-base.if",
+      "position": [850, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data.identifier }}",
+              "operation": "isNotEmpty",
+              "value2": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Find Twenty Ticket by Linear ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1050, 250],
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.newleaf.financial/graphql",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.TWENTY_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "query FindTicketByLinear($linearId: String!) { supportTickets(filter: { linearId: { eq: $linearId } }) { edges { node { id status linearId } } } }"
+            },
+            {
+              "name": "variables",
+              "value": "{\"linearId\": \"{{ $json.data.identifier }}\"}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Map Status",
+      "type": "n8n-nodes-base.code",
+      "position": [1050, 450],
+      "parameters": {
+        "jsCode": "// Map Linear status → Twenty SupportTicket status\nconst linearState = $input.first().json.data.state?.name || $input.first().json.data.stateId;\n\nconst statusMap = {\n  'Triage': 'OPEN',\n  'Todo': 'OPEN',\n  'Backlog': 'OPEN',\n  'In Progress': 'IN_PROGRESS',\n  'In Review': 'IN_PROGRESS',\n  'Done': 'CLOSED',\n  'Canceled': 'CLOSED',\n  'completed': 'CLOSED',\n  'started': 'IN_PROGRESS',\n  'unstarted': 'OPEN'\n};\n\nconst twentyStatus = statusMap[linearState] || 'OPEN';\n\nreturn {\n  linearState,\n  twentyStatus,\n  issueId: $input.first().json.data.id,\n  identifier: $input.first().json.data.identifier\n};"
+      }
+    },
+    {
+      "name": "Update Twenty Ticket Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1250, 250],
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.newleaf.financial/graphql",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.TWENTY_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "mutation UpdateTicketStatus($id: ID!, $data: SupportTicketUpdateInput!) { updateSupportTicket(id: $id, data: $data) { id status } }"
+            },
+            {
+              "name": "variables",
+              "value": "{\"id\": \"{{ $('Find Twenty Ticket by Linear ID').first().json.data.supportTickets.edges[0].node.id }}\", \"data\": {\"status\": \"{{ $('Map Status').first().json.twentyStatus }}\"}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Append Twenty Activity",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1450, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.newleaf.financial/graphql",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.TWENTY_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "mutation CreateActivity($data: ActivityCreateInput!) { createActivity(data: $data) { id } }"
+            },
+            {
+              "name": "variables",
+              "value": "{\"data\": {\"supportTicketId\": \"{{ $('Find Twenty Ticket by Linear ID').first().json.data.supportTickets.edges[0].node.id }}\", \"body\": \"Linear status changed: {{ $('Map Status').first().json.linearState }} → {{ $('Map Status').first().json.twentyStatus }}\\nLinear issue: https://linear.app/newleaf/issue/{{ $('Map Status').first().json.identifier }}\", \"title\": \"Linear Status Update\"}}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Linear Webhook Trigger": { "main": [[ { "node": "Verify Linear HMAC", "type": "main", "index": 0 } ]] },
+    "Verify Linear HMAC": { "main": [[ { "node": "Check Issue Update Event", "type": "main", "index": 0 } ]] },
+    "Check Issue Update Event": {
+      "main": [
+        [{ "node": "Has Linear Identifier", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Has Linear Identifier": {
+      "main": [
+        [
+          { "node": "Find Twenty Ticket by Linear ID", "type": "main", "index": 0 },
+          { "node": "Map Status", "type": "main", "index": 0 }
+        ]
+      ],
+      "fallback": [[]]
+    },
+    "Find Twenty Ticket by Linear ID": { "main": [[ { "node": "Update Twenty Ticket Status", "type": "main", "index": 0 } ]] },
+    "Map Status": { "main": [[ { "node": "Update Twenty Ticket Status", "type": "main", "index": 0 } ]] },
+    "Update Twenty Ticket Status": { "main": [[ { "node": "Append Twenty Activity", "type": "main", "index": 0 } ]] }
+  }
+}

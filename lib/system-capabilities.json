@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-06-17T03:39:21.991Z",
+  "generatedAt": "2026-06-17T04:34:06.347Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "e2561e2",
+  "commitSha": "c5ad720",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
     "skills": 6,
     "functions": 12,
     "workflows": 5,
-    "tools": 21,
-    "apiRoutes": 128,
+    "tools": 22,
+    "apiRoutes": 131,
     "models": 35,
     "uiComponents": 26
   },
@@ -877,6 +877,11 @@
       "description": "Create a new workflow from a natural language description. The workflow will be built on the React Flow canvas with trigger, action, conditional, parallel, transform, AI, and output nodes. Use this wh"
     },
     {
+      "name": "executeCrmActionTool",
+      "path": "lib/ai/tools/crm-action.ts",
+      "description": "Execute a CRM action against Twenty CRM. Use this when the user wants to: - Update a person"
+    },
+    {
       "name": "getCustomerProfile",
       "path": "lib/ai/tools/get-customer-profile.ts",
       "description": "Get a customer profile from Base44. Returns entity type, customer details, and related records."
@@ -1017,6 +1022,11 @@
       "method": "POST",
       "route": "/api/annotations/digest",
       "file": "app/api/annotations/digest/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/audit",
+      "file": "app/api/audit/route.ts"
     },
     {
       "method": "GET",
@@ -1407,6 +1417,16 @@
       "method": "POST",
       "route": "/api/twenty-sync",
       "file": "app/api/twenty-sync/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/twenty-webhooks",
+      "file": "app/api/twenty-webhooks/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/twenty-webhooks",
+      "file": "app/api/twenty-webhooks/route.ts"
     },
     {
       "method": "GET",

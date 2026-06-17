@@ -1,0 +1,92 @@
+{
+  "name": "WF2: Twenty SupportTicket → Linear Issue",
+  "nodes": [
+    {
+      "name": "Twenty Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "twenty-support-created",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "Verify Signature",
+      "type": "n8n-nodes-base.code",
+      "position": [450, 300],
+      "parameters": {
+        "jsCode": "// Verify X-Twenty-Webhook-Signature\nconst crypto = require('crypto');\nconst timestamp = $input.first().headers['x-twenty-webhook-timestamp'];\nconst receivedSig = $input.first().headers['x-twenty-webhook-signature'];\nconst secret = $env.TWENTY_APP_SECRET;\nconst payload = JSON.stringify($input.first().body);\n\nconst expectedSig = crypto.createHmac('sha256', secret).update(`${timestamp}:${payload}`).digest('hex');\n\nif (receivedSig !== expectedSig) {\n  throw new Error('HMAC signature mismatch');\n}\n\nreturn $input.first().body;"
+      }
+    },
+    {
+      "name": "Check Event Type",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.event }}",
+              "operation": "equals",
+              "value2": "supportTicket.created"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Linear Issue",
+      "type": "n8n-nodes-base.linear",
+      "position": [850, 300],
+      "parameters": {
+        "teamId": "Customer Operations",
+        "title": "={{ $json.data.title }}",
+        "description": "={{ 'Twenty SupportTicket\\nID: ' + $json.data.id + '\\nPriority: ' + $json.data.priority + '\\n\\n' + $json.data.description }}",
+        "priority": "={{ $json.data.priority === 'critical' ? 'Urgent' : 'Normal' }}"
+      }
+    },
+    {
+      "name": "Update Twenty with Linear ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1050, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.newleaf.financial/graphql",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.TWENTY_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "query", "value": "mutation ($id: ID!, $data: SupportTicketUpdateInput!) { updateSupportTicket(id: $id, data: $data) { id linearId } }" },
+            { "name": "variables", "value": "{\"id\": \"{{ $('Verify Signature').first().json.data.id }}\", \"data\": {\"linearId\": \"{{ $('Create Linear Issue').first().json.identifier }}\", \"linearUrl\": \"https://linear.app/newleaf/issue/{{ $('Create Linear Issue').first().json.identifier }}\"}}" }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Twenty Webhook Trigger": { "main": [[ { "node": "Verify Signature", "type": "main", "index": 0 } ]] },
+    "Verify Signature": { "main": [[ { "node": "Check Event Type", "type": "main", "index": 0 } ]] },
+    "Check Event Type": {
+      "main": [
+        [{ "node": "Create Linear Issue", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Create Linear Issue": { "main": [[ { "node": "Update Twenty with Linear ID", "type": "main", "index": 0 } ]] }
+  }
+}

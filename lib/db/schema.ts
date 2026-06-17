@@ -637,3 +637,27 @@ export const libraryWorkflowRun = pgTable("library_workflow_runs", {
 });
 
 export type LibraryWorkflowRun = InferSelectModel<typeof libraryWorkflowRun>;
+
+// ── Phase 31: Generative CRM Actions (0017) ───────────────────────────────
+
+export const libraryCrmAction = pgTable("library_crm_actions", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+  missionId: uuid("mission_id").references(() => libraryMission.id, { onDelete: "set null" }),
+  actionName: text("action_name").notNull(),
+  targetType: text("target_type").notNull().default("person"),
+  targetId: text("target_id"),
+  params: jsonb("params").notNull().default({}),
+  riskLevel: text("risk_level").notNull().default("low"),
+  status: text("status").notNull().default("pending"),
+  result: jsonb("result"),
+  errorMessage: text("error_message"),
+  twentyMutation: text("twenty_mutation"),
+  twentyResponse: jsonb("twenty_response"),
+  confirmedBy: text("confirmed_by"),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  executedAt: timestamp("executed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type LibraryCrmAction = InferSelectModel<typeof libraryCrmAction>;

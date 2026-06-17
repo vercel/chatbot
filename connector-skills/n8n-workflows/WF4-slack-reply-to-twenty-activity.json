@@ -1,0 +1,156 @@
+{
+  "name": "WF4: Slack Thread Reply → Twenty Activity + Linear Comment",
+  "nodes": [
+    {
+      "name": "Slack Thread Reply Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-thread-reply",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "Is Thread Reply",
+      "type": "n8n-nodes-base.if",
+      "position": [450, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.event.thread_ts }}",
+              "operation": "isNotEmpty",
+              "value2": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Not Bot Message",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.event.bot_id }}",
+              "operation": "isEmpty",
+              "value2": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Find Twenty by Slack Thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [850, 250],
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.newleaf.financial/graphql",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.TWENTY_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "query FindTicketByThread($threadTs: String!, $channel: String!) { supportTickets(filter: { slackThreadTs: { eq: $threadTs }, slackChannel: { eq: $channel } }) { edges { node { id linearId slackThreadTs } } } }"
+            },
+            {
+              "name": "variables",
+              "value": "{\"threadTs\": \"{{ $json.event.thread_ts }}\", \"channel\": \"{{ $json.event.channel }}\"}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Slack User Info",
+      "type": "n8n-nodes-base.slack",
+      "position": [850, 450],
+      "parameters": {
+        "resource": "user",
+        "operation": "info",
+        "userId": "={{ $json.event.user }}"
+      }
+    },
+    {
+      "name": "Append Twenty Activity",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1050, 250],
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.newleaf.financial/graphql",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.TWENTY_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "mutation CreateActivity($data: ActivityCreateInput!) { createActivity(data: $data) { id } }"
+            },
+            {
+              "name": "variables",
+              "value": "{\"data\": {\"supportTicketId\": \"{{ $('Find Twenty by Slack Thread').first().json.data.supportTickets.edges[0].node.id }}\", \"body\": \"Slack reply from {{ $('Get Slack User Info').json.user.real_name || $json.event.user }}\\nMessage: {{ $json.event.text }}\\nSlack link: https://newleaf-financial.slack.com/archives/{{ $json.event.channel }}/p{{ $json.event.thread_ts.replace('.','') }}\", \"title\": \"Slack Reply Received\"}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Append Linear Comment",
+      "type": "n8n-nodes-base.linear",
+      "position": [1250, 300],
+      "parameters": {
+        "resource": "comment",
+        "operation": "create",
+        "issueId": "={{ $('Find Twenty by Slack Thread').first().json.data.supportTickets.edges[0].node.linearId }}",
+        "body": "={{ '💬 **Slack reply from ' + ($('Get Slack User Info').json.user.real_name || 'user') + '**\\n\\n> ' + $json.event.text + '\\n\\n🔗 [View in Slack](https://newleaf-financial.slack.com/archives/' + $json.event.channel + '/p' + $json.event.thread_ts.replace('.','') + ')' }}"
+      }
+    }
+  ],
+  "connections": {
+    "Slack Thread Reply Trigger": { "main": [[ { "node": "Is Thread Reply", "type": "main", "index": 0 } ]] },
+    "Is Thread Reply": {
+      "main": [
+        [{ "node": "Not Bot Message", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Not Bot Message": {
+      "main": [
+        [
+          { "node": "Find Twenty by Slack Thread", "type": "main", "index": 0 },
+          { "node": "Get Slack User Info", "type": "main", "index": 0 }
+        ]
+      ],
+      "fallback": [[]]
+    },
+    "Find Twenty by Slack Thread": { "main": [[ { "node": "Append Twenty Activity", "type": "main", "index": 0 } ]] },
+    "Get Slack User Info": { "main": [[ { "node": "Append Twenty Activity", "type": "main", "index": 0 } ]] },
+    "Append Twenty Activity": { "main": [[ { "node": "Append Linear Comment", "type": "main", "index": 0 } ]] }
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "name": "WF1: Slack DM → Linear Ticket + Twenty SupportTicket",
+  "nodes": [
+    {
+      "name": "Slack Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "name": "Filter Support Keywords",
+      "type": "n8n-nodes-base.if",
+      "position": [450, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.event.text }}",
+              "operation": "contains",
+              "value2": "support"
+            },
+            {
+              "value1": "={{ $json.body.event.text }}",
+              "operation": "contains",
+              "value2": "help"
+            },
+            {
+              "value1": "={{ $json.body.event.text }}",
+              "operation": "contains",
+              "value2": "issue"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Linear Issue",
+      "type": "n8n-nodes-base.linear",
+      "position": [650, 200],
+      "parameters": {
+        "teamId": "Customer Operations",
+        "title": "={{ 'Support: ' + $json.body.event.text.substring(0, 80) }}",
+        "description": "={{ 'From Slack #customer-support\\nUser: ' + $json.body.event.user + '\\nMessage: ' + $json.body.event.text + '\\nThread: https://newleaf-financial.slack.com/archives/' + $json.body.event.channel + '/p' + $json.body.event.ts.replace('.','') }}",
+        "priority": "Normal"
+      }
+    },
+    {
+      "name": "Create Twenty SupportTicket",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [650, 450],
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.newleaf.financial/graphql",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.TWENTY_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "mutation CreateTicket($data: CreateSupportTicketInput!) { createSupportTicket(data: $data) { id } }"
+            },
+            {
+              "name": "variables",
+              "value": "{\"data\": {\"title\": \"{{ $json.body.event.text.substring(0, 100) }}\", \"description\": \"{{ $json.body.event.text }}\", \"source\": \"slack\", \"slackThreadTs\": \"{{ $json.body.event.ts }}\", \"slackChannel\": \"{{ $json.body.event.channel }}\"}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Slack Reply with Ticket ID",
+      "type": "n8n-nodes-base.slack",
+      "position": [850, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channelId": "={{ $json.body.event.channel }}",
+        "threadTs": "={{ $json.body.event.ts }}",
+        "text": "Ticket created! 🎫\n• Linear: {{ $node['Create Linear Issue'].json.identifier }}\n• Twenty: {{ $node['Create Twenty SupportTicket'].json.data.createSupportTicket.id }}\n\nWe'll get back to you shortly.",
+        "otherOptions": {
+          "blocks": "[\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*Ticket Created* 🎫\\n• Linear: {{ $node['Create Linear Issue'].json.identifier }}\\n• Twenty SupportTicket: Opened\"\n    }\n  },\n  {\n    \"type\": \"actions\",\n    \"elements\": [\n      {\n        \"type\": \"button\",\n        \"text\": { \"type\": \"plain_text\", \"text\": \"View in Linear\" },\n        \"url\": \"https://linear.app/newleaf/issue/{{ $node['Create Linear Issue'].json.identifier }}\"\n      }\n    ]\n  }\n]"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Slack Webhook Trigger": { "main": [[ { "node": "Filter Support Keywords", "type": "main", "index": 0 } ]] },
+    "Filter Support Keywords": {
+      "main": [
+        [{ "node": "Create Linear Issue", "type": "main", "index": 0 }],
+        [{ "node": "Create Twenty SupportTicket", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Linear Issue": { "main": [[ { "node": "Slack Reply with Ticket ID", "type": "main", "index": 0 } ]] },
+    "Create Twenty SupportTicket": { "main": [[ { "node": "Slack Reply with Ticket ID", "type": "main", "index": 0 } ]] }
+  }
+}

@@ -175,6 +175,15 @@ export const BUILT_IN_TOOLS = [
       (output as Record<string, unknown>).connectorType === "vercel",
     description: "UniversalConnectorCard (vercel) — project + deploy URL + build",
   },
+  {
+    toolName: "executeCrmAction",
+    detect: (output: unknown) =>
+      typeof output === "object" &&
+      output !== null &&
+      "actionName" in output &&
+      ("auditId" in output || "requiresConfirmation" in output || "status" in output),
+    description: "MissionCard (CRM Action) — generative CRM action with audit trail + confirmation gates",
+  },
 ];
 
 export function getBuiltInTools() {
