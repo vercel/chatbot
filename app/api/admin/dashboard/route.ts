@@ -152,6 +152,69 @@ export async function GET(req: NextRequest) {
       `))[0]?.total || 0
     );
 
+    // ── Mission KPI (Stream 8: Eve observability) ─────────────────────
+    const missionData = await q(sql`
+      SELECT
+        COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE status = 'pending')::int as pending,
+        COUNT(*) FILTER (WHERE status = 'running')::int as running,
+        COUNT(*) FILTER (WHERE status = 'completed')::int as completed,
+        COUNT(*) FILTER (WHERE status = 'failed')::int as failed,
+        COUNT(*) FILTER (WHERE status = 'aborted')::int as aborted,
+        COUNT(*) FILTER (WHERE status = 'enhancing')::int as enhancing,
+        COUNT(*) FILTER (WHERE status = 'approved')::int as approved,
+        COALESCE(SUM(estimated_time_min), 0)::int as total_est_minutes
+      FROM library_missions
+      WHERE created_at >= ${since.toISOString()}
+    `);
+
+    const missionKPI = {
+      total: Number(missionData[0]?.total || 0),
+      pending: Number(missionData[0]?.pending || 0),
+      running: Number(missionData[0]?.running || 0),
+      completed: Number(missionData[0]?.completed || 0),
+      failed: Number(missionData[0]?.failed || 0),
+      aborted: Number(missionData[0]?.aborted || 0),
+      enhancing: Number(missionData[0]?.enhancing || 0),
+      approved: Number(missionData[0]?.approved || 0),
+      totalEstMinutes: Number(missionData[0]?.total_est_minutes || 0),
+    };
+
+    // Per-day mission completions
+    const missionsPerDay = (await q(sql`
+      SELECT
+        DATE(created_at) as date,
+        COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE status = 'completed')::int as completed
+      FROM library_missions
+      WHERE created_at >= ${since.toISOString()}
+      GROUP BY DATE(created_at)
+      ORDER BY date
+    `)).map((r: any) => ({
+      date: String(r.date),
+      total: Number(r.total),
+      completed: Number(r.completed),
+    }));
+
+    // ── V2 Session Health (Stream 7: V2 alignment) ─────────────────────
+    // Query V2 handoff sessions
+    const v2SessionData = await q(sql`
+      SELECT
+        COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE status = 'running')::int as running,
+        COUNT(*) FILTER (WHERE status = 'completed')::int as completed,
+        COUNT(*) FILTER (WHERE status = 'failed')::int as failed
+      FROM library_handoff_sessions
+      WHERE started_at >= ${since.toISOString()}
+    `);
+
+    const v2SessionKPI = {
+      total: Number(v2SessionData[0]?.total || 0),
+      running: Number(v2SessionData[0]?.running || 0),
+      completed: Number(v2SessionData[0]?.completed || 0),
+      failed: Number(v2SessionData[0]?.failed || 0),
+    };
+
     await sqlClient.end();
     return NextResponse.json({
       tokensTotal: totalTokens,
@@ -166,6 +229,10 @@ export async function GET(req: NextRequest) {
       totalSessions,
       activeModels,
       totalSkills,
+      // Stream 8 additions
+      missionKPI,
+      missionsPerDay,
+      v2SessionKPI,
     });
   } catch (err: any) {
     await sqlClient.end();

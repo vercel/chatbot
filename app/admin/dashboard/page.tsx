@@ -28,6 +28,11 @@ import {
   RadioIcon,
   WifiIcon,
   WifiOffIcon,
+  RocketIcon,
+  XCircleIcon,
+  CheckCircle2Icon,
+  AlertTriangleIcon,
+  BotIcon,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -45,6 +50,16 @@ interface DashboardKPI {
   totalSessions: number;
   activeModels: number;
   totalSkills: number;
+  // Stream 8: Eve observability additions
+  missionKPI?: {
+    total: number; pending: number; running: number;
+    completed: number; failed: number; aborted: number;
+    enhancing: number; approved: number; totalEstMinutes: number;
+  };
+  missionsPerDay?: { date: string; total: number; completed: number }[];
+  v2SessionKPI?: {
+    total: number; running: number; completed: number; failed: number;
+  };
 }
 
 interface VPSHealth {
@@ -339,6 +354,137 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="text-center text-[10px] text-muted-foreground mt-2">Uptime: {vps.uptime}</div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Mission KPIs (Stream 8: Eve Observability) ────────────────── */}
+      {kpi?.missionKPI && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            <Card className="bg-accent/10">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">Total</div>
+                <div className="text-lg font-bold mt-1">{kpi.missionKPI.total}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-emerald-500/5">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">Done</div>
+                <div className="text-lg font-bold text-emerald-400 mt-1">{kpi.missionKPI.completed}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-yellow-500/5">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">Running</div>
+                <div className="text-lg font-bold text-yellow-400 mt-1">{kpi.missionKPI.running}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-cyan-500/5">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">Enhancing</div>
+                <div className="text-lg font-bold text-cyan-400 mt-1">{kpi.missionKPI.enhancing}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-violet-500/5">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">Approved</div>
+                <div className="text-lg font-bold text-violet-400 mt-1">{kpi.missionKPI.approved}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-red-500/5">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">Failed</div>
+                <div className="text-lg font-bold text-red-400 mt-1">{kpi.missionKPI.failed}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-orange-500/5">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">Aborted</div>
+                <div className="text-lg font-bold text-orange-400 mt-1">{kpi.missionKPI.aborted}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-accent/10">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">Est. Min</div>
+                <div className="text-lg font-bold mt-1">{kpi.missionKPI.totalEstMinutes}m</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Missions/Day chart */}
+          {kpi.missionsPerDay && kpi.missionsPerDay.length > 0 && (
+            <Card>
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <RocketIcon className="size-3.5" /> Missions / Day
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="flex items-end gap-1 h-24">
+                  {kpi.missionsPerDay.map((d, i) => {
+                    const maxMissions = Math.max(...kpi.missionsPerDay!.map(x => x.total), 1);
+                    const h = (d.total / maxMissions) * 100;
+                    const ch = (d.completed / maxMissions) * 100;
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full flex flex-col-reverse" style={{ height: `${Math.max(2, h)}%` }}>
+                          <div className="w-full bg-cyan-500/40 rounded-t" style={{ height: `${Math.max(1, ch)}%` }} />
+                          <div className="w-full bg-cyan-500/10" style={{ height: `${Math.max(1, h - ch)}%` }} />
+                        </div>
+                        <span className="text-[8px] text-muted-foreground rotate-45 origin-left">{d.date.slice(5)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* ── V2 Session Health (Stream 7: V2 alignment) ───────────────── */}
+      {kpi?.v2SessionKPI && (
+        <Card className="bg-accent/10">
+          <CardHeader className="p-4 pb-2">
+            <div className="flex items-center gap-2">
+              <BotIcon className="size-4" />
+              <CardTitle className="text-sm">V2 Session Health</CardTitle>
+              <Badge variant={kpi.v2SessionKPI.running > 0 ? "default" : "secondary"} className="ml-auto">
+                {kpi.v2SessionKPI.running} running
+              </Badge>
+            </div>
+            <CardDescription className="text-[10px]">
+              Neptune V2 coding agent sessions ({kpi.v2SessionKPI.total} total)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="grid grid-cols-4 gap-3 text-center">
+              <div>
+                <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  <ActivityIcon className="size-3" /> Total
+                </div>
+                <div className="text-lg font-bold">{kpi.v2SessionKPI.total}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  <RadioIcon className="size-3" /> Running
+                </div>
+                <div className="text-lg font-bold text-yellow-400">{kpi.v2SessionKPI.running}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  <CheckCircle2Icon className="size-3" /> Done
+                </div>
+                <div className="text-lg font-bold text-emerald-400">{kpi.v2SessionKPI.completed}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  <XCircleIcon className="size-3" /> Failed
+                </div>
+                <div className="text-lg font-bold text-red-400">{kpi.v2SessionKPI.failed}</div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
