@@ -30,3 +30,17 @@ export {
   extractProfilesFromPulled,
 } from "./cross-reference";
 export type { CrossReferenceResult } from "./cross-reference";
+
+// Dependency graph
+export { buildDependencyGraph, summarizeGraph } from "./dependency-graph";
+export type { GraphSummary } from "./dependency-graph";
+
+// Alignment validators
+export {
+  validateBillingAlignment,
+  validateEnrollmentAlignment,
+  validateAgentPromiseAlignment,
+  validateDocumentationAlignment,
+  validateAll,
+  summarizeValidations,
+} from "./alignment-validators";
