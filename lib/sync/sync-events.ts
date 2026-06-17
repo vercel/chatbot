@@ -6,7 +6,7 @@
 import { SYNC_FAILURE_SLACK_THRESHOLD } from "./constants";
 
 export interface SyncEventInput {
-  direction: "b2t" | "t2b";
+  direction: "b2t" | "t2b" | "n2t";
   recordId: string;
   eventType: string;
   status: "received" | "completed" | "failed" | "conflict_resolved" | "skipped";

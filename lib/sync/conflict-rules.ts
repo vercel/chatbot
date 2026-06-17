@@ -3,7 +3,7 @@
  * Phase 30: Enforces NMI sacred fields + LWW + field ownership
  */
 
-export type SyncDirection = "b2t" | "t2b";
+export type SyncDirection = "b2t" | "t2b" | "n2t";
 
 export interface SyncField {
   field: string;
