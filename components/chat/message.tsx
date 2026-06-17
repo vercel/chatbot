@@ -23,6 +23,7 @@ import { PreviewAttachment } from "./preview-attachment";
 import { StreamingIndicator, detectStreamPhase } from "./streaming-indicator";
 import { ToolResultRenderer } from "./tool-result-renderer";
 import { Weather } from "./weather";
+import { UniversalConnectorCard } from "@/components/generative/universal-connector-card";
 import {
   groupToolCalls,
   CollapsedToolGroup,
@@ -181,6 +182,19 @@ const PurePreviewMessage = ({
       const widthClass = "w-[min(100%,450px)]";
 
       if (state === "output-available") {
+        // Phase 24B: If output uses standard connector envelope, render UniversalConnectorCard
+        const output = part.output as Record<string, unknown> | undefined;
+        if (output && typeof output === "object" && "connectorType" in output && "data" in output) {
+          return (
+            <div className={widthClass} key={toolCallId}>
+              <UniversalConnectorCard
+                connector={output.connectorType as string}
+                type={output.schemaVersion ? `schema-v${output.schemaVersion}` : "default"}
+                data={output.data as Record<string, unknown>}
+              />
+            </div>
+          );
+        }
         return (
           <div className={widthClass} key={toolCallId}>
             <Weather weatherAtLocation={part.output} />
@@ -404,17 +418,35 @@ const PurePreviewMessage = ({
               <ToolInput input={toolPart.input as any} />
             ) : null}
             {isComplete && (
-              <ToolResultRenderer
-                part={
-                  {
-                    type: "dynamic-tool",
-                    toolName,
-                    state: toolPart.state,
-                    output: toolPart.output,
-                    errorText: toolPart.errorText,
-                  } as any
-                }
-              />
+              <>
+                {/* Phase 24B: If output uses standard connector envelope { connectorType, data }, render UniversalConnectorCard fallback */}
+                {toolPart.output &&
+                typeof toolPart.output === "object" &&
+                "connectorType" in toolPart.output &&
+                "data" in toolPart.output ? (
+                  <UniversalConnectorCard
+                    connector={(toolPart.output as Record<string, unknown>).connectorType as string}
+                    type={
+                      (toolPart.output as Record<string, unknown>).schemaVersion
+                        ? `schema-v${(toolPart.output as Record<string, unknown>).schemaVersion}`
+                        : "default"
+                    }
+                    data={(toolPart.output as Record<string, unknown>).data as Record<string, unknown>}
+                  />
+                ) : (
+                  <ToolResultRenderer
+                    part={
+                      {
+                        type: "dynamic-tool",
+                        toolName,
+                        state: toolPart.state,
+                        output: toolPart.output,
+                        errorText: toolPart.errorText,
+                      } as any
+                    }
+                  />
+                )}
+              </>
             )}
           </ToolContent>
         </Tool>

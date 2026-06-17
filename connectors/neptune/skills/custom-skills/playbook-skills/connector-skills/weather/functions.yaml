@@ -1,0 +1,25 @@
+functions:
+  getWeather:
+    description: Get current weather at a location by city name or coordinates
+    parameters:
+      - name: latitude
+        type: number
+        required: false
+        description: Latitude coordinate
+      - name: longitude
+        type: number
+        required: false
+        description: Longitude coordinate
+      - name: city
+        type: string
+        required: false
+        description: City name for geocoding lookup
+    returns:
+      connectorType: weather
+      schemaVersion: 1
+      data:
+        temperature: number
+        weather: string
+        location: string
+        units: string
+    source: lib/ai/tools/get-weather.ts

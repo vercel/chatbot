@@ -47,6 +47,7 @@ export function ToolResultRenderer({ part }: ToolResultRendererProps) {
   }
 
   // Phase 24: Route connector card outputs through UniversalConnectorCard
+  // Supports both legacy { connector, type, data } and Phase 24B { connectorType, data, schemaVersion }
   if (typeof output === "object" && output !== null) {
     const cardOutput = output as Record<string, unknown>;
     if (cardOutput.connector && cardOutput.type && cardOutput.data) {
@@ -54,6 +55,20 @@ export function ToolResultRenderer({ part }: ToolResultRendererProps) {
         <CardRouter
           toolName={toolName}
           output={cardOutput as { connector: string; type: string; data: Record<string, unknown> }}
+        />
+      );
+      if (card) return card;
+    }
+    // Phase 24B: Standard envelope { connectorType, data, schemaVersion }
+    if (cardOutput.connectorType && cardOutput.data) {
+      const card = (
+        <CardRouter
+          toolName={toolName}
+          output={{
+            connector: cardOutput.connectorType as string,
+            type: cardOutput.schemaVersion ? `schema-v${cardOutput.schemaVersion}` : "default",
+            data: cardOutput.data as Record<string, unknown>,
+          }}
         />
       );
       if (card) return card;

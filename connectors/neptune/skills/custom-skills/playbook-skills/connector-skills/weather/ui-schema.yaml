@@ -1,0 +1,14 @@
+name: Weather
+icon: cloud-sun
+accentColor: "#0ea5e9"
+keyFields:
+  - { field: temperature, type: text }
+  - { field: weather, type: chip, colors: { sunny: yellow, cloudy: gray, rainy: blue, "clear-night": purple } }
+  - { field: location, type: text }
+expandedLayout:
+  - currentHigh
+  - currentLow
+  - units
+  - isDay
+functions:
+  - get_weather

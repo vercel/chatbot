@@ -1,0 +1,20 @@
+{
+  "connector": "weather",
+  "icon": "🌤️",
+  "accentColor": "#0ea5e9",
+  "cardTypes": {
+    "forecast": {
+      "inline": {
+        "fields": ["location", "temperature", "weather"],
+        "badges": ["weather", "isDay"],
+        "layout": "compact-weather"
+      },
+      "expanded": {
+        "sections": ["details", "forecast"]
+      },
+      "canvas": {
+        "sections": ["fullRecord", "hourly", "daily"]
+      }
+    }
+  }
+}

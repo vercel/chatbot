@@ -48,7 +48,11 @@ export const getWeather = tool({
       const coords = await geocodeCity(input.city);
       if (!coords) {
         return {
-          error: `Could not find coordinates for "${input.city}". Please check the city name.`,
+          connectorType: "weather",
+          data: {
+            error: `Could not find coordinates for "${input.city}". Please check the city name.`,
+          },
+          schemaVersion: 1,
         };
       }
       latitude = coords.latitude;
@@ -58,8 +62,12 @@ export const getWeather = tool({
       longitude = input.longitude;
     } else {
       return {
-        error:
-          "Please provide either a city name or both latitude and longitude coordinates.",
+        connectorType: "weather",
+        data: {
+          error:
+            "Please provide either a city name or both latitude and longitude coordinates.",
+        },
+        schemaVersion: 1,
       };
     }
 
@@ -69,10 +77,51 @@ export const getWeather = tool({
 
     const weatherData = await response.json();
 
-    if ("city" in input) {
-      weatherData.cityName = input.city;
+    const cityName = "city" in input ? input.city : undefined;
+    const location =
+      cityName ||
+      `${latitude.toFixed(1)}°, ${longitude.toFixed(1)}°`;
+
+    // Determine day/night from sunrise/sunset
+    let isDay = true;
+    if (weatherData.daily?.sunrise?.[0] && weatherData.daily?.sunset?.[0]) {
+      const now = new Date();
+      const sunrise = new Date(weatherData.daily.sunrise[0]);
+      const sunset = new Date(weatherData.daily.sunset[0]);
+      isDay = now >= sunrise && now <= sunset;
     }
 
-    return weatherData;
+    // Simple weather condition from temperature
+    const temp = weatherData.current?.temperature_2m;
+    let condition = "unknown";
+    if (temp !== undefined) {
+      if (temp > 30) condition = "hot";
+      else if (temp > 20) condition = "warm";
+      else if (temp > 10) condition = "mild";
+      else if (temp > 0) condition = "cool";
+      else condition = "cold";
+    }
+
+    const currentHigh = weatherData.hourly?.temperature_2m
+      ? Math.max(...weatherData.hourly.temperature_2m.slice(0, 24))
+      : temp;
+    const currentLow = weatherData.hourly?.temperature_2m
+      ? Math.min(...weatherData.hourly.temperature_2m.slice(0, 24))
+      : temp;
+
+    return {
+      connectorType: "weather",
+      data: {
+        temperature: temp,
+        weather: condition,
+        location,
+        units: weatherData.current_units?.temperature_2m || "°C",
+        currentHigh,
+        currentLow,
+        isDay,
+        timezone: weatherData.timezone,
+      },
+      schemaVersion: 1,
+    };
   },
 });

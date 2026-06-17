@@ -46,9 +46,17 @@ function detectConnector(
   toolName: string,
   output: ToolOutput
 ): { connector: string; type: string } | null {
-  // Explicit connector field
+  // Phase 24B: Standard connector envelope { connectorType, data, schemaVersion }
+  if (output.connectorType && output.data) {
+    return {
+      connector: output.connectorType as string,
+      type: output.schemaVersion ? `schema-v${output.schemaVersion}` : "default",
+    };
+  }
+
+  // Explicit connector field (legacy)
   if (output.connector && output.type) {
-    return { connector: output.connector, type: output.type };
+    return { connector: output.connector as string, type: output.type as string };
   }
 
   // Detect from tool name patterns
