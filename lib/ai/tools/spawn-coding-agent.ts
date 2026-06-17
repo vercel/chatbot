@@ -17,11 +17,11 @@ import { tool } from "ai";
 import { z } from "zod";
 import { readFile } from "fs/promises";
 import path from "path";
-import { handoffToV2 } from "@/lib/v2/bridge";
 import { libraryV2Handoff } from "@/lib/db/schema";
 import { spawnV2Session } from "@/lib/v2/handoff-client";
 import { generateUUID } from "@/lib/utils";
 import { routeIntent } from "@/lib/ai/routing/kg-router";
+import { recordHandoffSuccess, recordHandoffFailure } from "@/lib/handoff-health";
 
 const dbClient = postgres(process.env.POSTGRES_URL ?? "");
 const db = drizzle(dbClient);
@@ -225,16 +225,24 @@ export const spawnCodingAgent = tool({
           timestamp: new Date().toISOString(),
         };
 
-        // Phase 24: V2 handoff with retry (1 retry with 2s backoff)
+        // Phase 28: V2 handoff with 3 retries exp backoff, 10s timeout per attempt
+        const MAX_RETRIES = 3;
+        const BASE_DELAY_MS = 1000;
+        const ATTEMPT_TIMEOUT_MS = 10_000;
+
         let v2SessionId = "";
         let streamUrl = "";
         let handoffAttempts = 0;
+        let lastError: string | null = null;
 
-        const attemptHandoff = async (): Promise<{ sessionId: string; streamUrl: string } | null> => {
-          handoffAttempts++;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          handoffAttempts = attempt;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS);
 
-          // Try direct V2 client
           try {
+            console.log(`[spawnCodingAgent] Attempt ${attempt}/${MAX_RETRIES}: spawning V2 session for "${goal.slice(0, 60)}"`);
+
             const v2Result = await spawnV2Session({
               goal,
               mode,
@@ -247,68 +255,53 @@ export const spawnCodingAgent = tool({
               },
             });
 
+            clearTimeout(timeoutId);
+
             if (v2Result.success && v2Result.sessionId) {
-              console.log(`[spawnCodingAgent] Direct V2 client success (attempt ${handoffAttempts})`);
-              return { sessionId: v2Result.sessionId, streamUrl: v2Result.streamUrl || "" };
+              console.log(`[spawnCodingAgent] ✅ V2 session created (attempt ${attempt}/${MAX_RETRIES}): ${v2Result.sessionId}`);
+              v2SessionId = v2Result.sessionId;
+              streamUrl = v2Result.streamUrl || "";
+              break;
             }
 
-            if (v2Result.code === "V2_UNREACHABLE" && handoffAttempts < 2) {
-              console.warn(`[spawnCodingAgent] V2 unreachable, will retry with backoff...`);
-              return null;
+            lastError = `V2 returned: ${v2Result.code || "UNKNOWN"} - ${v2Result.error || "no error detail"}`;
+            console.warn(`[spawnCodingAgent] ⚠️ Attempt ${attempt}/${MAX_RETRIES} failed: ${lastError}`);
+
+            if (v2Result.code === "V2_UNREACHABLE" || v2Result.code?.startsWith("V2_HTTP_5")) {
+              // Retryable — continue loop
+            } else {
+              // Non-retryable error, don't waste retries
+              lastError = v2Result.error || "Non-retryable V2 error";
+              break;
             }
-          } catch (v2Err) {
-            console.warn("[spawnCodingAgent] Direct V2 client threw:", (v2Err as Error).message);
+          } catch (err) {
+            clearTimeout(timeoutId);
+            lastError = (err as Error).message;
+            console.error(`[spawnCodingAgent] ❌ Attempt ${attempt}/${MAX_RETRIES} exception: ${lastError}`);
           }
 
-          // Fallback: V2 bridge
-          try {
-            const contextStr = `Repository: ${repoOwner}/${repoName || "unknown"}
-Base branch: ${baseBranch || "main"}
-KG Insights: ${kgInsights?.primaryPlaybook || "none"} (confidence: ${kgInsights?.confidence ?? 0})
-Last messages: ${lastMessages.length} messages in context`;
-
-            const handoffResult = await handoffToV2(goal, contextStr, "deepseek-v4-pro", sessionId);
-            if (handoffResult.success) {
-              console.log(`[spawnCodingAgent] V2 bridge success (attempt ${handoffAttempts})`);
-              return { sessionId: handoffResult.sessionId || "", streamUrl: handoffResult.sseUrl || "" };
-            }
-
-            if (handoffAttempts < 2) {
-              console.warn(`[spawnCodingAgent] V2 bridge failed, retrying in 2s...`);
-              return null;
-            }
-
-            console.error(`[spawnCodingAgent] All handoff attempts exhausted`);
-            return null;
-          } catch (bridgeErr) {
-            console.error("[spawnCodingAgent] Bridge threw:", (bridgeErr as Error).message);
-            return null;
+          // Exponential backoff before next attempt (1s, 2s, 4s)
+          if (attempt < MAX_RETRIES) {
+            const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+            console.log(`[spawnCodingAgent] Retrying in ${delay}ms...`);
+            await new Promise((r) => setTimeout(r, delay));
           }
-        };
-
-        // First attempt
-        let handoffResult = await attemptHandoff();
-
-        // Retry with 2s backoff
-        if (!handoffResult && handoffAttempts < 2) {
-          await new Promise((r) => setTimeout(r, 2000));
-          handoffResult = await attemptHandoff();
         }
 
-        if (!handoffResult) {
+        if (!v2SessionId) {
+          // Phase 28: Record health failure
+          recordHandoffFailure(lastError || "unknown", undefined).catch(() => {});
+
           return {
             success: false,
             error: {
               code: "V2_HANDOFF_FAILED",
-              message: `V2 unreachable after ${handoffAttempts} attempt(s)`,
+              message: `V2 unreachable after ${handoffAttempts} attempt(s). Last error: ${lastError || "unknown"}`,
               retryable: true,
               suggestion: "V2 backend may be temporarily down. Try again or use sandbox tools.",
             },
           };
         }
-
-        v2SessionId = handoffResult.sessionId;
-        streamUrl = handoffResult.streamUrl;
 
         // Persist to library_v2_handoffs
         const dbId = generateUUID();
@@ -326,6 +319,9 @@ Last messages: ${lastMessages.length} messages in context`;
         } catch (dbErr) {
           console.warn("[spawnCodingAgent] DB persist failed (non-fatal):", (dbErr as Error).message);
         }
+
+        // Phase 28: Record health success
+        recordHandoffSuccess(v2SessionId).catch(() => {});
 
         return {
           success: true,

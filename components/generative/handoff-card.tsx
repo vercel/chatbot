@@ -112,21 +112,41 @@ export function HandoffCard({
   const [status, setStatus] = useState<HandoffStatus>(handoff.status);
   const [progress, setProgress] = useState(handoff.progress || 0);
 
-  // SSE subscription to v2-webhooks
+  // Phase 28: SSE subscription to v2-webhooks with auto-reconnect
+  const [reconnecting, setReconnecting] = useState(false);
   useEffect(() => {
     if (!handoff.sessionId) return;
-    const eventSource = new EventSource(
-      `/api/v2-webhooks/stream?sessionId=${handoff.sessionId}`
-    );
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.status) setStatus(data.status);
-        if (data.progress !== undefined) setProgress(data.progress);
-      } catch { /* ignore */ }
+    let eventSource: EventSource | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const connect = () => {
+      eventSource = new EventSource(
+        `/api/v2-webhooks/stream?sessionId=${handoff.sessionId}`
+      );
+      eventSource.onopen = () => {
+        setReconnecting(false);
+      };
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.status) setStatus(data.status);
+          if (data.progress !== undefined) setProgress(data.progress);
+        } catch { /* ignore malformed events */ }
+      };
+      eventSource.onerror = () => {
+        eventSource?.close();
+        setReconnecting(true);
+        // Auto-reconnect after 5s
+        reconnectTimer = setTimeout(connect, 5000);
+      };
     };
-    eventSource.onerror = () => eventSource.close();
-    return () => eventSource.close();
+
+    connect();
+
+    return () => {
+      eventSource?.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+    };
   }, [handoff.sessionId]);
 
   const canPreview = status === "ready_for_preview" || status === "ready_to_merge";
@@ -176,6 +196,12 @@ export function HandoffCard({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <StatusBadge status={status} />
+            {reconnecting && (
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium border flex items-center gap-1 bg-amber-500/10 text-amber-400 border-amber-500/20">
+                <Loader2 className="size-3 animate-spin" />
+                Reconnecting...
+              </span>
+            )}
             <button
               onClick={() =>
                 setState((s) => (s === "expanded" ? "inline" : "expanded"))

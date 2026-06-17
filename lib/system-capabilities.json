@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-17T02:10:30.870Z",
+  "generatedAt": "2026-06-17T02:24:30.998Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "115a143",
+  "commitSha": "696f6d7",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
@@ -10,7 +10,7 @@
     "functions": 12,
     "workflows": 5,
     "tools": 21,
-    "apiRoutes": 120,
+    "apiRoutes": 124,
     "models": 35,
     "uiComponents": 26
   },
@@ -1384,6 +1384,11 @@
       "file": "app/api/tools/route.ts"
     },
     {
+      "method": "POST",
+      "route": "/api/twenty-sync",
+      "file": "app/api/twenty-sync/route.ts"
+    },
+    {
       "method": "GET",
       "route": "/api/v2-bridge",
       "file": "app/api/v2-bridge/route.ts"
@@ -1422,6 +1427,21 @@
       "method": "GET",
       "route": "/api/v2-handoffs/:id/stream",
       "file": "app/api/v2-handoffs/[id]/stream/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v2-sessions/test",
+      "file": "app/api/v2-sessions/test/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v2-sessions/test",
+      "file": "app/api/v2-sessions/test/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v2-webhooks",
+      "file": "app/api/v2-webhooks/route.ts"
     },
     {
       "method": "POST",
