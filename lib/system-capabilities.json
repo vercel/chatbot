@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-17T22:15:07.731Z",
+  "generatedAt": "2026-06-17T23:03:04.963Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "0230616",
+  "commitSha": "9ed2d67",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
@@ -10,7 +10,7 @@
     "functions": 12,
     "workflows": 5,
     "tools": 27,
-    "apiRoutes": 145,
+    "apiRoutes": 155,
     "models": 35,
     "uiComponents": 26
   },
@@ -1500,6 +1500,31 @@
     },
     {
       "method": "GET",
+      "route": "/api/testing/playbooks",
+      "file": "app/api/testing/playbooks/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/testing/run",
+      "file": "app/api/testing/run/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/testing/run-all",
+      "file": "app/api/testing/run-all/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/testing/runs",
+      "file": "app/api/testing/runs/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/testing/runs/:runId",
+      "file": "app/api/testing/runs/[runId]/route.ts"
+    },
+    {
+      "method": "GET",
       "route": "/api/tools",
       "file": "app/api/tools/route.ts"
     },
@@ -1512,6 +1537,31 @@
       "method": "POST",
       "route": "/api/twenty-sync",
       "file": "app/api/twenty-sync/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/twenty-sync/cron",
+      "file": "app/api/twenty-sync/cron/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/twenty-sync/cron",
+      "file": "app/api/twenty-sync/cron/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/twenty-sync/generate-payment-link",
+      "file": "app/api/twenty-sync/generate-payment-link/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/twenty-sync/nmi-webhook",
+      "file": "app/api/twenty-sync/nmi-webhook/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/twenty-sync/nmi-webhook",
+      "file": "app/api/twenty-sync/nmi-webhook/route.ts"
     },
     {
       "method": "GET",

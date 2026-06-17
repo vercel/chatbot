@@ -1,0 +1,5 @@
+# Phase 40 Visual Diff Baselines
+# PNG baselines are git-tracked (LFS for >1MB)
+# Diff outputs are NOT tracked
+*.diff.png
+/tmp/
