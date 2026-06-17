@@ -86,3 +86,25 @@ export {
   summarizeActions,
 } from "./action-dispatcher";
 export type { CreateActionInput, DispatchResult, BatchDispatchResult, ActionStats } from "./action-dispatcher";
+
+// Knowledge graph bridge
+export {
+  toD3Format,
+  toRichD3Format,
+  mergeGraphs,
+  queryGraph,
+  toGraphvizDOT,
+  toMermaid,
+  analyzeCustomerGraphs,
+  prepareForPersistence,
+  deserializeFromPersistence,
+  filterByTimeRange,
+} from "./knowledge-graph-bridge";
+export type {
+  D3Node,
+  D3Edge,
+  D3GraphData,
+  GraphQuery,
+  CustomerGraphSummary,
+  PersistedGraph,
+} from "./knowledge-graph-bridge";
