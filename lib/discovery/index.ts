@@ -67,3 +67,22 @@ export {
   quickReport,
 } from "./report-generator";
 export type { GenerateReportInput, GeneratedReports } from "./report-generator";
+
+// Action dispatcher
+export {
+  createAction,
+  createActionsFromFindings,
+  getAction,
+  getActionsForRun,
+  getPendingActions,
+  approveAction,
+  rejectAction,
+  approveAll,
+  rejectAll,
+  dispatchAction,
+  dispatchAll,
+  validateAction,
+  getActionStats,
+  summarizeActions,
+} from "./action-dispatcher";
+export type { CreateActionInput, DispatchResult, BatchDispatchResult, ActionStats } from "./action-dispatcher";
