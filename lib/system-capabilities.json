@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-17T05:33:53.399Z",
+  "generatedAt": "2026-06-17T10:23:59.222Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "bf7222b",
+  "commitSha": "8ca17e3",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
@@ -10,7 +10,7 @@
     "functions": 12,
     "workflows": 5,
     "tools": 22,
-    "apiRoutes": 131,
+    "apiRoutes": 134,
     "models": 35,
     "uiComponents": 26
   },
@@ -1120,6 +1120,11 @@
     },
     {
       "method": "GET",
+      "route": "/api/knowledge/export",
+      "file": "app/api/knowledge/export/route.ts"
+    },
+    {
+      "method": "GET",
       "route": "/api/knowledge/extract",
       "file": "app/api/knowledge/extract/route.ts"
     },
@@ -1127,6 +1132,21 @@
       "method": "POST",
       "route": "/api/knowledge/extract",
       "file": "app/api/knowledge/extract/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/knowledge/files",
+      "file": "app/api/knowledge/files/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/knowledge/graph",
+      "file": "app/api/knowledge/graph/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/knowledge/search",
+      "file": "app/api/knowledge/search/route.ts"
     },
     {
       "method": "GET",
@@ -1405,11 +1425,6 @@
     },
     {
       "method": "GET",
-      "route": "/api/twenty-auth",
-      "file": "app/api/twenty-auth/route.ts"
-    },
-    {
-      "method": "POST",
       "route": "/api/twenty-auth",
       "file": "app/api/twenty-auth/route.ts"
     },
