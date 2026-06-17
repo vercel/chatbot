@@ -555,15 +555,59 @@ const PurePreviewMessage = ({
     return null;
   });
 
+  // Phase 25: Auto-detect "Send to V2" candidates
+  const showSendToV2 = useMemo(() => {
+    if (!isAssistant || isLoading) return false;
+    const textParts = message.parts?.filter(
+      (p) => p.type === "text" && typeof p.text === "string"
+    ) || [];
+    for (const part of textParts) {
+      const text = (part as { text: string }).text;
+      // Code blocks > 50 lines
+      const codeBlockMatch = text.match(/```[\s\S]*?```/g);
+      if (codeBlockMatch) {
+        for (const block of codeBlockMatch) {
+          if (block.split("\n").length > 50) return true;
+        }
+      }
+      // Mentions multi-file or create file or refactor
+      if (
+        /\b(multi.?file|create.?file|refactor.?entire|build.?a|generate.?code|scaffold)\b/i.test(
+          text
+        )
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }, [message.parts, isAssistant, isLoading]);
+
   const actions = !isReadonly && (
-    <MessageActions
-      chatId={chatId}
-      isLoading={isLoading}
-      key={`action-${message.id}`}
-      message={message}
-      onEdit={onEdit ? () => onEdit(message) : undefined}
-      vote={vote}
-    />
+    <div className="flex flex-wrap items-center gap-2">
+      <MessageActions
+        chatId={chatId}
+        isLoading={isLoading}
+        key={`action-${message.id}`}
+        message={message}
+        onEdit={onEdit ? () => onEdit(message) : undefined}
+        vote={vote}
+      />
+      {showSendToV2 && (
+        <button
+          className="flex items-center gap-1 px-2 py-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-400 hover:bg-purple-500/20 transition-colors"
+          title="Send this code task to Neptune V2 for execution"
+          onClick={() => {
+            const inputEl = document.querySelector('[data-testid="chat-input"]') as HTMLTextAreaElement;
+            if (inputEl) {
+              inputEl.value = "spawnCodingAgent with mode=modify_existing goal=Implement the code changes from the last message";
+              inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+          }}
+        >
+          🚀 Send to V2
+        </button>
+      )}
+    </div>
   );
 
   // Detect stream phase for indicator
