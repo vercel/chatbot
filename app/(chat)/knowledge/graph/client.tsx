@@ -1,387 +1,463 @@
 "use client";
 
 /**
- * Knowledge Page — Client Component
+ * Knowledge Graph Visualizer — Client Component
  *
- * Interactive knowledge visualizer with:
- * - Force-directed graph (D3)
- * - Twin View toggle (Library / Playbook)
- * - Search, filter, file viewer
- * - OKF export button
+ * Interactive D3 force-directed knowledge graph at /knowledge/graph.
+ * Fetches graph data from API on mount. Search + file content via API.
+ *
+ * NEPTUNE-KNOWLEDGE-SPEC v1.0 — Reference Implementation
+ * Phase 35: Knowledge Visualizer | Stream 7
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { KnowledgeGraph } from "@/components/knowledge/knowledge-graph";
 import { SearchBar } from "@/components/knowledge/search-bar";
 import { DomainFilter } from "@/components/knowledge/domain-filter";
 import { FileViewer } from "@/components/knowledge/file-viewer";
 import { toD3Graph, groupByDomain, getRecentChanges, computeGraphStats } from "@/lib/knowledge/graph-builder";
-import {
-  searchKnowledge,
-  getKnowledgeFileContent,
-} from "@/lib/knowledge/parser";
-import type {
-  KnowledgeNode,
-  KnowledgeEdge,
-  SearchResult,
-} from "@/lib/knowledge/parser";
-import type { D3Node } from "@/lib/knowledge/graph-builder";
+
+// Lightweight client-safe types (no node:fs dependencies)
+export interface KnowledgeNode {
+  id: string;
+  type: string;
+  name: string;
+  domain?: string;
+  version?: string;
+  description?: string;
+  path: string;
+  linkCount: number;
+  frontmatter: Record<string, unknown>;
+}
+
+export interface KnowledgeEdge {
+  source: string;
+  target: string;
+  type: string;
+  label?: string;
+}
+
+interface SearchResult {
+  node: KnowledgeNode;
+  matchField: string;
+  score: number;
+}
+
+interface D3Node {
+  id: string;
+  name: string;
+  type: string;
+  domain?: string;
+  version?: string;
+  description?: string;
+  linkCount: number;
+  x?: number;
+  y?: number;
+  fx?: number | null;
+  fy?: number | null;
+}
+
+interface D3Link {
+  source: string | D3Node;
+  target: string | D3Node;
+  type: string;
+}
+
+interface GraphStats {
+  totalNodes: number;
+  totalEdges: number;
+  typeBreakdown: Record<string, number>;
+  domainBreakdown: Record<string, number>;
+}
 
 interface KnowledgeClientProps {
-  initialGraph: {
+  initialGraph?: {
     nodes: KnowledgeNode[];
     edges: KnowledgeEdge[];
-    stats: {
-      totalNodes: number;
-      totalEdges: number;
-      byType: Record<string, number>;
-      byDomain: Record<string, number>;
-      generatedAt: string;
-    };
+    stats: GraphStats;
   };
-  allNodes: KnowledgeNode[];
-  allEdges: KnowledgeEdge[];
+  allNodes?: KnowledgeNode[];
+  allEdges?: KnowledgeEdge[];
+}
+
+/**
+ * Client-side search (filters loaded nodes locally)
+ */
+function localSearch(
+  nodes: KnowledgeNode[],
+  query: string
+): SearchResult[] {
+  if (!query.trim()) return [];
+  const q = query.toLowerCase();
+  const results: SearchResult[] = [];
+
+  for (const node of nodes) {
+    let score = 0;
+    let matchField = "";
+
+    if (node.name.toLowerCase().includes(q)) {
+      score += 10;
+      matchField = "name";
+    }
+    if (node.description?.toLowerCase().includes(q)) {
+      score += 5;
+      if (!matchField) matchField = "description";
+    }
+    if (node.domain?.toLowerCase().includes(q)) {
+      score += 3;
+      if (!matchField) matchField = "domain";
+    }
+    if (node.type.toLowerCase().includes(q)) {
+      score += 2;
+      if (!matchField) matchField = "type";
+    }
+
+    if (score > 0) {
+      results.push({ node, matchField, score });
+    }
+  }
+
+  return results.sort((a, b) => b.score - a.score);
 }
 
 export function KnowledgeClient({
   initialGraph,
-  allNodes,
-  allEdges,
+  allNodes: initialAllNodes,
+  allEdges: initialAllEdges,
 }: KnowledgeClientProps) {
   // State
   const [view, setView] = useState<"library" | "playbook">("library");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState<string>("ALL");
-  const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
-  const [selectedNode, setSelectedNode] = useState<D3Node | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
+  const [selectedNode, setSelectedNode] = useState<KnowledgeNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<D3Node | null>(null);
-  const [fileContent, setFileContent] = useState<{
-    content: string;
-    frontmatter: Record<string, unknown> | null;
-    path: string;
-  } | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [graphData, setGraphData] = useState<{
+    nodes: KnowledgeNode[];
+    edges: KnowledgeEdge[];
+    stats: GraphStats;
+  } | null>(initialGraph || null);
 
-  // Memoized data
+  // Fetch graph data on mount if not provided
+  useEffect(() => {
+    if (initialGraph) return;
+    async function fetchGraph() {
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/knowledge/graph");
+        const data = await res.json();
+        if (data.success) {
+          setGraphData({
+            nodes: data.nodes,
+            edges: data.edges,
+            stats: data.stats,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load knowledge graph:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchGraph();
+  }, [initialGraph]);
+
+  const nodes = graphData?.nodes || [];
+  const edges = graphData?.edges || [];
+  const allNodes = initialAllNodes || nodes;
+  const allEdges = initialAllEdges || edges;
+
+  // Derive D3 graph
   const d3Graph = useMemo(() => {
-    let nodes = allNodes;
-    if (selectedType !== "ALL") {
-      nodes = nodes.filter((n) => n.type === selectedType);
-    }
-    if (selectedDomains.length > 0) {
-      nodes = nodes.filter((n) => n.domain && selectedDomains.includes(n.domain));
-    }
-    if (searchQuery) {
-      const results = searchKnowledge(
-        { nodes, edges: allEdges, stats: initialGraph.stats },
-        searchQuery
-      );
-      nodes = results.map((r) => r.node);
-    }
-    return toD3Graph({ nodes, edges: allEdges, stats: initialGraph.stats });
-  }, [allNodes, allEdges, selectedType, selectedDomains, searchQuery, initialGraph.stats]);
+    if (nodes.length === 0) return { nodes: [], links: [] };
+    return toD3Graph(nodes, edges);
+  }, [nodes, edges]);
 
-  const domainGroups = useMemo(() => {
-    const graph = { nodes: allNodes, edges: allEdges, stats: initialGraph.stats };
-    return groupByDomain(graph);
-  }, [allNodes, allEdges, initialGraph.stats]);
+  // Domain list for filter
+  const domains = useMemo(() => {
+    return groupByDomain(nodes);
+  }, [nodes]);
 
+  // Recent changes from graph stats
   const recentChanges = useMemo(() => {
-    const graph = { nodes: allNodes, edges: allEdges, stats: initialGraph.stats };
-    return getRecentChanges(graph, 20);
-  }, [allNodes, allEdges, initialGraph.stats]);
+    return getRecentChanges(nodes);
+  }, [nodes]);
 
   const graphStats = useMemo(() => {
-    const graph = { nodes: allNodes, edges: allEdges, stats: initialGraph.stats };
-    return computeGraphStats(graph);
-  }, [allNodes, allEdges, initialGraph.stats]);
+    return computeGraphStats(nodes, edges);
+  }, [nodes, edges]);
 
-  const uniqueTypes = useMemo(
-    () => Object.keys(initialGraph.stats.byType).sort(),
-    [initialGraph.stats.byType]
-  );
-
-  const uniqueDomains = useMemo(
-    () =>
-      Object.entries(initialGraph.stats.byDomain)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count),
-    [initialGraph.stats.byDomain]
-  );
-
-  // Handlers
+  // Search
   const handleSearch = useCallback(
     (query: string) => {
       setSearchQuery(query);
-      if (query.length > 0) {
-        const graph = { nodes: allNodes, edges: allEdges, stats: initialGraph.stats };
-        setSearchResults(searchKnowledge(graph, query));
-      } else {
+      if (!query.trim()) {
         setSearchResults([]);
+        return;
       }
+      const results = localSearch(allNodes, query);
+      setSearchResults(results);
     },
-    [allNodes, allEdges, initialGraph.stats]
+    [allNodes]
   );
 
-  const handleSelectResult = useCallback(
-    (result: SearchResult) => {
-      setSelectedNode(result.node as D3Node);
-    },
-    []
-  );
-
-  const handleNodeClick = useCallback(
-    (node: D3Node) => {
-      setSelectedNode(node);
-      const file = getKnowledgeFileContent(node.path);
-      if (file.exists) {
-        setFileContent({
-          content: file.content,
-          frontmatter: file.frontmatter as Record<string, unknown> | null,
-          path: node.path,
-        });
-      }
-    },
-    []
-  );
-
-  const handleOpenFile = useCallback((node: D3Node) => {
-    handleNodeClick(node);
-  }, [handleNodeClick]);
-
-  const handlePinNode = useCallback((_node: D3Node) => {
-    // Pin functionality — keeps node fixed in graph
-    // Auto-handled by D3 drag behavior
+  // Type filter
+  const toggleType = useCallback((type: string | null) => {
+    setSelectedType((prev) => (prev === type ? null : type));
   }, []);
 
+  // Domain filter
   const toggleDomain = useCallback((domain: string) => {
-    setSelectedDomains((prev) =>
-      prev.includes(domain)
-        ? prev.filter((d) => d !== domain)
-        : [...prev, domain]
-    );
+    setSelectedDomains((prev) => {
+      const next = new Set(prev);
+      if (next.has(domain)) {
+        next.delete(domain);
+      } else {
+        next.add(domain);
+      }
+      return next;
+    });
   }, []);
 
-  const clearDomains = useCallback(() => {
-    setSelectedDomains([]);
+  const clearDomainFilter = useCallback(() => {
+    setSelectedDomains(new Set());
   }, []);
 
-  const handleOKFExport = useCallback(() => {
-    window.open("/api/knowledge/okf-export", "_blank");
+  // Filtered nodes for display
+  const filteredNodes = useMemo(() => {
+    let filtered = nodes;
+
+    if (selectedType) {
+      filtered = filtered.filter((n) => n.type === selectedType);
+    }
+
+    if (selectedDomains.size > 0) {
+      filtered = filtered.filter(
+        (n) => n.domain && selectedDomains.has(n.domain)
+      );
+    }
+
+    if (searchQuery.trim()) {
+      const resultIds = new Set(searchResults.map((r) => r.node.id));
+      filtered = filtered.filter((n) => resultIds.has(n.id));
+    }
+
+    return filtered;
+  }, [nodes, selectedType, selectedDomains, searchQuery, searchResults]);
+
+  // File viewer
+  const handleNodeClick = useCallback(
+    async (node: D3Node) => {
+      const fullNode = nodes.find((n) => n.id === node.id);
+      if (!fullNode) return;
+      setSelectedNode(fullNode);
+
+      // Fetch file content via API
+      try {
+        const res = await fetch(
+          `/api/knowledge/files?path=${encodeURIComponent(fullNode.path)}`
+        );
+        const data = await res.json();
+        if (data.success) {
+          setFileContent(data.content);
+        } else {
+          setFileContent("File not found or inaccessible.");
+        }
+      } catch {
+        setFileContent("Error loading file content.");
+      }
+    },
+    [nodes]
+  );
+
+  const handleNodeHover = useCallback((node: D3Node | null) => {
+    setHoveredNode(node);
+  }, []);
+
+  const handleCloseFileViewer = useCallback(() => {
+    setSelectedNode(null);
+    setFileContent(null);
+  }, []);
+
+  // OKF Export
+  const handleExportOKF = useCallback(() => {
+    window.open("/api/knowledge/export", "_blank");
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950">
-      {/* Top Bar */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80 backdrop-blur-xl">
-        <div className="flex items-center gap-4">
-          <a
-            href="/"
-            className="text-slate-500 hover:text-slate-300 transition-colors text-sm"
-          >
-            ← Chat
-          </a>
-          <h1 className="text-lg font-bold text-teal-400">⚡ Knowledge</h1>
-        </div>
+    <div className="flex flex-col h-full">
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 bg-background/95 backdrop-blur-sm shrink-0">
+        <h2 className="text-sm font-semibold flex items-center gap-2">
+          <span>Knowledge Graph</span>
+          {graphStats && (
+            <span className="text-[10px] text-muted-foreground font-normal">
+              {graphStats.totalNodes} nodes · {graphStats.totalEdges} edges
+            </span>
+          )}
+        </h2>
 
-        <div className="flex items-center gap-3">
-          {/* View toggle */}
-          <div className="flex rounded-lg bg-slate-800 p-0.5">
-            <button
-              onClick={() => setView("library")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                view === "library"
-                  ? "bg-slate-700 text-slate-100"
-                  : "text-slate-500 hover:text-slate-300"
-              }`}
-            >
-              Library
-            </button>
-            <button
-              onClick={() => setView("playbook")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                view === "playbook"
-                  ? "bg-slate-700 text-slate-100"
-                  : "text-slate-500 hover:text-slate-300"
-              }`}
-            >
-              Playbook
-            </button>
-          </div>
+        <div className="flex-1" />
 
-          {/* OKF Export */}
+        {/* View toggle */}
+        <div className="flex items-center rounded-md border border-border/50 overflow-hidden">
           <button
-            onClick={handleOKFExport}
-            className="px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-400 text-xs font-medium hover:bg-teal-500/20 transition-colors"
+            onClick={() => setView("library")}
+            className={`px-2.5 py-1 text-[11px] transition-colors ${
+              view === "library"
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            Export OKF
+            Library
           </button>
-
-          {/* Stats */}
-          <div className="text-xs text-slate-600">
-            {graphStats.totalNodes} nodes · {graphStats.totalEdges} edges
-          </div>
+          <button
+            onClick={() => setView("playbook")}
+            className={`px-2.5 py-1 text-[11px] transition-colors ${
+              view === "playbook"
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Playbook
+          </button>
         </div>
-      </header>
+
+        {/* Export button */}
+        <button
+          onClick={handleExportOKF}
+          className="px-2.5 py-1 text-[11px] rounded-md border border-teal-500/30 text-teal-400 hover:bg-teal-500/10 transition-colors"
+        >
+          Export OKF
+        </button>
+      </div>
+
+      {/* Search + Filters */}
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-border/30 bg-background/50 shrink-0">
+        <SearchBar
+          value={searchQuery}
+          onChange={handleSearch}
+          results={searchResults}
+          onSelect={(result) => {
+            const d3Node = d3Graph.nodes.find(
+              (n: D3Node) => n.id === result.node.id
+            );
+            if (d3Node) handleNodeClick(d3Node);
+          }}
+        />
+        <DomainFilter
+          domains={domains}
+          selected={selectedDomains}
+          onToggle={toggleDomain}
+          onClear={clearDomainFilter}
+        />
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span>Type:</span>
+          {["skill", "playbook", "prd", "mission", "research", "memory"].map(
+            (type) => (
+              <button
+                key={type}
+                onClick={() => toggleType(type)}
+                className={`px-1.5 py-0.5 rounded ${
+                  selectedType === type
+                    ? "bg-accent text-foreground"
+                    : "hover:text-foreground"
+                }`}
+              >
+                {type}
+              </button>
+            )
+          )}
+        </div>
+      </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
-        <aside className="w-80 border-r border-slate-800 bg-slate-900/50 flex flex-col overflow-hidden">
-          {/* Search */}
-          <div className="p-3 border-b border-slate-800">
-            <SearchBar
-              onSearch={handleSearch}
-              results={searchResults}
-              onSelectResult={handleSelectResult}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left: Graph or Library View */}
+        <div
+          className={`${
+            selectedNode ? "w-[60%]" : "w-full"
+          } transition-all duration-200`}
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-sm text-muted-foreground animate-pulse">
+                Loading knowledge graph...
+              </div>
+            </div>
+          ) : view === "library" ? (
+            /* Library: Node List */
+            <div className="h-full overflow-auto p-4 space-y-1">
+              {filteredNodes.length === 0 && (
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  No nodes found. Try adjusting filters.
+                </div>
+              )}
+              {filteredNodes.map((node) => (
+                <button
+                  key={node.id}
+                  onClick={() => {
+                    const d3Node = d3Graph.nodes.find(
+                      (n: D3Node) => n.id === node.id
+                    );
+                    if (d3Node) handleNodeClick(d3Node);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-accent/30 transition-colors flex items-center gap-3"
+                >
+                  <span className="text-[10px] font-mono text-muted-foreground w-16 shrink-0">
+                    {node.type}
+                  </span>
+                  <span className="text-sm flex-1 truncate">{node.name}</span>
+                  {node.domain && (
+                    <span className="text-[10px] text-muted-foreground">
+                      {node.domain}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-muted-foreground">
+                    {node.linkCount} links
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            /* Playbook: D3 Graph */
+            <KnowledgeGraph
+              data={d3Graph}
+              onNodeClick={handleNodeClick}
+              onNodeHover={handleNodeHover}
+              selectedNodeId={selectedNode?.id || null}
+            />
+          )}
+        </div>
+
+        {/* Right: File Viewer Panel */}
+        {selectedNode && (
+          <div className="w-[40%] border-l border-border/50 overflow-hidden">
+            <FileViewer
+              node={selectedNode}
+              content={fileContent}
+              onClose={handleCloseFileViewer}
             />
           </div>
-
-          {view === "library" ? (
-            <>
-              {/* Type Filter */}
-              <div className="p-3 border-b border-slate-800">
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setSelectedType("ALL")}
-                    className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all ${
-                      selectedType === "ALL"
-                        ? "bg-teal-500/20 text-teal-400 border border-teal-500/30"
-                        : "bg-slate-800 text-slate-500 border border-transparent hover:text-slate-300"
-                    }`}
-                  >
-                    ALL ({initialGraph.stats.totalNodes})
-                  </button>
-                  {uniqueTypes.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setSelectedType(type)}
-                      className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all ${
-                        selectedType === type
-                          ? "bg-teal-500/20 text-teal-400 border border-teal-500/30"
-                          : "bg-slate-800 text-slate-500 border border-transparent hover:text-slate-300"
-                      }`}
-                    >
-                      {type} ({initialGraph.stats.byType[type]})
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Node List */}
-              <div className="flex-1 overflow-y-auto p-2">
-                {d3Graph.nodes.slice(0, 200).map((node) => (
-                  <button
-                    key={node.id}
-                    onClick={() => handleNodeClick(node)}
-                    className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-colors ${
-                      selectedNode?.id === node.id
-                        ? "bg-teal-500/10 border border-teal-500/20"
-                        : "hover:bg-slate-800/50 border border-transparent"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-200 truncate flex-1">
-                        {node.name}
-                      </span>
-                      <span className="text-[10px] text-slate-600">v{node.version}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-slate-500">{node.type}</span>
-                      {node.domain && (
-                        <span className="text-[10px] text-slate-600">· {node.domain}</span>
-                      )}
-                      {node.linkCount > 0 && (
-                        <span className="text-[10px] text-slate-600">· {node.linkCount} links</span>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            /* Playbook View */
-            <div className="flex-1 overflow-y-auto p-2">
-              {domainGroups.map((group) => (
-                <div key={group.domain} className="mb-4">
-                  <div className="flex items-center gap-2 px-3 py-2">
-                    <span className="text-sm font-semibold text-slate-200">
-                      {group.label}
-                    </span>
-                    <span className="text-[10px] text-slate-600">
-                      ({group.nodes.length} nodes · {group.totalLinks} links)
-                    </span>
-                  </div>
-                  <div className="ml-2 space-y-0.5">
-                    {group.nodes.slice(0, 10).map((node) => (
-                      <button
-                        key={node.id}
-                        onClick={() => handleNodeClick(node as D3Node)}
-                        className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition-colors"
-                      >
-                        {node.name}
-                        <span className="text-slate-600 ml-2">({node.type})</span>
-                      </button>
-                    ))}
-                    {group.nodes.length > 10 && (
-                      <div className="text-[10px] text-slate-600 px-3 py-1">
-                        +{group.nodes.length - 10} more...
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Recent Changes */}
-          <div className="border-t border-slate-800 p-3">
-            <h4 className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
-              Recent Changes
-            </h4>
-            <div className="space-y-1">
-              {recentChanges.slice(0, 5).map((change) => (
-                <div
-                  key={change.node.id}
-                  className="flex items-center justify-between text-xs"
-                >
-                  <span className="text-slate-400 truncate flex-1 mr-2">
-                    {change.node.name}
-                  </span>
-                  <span className="text-slate-600 flex-shrink-0">
-                    {change.relativeTime}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-
-        {/* Graph Area */}
-        <main className="flex-1 relative">
-          <KnowledgeGraph
-            data={d3Graph}
-            onNodeClick={handleNodeClick}
-            onNodeHover={setHoveredNode}
-            selectedNodeId={selectedNode?.id}
-          />
-
-          {/* File Viewer Panel (slide-in from right) */}
-          {fileContent && (
-            <div className="absolute top-0 right-0 w-96 h-full border-l border-slate-800 bg-slate-900/95 backdrop-blur-xl shadow-2xl overflow-hidden">
-              <FileViewer
-                content={fileContent.content}
-                frontmatter={fileContent.frontmatter as any}
-                path={fileContent.path}
-                onClose={() => setFileContent(null)}
-                onLinkClick={(linkPath) => {
-                  // Handle internal link navigation
-                }}
-              />
-            </div>
-          )}
-        </main>
+        )}
       </div>
+
+      {/* Footer: Recent Changes */}
+      {recentChanges.length > 0 && (
+        <div className="border-t border-border/30 px-4 py-2 flex items-center gap-3 text-[10px] text-muted-foreground shrink-0 overflow-x-auto">
+          <span className="font-semibold uppercase shrink-0">
+            Recent Changes:
+          </span>
+          {recentChanges.slice(0, 8).map((change, i) => (
+            <span key={i} className="shrink-0">
+              {change}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,32 +1,26 @@
 /**
- * Knowledge Page — Server Component
+ * Knowledge Graph Page — Server Component
  *
  * NEPTUNE-KNOWLEDGE-SPEC v1.0 — Reference Implementation
- * Loads the knowledge graph on the server and passes to client component.
+ * Client fetches graph data from /api/knowledge/graph on mount.
+ *
+ * Phase 35: Knowledge Visualizer | Stream 7
  */
 
-import { buildKnowledgeGraph } from "@/lib/knowledge/parser";
 import { KnowledgeClient } from "./client";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Knowledge | Neptune",
-  description: "Interactive knowledge graph — NEPTUNE-KNOWLEDGE-SPEC v1.0",
+  title: "Knowledge Graph | Neptune",
+  description: "Interactive knowledge graph visualizer — NEPTUNE-KNOWLEDGE-SPEC v1.0",
 };
 
-export default async function KnowledgePage() {
-  // Build graph from cortex on the server
-  const graph = buildKnowledgeGraph();
-
+export default function KnowledgeGraphPage() {
   return (
     <KnowledgeClient
-      initialGraph={{
-        nodes: graph.nodes,
-        edges: graph.edges,
-        stats: graph.stats,
-      }}
-      allNodes={graph.nodes}
-      allEdges={graph.edges}
+      initialGraph={undefined}
+      allNodes={undefined}
+      allEdges={undefined}
     />
   );
 }
