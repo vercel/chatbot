@@ -1,0 +1,78 @@
+{
+  "runId": "tour-1781740096292",
+  "timestamp": "2026-06-17T23:49:15.545Z",
+  "testUser": "test-agent@newleaf.financial",
+  "totalSteps": 8,
+  "passedSteps": 4,
+  "failedSteps": 4,
+  "steps": [
+    {
+      "step": "01-neptune-signin",
+      "passed": false,
+      "url": "https://neptune-chat-ashy.vercel.app/login?callbackUrl=https%3A%2F%2Fneptune-chat-ashy.vercel.app%2F",
+      "screenshot": "tour-1781740096292/tour-01-signin.png",
+      "consoleErrors": [],
+      "networkFails": []
+    },
+    {
+      "step": "02-chat",
+      "passed": false,
+      "url": "https://neptune-chat-ashy.vercel.app/login?callbackUrl=https%3A%2F%2Fneptune-chat-ashy.vercel.app%2Fchat",
+      "screenshot": "tour-1781740096292/tour-02-chat.png",
+      "consoleErrors": [],
+      "networkFails": []
+    },
+    {
+      "step": "03-discovery",
+      "passed": false,
+      "url": "https://neptune-chat-ashy.vercel.app/login?callbackUrl=https%3A%2F%2Fneptune-chat-ashy.vercel.app%2Fdiscovery",
+      "screenshot": "tour-1781740096292/tour-03-discovery.png",
+      "consoleErrors": [],
+      "networkFails": []
+    },
+    {
+      "step": "04-kg",
+      "passed": true,
+      "url": "https://neptune-chat-ashy.vercel.app/knowledge/graph",
+      "screenshot": "tour-1781740096292/tour-04-kg.png",
+      "consoleErrors": [],
+      "networkFails": []
+    },
+    {
+      "step": "05-admin",
+      "passed": false,
+      "url": "https://neptune-chat-ashy.vercel.app/login?callbackUrl=https%3A%2F%2Fneptune-chat-ashy.vercel.app%2Fadmin%2Fdashboard",
+      "screenshot": "tour-1781740096292/tour-05-admin.png",
+      "consoleErrors": [],
+      "networkFails": []
+    },
+    {
+      "step": "06-twenty-crm",
+      "passed": true,
+      "url": "https://app.crm.newleaf.financial/welcome",
+      "screenshot": "tour-1781740096292/tour-06-crm.png",
+      "consoleErrors": [],
+      "networkFails": []
+    },
+    {
+      "step": "07-neptune-v2",
+      "passed": true,
+      "url": "https://neptune-v2.vercel.app/",
+      "screenshot": "tour-1781740096292/tour-07-v2.png",
+      "consoleErrors": [],
+      "networkFails": []
+    },
+    {
+      "step": "08-portal",
+      "passed": true,
+      "url": "https://portal.newleaf.financial/sign-in?redirect_url=https%3A%2F%2Fportal.newleaf.financial%2F",
+      "screenshot": "tour-1781740096292/tour-08-portal.png",
+      "consoleErrors": [],
+      "networkFails": []
+    }
+  ],
+  "bugs": [
+    "BUG: Clerk sign-in flow failed — unknown"
+  ],
+  "durationMs": 59253
+}
