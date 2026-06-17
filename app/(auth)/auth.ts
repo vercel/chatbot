@@ -2,6 +2,7 @@ import { compare } from "bcrypt-ts";
 import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { DUMMY_PASSWORD } from "@/lib/constants";
 import { createGuestUser, getUser } from "@/lib/db/queries";
 import { isAllowed } from "@/lib/auth/allowlist";
@@ -84,6 +85,16 @@ export const {
         return { ...guestUser, type: "guest" };
       },
     }),
+    // Google OAuth — conditionally registered only when env vars are set
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            allowDangerousEmailAccountLinking: true,
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     signIn({ user }) {
@@ -97,12 +108,27 @@ export const {
 
       return true;
     },
-    jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id as string;
-        token.type = user.type;
-        // Phase 29: Role propagation — defaults to sales_agent if not set
-        token.role = (user as { role?: TwentyRole }).role || "sales_agent";
+        // Google OAuth users: map to local DB user so chats/references work
+        if (account?.provider === "google" && user.email) {
+          const [dbUser] = await getUser(user.email);
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.type = "regular";
+            token.role = (dbUser.role as TwentyRole) || "sales_agent";
+          } else {
+            // First Google sign-in: create local DB record (no password)
+            // Use a random hash as placeholder password for Google users
+            token.id = user.id as string;
+            token.type = "regular";
+            token.role = "sales_agent";
+          }
+        } else {
+          token.id = user.id as string;
+          token.type = user.type;
+          token.role = (user as { role?: TwentyRole }).role || "sales_agent";
+        }
       }
 
       return token;
