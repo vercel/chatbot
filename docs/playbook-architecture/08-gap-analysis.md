@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 8
 gaps_found: 6
+type: "spec"
 ---
 
 # 08 — Gap Analysis

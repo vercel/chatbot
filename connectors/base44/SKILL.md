@@ -5,6 +5,7 @@ version: 1.0.0
 domain: customer-enrollment
 mcp: false
 custom_client: true
+type: "skill"
 ---
 # Base44 CRM Integration Pack
 

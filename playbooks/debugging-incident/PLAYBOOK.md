@@ -8,6 +8,7 @@ model_routing:
   reasoning_heavy: "anthropic/claude-opus-4-6"
   coding: "deepseek/deepseek-v4-pro"
   fast_iteration: "deepseek/deepseek-v4-flash"
+type: "playbook"
 ---
 
 # Debugging & Incident Response — Master Playbook

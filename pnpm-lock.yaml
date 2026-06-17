@@ -68,6 +68,9 @@ importers:
       '@streamdown/mermaid':
         specifier: ^1.0.2
         version: 1.0.2(react@19.0.1)
+      '@types/d3':
+        specifier: ^7.4.3
+        version: 7.4.3
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -119,6 +122,9 @@ importers:
       codemirror:
         specifier: ^6.0.1
         version: 6.0.1
+      d3:
+        specifier: ^7.9.0
+        version: 7.9.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0

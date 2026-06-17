@@ -20,6 +20,7 @@ headline: |
   Extract LOCKED cardinal rules from save_memory and cortex.
   Categorize by domain, de-duplicate, rank by priority,
   and return structured output with rule IDs and source citations.
+type: "skill"
 ---
 
 # Cardinal Rules Extract — Pull LOCKED Constraints

@@ -5,6 +5,7 @@ version: 1.0.0
 domain: agent-orchestration
 mcp: false
 custom_client: false
+type: "skill"
 ---
 # Custom Skills Pseudo-Connector
 

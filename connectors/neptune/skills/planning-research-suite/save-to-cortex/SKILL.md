@@ -23,6 +23,7 @@ headline: |
   Classifies content type, applies YAML frontmatter, resolves target paths,
   and writes via VPS FS bridge. The canonical save mechanism for all PRDs,
   TRDs, plans, research, and missions.
+type: "skill"
 ---
 
 # Save to Cortex — Artifact Persistence

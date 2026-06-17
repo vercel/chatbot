@@ -5,6 +5,7 @@ kind: capability
 primary_domain: support-triage
 headline: |
   Techniques for shaping LLM output: artifact streaming, inline cards, split view, deploy receipts.
+type: "skill"
 ---
 
 # Response Formatting Capability

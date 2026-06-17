@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 4
 workflows_cataloged: 6
+type: "spec"
 ---
 
 # 04 — Workflows Catalog

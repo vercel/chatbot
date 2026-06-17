@@ -8,6 +8,7 @@ tools: [sendCampaign, listCampaigns, getAffiliateStats]
 dependencies: []
 headline: |
   Affy affiliate marketing platform connector for campaign management.
+type: "skill"
 ---
 
 # Affy Connector Skill

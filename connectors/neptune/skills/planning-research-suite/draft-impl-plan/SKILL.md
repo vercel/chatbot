@@ -23,6 +23,7 @@ associated_skills:
 headline: |
   Phased implementation plan with turn budgets, dependency graphs,
   parallel execution groups, and plan-mode gating for tasks with >= 3 phases.
+type: "skill"
 ---
 
 # Draft Implementation Plan

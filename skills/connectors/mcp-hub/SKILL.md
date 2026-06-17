@@ -8,6 +8,7 @@ tools: [listMcpServers, invokeMcpTool, searchMcpTools, registerMcpServer]
 dependencies: []
 headline: |
   MCP Hub aggregates Smithery-hosted MCP servers. Discover and invoke tools from any registered MCP.
+type: "skill"
 ---
 
 # MCP Hub Connector Skill

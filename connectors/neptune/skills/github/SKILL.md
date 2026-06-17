@@ -19,6 +19,7 @@ associated_connectors:
 headline: |
   35 GitHub actions: repos, branches, commits, PRs, issues, code search,
   reviews, workflows, releases, and collaboration. Full repository management.
+type: "skill"
 ---
 
 # GitHub Skills — 35 Actions

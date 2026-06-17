@@ -13,6 +13,7 @@ trigger_tools:
 headline: |
   Base44 central backend for NewLeaf ops. 12 queryable entities, 16 report actions.
   Never call hostingerBridge from off-VPS. Query with filters, always paginate.
+type: "playbook"
 ---
 
 # Base44 Connector Playbook

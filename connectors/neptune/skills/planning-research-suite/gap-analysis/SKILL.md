@@ -21,6 +21,7 @@ associated_skills:
 headline: |
   Systematic current-vs-target state analysis producing classified gaps
   (critical/high/medium/low) with remediation plans and effort estimates.
+type: "skill"
 ---
 
 # Gap Analysis — Current vs Target State Diff

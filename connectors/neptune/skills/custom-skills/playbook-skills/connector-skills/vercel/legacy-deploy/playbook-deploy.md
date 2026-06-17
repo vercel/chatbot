@@ -8,6 +8,7 @@ model_routing:
   fast_iteration: "deepseek/deepseek-v4-flash"
   reasoning_heavy: "anthropic/claude-sonnet-4-6"
   coding: "deepseek/deepseek-v4-pro"
+type: "playbook"
 ---
 
 # Deploy Playbook (Chat + V2 + VPS)

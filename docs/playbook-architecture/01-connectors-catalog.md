@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 1
 connectors_cataloged: 17
+type: "spec"
 ---
 
 # 01 — Connectors Catalog

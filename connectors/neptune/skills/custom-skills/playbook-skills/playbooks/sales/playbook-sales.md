@@ -10,6 +10,7 @@ model_routing:
   reasoning_heavy: "anthropic/claude-sonnet-4-6"
   fast_iteration: "deepseek/deepseek-v4-flash"
   long_context: "zai/glm-5.1"
+type: "playbook"
 ---
 
 # Playbook: Sales & Lead Flow

@@ -17,6 +17,7 @@ associated_connectors:
   - affy
 associated_skills: []
 associated_functions: []
+type: "playbook"
 ---
 
 # Miscellaneous Capabilities (other)

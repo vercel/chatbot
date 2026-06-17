@@ -7,6 +7,7 @@ priority: P1
 headline: |
   Neptune Custom Skills Connector — canonical home for all agent-authored skills.
   All skill-author output lands here under skills/<connector>/.
+type: "playbook"
 ---
 
 # Neptune Connector Playbook

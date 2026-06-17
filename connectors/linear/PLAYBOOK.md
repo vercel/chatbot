@@ -11,6 +11,7 @@ trigger_tools:
 headline: |
   Linear issue tracker. Route to correct team (ENG/OPS/PAY/COMP/AGT). Never auto-close
   without closing comment. Priority 1 means urgent — confirm on-call is paged.
+type: "playbook"
 ---
 
 # Linear Connector Playbook

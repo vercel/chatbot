@@ -25,6 +25,7 @@ model_routing:
   reasoning_heavy: "anthropic/claude-opus-4-6"
   fast_iteration: "deepseek/deepseek-v4-flash"
   long_context: "google/gemini-2-pro"
+type: "playbook"
 ---
 
 # Disputes Domain Playbook

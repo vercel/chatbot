@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 3
 functions_cataloged: 25
+type: "spec"
 ---
 
 # 03 — Functions Catalog

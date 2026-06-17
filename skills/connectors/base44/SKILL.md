@@ -9,6 +9,7 @@ dependencies: []
 headline: |
   Base44 central backend for NewLeaf ops. 12 queryable entities, 16 report actions.
   Never call hostingerBridge from off-VPS. Query with filters, always paginate.
+type: "skill"
 ---
 
 # Base44 Connector Skill

@@ -17,6 +17,7 @@ associated_connectors:
 headline: |
   25 Vercel actions: deployments, projects, domains, environment variables,
   analytics, logs, security, and team management. Full platform management.
+type: "skill"
 ---
 
 # Vercel Skills — 25 Actions

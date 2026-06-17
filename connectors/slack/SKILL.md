@@ -5,6 +5,7 @@ version: 1.0.0
 domain: comms
 mcp: false
 custom_client: true
+type: "skill"
 ---
 # Slack Integration Pack
 

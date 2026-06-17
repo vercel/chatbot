@@ -9,6 +9,7 @@ model_routing:
   fast_iteration: "deepseek/deepseek-v4-flash"
   long_context: "google/gemini-2-pro"
   json_output: "deepseek/deepseek-v4-pro"
+type: "playbook"
 ---
 
 # Planning & Research — Master Playbook

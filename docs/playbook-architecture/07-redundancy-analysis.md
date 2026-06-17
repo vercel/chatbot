@@ -7,6 +7,7 @@ status: ACTIVE
 kb_index: 7
 redundancies_found: 5
 severity: "low"
+type: "spec"
 ---
 
 # 07 — Redundancy Analysis

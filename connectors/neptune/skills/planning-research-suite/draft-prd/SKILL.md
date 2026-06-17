@@ -23,6 +23,7 @@ headline: |
   12-section PRD template with research-backed content generation.
   Produces production-grade Product Requirements Documents with
   success criteria, risk assessment, and phased delivery plan.
+type: "skill"
 ---
 
 # Draft PRD — 12-Section Product Requirements Document

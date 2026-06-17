@@ -2,6 +2,7 @@
 name: playbook-refiner
 description: Audit agent tool-call logs and propose updates to connector PLAYBOOK.md files. Use when the user wants to refine, improve, audit, or update connector playbooks based on actual usage patterns. Also use when the user mentions failing tool calls, recurring errors, or agent mistakes.
 version: 1.0.0
+type: "skill"
 ---
 
 # Playbook Refiner — Automated Playbook Improvement (Shared)

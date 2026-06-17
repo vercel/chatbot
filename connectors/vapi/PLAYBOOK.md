@@ -12,6 +12,7 @@ trigger_tools:
 headline: |
   Neptune V2 coding engine bridge. Posts to NEPTUNE_V2_CHAT_URL with handoff secret.
   Sessions run in E2B sandboxes. Always use SSE streaming — never poll in tight loops.
+type: "playbook"
 ---
 
 # Vapi (Neptune V2) Connector Playbook

@@ -5,6 +5,7 @@ last_updated: "2026-06-15"
 owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 10
+type: "concept"
 ---
 
 # 10 — Portability Guide

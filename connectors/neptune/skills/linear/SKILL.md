@@ -17,6 +17,7 @@ associated_connectors:
 headline: |
   25 Linear actions: issues, projects, teams, cycles, views, comments,
   labels, and workflow automation. Full project management.
+type: "skill"
 ---
 
 # Linear Skills — 25 Actions

@@ -9,6 +9,7 @@ dependencies: [nmi-connector]
 headline: |
   Hyperswitch payment orchestration. All new payment flows go through here.
   Refunds need idempotency keys. Never poll — use webhooks.
+type: "skill"
 ---
 
 # Hyperswitch Connector Skill

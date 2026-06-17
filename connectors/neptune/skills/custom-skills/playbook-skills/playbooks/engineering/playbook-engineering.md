@@ -55,6 +55,7 @@ associated_skills:
 associated_functions:
   - validate-action
 routines_count: 3
+type: "playbook"
 ---
 
 # Engineering Domain Playbook

@@ -9,6 +9,7 @@ model_routing:
   reasoning_heavy: "anthropic/claude-opus-4-6"
   fast_iteration: "deepseek/deepseek-v4-flash"
   cheap: "deepseek/deepseek-v3.2"
+type: "playbook"
 ---
 
 # Feature Build — Master Playbook

@@ -8,6 +8,7 @@ tools: [searchWiki, getPage, createPage, updatePage]
 dependencies: []
 headline: |
   Internal wiki connector for NewLeaf documentation and SOPs.
+type: "skill"
 ---
 
 # Wiki Connector Skill

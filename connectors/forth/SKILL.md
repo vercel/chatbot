@@ -5,6 +5,7 @@ version: 1.0.0
 domain: credit-disputes
 mcp: false
 custom_client: true
+type: "skill"
 ---
 # Forth Credit Integration Pack
 

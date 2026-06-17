@@ -29,6 +29,7 @@ model_routing:
   fast_iteration: "deepseek/deepseek-v4-flash"
   cheap: "deepseek/deepseek-v3.2"
   coding: "deepseek/deepseek-v4-pro"
+type: "playbook"
 ---
 
 # Billing Domain Playbook

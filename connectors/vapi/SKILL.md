@@ -5,6 +5,7 @@ version: 1.0.0
 domain: support-triage
 mcp: false
 custom_client: true
+type: "skill"
 ---
 # Vapi Voice AI Integration Pack
 

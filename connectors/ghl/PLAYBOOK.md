@@ -12,6 +12,7 @@ trigger_tools:
 headline: |
   GoHighLevel CRM via Base44 bridge. SMS requires opt-in + 9am-9pm window.
   Never hardcode GHL API key in Neptune — it lives in Base44. TCPA + CAN-SPAM compliant.
+type: "playbook"
 ---
 
 # GoHighLevel Connector Playbook

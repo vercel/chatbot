@@ -19,6 +19,7 @@ associated_connectors:
 headline: |
   15 Affy chargeback actions: disputes, evidence, affidavits, tracking,
   deadlines, and resolution. Fight chargebacks with documented evidence.
+type: "skill"
 ---
 
 # Affy Chargeback Skills — 15 Actions

@@ -9,6 +9,7 @@ dependencies: [github-connector]
 headline: |
   Vercel deployment platform. Never hardcode project IDs. VERCEL_TOKEN is server-only.
   REST API only per cardinal 6a273f70. Concurrent deploys can race.
+type: "skill"
 ---
 
 # Vercel Connector Skill

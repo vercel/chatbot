@@ -8,6 +8,7 @@ tools: [createContact, sendSms, sendEmail, queryConversations, getOpportunity]
 dependencies: [base44-connector]
 headline: |
   GoHighLevel CRM via Base44 bridge. SMS requires opt-in + 9am-9pm window. TCPA + CAN-SPAM compliant.
+type: "skill"
 ---
 
 # GHL Connector Skill

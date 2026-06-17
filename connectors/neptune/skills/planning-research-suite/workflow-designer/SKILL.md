@@ -19,6 +19,7 @@ headline: |
   YAML scaffolding tool for creating new workflow definitions.
   Generates structured YAML files with phases, steps, dependencies,
   parallel markers, and success criteria for any domain.
+type: "skill"
 ---
 
 # Workflow Designer — YAML Scaffolding

@@ -27,6 +27,7 @@ model_routing:
   fast_iteration: "deepseek/deepseek-v4-flash"
   reasoning_heavy: "anthropic/claude-sonnet-4-6"
   cheap: "groq/llama-4-maverick"
+type: "playbook"
 ---
 
 # Customer Support Domain Playbook

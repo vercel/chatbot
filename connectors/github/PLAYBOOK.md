@@ -12,6 +12,7 @@ trigger_tools:
 headline: |
   GitHub repo connector. Never push directly to main on protected repos.
   All AI commits go through PR with `ai-agent` label. Secret scanning is on.
+type: "playbook"
 ---
 
 # GitHub Connector Playbook

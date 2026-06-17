@@ -8,6 +8,7 @@ tools: [listIssues, createIssue, searchIssues, listProjects, updateIssue]
 dependencies: []
 headline: |
   Linear issue tracker. Route to correct team (ENG/OPS/PAY/COMP/AGT). Never auto-close without closing comment.
+type: "skill"
 ---
 
 # Linear Connector Skill

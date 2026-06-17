@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 5
 playbooks_cataloged: 16
+type: "spec"
 ---
 
 # 05 — Playbooks Catalog

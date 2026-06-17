@@ -22,6 +22,7 @@ headline: |
   Mission dispatch engine: generates YAML mission files, creates hybridDispatch
   wrappers, saves to jarvis/cortex/missions/, and routes to agent-orchestration
   for execution if needed.
+type: "skill"
 ---
 
 # Mission Dispatcher — Execute Planned Work

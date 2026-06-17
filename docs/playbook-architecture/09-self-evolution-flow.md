@@ -5,6 +5,7 @@ last_updated: "2026-06-15"
 owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 9
+type: "spec"
 ---
 
 # 09 — Self-Evolution Flow

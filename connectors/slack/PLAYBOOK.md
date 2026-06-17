@@ -12,6 +12,7 @@ trigger_tools:
 headline: |
   Slack messaging connector. Verify channel_id is in allowlist before posting.
   Redact customer PII (card, SSN, DOB). Rate limit 1 msg/sec per channel.
+type: "playbook"
 ---
 
 # Slack Connector Playbook

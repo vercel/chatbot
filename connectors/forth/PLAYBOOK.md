@@ -12,6 +12,7 @@ trigger_tools:
 headline: |
   Forth DPP credit repair. SSN only last 4 digits. Credit reports encrypted at rest.
   FCRA compliance required — never pull without signed authorization.
+type: "playbook"
 ---
 
 # Forth (DPP/Credit) Connector Playbook

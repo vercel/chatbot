@@ -24,6 +24,7 @@ headline: |
   Technical Requirements Document with Mermaid C4 diagrams, OpenAPI contracts,
   data model definitions, and deployment architecture. Implements a PRD into
   concrete technical specifications.
+type: "skill"
 ---
 
 # Draft TRD — Technical Requirements Document

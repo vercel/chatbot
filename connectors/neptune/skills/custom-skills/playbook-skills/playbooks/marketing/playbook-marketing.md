@@ -47,6 +47,7 @@ associated_functions:
   - reporting_enrollments
   - reporting_lead_flow
 routines_count: 2
+type: "playbook"
 ---
 
 # Marketing Domain Playbook

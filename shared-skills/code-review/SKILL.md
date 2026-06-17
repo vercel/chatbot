@@ -2,6 +2,7 @@
 name: code-review
 description: Reviews code changes and provides actionable feedback. Use when the user asks to review a PR, diff, commit, or code changes. Triggers on /review, review this PR, review my changes, code review. Shared across all agents.
 version: 1.0.0
+type: "skill"
 ---
 
 # Code Review — Cross-Agent Code Review Engine (Shared)

@@ -10,6 +10,7 @@ trigger_tools:
 headline: |
   MCP Hub multi-server aggregator. Tools discovered at runtime via MCP protocol.
   Never assume tools are available — always check connection status first.
+type: "playbook"
 ---
 
 # MCP Hub Connector Playbook

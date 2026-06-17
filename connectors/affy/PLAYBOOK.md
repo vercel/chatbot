@@ -11,6 +11,7 @@ trigger_tools:
 headline: |
   Affy chargeback dispute management via Base44 bridge. Never auto-approve chargeback
   responses — always human review. Missing a deadline means losing the dispute.
+type: "playbook"
 ---
 
 # Affy (Chargeback/Affidavit) Connector Playbook

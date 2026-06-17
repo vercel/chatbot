@@ -5,6 +5,7 @@ kind: capability
 primary_domain: engineering
 headline: |
   Neptune Chat's ability to modify its own codebase. Use for small fixes (typos, color tweaks, copy changes, prop additions). Hand off to Neptune V2 for complex work.
+type: "skill"
 ---
 
 # Self-Coding Capability

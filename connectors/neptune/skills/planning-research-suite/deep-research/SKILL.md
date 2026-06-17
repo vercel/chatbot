@@ -30,6 +30,7 @@ headline: |
   Parallel multi-source research engine. Fires 5 sources simultaneously
   (Tavily, Exa, GitHub, Web, Smithery) with 30s per-source timeout.
   Synthesizes results ranked by confidence + recency + relevance.
+type: "skill"
 ---
 
 # Deep Research — Parallel Multi-Source Synthesis

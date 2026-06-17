@@ -19,6 +19,7 @@ associated_connectors:
 headline: |
   35 GoHighLevel actions: contacts, SMS, email, campaigns, pipelines,
   opportunities, automations, calendars, and analytics. Full CRM management.
+type: "skill"
 ---
 
 # GoHighLevel Skills — 35 Actions

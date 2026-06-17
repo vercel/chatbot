@@ -5,6 +5,7 @@ kind: capability
 primary_domain: coding
 headline: |
   Structured code review technique. Checks correctness, security, performance, and style.
+type: "skill"
 ---
 
 # Code Review Capability

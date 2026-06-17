@@ -1,13 +1,14 @@
 /**
- * Knowledge Page — Memory + PRDs + Knowledge Graph with card-grid UI.
- * PHASE 3: Enterprise card-grid redesign with search, dark mode, responsive.
+ * Knowledge Page — OKF v0.1 Visualizer (Phase 34 Stream 4)
+ * Three views: Library (by type), Playbook (by domain), Graph (D3 force-directed).
+ * OKF-compatible with Neptune extensions (mission overlay, memory inline, KG integration).
  */
 import { auth } from "@/app/(auth)/auth";
-import { KnowledgeCardGrid } from "./knowledge-card-grid";
+import { OkfVisualizer } from "@/components/knowledge/okf-visualizer";
 
 export const metadata = {
-  title: "Knowledge — Neptune",
-  description: "Memory store, PRD archive, and knowledge graph artifacts.",
+  title: "Knowledge — Neptune OKF Visualizer",
+  description: "OKF v0.1 knowledge browser — Library, Playbooks, Knowledge Graph. Neptune reference implementation.",
 };
 
 export default async function KnowledgePage() {
@@ -25,16 +26,16 @@ export default async function KnowledgePage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="shrink-0 border-b px-6 py-4">
-        <h1 className="text-lg font-semibold">Knowledge</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Memory store &middot; PRD archive &middot; Knowledge graph &middot; Semantic search
+      <div className="shrink-0 border-b px-4 py-3">
+        <h1 className="text-base font-semibold">Knowledge</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          OKF v0.1 · Library · Playbooks · Graph · <span className="text-emerald-600 dark:text-emerald-400 font-medium">Neptune Reference Implementation</span>
         </p>
       </div>
 
-      {/* Card Grid */}
-      <div className="flex-1 overflow-y-auto">
-        <KnowledgeCardGrid />
+      {/* Visualizer (client component) */}
+      <div className="flex-1 overflow-hidden">
+        <OkfVisualizer />
       </div>
     </div>
   );

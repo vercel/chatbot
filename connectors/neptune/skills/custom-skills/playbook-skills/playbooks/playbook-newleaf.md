@@ -17,6 +17,7 @@ skills:
 headline: |
   NewLeaf Financial operations root playbook. All agents load this first.
   Routes intents to domain playbooks. 168 active enrolled customers, $33,749 MRR.
+type: "playbook"
 ---
 
 # NewLeaf Financial — Root Playbook

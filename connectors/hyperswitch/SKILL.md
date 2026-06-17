@@ -5,6 +5,7 @@ version: 1.0.0
 domain: billing-flow
 mcp: false
 custom_client: true
+type: "skill"
 ---
 # Hyperswitch Integration Pack
 

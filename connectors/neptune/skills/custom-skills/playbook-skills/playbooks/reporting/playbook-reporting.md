@@ -47,6 +47,7 @@ associated_functions:
   - reporting_overview
   - reporting_billing
 routines_count: 3
+type: "playbook"
 ---
 
 # Reporting Domain Playbook
