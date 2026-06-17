@@ -21,6 +21,7 @@ headline: |
   Generate Mermaid diagrams from structural analysis. Supports 8 diagram types:
   flowchart, sequence, class, ER, C4 context, C4 container, state, and Gantt.
 type: "skill"
+access: internal
 ---
 
 # Architecture Diagrammer — Mermaid Generation

@@ -13,6 +13,7 @@ headline: |
   Karpathy Wiki long-term memory. Never store PII or credentials in wiki pages.
   All pages need title, category, tags. Deprecate with [DEPRECATED] — never delete.
 type: "playbook"
+access: internal
 ---
 
 # Wiki (Karpathy Wiki) Connector Playbook

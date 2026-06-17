@@ -11,6 +11,7 @@ model_routing:
   fast_iteration: "deepseek/deepseek-v4-flash"
   long_context: "zai/glm-5.1"
 type: "playbook"
+access: internal
 ---
 
 # Playbook: Sales & Lead Flow

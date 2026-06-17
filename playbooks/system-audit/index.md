@@ -4,6 +4,7 @@ name: "system-audit"
 description: "Index of all knowledge artifacts in playbooks/system-audit/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # system-audit

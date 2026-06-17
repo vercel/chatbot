@@ -9,7 +9,7 @@
  *
  * Eve pattern:
  *   export default defineSchedule({
- *     cron: "0 */12 * * *",
+ *     cron: "0 *\/12 * * *",
  *     async run({ receive, waitUntil }) { ... }
  *   });
  */

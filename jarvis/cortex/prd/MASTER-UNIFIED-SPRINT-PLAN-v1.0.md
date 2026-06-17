@@ -1,3 +1,12 @@
+---
+type: "prd"
+name: "MASTER UNIFIED SPRINT PLAN V1.0"
+description: "Auto-generated description for MASTER UNIFIED SPRINT PLAN V1.0"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # MASTER UNIFIED SPRINT PLAN v1.0
 
 ## Neptune Platform v1.0 — Production AI Agent Platform

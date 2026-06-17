@@ -7,6 +7,7 @@ status: ACTIVE
 kb_index: 3
 functions_cataloged: 25
 type: "spec"
+access: internal
 ---
 
 # 03 — Functions Catalog

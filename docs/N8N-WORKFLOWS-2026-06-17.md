@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "N8N WORKFLOWS 2026 06 17"
+description: "Auto-generated description for N8N WORKFLOWS 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # N8N Tri-Integration Workflows — Phase 30.5
 
 **Date:** 2026-06-17  

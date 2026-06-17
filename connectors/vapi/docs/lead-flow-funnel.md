@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Lead Flow Funnel"
+description: "Auto-generated description for Lead Flow Funnel"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Vapi Lead Flow Funnel — U2.3.E
 
 ## Haley v3 Funnel Discipline

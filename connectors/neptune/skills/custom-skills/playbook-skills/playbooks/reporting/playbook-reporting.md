@@ -48,6 +48,7 @@ associated_functions:
   - reporting_billing
 routines_count: 3
 type: "playbook"
+access: internal
 ---
 
 # Reporting Domain Playbook

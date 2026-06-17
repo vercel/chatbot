@@ -7,6 +7,7 @@ status: ACTIVE
 kb_index: 4
 workflows_cataloged: 6
 type: "spec"
+access: internal
 ---
 
 # 04 — Workflows Catalog

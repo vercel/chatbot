@@ -13,6 +13,7 @@ headline: |
   GitHub repo connector. Never push directly to main on protected repos.
   All AI commits go through PR with `ai-agent` label. Secret scanning is on.
 type: "playbook"
+access: internal
 ---
 
 # GitHub Connector Playbook

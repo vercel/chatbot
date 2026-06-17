@@ -6,6 +6,7 @@ domain: mcp-edits
 mcp: false
 custom_client: true
 type: "skill"
+access: internal
 ---
 # MCP Hub Integration Pack
 

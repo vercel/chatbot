@@ -25,6 +25,7 @@ headline: |
   data model definitions, and deployment architecture. Implements a PRD into
   concrete technical specifications.
 type: "skill"
+access: internal
 ---
 
 # Draft TRD — Technical Requirements Document

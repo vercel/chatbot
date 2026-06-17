@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Patterns"
+description: "Auto-generated description for Patterns"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # hostinger-vps — Patterns
 
 ## Common Patterns

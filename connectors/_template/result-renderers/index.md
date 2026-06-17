@@ -4,6 +4,7 @@ name: "result-renderers"
 description: "Index of all knowledge artifacts in connectors/_template/result-renderers/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # result-renderers

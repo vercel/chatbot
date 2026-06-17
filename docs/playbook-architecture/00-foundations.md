@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 0
 type: "spec"
+access: internal
 ---
 
 # 00 — Foundations: The Fractal Library Pattern

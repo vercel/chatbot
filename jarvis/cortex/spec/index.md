@@ -4,6 +4,7 @@ name: "spec"
 description: "Index of all knowledge artifacts in jarvis/cortex/spec/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # spec

@@ -48,6 +48,7 @@ associated_functions:
   - reporting_lead_flow
 routines_count: 2
 type: "playbook"
+access: internal
 ---
 
 # Marketing Domain Playbook

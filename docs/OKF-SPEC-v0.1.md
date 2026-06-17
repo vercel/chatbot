@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "OKF SPEC V0.1"
+description: "Auto-generated description for OKF SPEC V0.1"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Open Knowledge Format (OKF) v0.1 — Specification
 
 **Status:** Published  

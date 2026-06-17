@@ -10,6 +10,7 @@ headline: |
   Hyperswitch payment orchestration. All new payment flows go through here.
   Refunds need idempotency keys. Never poll — use webhooks.
 type: "skill"
+access: internal
 ---
 
 # Hyperswitch Connector Skill

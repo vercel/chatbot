@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Api Reference"
+description: "Auto-generated description for Api Reference"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Slack API Reference — U2.3.B Comprehensive
 
 ## Overview

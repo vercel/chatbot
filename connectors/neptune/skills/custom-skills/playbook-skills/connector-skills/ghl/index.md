@@ -4,6 +4,7 @@ name: "ghl"
 description: "Index of all knowledge artifacts in connectors/neptune/skills/custom-skills/playbook-skills/connector-skills/ghl/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # ghl

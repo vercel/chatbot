@@ -6,6 +6,8 @@ primary_domain: customer-enrollment
 dependencies: [base44-connector]
 headline: |
   Builds Virtual Data Envelope for customer: aggregates all data points into unified view.
+type: "concept"
+access: internal
 ---
 
 # Build Customer VDE

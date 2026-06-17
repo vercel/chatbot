@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Mcp Guide"
+description: "Auto-generated description for Mcp Guide"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Workflow DevKit — MCP Bridge Guide
 
 **Purpose:** How Neptune exposes Workflow DevKit as a connector with MCP-compatible tool registration.

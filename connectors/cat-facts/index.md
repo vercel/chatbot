@@ -4,6 +4,7 @@ name: "cat-facts"
 description: "Index of all knowledge artifacts in connectors/cat-facts/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # cat-facts

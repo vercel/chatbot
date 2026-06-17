@@ -7,6 +7,8 @@ also_in: [compliance-audit, reporting]
 dependencies: [nmi-connector, base44-connector]
 headline: |
   Card-on-File health audit: checks all stored cards for expiry, decline patterns, and CIT validity.
+type: "audit"
+access: internal
 ---
 
 # COF Health Audit

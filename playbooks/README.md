@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "README"
+description: "Auto-generated description for README"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # playbooks/ — Canonical Location Redirect
 
 > ⚠️ **This directory is kept for backward compatibility only.**

@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 11
 type: "spec"
+access: internal
 ---
 
 # 11 — Bootstrap New Organization

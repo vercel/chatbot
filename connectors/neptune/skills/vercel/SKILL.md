@@ -18,6 +18,7 @@ headline: |
   25 Vercel actions: deployments, projects, domains, environment variables,
   analytics, logs, security, and team management. Full platform management.
 type: "skill"
+access: internal
 ---
 
 # Vercel Skills — 25 Actions

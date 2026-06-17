@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Deployment Guide"
+description: "Auto-generated description for Deployment Guide"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Twenty CRM — Custom Objects Deployment Guide
 
 **Phase:** 27 | **Date:** 2026-06-17

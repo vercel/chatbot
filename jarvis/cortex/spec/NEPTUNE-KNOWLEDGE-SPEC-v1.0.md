@@ -1,3 +1,12 @@
+---
+type: "spec"
+name: "NEPTUNE KNOWLEDGE SPEC V1.0"
+description: "Auto-generated description for NEPTUNE KNOWLEDGE SPEC V1.0"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # NEPTUNE KNOWLEDGE SPEC v1.0
 
 ## OKF Superset for Production AI Agents

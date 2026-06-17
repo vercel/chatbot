@@ -39,6 +39,7 @@ associated_skills:
 associated_functions: []
 routines_count: 2
 type: "playbook"
+access: internal
 ---
 
 # HR Domain Playbook

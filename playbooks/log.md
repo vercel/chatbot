@@ -4,6 +4,7 @@ name: "playbooks Change Log"
 description: "Chronological change log for playbooks/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # playbooks Change Log

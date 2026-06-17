@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 0
 type: "index"
+access: internal
 ---
 
 # Playbook Architecture Knowledge Base

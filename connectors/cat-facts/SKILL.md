@@ -6,6 +6,7 @@ domain: engineering
 mcp: false
 custom_client: true
 type: "skill"
+access: internal
 ---
 
 # Cat-facts Integration Pack

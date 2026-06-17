@@ -4,6 +4,7 @@ name: "deploy-discipline"
 description: "Index of all knowledge artifacts in shared-skills/deploy-discipline/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # deploy-discipline

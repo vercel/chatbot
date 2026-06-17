@@ -4,6 +4,7 @@ name: "gap-analysis"
 description: "Index of all knowledge artifacts in connectors/neptune/skills/planning-research-suite/gap-analysis/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # gap-analysis

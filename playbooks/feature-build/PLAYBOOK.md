@@ -10,6 +10,7 @@ model_routing:
   fast_iteration: "deepseek/deepseek-v4-flash"
   cheap: "deepseek/deepseek-v3.2"
 type: "playbook"
+access: internal
 ---
 
 # Feature Build — Master Playbook

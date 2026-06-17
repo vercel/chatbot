@@ -7,6 +7,7 @@ status: ACTIVE
 kb_index: 8
 gaps_found: 6
 type: "spec"
+access: internal
 ---
 
 # 08 — Gap Analysis

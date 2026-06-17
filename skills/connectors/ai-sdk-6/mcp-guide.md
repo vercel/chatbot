@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Mcp Guide"
+description: "Auto-generated description for Mcp Guide"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # AI SDK 6 — MCP Bridge Guide
 
 **Purpose:** How Neptune exposes AI SDK 6 as a connector with MCP-compatible tool registration.

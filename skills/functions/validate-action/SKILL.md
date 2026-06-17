@@ -7,6 +7,8 @@ also_in: [billing-flow, credit-disputes, customer-enrollment]
 dependencies: []
 headline: |
   Pre-flight action validator. Checks action against playbook safeguards before execution.
+type: "concept"
+access: internal
 ---
 
 # Validate Action

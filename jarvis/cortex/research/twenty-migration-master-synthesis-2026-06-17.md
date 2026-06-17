@@ -1,3 +1,12 @@
+---
+type: "research"
+name: "Twenty Migration Master Synthesis 2026 06 17"
+description: "Auto-generated description for Twenty Migration Master Synthesis 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # BASE44 FULL AUDIT + TWENTY CRM MIGRATION — MASTER SYNTHESIS
 
 **Mission:** `6a323dc5f106e2c64acae2cd` | **Date:** 2026-06-17  

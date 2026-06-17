@@ -4,6 +4,7 @@ name: "shared-skills Change Log"
 description: "Chronological change log for shared-skills/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # shared-skills Change Log

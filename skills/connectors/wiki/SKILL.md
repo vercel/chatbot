@@ -9,6 +9,7 @@ dependencies: []
 headline: |
   Internal wiki connector for NewLeaf documentation and SOPs.
 type: "skill"
+access: internal
 ---
 
 # Wiki Connector Skill

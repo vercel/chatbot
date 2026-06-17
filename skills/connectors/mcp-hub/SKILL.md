@@ -9,6 +9,7 @@ dependencies: []
 headline: |
   MCP Hub aggregates Smithery-hosted MCP servers. Discover and invoke tools from any registered MCP.
 type: "skill"
+access: internal
 ---
 
 # MCP Hub Connector Skill

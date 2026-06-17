@@ -4,6 +4,7 @@ name: "skills Change Log"
 description: "Chronological change log for skills/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # skills Change Log

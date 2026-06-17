@@ -6,6 +6,8 @@ primary_domain: compliance-audit
 dependencies: []
 headline: |
   Extracts and classifies PII from unstructured text for redaction and compliance.
+type: "concept"
+access: internal
 ---
 
 # Extract Customer PII

@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 10
 type: "concept"
+access: internal
 ---
 
 # 10 — Portability Guide

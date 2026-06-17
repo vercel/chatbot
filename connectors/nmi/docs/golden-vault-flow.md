@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Golden Vault Flow"
+description: "Auto-generated description for Golden Vault Flow"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # NMI Golden Vault Flow — U2.3.C
 
 ## Overview

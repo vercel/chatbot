@@ -20,6 +20,7 @@ headline: |
   Generates structured YAML files with phases, steps, dependencies,
   parallel markers, and success criteria for any domain.
 type: "skill"
+access: internal
 ---
 
 # Workflow Designer — YAML Scaffolding

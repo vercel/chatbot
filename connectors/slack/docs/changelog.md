@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Changelog"
+description: "Auto-generated description for Changelog"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Slack Connector Changelog
 
 ## U2.3.B (2026-06-12)

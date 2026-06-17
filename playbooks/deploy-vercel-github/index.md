@@ -4,6 +4,7 @@ name: "deploy-vercel-github"
 description: "Index of all knowledge artifacts in playbooks/deploy-vercel-github/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # deploy-vercel-github

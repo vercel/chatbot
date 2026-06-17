@@ -4,6 +4,7 @@ name: "response-formatting"
 description: "Index of all knowledge artifacts in skills/capabilities/response-formatting/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # response-formatting

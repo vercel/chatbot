@@ -4,6 +4,7 @@ name: "deploy-yourself"
 description: "Index of all knowledge artifacts in skills/capabilities/deploy-yourself/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # deploy-yourself

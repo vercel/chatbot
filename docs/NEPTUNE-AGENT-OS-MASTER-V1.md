@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "NEPTUNE AGENT OS MASTER V1"
+description: "Auto-generated description for NEPTUNE AGENT OS MASTER V1"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # NEPTUNE AGENT OS — DEFINITIVE MASTER DOCUMENT V1
 
 **Document Type:** PRD/TRD/Design Doc/App Flow/Launch Checklist (Unified)

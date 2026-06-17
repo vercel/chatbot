@@ -7,6 +7,8 @@ also_in: [reporting, compliance-audit]
 dependencies: [base44-connector]
 headline: |
   Structured billing event logger. Writes immutable audit trail for all payment events.
+type: "concept"
+access: internal
 ---
 
 # Billing Event Logger

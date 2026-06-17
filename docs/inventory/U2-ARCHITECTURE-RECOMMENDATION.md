@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "U2 ARCHITECTURE RECOMMENDATION"
+description: "Auto-generated description for U2 ARCHITECTURE RECOMMENDATION"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # U2 Architecture Pivot Recommendation — Pattern A: Documentation-Driven Runtime
 
 **Date:** 2026-06-11 | **Mission:** U1 Finish + Architecture Pivot  

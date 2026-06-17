@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "Blog Okf 6 Months Ahead"
+description: "Auto-generated description for Blog Okf 6 Months Ahead"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # We Built OKF 6 Months Before Google Specced It
 
 **By Abhishek Swami · June 17, 2026**

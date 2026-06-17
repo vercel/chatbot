@@ -4,6 +4,7 @@ name: "agent-orchestration"
 description: "Index of all knowledge artifacts in connectors/neptune/skills/custom-skills/playbook-skills/playbooks/agent-orchestration/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # agent-orchestration

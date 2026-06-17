@@ -7,6 +7,7 @@ status: ACTIVE
 kb_index: 1
 connectors_cataloged: 17
 type: "spec"
+access: internal
 ---
 
 # 01 — Connectors Catalog

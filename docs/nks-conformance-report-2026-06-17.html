@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NKS Conformance Report — 2026-06-17</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 2rem; max-width: 1200px; margin: 0 auto; background: #0f172a; color: #e2e8f0; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: #94a3b8; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+    .card { background: #1e293b; border-radius: 12px; padding: 1.25rem; border: 1px solid #334155; }
+    .card .value { font-size: 2rem; font-weight: 700; }
+    .card .label { font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem; }
+    .success { color: #14b8a6; } .warning { color: #f59e0b; } .error { color: #ef4444; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #334155; }
+    th { color: #94a3b8; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; }
+    .bar { height: 8px; border-radius: 4px; margin: 0.5rem 0; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .auto-fix-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+    .tag { padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem; }
+    .tag-auto { background: #14b8a620; color: #14b8a6; border: 1px solid #14b8a640; }
+    .tag-manual { background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b40; }
+  </style>
+</head>
+<body>
+  <h1>📋 NKS v1.0 Conformance Report</h1>
+  <p style="color: #94a3b8; font-size: 0.875rem;">Generated: 2026-06-17T11:23:10.751Z | Validator: validate-nks-conformance.ts</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="value">524</div>
+      <div class="label">Total .md Files Scanned</div>
+    </div>
+    <div class="card">
+      <div class="value success">65</div>
+      <div class="label">Fully Conformant Files</div>
+    </div>
+    <div class="card">
+      <div class="value error">12.4%</div>
+      <div class="label">Conformance Rate</div>
+      <div class="bar" style="background:#334155"><div class="bar-fill" style="width:12.4%;background:#ef4444"></div></div>
+    </div>
+    <div class="card">
+      <div class="value">215</div>
+      <div class="label">Total Directories</div>
+    </div>
+    <div class="card">
+      <div class="value error">715</div>
+      <div class="label">Errors</div>
+    </div>
+    <div class="card">
+      <div class="value warning">21</div>
+      <div class="label">Warnings</div>
+    </div>
+  </div>
+
+  <div class="auto-fix-list">
+    <span class="tag tag-auto">🔧 568 auto-fixable</span>
+    <span class="tag tag-manual">✋ 166 need manual fix</span>
+  </div>
+
+  <h2>Issues by Category</h2>
+  <table>
+    <tr><th>Category</th><th>Count</th></tr>
+    <tr><td>missing_required_field</td><td>568</td></tr><tr><td>auto_fixed</td><td>459</td></tr><tr><td>missing_frontmatter</td><td>145</td></tr><tr><td>broken_link</td><td>21</td></tr><tr><td>invalid_type</td><td>2</td></tr>
+  </table>
+
+  <h2>Top Issues (736 total)</h2>
+  <table>
+    <tr><th>Severity</th><th>Category</th><th>File</th><th>Detail</th><th>Auto-Fix</th></tr>
+    <tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/design/MASTER-DESIGN-DOC-v1.0.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/design/NAVIGATION-FLOWS-v1.0.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/design/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/log.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/marketing/blog-okf-6-months-ahead.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/marketing/social-linkedin-post.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/marketing/social-twitter-thread.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/memories/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/missions/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/missions/neptune-CONNECTOR-PLAYBOOK-WORKFLOW-BUILDER-2026-06-09.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/prd/IMPLEMENTATION-PLAN-v1.0.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/prd/MASTER-TRD-v1.0.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/prd/MASTER-UNIFIED-SPRINT-PLAN-v1.0.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/prd/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/research/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/research/integrations-audit-2026-06-17.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/research/neptune-chat-codebase-audit-2026-06-17.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/research/neptune-v2-codebase-audit-2026-06-17.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/research/next-phases-roadmap-2026-06-17.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/research/twenty-crm-installation-audit-2026-06-17.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/research/twenty-migration-master-synthesis-2026-06-17.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/research/vps-infrastructure-audit-2026-06-17.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/skills/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/skills/neptune-secrets-master-inventory.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/skills/playbook-refinement.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/skills/vps-recovery-runbook.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">jarvis/cortex/spec/NEPTUNE-KNOWLEDGE-SPEC-v1.0.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">jarvis/cortex/spec/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/HR/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/HR/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">playbooks/README.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/agent-orchestration/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/agent-orchestration/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/billing/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/billing/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/code-review/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: name</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/code-review/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/code-review/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/code-review/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/code-review/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/customer-support/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/customer-support/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/debugging-incident/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: name</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/debugging-incident/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/debugging-incident/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/debugging-incident/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/debugging-incident/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/deploy-vercel-github/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">playbooks/deploy-vercel-github/phase-template.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/deploy-vercel-github/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/disputes/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/disputes/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/engineering/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/engineering/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/feature-build/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: name</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/feature-build/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/feature-build/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/feature-build/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/feature-build/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/log.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/marketing/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/marketing/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/planning-research/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: name</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/planning-research/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/planning-research/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/planning-research/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/planning-research/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/planning-research/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/reporting/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/reporting/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/system-audit/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: name</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/system-audit/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/system-audit/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/system-audit/PLAYBOOK.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/system-audit/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/vercel-discipline/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/vercel-discipline/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/vps-ops/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">playbooks/vps-ops/workflows/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">skills/MULTI-ORG-GUIDE.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_frontmatter</td>
+      <td style="font-size:12px">skills/README.md</td>
+      <td style="font-size:12px">No YAML frontmatter found</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/bridge/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/artifact-response-pattern/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/artifact-response-pattern/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/artifact-response-pattern/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/artifact-response-pattern/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/code-review/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/code-review/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/code-review/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/code-review/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/deploy-yourself/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/deploy-yourself/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/deploy-yourself/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/deploy-yourself/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/index.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/playbook-refiner/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: description</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/playbook-refiner/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: updated</td>
+      <td></td>
+    </tr><tr>
+      <td style="color:#ef4444">ERROR</td>
+      <td>missing_required_field</td>
+      <td style="font-size:12px">skills/capabilities/playbook-refiner/SKILL.md</td>
+      <td style="font-size:12px">Missing required field: access</td>
+      <td></td>
+    </tr>
+  </table>
+
+  <p style="margin-top: 2rem; font-size: 0.75rem; color: #475569; text-align: center;">
+    NKS v1.0 Conformance Validator · Neptune-Knowledge-Spec Reference Implementation
+  </p>
+</body>
+</html>

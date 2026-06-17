@@ -28,6 +28,7 @@ model_routing:
   reasoning_heavy: "anthropic/claude-sonnet-4-6"
   cheap: "groq/llama-4-maverick"
 type: "playbook"
+access: internal
 ---
 
 # Customer Support Domain Playbook

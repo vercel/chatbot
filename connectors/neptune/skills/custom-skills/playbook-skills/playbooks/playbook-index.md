@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Playbook Index"
+description: "Auto-generated description for Playbook Index"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Playbook Index
 
 Auto-generated master index of all domain playbooks (U2.4 — Relational Graph + 4 Libraries).

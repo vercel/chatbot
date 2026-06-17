@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Playbook Self Coding"
+description: "Auto-generated description for Playbook Self Coding"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Self-Coding Playbook — Neptune Chat
 
 ## Section 1: Identity & Context

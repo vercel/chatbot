@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Functions Guide"
+description: "Auto-generated description for Functions Guide"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Base44 Functions Guide — U2.3.A
 
 ## Overview

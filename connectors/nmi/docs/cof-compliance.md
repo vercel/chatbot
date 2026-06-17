@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Cof Compliance"
+description: "Auto-generated description for Cof Compliance"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # CoF (Card-on-File) Compliance Discipline — U2.3.C
 
 ## LOCKED: Cardinal 6a1f118b

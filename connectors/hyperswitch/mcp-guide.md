@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Mcp Guide"
+description: "Auto-generated description for Mcp Guide"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Hyperswitch MCP Integration Guide — U2.3.D
 
 ## Architecture: MCP + Custom Client Hybrid

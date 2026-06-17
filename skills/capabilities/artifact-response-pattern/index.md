@@ -4,6 +4,7 @@ name: "artifact-response-pattern"
 description: "Index of all knowledge artifacts in skills/capabilities/artifact-response-pattern/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # artifact-response-pattern

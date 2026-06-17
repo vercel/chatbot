@@ -30,6 +30,7 @@ model_routing:
   cheap: "deepseek/deepseek-v3.2"
   coding: "deepseek/deepseek-v4-pro"
 type: "playbook"
+access: internal
 ---
 
 # Billing Domain Playbook

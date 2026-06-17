@@ -4,6 +4,7 @@ name: "ghl"
 description: "Index of all knowledge artifacts in skills/connectors/ghl/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # ghl

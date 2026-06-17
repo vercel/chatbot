@@ -24,6 +24,7 @@ headline: |
   Produces production-grade Product Requirements Documents with
   success criteria, risk assessment, and phased delivery plan.
 type: "skill"
+access: internal
 ---
 
 # Draft PRD — 12-Section Product Requirements Document

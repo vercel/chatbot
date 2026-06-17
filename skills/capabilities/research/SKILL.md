@@ -6,6 +6,7 @@ primary_domain: reporting
 headline: |
   Web research synthesis technique. Searches, fetches, cross-references, and distills findings.
 type: "skill"
+access: internal
 ---
 
 # Research Capability

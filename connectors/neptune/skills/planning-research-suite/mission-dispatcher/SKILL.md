@@ -23,6 +23,7 @@ headline: |
   wrappers, saves to jarvis/cortex/missions/, and routes to agent-orchestration
   for execution if needed.
 type: "skill"
+access: internal
 ---
 
 # Mission Dispatcher — Execute Planned Work

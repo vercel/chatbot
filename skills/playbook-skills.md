@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Playbook Skills"
+description: "Auto-generated description for Playbook Skills"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Playbook Skills — Master Index
 
 Auto-generated master index of all skills, connectors, and capabilities.  

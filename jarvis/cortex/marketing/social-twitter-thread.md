@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "Social Twitter Thread"
+description: "Auto-generated description for Social Twitter Thread"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Twitter Thread — NKS v1.0 Launch
 
 **10 tweets. Publish date: June 17, 2026**

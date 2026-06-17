@@ -21,6 +21,7 @@ headline: |
   Ranks sources by confidence (0.4) + recency (0.3) + relevance (0.3),
   resolves contradictions, and produces confidence-weighted recommendations.
 type: "skill"
+access: internal
 ---
 
 # Source Synthesis — Weighted Multi-Source Merge

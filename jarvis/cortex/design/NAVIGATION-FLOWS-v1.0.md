@@ -1,3 +1,12 @@
+---
+type: "design"
+name: "NAVIGATION FLOWS V1.0"
+description: "Auto-generated description for NAVIGATION FLOWS V1.0"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # NAVIGATION FLOWS v1.0
 
 ## Neptune Platform v1.0 — Complete Navigation Specification

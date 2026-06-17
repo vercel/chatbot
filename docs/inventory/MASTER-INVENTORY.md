@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "MASTER INVENTORY"
+description: "Auto-generated description for MASTER INVENTORY"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Neptune Chat — Master Function Inventory
 
 **Date:** 2026-06-11  

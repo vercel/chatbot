@@ -1,3 +1,12 @@
+---
+type: "research"
+name: "Next Phases Roadmap 2026 06 17"
+description: "Auto-generated description for Next Phases Roadmap 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Gap Analysis & Next Phases Roadmap — 2026-06-17
 
 > **Source audits:** Neptune Chat, Neptune V2, Twenty CRM, VPS Infrastructure, Integrations  

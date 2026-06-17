@@ -6,6 +6,7 @@ domain: comms
 mcp: false
 custom_client: true
 type: "skill"
+access: internal
 ---
 # Slack Integration Pack
 

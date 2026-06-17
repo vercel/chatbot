@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Playbook"
+description: "Auto-generated description for Playbook"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Twenty CRM — Operational Playbook
 
 **Version:** v1.0 | **Phase 27** | **Last Updated:** 2026-06-17

@@ -20,6 +20,7 @@ headline: |
   35 GoHighLevel actions: contacts, SMS, email, campaigns, pipelines,
   opportunities, automations, calendars, and analytics. Full CRM management.
 type: "skill"
+access: internal
 ---
 
 # GoHighLevel Skills — 35 Actions

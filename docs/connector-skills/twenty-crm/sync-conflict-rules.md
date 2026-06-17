@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Sync Conflict Rules"
+description: "Auto-generated description for Sync Conflict Rules"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Twenty ↔ Base44 Sync Conflict Rules
 
 **Date:** 2026-06-17  

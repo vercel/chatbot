@@ -24,6 +24,7 @@ headline: |
   and writes via VPS FS bridge. The canonical save mechanism for all PRDs,
   TRDs, plans, research, and missions.
 type: "skill"
+access: internal
 ---
 
 # Save to Cortex — Artifact Persistence

@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "PLAYBOOK"
+description: "Auto-generated description for PLAYBOOK"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Workflow DevKit — Connector Playbook
 
 **Version:** 0.0.0 (Beta) | **Type:** SDK Reference | **Primary Domain:** mcp-edits

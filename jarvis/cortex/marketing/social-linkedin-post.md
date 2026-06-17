@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "Social Linkedin Post"
+description: "Auto-generated description for Social Linkedin Post"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # LinkedIn Post — NKS v1.0 Launch
 
 **Publish date: June 17, 2026**

@@ -8,6 +8,8 @@ dependencies: [nmi-connector]
 headline: |
   Determines if a transaction is eligible for refund based on settlement window,
   customer tier, amount thresholds, and dispute status.
+type: "concept"
+access: internal
 ---
 
 # Calculate Refund Eligibility

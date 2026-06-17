@@ -6,6 +6,7 @@ primary_domain: coding
 headline: |
   Pattern for streaming structured artifacts (code, tables, charts) in agent responses.
 type: "skill"
+access: internal
 ---
 
 # Artifact Response Pattern

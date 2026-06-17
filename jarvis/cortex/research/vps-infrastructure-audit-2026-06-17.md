@@ -1,3 +1,12 @@
+---
+type: "research"
+name: "Vps Infrastructure Audit 2026 06 17"
+description: "Auto-generated description for Vps Infrastructure Audit 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # VPS Infrastructure Audit — 2026-06-17
 
 > **Host:** VPS (Hostinger) at 187.127.250.171  

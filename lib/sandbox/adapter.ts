@@ -94,14 +94,13 @@ class VercelSandboxAdapter implements SandboxAdapter {
     try {
       // Use @vercel/sandbox when available
       const { Sandbox } = await import("@vercel/sandbox");
-      // @ts-expect-error - Sandbox SDK types may vary
       const sandbox = await Sandbox.create({
         runtime: "node24",
-        timeoutMs: this.config.timeoutMs,
+        timeout: this.config.timeoutMs,
         env: this.config.env,
-      });
+      } as Parameters<typeof Sandbox.create>[0]);
 
-      const sandboxId = sandbox.id || sandbox.sandboxId || `vercel-${Date.now()}`;
+      const sandboxId = `vercel-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       this.sandboxes.set(sandboxId, { sandbox });
       return { sandboxId };
     } catch (err) {

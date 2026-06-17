@@ -7,6 +7,7 @@ headline: |
   How any Neptune-family agent deploys changes to itself or any Vercel+GitHub project.
   Shared skill referenced by both Neptune Chat and Neptune V2.
 type: "skill"
+access: internal
 ---
 
 # Deploy-Yourself — Shared Deployment Capability

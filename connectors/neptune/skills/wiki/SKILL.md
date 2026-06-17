@@ -17,6 +17,7 @@ headline: |
   20 Karpathy Wiki actions: pages, search, ingest, lint, index, categories,
   tags, cross-references, and knowledge management. Long-term agent memory.
 type: "skill"
+access: internal
 ---
 
 # Karpathy Wiki Skills — 20 Actions

@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "README"
+description: "Auto-generated description for README"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Agent Skills Library v1.0.0
 
 Universal, shareable skill library for all agent instances across all orgs.

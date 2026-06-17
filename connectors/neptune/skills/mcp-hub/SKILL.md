@@ -18,6 +18,7 @@ headline: |
   15 MCP Hub actions: servers, tools, connections, health, resources,
   prompts, and protocol management. Multi-server MCP aggregator mastery.
 type: "skill"
+access: internal
 ---
 
 # MCP Hub Skills — 15 Actions

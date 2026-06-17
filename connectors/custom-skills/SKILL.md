@@ -6,6 +6,7 @@ domain: agent-orchestration
 mcp: false
 custom_client: false
 type: "skill"
+access: internal
 ---
 # Custom Skills Pseudo-Connector
 

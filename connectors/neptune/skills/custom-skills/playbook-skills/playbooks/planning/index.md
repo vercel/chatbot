@@ -4,6 +4,7 @@ name: "planning"
 description: "Index of all knowledge artifacts in connectors/neptune/skills/custom-skills/playbook-skills/playbooks/planning/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # planning

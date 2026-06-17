@@ -4,6 +4,7 @@ name: "playbook-skills"
 description: "Index of all knowledge artifacts in connectors/neptune/skills/custom-skills/playbook-skills/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # playbook-skills

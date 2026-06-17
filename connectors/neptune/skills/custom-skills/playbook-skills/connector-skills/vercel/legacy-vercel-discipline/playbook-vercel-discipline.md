@@ -47,6 +47,7 @@ associated_functions:
   - validate-action
 routines_count: 3
 type: "playbook"
+access: internal
 ---
 
 # Vercel Discipline Playbook

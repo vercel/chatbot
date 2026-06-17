@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "PLAYBOOK ROUTER"
+description: "Auto-generated description for PLAYBOOK ROUTER"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # PLAYBOOK ROUTER — The Master Index (Phase 24)
 # Neptune Chat Playbook-First Architecture
 

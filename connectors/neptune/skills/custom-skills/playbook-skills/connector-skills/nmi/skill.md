@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Skill"
+description: "Auto-generated description for Skill"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # NMI Connector Skill
 
 > **Connector:** nmi | **Priority:** P0 | **Type:** Payment Gateway

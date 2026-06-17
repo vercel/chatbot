@@ -7,6 +7,7 @@ status: ACTIVE
 kb_index: 2
 skills_cataloged: 15
 type: "spec"
+access: internal
 ---
 
 # 02 — Skills Catalog

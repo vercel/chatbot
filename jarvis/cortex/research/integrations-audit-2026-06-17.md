@@ -1,3 +1,12 @@
+---
+type: "research"
+name: "Integrations Audit 2026 06 17"
+description: "Auto-generated description for Integrations Audit 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Integrations Audit — 2026-06-17
 
 > **Scope:** Every external service, API, and SaaS integration across VPS + Vercel + Docker  

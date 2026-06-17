@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "MULTI ORG GUIDE"
+description: "Auto-generated description for MULTI ORG GUIDE"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Multi-Org Operating Guide v1.0
 
 ## Architecture

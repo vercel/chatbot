@@ -4,6 +4,7 @@ name: "vercel-discipline"
 description: "Index of all knowledge artifacts in playbooks/vercel-discipline/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # vercel-discipline

@@ -6,6 +6,7 @@ domain: reporting
 mcp: false
 custom_client: true
 type: "skill"
+access: internal
 ---
 # Wiki Integration Pack
 

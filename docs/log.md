@@ -4,6 +4,7 @@ name: "docs Change Log"
 description: "Chronological change log for docs/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # docs Change Log

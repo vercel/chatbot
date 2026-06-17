@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "PLAYBOOK"
+description: "Auto-generated description for PLAYBOOK"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # AI SDK 6 — Connector Playbook
 
 **Version:** 6.0.116 | **Type:** SDK Reference | **Primary Domain:** mcp-edits

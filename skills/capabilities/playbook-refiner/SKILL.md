@@ -6,6 +6,7 @@ primary_domain: agent-orchestration
 headline: |
   Playbook refinement technique. Analyzes session logs, identifies patterns, proposes playbook diffs.
 type: "skill"
+access: internal
 ---
 
 # Playbook Refiner Capability

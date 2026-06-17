@@ -71,7 +71,6 @@ interface MissionData {
     estimatedTokens?: number;
     estimatedMinutes?: number;
     recommendation?: string;
-    enhancedContent?: string;
     findingsCount?: number;
     pitfallsCount?: number;
   };

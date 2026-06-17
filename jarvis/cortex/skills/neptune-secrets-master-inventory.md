@@ -1,3 +1,12 @@
+---
+type: "skill"
+name: "Neptune Secrets Master Inventory"
+description: "Auto-generated description for Neptune Secrets Master Inventory"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Neptune Secrets Master Inventory — U2.7.A
 
 **Generated:** 2026-06-11

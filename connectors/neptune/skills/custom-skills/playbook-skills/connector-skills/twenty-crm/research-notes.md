@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Research Notes"
+description: "Auto-generated description for Research Notes"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Twenty CRM — Master Research Dossier
 
 **Phase:** 27 | **Date:** 2026-06-17 | **Version:** v1.0  

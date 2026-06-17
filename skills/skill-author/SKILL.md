@@ -8,6 +8,7 @@ runtime_type: orchestration_workflow
 associated_playbooks:
   - playbooks/engineering
 requires_v2_handoff: true
+access: internal
 ---
 
 # Skill Author — Autonomous Skill Creation Engine

@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "Connector Routing"
+description: "Auto-generated description for Connector Routing"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Hyperswitch Connector Routing — U2.3.D
 
 ## How Hyperswitch Routes to NMI

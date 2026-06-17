@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "IFRAME HARNESS RESEARCH 2026 06 17"
+description: "Auto-generated description for IFRAME HARNESS RESEARCH 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Iframe Harness Research — Neptune Command Center × Twenty CRM
 
 **Date:** 2026-06-17 | **Phase:** 29 — Command Center UI

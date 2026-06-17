@@ -8,6 +8,8 @@ dependencies: [base44-connector]
 headline: |
   Resolves customer identity across systems using email, phone, or vault ID.
   Returns unified CustomerProfile with cross-system linkages.
+type: "concept"
+access: internal
 ---
 
 # Resolve Customer Identity

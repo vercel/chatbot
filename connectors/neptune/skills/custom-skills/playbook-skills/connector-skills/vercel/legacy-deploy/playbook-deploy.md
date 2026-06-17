@@ -9,6 +9,7 @@ model_routing:
   reasoning_heavy: "anthropic/claude-sonnet-4-6"
   coding: "deepseek/deepseek-v4-pro"
 type: "playbook"
+access: internal
 ---
 
 # Deploy Playbook (Chat + V2 + VPS)

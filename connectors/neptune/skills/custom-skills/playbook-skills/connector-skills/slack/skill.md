@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Skill"
+description: "Auto-generated description for Skill"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Slack Connector Skill
 
 > **Connector:** slack | **Priority:** P0 | **Type:** Communication

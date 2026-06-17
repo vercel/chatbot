@@ -1,3 +1,12 @@
+---
+type: "research"
+name: "Neptune Chat Codebase Audit 2026 06 17"
+description: "Auto-generated description for Neptune Chat Codebase Audit 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Neptune Chat Codebase Audit — 2026-06-17
 
 > **Phase:** Pre-Phase 33 baseline research

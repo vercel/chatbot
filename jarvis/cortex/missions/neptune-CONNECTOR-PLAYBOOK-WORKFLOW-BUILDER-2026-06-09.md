@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "Neptune CONNECTOR PLAYBOOK WORKFLOW BUILDER 2026 06 09"
+description: "Auto-generated description for Neptune CONNECTOR PLAYBOOK WORKFLOW BUILDER 2026 06 09"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # NEPTUNE MEGAMISSION: CONNECTOR-PLAYBOOK ARCHITECTURE + WORKFLOW BUILDER ON CANVAS
 
 **Date:** 2026-06-09 | **Status:** IN EXECUTION | **Turns:** 500  

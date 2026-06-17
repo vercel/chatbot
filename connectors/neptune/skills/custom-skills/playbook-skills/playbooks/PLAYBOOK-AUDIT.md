@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "PLAYBOOK AUDIT"
+description: "Auto-generated description for PLAYBOOK AUDIT"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Playbook Architecture Audit — Phase 24
 Date: 2026-06-16
 

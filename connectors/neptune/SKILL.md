@@ -22,6 +22,7 @@ associated_connectors:
 headline: |
   Neptune Custom Skills Connector — all Tasklet AI authored skills and custom
   functions live here. This is the canonical home for agent-authored capabilities.
+access: internal
 ---
 
 # Neptune Connector SKILL.md

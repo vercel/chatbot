@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "SKILL"
+description: "Auto-generated description for SKILL"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # AI SDK 6 — Skill Definition
 
 **Type:** SDK Reference | **Version:** 6.0.116

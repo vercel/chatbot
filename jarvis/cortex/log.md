@@ -4,6 +4,7 @@ name: "cortex Change Log"
 description: "Chronological change log for jarvis/cortex/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # cortex Change Log

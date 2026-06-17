@@ -6,6 +6,7 @@ domain: customer-comms
 mcp: false
 custom_client: true
 type: "skill"
+access: internal
 ---
 # GHL CRM Integration Pack
 

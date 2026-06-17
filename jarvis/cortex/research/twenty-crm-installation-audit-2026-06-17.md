@@ -1,3 +1,12 @@
+---
+type: "research"
+name: "Twenty Crm Installation Audit 2026 06 17"
+description: "Auto-generated description for Twenty Crm Installation Audit 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Twenty CRM Installation Audit — 2026-06-17
 
 > **Phase:** Pre-Phase 33 baseline research

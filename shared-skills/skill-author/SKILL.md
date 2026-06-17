@@ -3,6 +3,7 @@ name: skill-author
 description: Autonomously creates new skill packs (connectors, custom skills), wires them into the file tree, updates playbooks, and regenerates indexes. Use when user wants to add a new API integration or custom capability.
 version: 1.0.0
 type: "skill"
+access: internal
 ---
 
 # Skill Author — Autonomous Skill Creation Engine (Shared)

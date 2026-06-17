@@ -13,6 +13,7 @@ headline: |
   Vercel deployment platform. Never hardcode project IDs — resolve by name via listProjects.
   VERCEL_TOKEN is server-only. Concurrent deploys can race — check before redeploying.
 type: "playbook"
+access: internal
 ---
 
 # Vercel Connector Playbook

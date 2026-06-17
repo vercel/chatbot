@@ -4,6 +4,7 @@ name: "custom-skills"
 description: "Index of all knowledge artifacts in connectors/custom-skills/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # custom-skills

@@ -6,6 +6,7 @@ owner: "playbook-skills meta-skill"
 status: ACTIVE
 kb_index: 6
 type: "spec"
+access: internal
 ---
 
 # 06 — Cross-Reference Matrix

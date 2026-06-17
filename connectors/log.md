@@ -4,6 +4,7 @@ name: "connectors Change Log"
 description: "Chronological change log for connectors/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # connectors Change Log

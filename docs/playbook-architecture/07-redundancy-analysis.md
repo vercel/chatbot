@@ -8,6 +8,7 @@ kb_index: 7
 redundancies_found: 5
 severity: "low"
 type: "spec"
+access: internal
 ---
 
 # 07 — Redundancy Analysis

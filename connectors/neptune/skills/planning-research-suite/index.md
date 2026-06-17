@@ -4,6 +4,7 @@ name: "planning-research-suite"
 description: "Index of all knowledge artifacts in connectors/neptune/skills/planning-research-suite/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # planning-research-suite

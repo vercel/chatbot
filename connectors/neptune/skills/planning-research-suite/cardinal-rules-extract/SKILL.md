@@ -21,6 +21,7 @@ headline: |
   Categorize by domain, de-duplicate, rank by priority,
   and return structured output with rule IDs and source citations.
 type: "skill"
+access: internal
 ---
 
 # Cardinal Rules Extract — Pull LOCKED Constraints

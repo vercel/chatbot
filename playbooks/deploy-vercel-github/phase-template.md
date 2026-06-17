@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Phase Template"
+description: "Auto-generated description for Phase Template"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Phase Execution Template (CS0 Enforced)
 
 These steps are MANDATORY for every phase CS1-CS8. They enforce the deploy-discipline playbook.

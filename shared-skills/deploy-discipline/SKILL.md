@@ -3,6 +3,7 @@ name: deploy-discipline
 description: Canonical deploy patterns for Vercel. Pre-deploy checks, deploy flow, live URL verification, rollback procedure. Use before any deployment to ensure quality gates are met.
 version: 1.0.0
 type: "skill"
+access: internal
 ---
 
 # Deploy Discipline — Canonical Deploy Patterns

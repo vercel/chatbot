@@ -1,3 +1,12 @@
+---
+type: "connector"
+name: "SKILL"
+description: "Auto-generated description for SKILL"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Workflow DevKit — Skill Definition
 
 **Type:** SDK Reference | **Version:** 0.0.0 (Beta)

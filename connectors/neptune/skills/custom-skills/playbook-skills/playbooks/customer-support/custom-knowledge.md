@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Custom Knowledge"
+description: "Auto-generated description for Custom Knowledge"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Customer Support — Custom Business Knowledge (NewLeaf Financial)
 
 > **Domain:** support-triage | **Priority:** P0 | **Playbook:** playbook-support.md

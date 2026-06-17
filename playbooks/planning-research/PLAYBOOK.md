@@ -10,6 +10,7 @@ model_routing:
   long_context: "google/gemini-2-pro"
   json_output: "deepseek/deepseek-v4-pro"
 type: "playbook"
+access: internal
 ---
 
 # Planning & Research — Master Playbook

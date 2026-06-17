@@ -1,3 +1,12 @@
+---
+type: "audit"
+name: "Integrations Audit 2026 06 17"
+description: "Auto-generated description for Integrations Audit 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Integrations Audit — Full Stack Enumeration
 **Date:** 2026-06-17 | **Auditor:** Hermès V5 · Stream 4  
 **Scope:** All integrations across Neptune Chat + V2 + VPS + NewLeaf

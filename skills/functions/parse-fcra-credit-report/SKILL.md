@@ -6,6 +6,8 @@ primary_domain: credit-disputes
 dependencies: [forth-connector]
 headline: |
   Parses FCRA-compliant credit reports into structured data for dispute generation.
+type: "concept"
+access: internal
 ---
 
 # Parse FCRA Credit Report

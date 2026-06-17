@@ -10,6 +10,7 @@ model_routing:
   vision: "google/gemini-2-flash"
   reasoning_heavy: "anthropic/claude-sonnet-4-6"
 type: "playbook"
+access: internal
 ---
 
 # Playbook: Video Generation

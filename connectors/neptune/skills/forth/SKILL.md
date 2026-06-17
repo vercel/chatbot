@@ -20,6 +20,7 @@ headline: |
   30 Forth DPP actions: credit reports, disputes, enrollments, contacts,
   bureau letters, evidence, resolutions, and FCRA compliance. Full credit repair.
 type: "skill"
+access: internal
 ---
 
 # Forth DPP Skills — 30 Actions

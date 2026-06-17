@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Custom Knowledge"
+description: "Auto-generated description for Custom Knowledge"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Billing — Custom Business Knowledge (NewLeaf Financial)
 
 > **Domain:** billing-flow | **Priority:** P0 | **Playbook:** playbook-billing.md

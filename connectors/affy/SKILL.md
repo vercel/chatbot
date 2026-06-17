@@ -6,6 +6,7 @@ domain: billing-flow
 mcp: false
 custom_client: true
 type: "skill"
+access: internal
 ---
 # Affy Chargebacks Integration Pack
 

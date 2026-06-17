@@ -51,6 +51,7 @@ associated_functions:
   - jarvis_task_complete
 routines_count: 3
 type: "playbook"
+access: internal
 ---
 
 # Agent Orchestration Domain Playbook

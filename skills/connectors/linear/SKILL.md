@@ -9,6 +9,7 @@ dependencies: []
 headline: |
   Linear issue tracker. Route to correct team (ENG/OPS/PAY/COMP/AGT). Never auto-close without closing comment.
 type: "skill"
+access: internal
 ---
 
 # Linear Connector Skill

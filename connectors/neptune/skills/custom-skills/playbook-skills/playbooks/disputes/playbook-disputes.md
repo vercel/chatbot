@@ -26,6 +26,7 @@ model_routing:
   fast_iteration: "deepseek/deepseek-v4-flash"
   long_context: "google/gemini-2-pro"
 type: "playbook"
+access: internal
 ---
 
 # Disputes Domain Playbook

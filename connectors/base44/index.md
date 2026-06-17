@@ -4,6 +4,7 @@ name: "base44"
 description: "Index of all knowledge artifacts in connectors/base44/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # base44

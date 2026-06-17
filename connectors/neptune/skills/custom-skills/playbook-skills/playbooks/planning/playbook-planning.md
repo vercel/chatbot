@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Playbook Planning"
+description: "Auto-generated description for Playbook Planning"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Planning & Research Domain Playbook
 
 > **Model Routing:** default: `anthropic/claude-sonnet-4-6` | reasoning_heavy: `anthropic/claude-opus-4-5` | fast_iteration: `deepseek/deepseek-v4-pro` | cheap: `deepseek/deepseek-v3.2`

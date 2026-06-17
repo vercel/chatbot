@@ -6,6 +6,8 @@ primary_domain: compliance-audit
 dependencies: [validate-action]
 headline: |
   Executes an action with pre-validation and post-execution verification.
+type: "concept"
+access: internal
 ---
 
 # Execute With Post-Verify

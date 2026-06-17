@@ -18,6 +18,7 @@ associated_connectors:
 associated_skills: []
 associated_functions: []
 type: "playbook"
+access: internal
 ---
 
 # Miscellaneous Capabilities (other)

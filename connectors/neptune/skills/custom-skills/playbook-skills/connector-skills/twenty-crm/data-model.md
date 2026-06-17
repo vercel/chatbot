@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Data Model"
+description: "Auto-generated description for Data Model"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # NewLeaf → Twenty CRM Data Model — Field Mapping & Object Design
 
 **Phase:** 27 | **Date:** 2026-06-17  

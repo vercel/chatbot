@@ -4,6 +4,7 @@ name: "jarvis Change Log"
 description: "Chronological change log for jarvis/"
 version: "1.0.0"
 updated: "2026-06-17"
+access: internal
 ---
 
 # jarvis Change Log

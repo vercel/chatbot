@@ -34,5 +34,5 @@ export default async function PlanReviewPage({
 
   const { id } = await params;
 
-  return <PlanReviewClient missionId={id} user={session.user} />;
+  return <PlanReviewClient missionId={id} user={session.user as { id?: string; name?: string | null; email?: string }} />;
 }

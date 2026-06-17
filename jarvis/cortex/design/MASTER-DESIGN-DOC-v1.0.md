@@ -1,3 +1,12 @@
+---
+type: "design"
+name: "MASTER DESIGN DOC V1.0"
+description: "Auto-generated description for MASTER DESIGN DOC V1.0"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # MASTER DESIGN DOCUMENT v1.0
 
 ## Neptune Platform v1.0 — Design System & UI Specification

@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "MIGRATION SMOKE RESULTS 2026 06 17"
+description: "Auto-generated description for MIGRATION SMOKE RESULTS 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Migration Smoke Test Results — 2026-06-17
 
 **Phase:** 32, Stream 1 | **Status:** PARTIAL — Infrastructure findings documented  

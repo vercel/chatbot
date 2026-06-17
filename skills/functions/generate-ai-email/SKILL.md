@@ -8,6 +8,8 @@ dependencies: []
 headline: |
   AI email generator. Creates context-aware emails using LLM with domain templates.
   All emails include unsubscribe link per CAN-SPAM.
+type: "concept"
+access: internal
 ---
 
 # Generate AI Email

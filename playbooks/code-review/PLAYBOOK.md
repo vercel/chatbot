@@ -9,6 +9,7 @@ model_routing:
   coding: "deepseek/deepseek-v4-pro"
   fast_iteration: "deepseek/deepseek-v4-flash"
 type: "playbook"
+access: internal
 ---
 
 # Code Review — Master Playbook

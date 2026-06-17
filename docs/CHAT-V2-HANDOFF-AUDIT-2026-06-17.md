@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "CHAT V2 HANDOFF AUDIT 2026 06 17"
+description: "Auto-generated description for CHAT V2 HANDOFF AUDIT 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Chat ↔ V2 Handoff — Complete Audit & Diagnosis
 ## 2026-06-17 02:20 UTC | Phase 28 Stream 0
 

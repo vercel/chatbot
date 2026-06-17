@@ -7,6 +7,7 @@ status: ACTIVE
 kb_index: 5
 playbooks_cataloged: 16
 type: "spec"
+access: internal
 ---
 
 # 05 — Playbooks Catalog

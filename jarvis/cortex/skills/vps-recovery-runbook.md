@@ -1,3 +1,12 @@
+---
+type: "skill"
+name: "Vps Recovery Runbook"
+description: "Auto-generated description for Vps Recovery Runbook"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # VPS Recovery Runbook
 
 **Created:** 2026-06-14 | **Phase:** 15.E | **Severity:** Critical

@@ -1,3 +1,12 @@
+---
+type: "concept"
+name: "MIGRATION RESEARCH 2026 06 17"
+description: "Auto-generated description for MIGRATION RESEARCH 2026 06 17"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Twenty ↔ Base44 Bidirectional Sync — Migration Research
 
 **Date:** 2026-06-17  

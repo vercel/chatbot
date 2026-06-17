@@ -1,3 +1,12 @@
+---
+type: "playbook"
+name: "Skill"
+description: "Auto-generated description for Skill"
+version: "1.0.0"
+updated: "2026-06-17"
+access: internal
+---
+
 # Forth DPP Connector Skill
 
 > **Connector:** forth-dpp | **Priority:** P0 | **Type:** Credit Dispute Processing

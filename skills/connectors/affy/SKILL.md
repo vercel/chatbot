@@ -9,6 +9,7 @@ dependencies: []
 headline: |
   Affy affiliate marketing platform connector for campaign management.
 type: "skill"
+access: internal
 ---
 
 # Affy Connector Skill
