@@ -15,7 +15,7 @@ import { sql } from "drizzle-orm";
 export const graphQueryTool = tool({
   description:
     "Search the Knowledge Graph for entities. Use /graph <entity> to find nodes and their relationships.",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z
       .string()
       .describe("Entity name, type, or keyword to search for in the KG"),
