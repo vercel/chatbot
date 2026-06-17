@@ -1,0 +1,311 @@
+# Twenty CRM — UI Schema
+# Visual configuration for generative cards and agent UX
+# Version: v1.0 | Phase 27 | 2026-06-17
+
+connector:
+  name: "Twenty CRM"
+  icon: "users"
+  accentColor: "#3b82f6"  # Blue-500 — matches Twenty branding
+  description: "NewLeaf customer CRM — profiles, subscriptions, payments, disputes, tickets"
+  url: "https://crm.newleaf.financial"
+
+# === OBJECT DISPLAY CONFIGURATIONS ===
+
+objects:
+
+  Person:
+    icon: "user"
+    accentColor: "#2563eb"  # Blue-600
+    keyFields:
+      - name.firstName
+      - name.lastName
+      - emails.primaryEmail
+      - phones.primaryPhoneNumber
+      - status
+    expandedLayout:
+      sections:
+        - title: "Profile"
+          fields:
+            - { field: name, label: "Name", type: full_name }
+            - { field: emails, label: "Email", type: emails }
+            - { field: phones, label: "Phone", type: phones }
+            - { field: dob, label: "Date of Birth", type: date, sensitive: true }
+            - { field: timezone, label: "Timezone", type: text }
+        - title: "CRM Status"
+          fields:
+            - { field: status, label: "Status", type: select, chip: true }
+            - { field: enrollmentStatus, label: "Enrollment", type: select, chip: true }
+            - { field: engagementTier, label: "Engagement", type: select, chip: true }
+            - { field: source, label: "Source", type: select }
+            - { field: agentEmail, label: "Assigned Agent", type: email }
+        - title: "Financial Snapshot"
+          fields:
+            - { field: creditScore, label: "Credit Score", type: number }
+            - { field: negativeItemCount, label: "Negative Items", type: number }
+            - { field: unsecuredDebtAmount, label: "Total Debt", type: currency }
+            - { field: annualIncome, label: "Annual Income", type: currency }
+            - { field: debtToIncomeRatio, label: "DTI Ratio", type: number }
+        - title: "Activity Summary"
+          fields:
+            - { field: disputeStatus, label: "Dispute Status", type: select, chip: true }
+            - { field: conversationSentiment, label: "Sentiment", type: select, chip: true }
+            - { field: lastContactAt, label: "Last Contact", type: date_time }
+    actions:
+      - { label: "View in CRM", icon: "external-link", action: "navigate", url: "https://crm.newleaf.financial/person/{id}" }
+      - { label: "Send Payment Link", icon: "credit-card", action: "function", function: "sendPaymentLink" }
+      - { label: "Create Ticket", icon: "help-circle", action: "function", function: "createSupportTicket" }
+
+  Subscription:
+    icon: "credit-card"
+    accentColor: "#059669"  # Emerald-600
+    keyFields:
+      - nmiSubscriptionId
+      - paymentAmount
+      - billingStatus
+      - nextPaymentDate
+    expandedLayout:
+      sections:
+        - title: "Billing"
+          fields:
+            - { field: nmiSubscriptionId, label: "NMI Subscription ID", type: text, mono: true }
+            - { field: paymentAmount, label: "Amount", type: currency }
+            - { field: paymentFrequency, label: "Frequency", type: select }
+            - { field: billingStatus, label: "Status", type: select, chip: true }
+            - { field: subscriptionHealth, label: "Health", type: select, chip: true }
+        - title: "Schedule"
+          fields:
+            - { field: nextPaymentDate, label: "Next Payment", type: date }
+            - { field: lastRetryDate, label: "Last Retry", type: date }
+            - { field: nextRetryDate, label: "Next Retry", type: date }
+        - title: "Performance"
+          fields:
+            - { field: consecutiveSuccessCount, label: "Success Streak", type: number }
+            - { field: consecutiveDeclineCount, label: "Decline Streak", type: number }
+            - { field: lastDeclineCode, label: "Last Decline Code", type: text, mono: true }
+            - { field: lastDeclineReason, label: "Last Decline Reason", type: text }
+        - title: "Vault"
+          fields:
+            - { field: nmiVaultId, label: "Vault ID", type: text, mono: true }
+            - { field: vaultHealth, label: "Vault Health", type: select, chip: true }
+            - { field: paymentMethod, label: "Payment Method", type: text }
+            - { field: paymentSourceType, label: "Source Type", type: select }
+    actions:
+      - { label: "View in NMI", icon: "shield", action: "navigate", url: "https://nmi.com/customer/{nmiVaultId}" }
+      - { label: "Charge Now", icon: "dollar-sign", action: "function", function: "processPayment" }
+      - { label: "Update Billing", icon: "edit", action: "function", function: "updateBillingStatus" }
+
+  PaymentRecord:
+    icon: "dollar-sign"
+    accentColor: "#d97706"  # Amber-600
+    keyFields:
+      - nmiTransactionId
+      - amount
+      - success
+      - transactionDate
+    expandedLayout:
+      sections:
+        - title: "Transaction"
+          fields:
+            - { field: nmiTransactionId, label: "Transaction ID", type: text, mono: true }
+            - { field: amount, label: "Amount", type: currency }
+            - { field: success, label: "Success", type: boolean, chip: true }
+            - { field: actionType, label: "Type", type: select, chip: true }
+            - { field: transactionDate, label: "Date", type: date_time }
+        - title: "Details"
+          fields:
+            - { field: responseText, label: "Response", type: text }
+            - { field: responseCode, label: "Code", type: text, mono: true }
+            - { field: last4, label: "Card (Last 4)", type: text, mono: true }
+            - { field: isRecovery, label: "Recovery Attempt", type: boolean }
+            - { field: retryCount, label: "Retry #", type: number }
+    actions:
+      - { label: "View Transaction", icon: "external-link", action: "navigate", url: "https://nmi.com/transaction/{nmiTransactionId}" }
+
+  CreditDispute:
+    icon: "file-check"
+    accentColor: "#dc2626"  # Red-600
+    keyFields:
+      - roundNumber
+      - status
+      - bureau
+      - responseDate
+    expandedLayout:
+      sections:
+        - title: "Dispute"
+          fields:
+            - { field: roundNumber, label: "Round", type: number }
+            - { field: status, label: "Status", type: select, chip: true }
+            - { field: bureau, label: "Bureaus", type: multi_select, chip: true }
+            - { field: negativeItemCount, label: "Items Disputed", type: number }
+            - { field: responseDate, label: "Response Due", type: date }
+        - title: "Urgency"
+          fields:
+            - { field: urgency, label: "Urgency", type: select, chip: true }
+            - { field: urgencyReason, label: "Reason", type: text }
+            - { field: lastActionAt, label: "Last Action", type: date_time }
+            - { field: recoveryAgent, label: "Recovery Agent", type: text }
+        - title: "Items"
+          fields:
+            - { field: items, label: "Dispute Items", type: raw_json }
+    actions:
+      - { label: "View Credit Report", icon: "file-text", action: "navigate", url: "{creditReportUrl}" }
+      - { label: "Update Status", icon: "edit", action: "function", function: "updateDisputeStatus" }
+
+  Enrollment:
+    icon: "user-check"
+    accentColor: "#7c3aed"  # Purple-600
+    keyFields:
+      - status
+      - onboardingStatus
+      - agreementStatus
+      - signedAt
+    expandedLayout:
+      sections:
+        - title: "Enrollment"
+          fields:
+            - { field: status, label: "Status", type: select, chip: true }
+            - { field: enrolledAt, label: "Enrolled Date", type: date_time }
+            - { field: enrolledBy, label: "Enrolled By", type: text }
+            - { field: programType, label: "Program", type: select }
+            - { field: programTermMonths, label: "Term (months)", type: number }
+        - title: "Onboarding"
+          fields:
+            - { field: onboardingStatus, label: "Status", type: select, chip: true }
+            - { field: onboardingStep, label: "Step", type: number }
+            - { field: onboardedAt, label: "Completed", type: date_time }
+            - { field: onboardedBy, label: "Completed By", type: text }
+        - title: "Agreement"
+          fields:
+            - { field: agreementStatus, label: "Status", type: select, chip: true }
+            - { field: termsAccepted, label: "Terms Accepted", type: boolean }
+            - { field: signedAt, label: "Signed Date", type: date_time }
+            - { field: agreementUrl, label: "Document", type: links }
+        - title: "Communications"
+          fields:
+            - { field: welcomeEmailSent, label: "Welcome Email", type: boolean }
+            - { field: agreementEmailSent, label: "Agreement Email", type: boolean }
+            - { field: enrollmentRecapSent, label: "Recap Sent", type: boolean }
+    actions:
+      - { label: "View Agreement", icon: "file-text", action: "navigate", url: "{agreementUrl}" }
+      - { label: "Update Stage", icon: "edit", action: "function", function: "updateEnrollmentStage" }
+
+  Activity:
+    icon: "activity"
+    accentColor: "#0891b2"  # Cyan-600
+    keyFields:
+      - activityType
+      - summary
+      - direction
+      - occurredAt
+    expandedLayout:
+      sections:
+        - title: "Activity"
+          fields:
+            - { field: activityType, label: "Type", type: select, chip: true }
+            - { field: direction, label: "Direction", type: select, chip: true }
+            - { field: summary, label: "Summary", type: text }
+            - { field: occurredAt, label: "Date", type: date_time }
+            - { field: content, label: "Content", type: rich_text }
+        - title: "Source"
+          fields:
+            - { field: source, label: "Source", type: text }
+            - { field: sourceId, label: "Source ID", type: text, mono: true }
+            - { field: agentEmail, label: "Agent", type: actor }
+    actions:
+      - { label: "View Source", icon: "external-link", action: "function", function: "viewActivitySource" }
+
+  SupportTicket:
+    icon: "help-circle"
+    accentColor: "#ea580c"  # Orange-600
+    keyFields:
+      - title
+      - status
+      - priority
+      - category
+    expandedLayout:
+      sections:
+        - title: "Ticket"
+          fields:
+            - { field: title, label: "Title", type: text }
+            - { field: status, label: "Status", type: select, chip: true }
+            - { field: priority, label: "Priority", type: select, chip: true }
+            - { field: category, label: "Category", type: select }
+        - title: "Details"
+          fields:
+            - { field: description, label: "Description", type: rich_text }
+            - { field: assignedTo, label: "Assigned To", type: text }
+            - { field: source, label: "Source", type: select, chip: true }
+        - title: "Links"
+          fields:
+            - { field: slackThreadTs, label: "Slack Thread", type: text, mono: true }
+            - { field: linearIssueId, label: "Linear Issue", type: text, mono: true }
+            - { field: linearIssueUrl, label: "Linear URL", type: links }
+        - title: "Resolution"
+          fields:
+            - { field: resolution, label: "Resolution", type: rich_text }
+            - { field: resolvedAt, label: "Resolved", type: date_time }
+    actions:
+      - { label: "Open in Linear", icon: "external-link", action: "navigate", url: "{linearIssueUrl}" }
+      - { label: "Update Status", icon: "edit", action: "function", function: "updateTicketStatus" }
+      - { label: "View Slack Thread", icon: "message-square", action: "function", function: "viewSlackThread" }
+
+# === GLOBAL ACTIONS ===
+globalActions:
+  - { label: "Search CRM", icon: "search", action: "function", function: "queryPersonByEmail" }
+  - { label: "Sync from Base44", icon: "refresh-cw", action: "function", function: "bulkSyncFromBase44" }
+  - { label: "Open CRM", icon: "external-link", action: "navigate", url: "https://crm.newleaf.financial" }
+
+# === ENUM COLOR MAPS ===
+chipColors:
+  status:
+    Active: green
+    New: blue
+    Inactive: gray
+    Cancelled: red
+  enrollmentStatus:
+    active: green
+    pending: yellow
+    not_enrolled: gray
+    cancelled: red
+  billingStatus:
+    active: green
+    past_due: red
+    cancelled: gray
+    no_payment_method: yellow
+    trial: blue
+  subscriptionHealth:
+    healthy: green
+    at_risk: yellow
+    failed: red
+    none: gray
+  disputeStatus:
+    completed: green
+    active: blue
+    paused: yellow
+    not_started: gray
+  engagementTier:
+    healthy: green
+    at_risk: yellow
+    needs_attention: red
+  conversationSentiment:
+    positive: green
+    neutral: blue
+    negative: red
+  supportTicket:
+    status:
+      resolved: green
+      in_progress: blue
+      open: yellow
+      closed: gray
+    priority:
+      critical: red
+      high: orange
+      medium: yellow
+      low: blue
+  activityType:
+    sms: blue
+    email: purple
+    call: green
+    note: gray
+    system_event: cyan
+    agent_action: orange

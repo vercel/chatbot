@@ -1,0 +1,358 @@
+# Twenty CRM — Functions Declaration
+# GraphQL + REST operations available to Neptune agents
+# Version: v1.0 | Phase 27 | 2026-06-17
+
+functions:
+  # === PERSON QUERIES ===
+  queryPerson:
+    description: "Query a Person by internal Twenty ID"
+    method: GET
+    path: /rest/people/:id
+    auth: Bearer
+    params:
+      id: string
+    returns: Person | null
+
+  queryPersonByEmail:
+    description: "Find a Person by email address"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    body:
+      query: |
+        query($email: String!) {
+          people(filter: { emails: { primaryEmail: { eq: $email } } }) {
+            edges {
+              node {
+                id
+                name { firstName lastName }
+                emails { primaryEmail }
+                phones { primaryPhoneNumber }
+                base44Id
+                status
+                enrollmentStatus
+                agentEmail
+              }
+            }
+          }
+        }
+    params:
+      email: string
+    returns: Person | null
+
+  queryPersonByPhone:
+    description: "Find a Person by phone number"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    body:
+      query: |
+        query($phone: String!) {
+          people(filter: { phones: { primaryPhoneNumber: { eq: $phone } } }) {
+            edges {
+              node {
+                id
+                name { firstName lastName }
+                emails { primaryEmail }
+                phones { primaryPhoneNumber }
+                base44Id
+                status
+              }
+            }
+          }
+        }
+    params:
+      phone: string
+    returns: Person | null
+
+  # === PERSON MUTATIONS ===
+  createPerson:
+    description: "Create a new Person record"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    body:
+      query: |
+        mutation($data: CreatePersonInput!) {
+          createPerson(data: $data) {
+            id
+            name { firstName lastName }
+            emails { primaryEmail }
+            base44Id
+          }
+        }
+    params:
+      firstName: string (required)
+      lastName: string (required)
+      email: string
+      phone: string
+      base44Id: string (required)
+      status: string
+      enrollmentStatus: string
+      agentEmail: string
+      source: string
+    returns: Person
+
+  updatePerson:
+    description: "Update an existing Person by base44Id or id"
+    method: PATCH
+    path: /rest/people/:id
+    auth: Bearer
+    params:
+      id: string (required)
+      firstName: string
+      lastName: string
+      email: string
+      phone: string
+      status: string
+      enrollmentStatus: string
+      agentEmail: string
+      subscriptionHealth: string
+      notes: string
+    returns: Person
+
+  # === SUBSCRIPTION OPERATIONS ===
+  querySubscriptions:
+    description: "Query Subscriptions for a Person"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    body:
+      query: |
+        query($personId: String!) {
+          subscriptions(filter: { personId: { eq: $personId } }) {
+            edges {
+              node {
+                id
+                nmiSubscriptionId
+                nmiVaultId
+                paymentAmount
+                paymentFrequency
+                billingStatus
+                subscriptionHealth
+                nextPaymentDate
+                lastRetryDate
+                consecutiveSuccessCount
+                consecutiveDeclineCount
+              }
+            }
+          }
+        }
+    params:
+      personId: string (required)
+    returns: Subscription[]
+
+  createSubscription:
+    description: "Create a Subscription record"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    body:
+      query: |
+        mutation($data: CreateSubscriptionInput!) {
+          createSubscription(data: $data) {
+            id
+            nmiSubscriptionId
+            billingStatus
+          }
+        }
+    params:
+      nmiSubscriptionId: string (required)
+      nmiVaultId: string
+      paymentAmount: number (required)
+      paymentFrequency: string
+      billingStatus: string
+      personId: string (required)
+      base44Id: string (required)
+    returns: Subscription
+
+  updateSubscription:
+    description: "Update an existing Subscription"
+    method: PATCH
+    path: /rest/subscriptions/:id
+    auth: Bearer
+    params:
+      id: string (required)
+      billingStatus: string
+      paymentAmount: number
+      nextPaymentDate: string
+      subscriptionHealth: string
+    returns: Subscription
+
+  # === PAYMENT RECORD OPERATIONS ===
+  queryPaymentRecords:
+    description: "Query PaymentRecords for a Person or Subscription"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    body:
+      query: |
+        query($personId: String, $subscriptionId: String, $limit: Int) {
+          paymentRecords(
+            filter: { or: [
+              { personId: { eq: $personId } },
+              { subscriptionId: { eq: $subscriptionId } }
+            ]},
+            orderBy: [{ transactionDate: DESC }],
+            first: $limit
+          ) {
+            edges {
+              node {
+                id
+                nmiTransactionId
+                amount
+                success
+                actionType
+                transactionDate
+                responseText
+                last4
+                isRecovery
+              }
+            }
+          }
+        }
+    params:
+      personId: string
+      subscriptionId: string
+      limit: number (default: 20)
+    returns: PaymentRecord[]
+
+  createPaymentRecord:
+    description: "Create a PaymentRecord from an NMI transaction"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    body:
+      query: |
+        mutation($data: CreatePaymentRecordInput!) {
+          createPaymentRecord(data: $data) {
+            id
+            nmiTransactionId
+          }
+        }
+    params:
+      nmiTransactionId: string (required)
+      amount: number (required)
+      success: boolean (required)
+      actionType: string
+      transactionDate: string (required)
+      personId: string (required)
+      subscriptionId: string
+      last4: string
+      responseText: string
+      isRecovery: boolean
+    returns: PaymentRecord
+
+  # === CREDIT DISPUTE OPERATIONS ===
+  queryCreditDisputes:
+    description: "Query CreditDisputes for a Person"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    params:
+      personId: string (required)
+    returns: CreditDispute[]
+
+  createCreditDispute:
+    description: "Create a CreditDispute record for a Person"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    params:
+      roundNumber: number (required)
+      status: string
+      bureau: string[]
+      negativeItemCount: number
+      personId: string (required)
+      base44CustomerId: string (required)
+    returns: CreditDispute
+
+  # === ACTIVITY OPERATIONS ===
+  queryActivities:
+    description: "Query Activity timeline for a Person"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    params:
+      personId: string (required)
+      limit: number (default: 50)
+      activityType: string (optional filter)
+    returns: Activity[]
+
+  createActivity:
+    description: "Log an Activity event (SMS, email, call, note, system_event)"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    params:
+      activityType: string (required)
+      summary: string (required)
+      direction: string (required)
+      occurredAt: string (required)
+      content: string
+      personId: string (required)
+      agentEmail: string
+      source: string
+      sourceId: string
+    returns: Activity
+
+  # === SUPPORT TICKET OPERATIONS ===
+  querySupportTickets:
+    description: "Query SupportTickets for a Person"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    params:
+      personId: string (required)
+      status: string (optional filter)
+    returns: SupportTicket[]
+
+  createSupportTicket:
+    description: "Create a SupportTicket (optionally linked to Linear)"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    params:
+      title: string (required)
+      description: string (required)
+      priority: string
+      category: string
+      source: string
+      personId: string (required)
+      assignedTo: string
+      slackThreadTs: string
+      linearIssueId: string
+    returns: SupportTicket
+
+  # === BULK SYNC ===
+  bulkSyncFromBase44:
+    description: "Sync one or many Base44 CustomerProfiles to Twenty"
+    method: POST
+    path: /api/twenty-sync
+    auth: internal_token
+    params:
+      customerIds: string[] (required)
+      objects: string[] (default: all — person,subscription,paymentRecord,creditDispute,enrollment,activity)
+    returns:
+      synced: number
+      created: number
+      updated: number
+      errors: array
+      duration: number
+
+  # === META ===
+  syncHealth:
+    description: "Check sync health — record counts and parity"
+    method: POST
+    path: /graphql
+    auth: Bearer
+    returns:
+      people: { twenty: number, base44: number, drift: string }
+      subscriptions: { twenty: number, base44: number, drift: string }
+      paymentRecords: { twenty: number, base44: number, drift: string }
+
+# === FUNCTION CATEGORIES ===
+categories:
+  queries: [queryPerson, queryPersonByEmail, queryPersonByPhone, querySubscriptions, queryPaymentRecords, queryCreditDisputes, queryActivities, querySupportTickets, syncHealth]
+  mutations: [createPerson, updatePerson, createSubscription, updateSubscription, createPaymentRecord, createCreditDispute, createActivity, createSupportTicket]
+  sync: [bulkSyncFromBase44]
