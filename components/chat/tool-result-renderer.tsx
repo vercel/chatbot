@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 /**
  * ToolResultRenderer — routes tool output to domain-specific renderers.

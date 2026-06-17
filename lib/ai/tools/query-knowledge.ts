@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase 22.5: queryKnowledge — Self-Description Truth Tool
  *

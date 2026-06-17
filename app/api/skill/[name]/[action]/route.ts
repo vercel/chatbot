@@ -54,7 +54,8 @@ export async function POST(
 
   // ── Route 2: Legacy tool module pattern ────────────────────────────────────
   try {
-    const toolsModule = await import(
+    // Hide dynamic import from Turbopack bundler tracing
+    const toolsModule = await new Function('p', 'return import(p)')(
       `@/lib/connectors/${connectorName}/tools`
     );
 

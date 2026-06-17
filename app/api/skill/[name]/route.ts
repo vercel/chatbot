@@ -124,7 +124,8 @@ export async function POST(
     try {
       // Dynamically import connector tools
       const connectorPath = `@/lib/connectors/${name.replace("-connector", "")}/tools`;
-      const tools = await import(connectorPath);
+      // Hide dynamic import from Turbopack bundler tracing
+      const tools = await new Function('p', 'return import(p)')(connectorPath);
       const action = body.action as string;
 
       if (action && typeof (tools as any)[action] === "function") {

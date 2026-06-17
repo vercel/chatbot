@@ -8,6 +8,8 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { GraphClient } from "./client";
 
+export const dynamic = "force-dynamic";
+
 async function getGraphData(focusId?: string) {
   if (!process.env.POSTGRES_URL) return { nodes: [], links: [] };
 
@@ -52,13 +54,13 @@ async function getGraphData(focusId?: string) {
     );
 
     const allNodes = [
-      ...connectors.rows,
-      ...playbooks.rows,
-      ...skills.rows,
-      ...functions.rows,
-      ...workflows.rows,
-      ...panels.rows,
-      ...handoffs.rows,
+      ...(connectors as any).rows,
+      ...(playbooks as any).rows,
+      ...(skills as any).rows,
+      ...(functions as any).rows,
+      ...(workflows as any).rows,
+      ...(panels as any).rows,
+      ...(handoffs as any).rows,
     ].map((r: any) => ({
       id: r.id,
       name: r.name,
@@ -66,7 +68,7 @@ async function getGraphData(focusId?: string) {
       metadata: r.metadata,
     }));
 
-    return { nodes: allNodes, links: edges.rows };
+    return { nodes: allNodes, links: (edges as any).rows };
   } finally {
     await dbClient.end().catch(() => {});
   }

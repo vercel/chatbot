@@ -224,22 +224,36 @@ async function main() {
   }
   console.log(`   ✅ ${n.workflows} workflows upserted`);
 
-  // ── Edges (delete all, then re-insert) ────────────────────────────────
+  // ── Edges (delete all, then re-insert with dedup + try-catch) ────────
   console.log("🔗 Edges...");
   // Delete all existing edges for idempotency (edges lack a natural PK for upsert)
   await db.delete(libraryEdge);
 
+  // Deduplicate and insert edges (try-catch per edge to survive duplicates)
+  const seenEdges = new Set<string>();
   for (const edge of caps.manifestEdges) {
     if (!edge.from || !edge.to) continue;
-    await db.insert(libraryEdge).values({
-      fromNode: edge.from,
-      fromType: edge.fromType,
-      toNode: edge.to,
-      toType: edge.toType,
-      edgeType: edge.edgeType,
-      weight: edge.edgeType === "requires" ? 3 : edge.edgeType === "uses" ? 2 : 1,
-    });
-    n.edges++;
+    const key = `${edge.from}|${edge.fromType}|${edge.to}|${edge.toType}|${edge.edgeType}`;
+    if (seenEdges.has(key)) continue;
+    seenEdges.add(key);
+    try {
+      await db.insert(libraryEdge).values({
+        fromNode: edge.from,
+        fromType: edge.fromType,
+        toNode: edge.to,
+        toType: edge.toType,
+        edgeType: edge.edgeType,
+        weight: edge.edgeType === "requires" ? 3 : edge.edgeType === "uses" ? 2 : 1,
+      });
+      n.edges++;
+    } catch (e: any) {
+      if (e?.code === '23505') {
+        // Duplicate key — skip silently (race condition with delete)
+        console.warn(`   ⚠️  Skipping duplicate edge: ${key}`);
+      } else {
+        throw e;
+      }
+    }
   }
   console.log(`   ✅ ${n.edges} edges inserted`);
 

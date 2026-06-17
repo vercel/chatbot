@@ -1164,9 +1164,9 @@ export const executeSkill = tool({
       }
 
       try {
-        // Dynamic import the script module from the skills/ directory
-        const scriptPath = `../../../skills/skill-author/scripts/${scriptName}`;
-        const mod = await import(scriptPath);
+        // Dynamic import hidden from bundler (Turbopack cannot trace this path)
+        const scriptPath = `/home/neptune/neptune-chat/skills/skill-author/scripts/${scriptName}.ts`;
+        const mod = await new Function('p', 'return import(p)')(scriptPath);
 
         if (typeof mod.default !== "function" && typeof mod.execute !== "function") {
           return {

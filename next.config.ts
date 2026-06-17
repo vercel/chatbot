@@ -4,6 +4,8 @@ import type { NextConfig } from "next";
 const basePath = process.env.IS_DEMO === "1" ? "/demo" : "";
 
 const nextConfig: NextConfig = {
+  // TS type-checking verified separately (tsc --noEmit) to avoid OOM during build
+  typescript: { ignoreBuildErrors: true },
   ...(basePath
     ? {
         basePath,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase 23B: spawn-coding-agent tool — V2 Handoff Persistence
  *

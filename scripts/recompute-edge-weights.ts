@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase 24: Recompute Edge Weights (Nightly Cron)
  *

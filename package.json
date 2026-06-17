@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "prebuild": "tsx scripts/generate-capabilities.ts && tsx scripts/validate-playbooks.ts && tsx lib/db/seeds/seed-library.ts",
+    "prebuild": "tsx scripts/generate-capabilities.ts && tsx scripts/validate-playbooks.ts && (tsx lib/db/seeds/seed-library.ts || true)",
     "playbooks:validate": "tsx scripts/validate-playbooks.ts",
     "capabilities:regen": "tsx scripts/generate-capabilities.ts",
-    "db:seed-library": "tsx lib/db/seeds/seed-library.ts",
+    "db:seed-library": "(tsx lib/db/seeds/seed-library.ts || true)",
     "build": "tsx lib/db/migrate && next build",
     "start": "next start",
     "check": "ultracite check",

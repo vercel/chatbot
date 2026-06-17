@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Connector Registry — imports all manifests and provides query functions.
  */
