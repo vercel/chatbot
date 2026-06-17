@@ -1,5 +1,16 @@
 {
   "framework": "nextjs",
+  "headers": [
+    {
+      "source": "/command-center(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-src https://app.crm.newleaf.financial https://crm.newleaf.financial; frame-ancestors 'self'"
+        }
+      ]
+    }
+  ],
   "crons": [
     {
       "path": "/api/annotations/digest?period=week",

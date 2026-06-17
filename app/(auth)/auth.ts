@@ -9,11 +9,15 @@ import { authConfig } from "./auth.config";
 
 export type UserType = "guest" | "regular";
 
+// Phase 29: Role-based access for Command Center
+export type TwentyRole = "sales_agent" | "admin" | "super_admin";
+
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
       type: UserType;
+      role?: TwentyRole;
     } & DefaultSession["user"];
   }
 
@@ -21,6 +25,7 @@ declare module "next-auth" {
     id?: string;
     email?: string | null;
     type: UserType;
+    role?: TwentyRole;
   }
 }
 
@@ -28,6 +33,7 @@ declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
     type: UserType;
+    role?: TwentyRole;
   }
 }
 
@@ -95,6 +101,8 @@ export const {
       if (user) {
         token.id = user.id as string;
         token.type = user.type;
+        // Phase 29: Role propagation — defaults to sales_agent if not set
+        token.role = (user as { role?: TwentyRole }).role || "sales_agent";
       }
 
       return token;
@@ -103,6 +111,8 @@ export const {
       if (session.user) {
         session.user.id = token.id;
         session.user.type = token.type;
+        // Phase 29: Role propagation
+        session.user.role = token.role;
       }
 
       return session;

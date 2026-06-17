@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-17T02:24:30.998Z",
+  "generatedAt": "2026-06-17T03:39:21.991Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "696f6d7",
+  "commitSha": "e2561e2",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
@@ -10,7 +10,7 @@
     "functions": 12,
     "workflows": 5,
     "tools": 21,
-    "apiRoutes": 124,
+    "apiRoutes": 128,
     "models": 35,
     "uiComponents": 26
   },
@@ -1090,6 +1090,16 @@
     },
     {
       "method": "GET",
+      "route": "/api/handoff-health",
+      "file": "app/api/handoff-health/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/handoff-health",
+      "file": "app/api/handoff-health/route.ts"
+    },
+    {
+      "method": "GET",
       "route": "/api/health",
       "file": "app/api/health/route.ts"
     },
@@ -1382,6 +1392,16 @@
       "method": "GET",
       "route": "/api/tools",
       "file": "app/api/tools/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/twenty-auth",
+      "file": "app/api/twenty-auth/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/twenty-auth",
+      "file": "app/api/twenty-auth/route.ts"
     },
     {
       "method": "POST",
