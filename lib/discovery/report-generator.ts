@@ -251,15 +251,15 @@ function suggestAction(
 
   switch (result.dimension) {
     case "billing": {
-      if (ctx.base44.billingStatus === "cancelled" && ctx.nmi.subscriptionStatus === "active") {
+      if (ctx.base44?.billingStatus === "cancelled" && ctx.nmi?.subscriptionStatus === "active") {
         return {
           ...base,
           type: "sync_nmi",
-          description: `Cancel NMI subscription ${ctx.nmi.subscriptionId} — CRM shows cancelled but NMI still active`,
+          description: `Cancel NMI subscription ${ctx.nmi?.subscriptionId} — CRM shows cancelled but NMI still active`,
           payload: {
             ...base.payload,
             action: "cancel_subscription",
-            subscriptionId: ctx.nmi.subscriptionId,
+            subscriptionId: ctx.nmi?.subscriptionId,
             reason: "CRM shows cancelled, NMI still charging",
           },
         };
@@ -271,7 +271,7 @@ function suggestAction(
     }
 
     case "enrollment": {
-      if (!ctx.base44.profile) {
+      if (!ctx.base44?.profile) {
         return {
           ...base,
           type: "follow_up",
@@ -330,15 +330,15 @@ function buildCustomerReports(
     }
 
     // Determine billing state summary
-    const billingState = ctx.nmi.subscriptionStatus === "active" && ctx.base44.billingStatus === "active"
+    const billingState = ctx.nmi?.subscriptionStatus === "active" && ctx.base44?.billingStatus === "active"
       ? "Active & Aligned"
-      : ctx.nmi.subscriptionStatus === "active" && ctx.base44.billingStatus === "cancelled"
+      : ctx.nmi?.subscriptionStatus === "active" && ctx.base44?.billingStatus === "cancelled"
         ? "MISALIGNED: Active NMI / Cancelled CRM"
-        : ctx.nmi.subscriptionStatus === "declining"
+        : ctx.nmi?.subscriptionStatus === "declining"
           ? "Declining"
-          : ctx.nmi.subscriptionStatus === "cancelled"
+          : ctx.nmi?.subscriptionStatus === "cancelled"
             ? "Cancelled"
-            : ctx.nmi.subscriptionStatus === "none"
+            : ctx.nmi?.subscriptionStatus === "none"
               ? "No Subscription"
               : "Unknown";
 
@@ -363,8 +363,8 @@ function buildCustomerReports(
       email: ctx.email || "",
       slackMentions: ctx.slack.mentions.length,
       slackActionRequested: ctx.slack.inferredActionRequested || "None",
-      base44Status: ctx.base44.enrollmentStatus || "Unknown",
-      nmiStatus: ctx.nmi.subscriptionStatus || "Unknown",
+      base44Status: ctx.base44?.enrollmentStatus || "Unknown",
+      nmiStatus: ctx.nmi?.subscriptionStatus || "Unknown",
       billingState,
       alignmentSummary,
       flags,
@@ -384,14 +384,14 @@ function buildAggregateStats(
   // Enrollment breakdown
   const enrollmentBreakdown: Record<string, number> = {};
   for (const ctx of contexts) {
-    const status = ctx.base44.enrollmentStatus || "unknown";
+    const status = ctx.base44?.enrollmentStatus || "unknown";
     enrollmentBreakdown[status] = (enrollmentBreakdown[status] || 0) + 1;
   }
 
   // Billing state breakdown
   const billingStateBreakdown: Record<string, number> = {};
   for (const ctx of contexts) {
-    const key = `${ctx.nmi.subscriptionStatus || "none"} / ${ctx.base44.billingStatus || "unknown"}`;
+    const key = `${ctx.nmi?.subscriptionStatus || "none"} / ${ctx.base44?.billingStatus || "unknown"}`;
     billingStateBreakdown[key] = (billingStateBreakdown[key] || 0) + 1;
   }
 
@@ -433,7 +433,7 @@ function buildAggregateStats(
       }
 
       // Check if promise was kept (follow-up action exists)
-      const hasFollowUp = ctx.base44.recentCalls.some((call) => {
+      const hasFollowUp = (ctx.base44?.recentCalls || []).some((call) => {
         const c = call as Record<string, unknown>;
         return c.createdAt && new Date(c.createdAt as string).getTime() > parseFloat(msg.ts) * 1000;
       });

@@ -64,7 +64,7 @@ export function buildDependencyGraph(
     }
 
     // ── Subscription Node + Edge ──
-    if (ctx.nmi.subscriptionId) {
+    if (ctx.nmi?.subscriptionId) {
       const subId = subscriptionNodeId(ctx.nmi.subscriptionId);
       if (!nodeMap.has(subId)) {
         nodeMap.set(subId, {
@@ -73,7 +73,7 @@ export function buildDependencyGraph(
           label: `Sub ${ctx.nmi.subscriptionId}`,
           data: {
             subscriptionId: ctx.nmi.subscriptionId,
-            status: ctx.nmi.subscriptionStatus,
+            status: ctx.nmi.subscriptionStatus || 'unknown',
             nextCharge: ctx.nmi.nextChargeDate,
           },
         });
@@ -82,7 +82,7 @@ export function buildDependencyGraph(
         from: custId,
         to: subId,
         type: 'ACTIVE_SUBSCRIPTION',
-        metadata: { status: ctx.nmi.subscriptionStatus },
+        metadata: { status: ctx.nmi.subscriptionStatus || 'unknown' },
       });
 
       // SHOULD_BE_CHARGED edge (future-dated next charge)
@@ -109,7 +109,7 @@ export function buildDependencyGraph(
     }
 
     // ── Ticket Nodes + Edges ──
-    for (const ticket of ctx.base44.openTickets) {
+    for (const ticket of (ctx.base44?.openTickets || [])) {
       const ticketData = ticket as Record<string, unknown>;
       const ticketId = ticketData.id as string;
       const tNodeId = ticketNodeId(ticketId);
@@ -153,7 +153,7 @@ export function buildDependencyGraph(
     }
 
     // ── Payment Node + Edge ──
-    if (ctx.base44.lastPayment) {
+    if (ctx.base44?.lastPayment) {
       const payment = ctx.base44.lastPayment as Record<string, unknown>;
       const paymentId = (payment.id as string) || `pay_${ctx.customerId}`;
       const pNodeId = `payment:${paymentId}`;
@@ -193,7 +193,7 @@ export function buildDependencyGraph(
     }
 
     // ── Agent Nodes + Edges ──
-    for (const agentName of ctx.slack.agentsWhoMentioned) {
+    for (const agentName of (ctx.slack?.agentsWhoMentioned || [])) {
       const aNodeId = agentNodeId(agentName);
       if (!nodeMap.has(aNodeId)) {
         nodeMap.set(aNodeId, {
@@ -238,7 +238,7 @@ export function buildDependencyGraph(
     }
 
     // ── Call Nodes ──
-    for (const call of ctx.base44.recentCalls) {
+    for (const call of (ctx.base44?.recentCalls || [])) {
       const callData = call as Record<string, unknown>;
       const callId = (callData.id as string) || `call_${ctx.customerId}`;
       const cNodeId = `call:${callId}`;
@@ -285,7 +285,7 @@ function detectAgentPromise(
   ctx: CustomerDiscoveryContext,
   agentName: string
 ): string | null {
-  for (const msg of ctx.slack.mentions) {
+  for (const msg of (ctx.slack?.mentions || [])) {
     const msgAgent = msg.userName || msg.userId;
     if (msgAgent === agentName) {
       for (const pattern of PROMISE_PATTERNS) {

@@ -470,33 +470,53 @@ async function executeReportStep(
   config: Record<string, unknown>,
   ctx: StepContext
 ): Promise<StepResult> {
-  // Report generation will be implemented in Stream 4
-  // For now, return placeholder
-  const report: DiscoveryReport = {
-    runId: ctx.runId,
-    generatedAt: new Date().toISOString(),
-    summary: {
-      totalCustomers: ctx.contexts.length,
-      totalMisalignments: 0,
-      criticalMisalignments: 0,
-      highMisalignments: 0,
-      mediumMisalignments: 0,
-      customersWithIssues: 0,
-      healthyCustomers: ctx.contexts.length,
-    },
-    findings: [],
-    customerReports: [],
-    aggregateStats: {
-      enrollmentBreakdown: {},
-      billingStateBreakdown: {},
-      alignmentByCategory: { billing: { aligned: 0, misaligned: 0, unknown: 0 }, enrollment: { aligned: 0, misaligned: 0, unknown: 0 }, agent_promise: { aligned: 0, misaligned: 0, unknown: 0 }, documentation: { aligned: 0, misaligned: 0, unknown: 0 } },
-      topAgents: [],
-      timeDistribution: {},
-    },
-    recommendations: [],
+  const { generateReport } = await import("./report-generator");
+
+  ctx.emitter.emit(ctx.runId, "step_progress", {
+    message: `Generating report for ${ctx.contexts.length} customers...`,
+    current: 0,
+    total: ctx.contexts.length,
+    percent: 0,
+  });
+
+  // Build validations map from contexts (they should already be validated)
+  const validations = new Map<string, import("./types").AlignmentResult[]>();
+  for (const c of ctx.contexts) {
+    const { validateAll } = await import("./alignment-validators");
+    validations.set(c.customerId, validateAll(c));
+  }
+
+  // Determine graph — if analyze step already ran, it's stored
+  let graph = ctx.contexts.length > 0 ? ctx.contexts[0] as unknown as import("./types").DependencyGraph : undefined;
+  if (!graph || !(graph as any).nodes) {
+    const { buildDependencyGraph } = await import("./dependency-graph");
+    graph = buildDependencyGraph(ctx.contexts, ctx.scrapedMessages);
+  }
+
+  const reportFormats = (config.formats as string[]) || ["markdown", "csv", "json"];
+  const reportConfig = {
+    format: reportFormats as ("markdown" | "csv" | "json" | "pdf")[],
+    includeCustomerDetails: config.includeCustomerDetails !== false,
+    includeRawData: config.includeRawData === true,
+    maxCustomersInReport: config.maxCustomersInReport as number || 500,
   };
 
-  return { report };
+  const generated = await generateReport({
+    runId: ctx.runId,
+    contexts: ctx.contexts,
+    validations,
+    graph,
+    config: reportConfig,
+  });
+
+  ctx.emitter.emit(ctx.runId, "step_progress", {
+    message: `Report generated: ${generated.artifacts.length} format(s)`,
+    current: ctx.contexts.length,
+    total: ctx.contexts.length,
+    percent: 100,
+  });
+
+  return { report: generated.report };
 }
 
 // ── Resume from Checkpoint ───────────────────────────────────────

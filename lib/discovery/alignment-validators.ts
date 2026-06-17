@@ -24,9 +24,21 @@ export function validateBillingAlignment(
   const details: AlignmentDetail[] = [];
   let score = 1.0;
 
+  // Null-safety: handle missing base44/nmi
+  if (!ctx.base44 && !ctx.nmi?.subscriptionStatus) {
+    return {
+      dimension: 'billing',
+      status: 'unknown',
+      score: 0.5,
+      details: [{ field: 'billing_status', expected: 'any', actual: 'no data', source: 'base44', discrepancy: 'No Base44 or NMI data available' }],
+      recommendation: 'Pull customer data from Base44 and NMI to validate billing.',
+      priority: 'medium',
+    };
+  }
+
   // Check 1: Base44 billingStatus vs NMI subscriptionStatus
-  const base44Status = ctx.base44.billingStatus?.toLowerCase() || 'unknown';
-  const nmiStatus = ctx.nmi.subscriptionStatus;
+  const base44Status = ctx.base44?.billingStatus?.toLowerCase() || 'unknown';
+  const nmiStatus = ctx.nmi?.subscriptionStatus || 'none';
 
   if (base44Status === 'active' && nmiStatus === 'active') {
     details.push({
@@ -77,7 +89,7 @@ export function validateBillingAlignment(
       expected: 'any',
       actual: 'NMI query error',
       source: 'nmi',
-      discrepancy: `NMI error: ${ctx.nmi.subscriptionId ? ctx.nmi.subscriptionId : 'query failed'}`,
+      discrepancy: `NMI error: ${ctx.nmi?.subscriptionId ? ctx.nmi.subscriptionId : 'query failed'}`,
     });
     score -= 0.2;
   }
@@ -100,7 +112,7 @@ export function validateBillingAlignment(
   }
 
   // Check 3: COF compliance
-  if (!ctx.nmi.cofCompliant && nmiStatus === 'active') {
+  if (ctx.nmi && !ctx.nmi.cofCompliant && nmiStatus === 'active') {
     details.push({
       field: 'cof_compliance',
       expected: 'COF compliant',
@@ -149,9 +161,9 @@ export function validateEnrollmentAlignment(
   const details: AlignmentDetail[] = [];
   let score = 1.0;
 
-  const base44Enrollment = ctx.base44.enrollmentStatus?.toLowerCase() || 'unknown';
-  const hasSlackActivity = ctx.slack.mentions.length > 0;
-  const slackAction = ctx.slack.inferredActionRequested?.toLowerCase() || '';
+  const base44Enrollment = ctx.base44?.enrollmentStatus?.toLowerCase() || 'unknown';
+  const hasSlackActivity = ctx.slack?.mentions?.length > 0;
+  const slackAction = ctx.slack?.inferredActionRequested?.toLowerCase() || '';
 
   // Check: Slack suggests enrollment but Base44 says not enrolled
   if (slackAction.includes('enroll') && base44Enrollment === 'unknown') {
@@ -168,7 +180,7 @@ export function validateEnrollmentAlignment(
   // Check: Base44 shows inactive but has active payment
   if (
     (base44Enrollment === 'inactive' || base44Enrollment === 'cancelled') &&
-    ctx.nmi.subscriptionStatus === 'active'
+    ctx.nmi?.subscriptionStatus === 'active'
   ) {
     details.push({
       field: 'enrollment_vs_billing',
@@ -181,7 +193,7 @@ export function validateEnrollmentAlignment(
   }
 
   // Check: Base44 says active but no NMI subscription
-  if (base44Enrollment === 'active' && ctx.nmi.subscriptionStatus === 'none') {
+  if (base44Enrollment === 'active' && ctx.nmi?.subscriptionStatus === 'none') {
     details.push({
       field: 'enrollment_vs_billing',
       expected: 'Active enrollment → active subscription',
@@ -193,7 +205,7 @@ export function validateEnrollmentAlignment(
   }
 
   // Check: Empty profile
-  if (!ctx.base44.profile) {
+  if (!ctx.base44?.profile) {
     details.push({
       field: 'profile',
       expected: 'Customer profile exists',
@@ -258,7 +270,7 @@ export function validateAgentPromiseAlignment(
 
       // Check if promise was fulfilled:
       // 1. Was there a follow-up call?
-      const hasFollowUpCall = ctx.base44.recentCalls.some(
+      const hasFollowUpCall = (ctx.base44?.recentCalls || []).some(
         (call) => {
           const c = call as Record<string, unknown>;
           return (
@@ -269,7 +281,7 @@ export function validateAgentPromiseAlignment(
       );
 
       // 2. Was the ticket resolved?
-      const relatedTicketResolved = ctx.base44.openTickets.length === 0;
+      const relatedTicketResolved = (ctx.base44?.openTickets || []).length === 0;
 
       if (hasFollowUpCall || relatedTicketResolved) {
         promisesKept++;
@@ -287,7 +299,7 @@ export function validateAgentPromiseAlignment(
   }
 
   // Check stale tickets
-  const staleCount = ctx.base44.openTickets.filter((t) => {
+  const staleCount = (ctx.base44?.openTickets || []).filter((t) => {
     const ticket = t as Record<string, unknown>;
     const updatedAt = ticket.updatedAt
       ? new Date(ticket.updatedAt as string).getTime()
@@ -349,8 +361,9 @@ export function validateDocumentationAlignment(
   let score = 1.0;
 
   // Check: Name consistency
-  if (ctx.slack.mentions.length > 0 && ctx.base44.profile) {
-    const profileName = [ctx.base44.profile.firstName, ctx.base44.profile.lastName]
+  if (ctx.slack?.mentions?.length > 0 && ctx.base44?.profile) {
+    const profile = ctx.base44.profile as Record<string, unknown>;
+    const profileName = [profile.firstName, profile.lastName]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();

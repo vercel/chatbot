@@ -21,6 +21,12 @@ import type {
   ExtractedCustomerMention,
 } from "./types";
 import { getCachedPull, setCachedPull, getCachedNmi, setCachedNmi, getCachedBase44, setCachedBase44 } from "./caching";
+import { base44Service } from "@/connectors/base44/client";
+
+// ── Production Wiring Flag ─────────────────────────────────────────
+// Set to true when running on VPS with full Base44 SDK access.
+// Set to false for local dev / testing with stubs.
+const PRODUCTION_WIRING = !!process.env.BASE44_API_KEY;
 
 // ── Types for MCP Bridge Calls ───────────────────────────────────
 
@@ -428,19 +434,17 @@ export async function pullCustomerData(
   return result;
 }
 
-// ── MCP Bridge Call Stubs ────────────────────────────────────────
-// These are the actual calls to MCP tools. They will be invoked
-// from VPS context where MCP tools are available.
-// The stubs below document the expected interface.
-// In production, these are replaced with actual MCP calls.
+// ── Live Data Fetch Functions (Production Wired) ──────────────────
+// Stream 8: All stubs replaced with real Base44 SDK + NMI bridge calls.
+// Falls back gracefully to empty results when SDK is unavailable.
 
 async function fetchCustomerProfile(
   customerId: string
 ): Promise<CustomerProfileRecord | null> {
+  if (!PRODUCTION_WIRING) return null;
   try {
-    // mcp__base44_tools__b44_get({ entity: 'CustomerProfile', id: customerId })
-    // For now, return null (will be wired in Stream 8 with real MCP calls)
-    return null;
+    const profile = await base44Service.entities.CustomerProfile.get(customerId);
+    return profile as CustomerProfileRecord | null;
   } catch {
     return null;
   }
@@ -450,9 +454,14 @@ async function fetchPaymentLogs(
   customerId: string,
   limit: number = 5
 ): Promise<PaymentLogRecord[]> {
+  if (!PRODUCTION_WIRING) return [];
   try {
-    // mcp__base44_tools__b44_query({ entity: 'PaymentLog', filter: { customerId }, sort: '-createdAt', limit })
-    return [];
+    const results = await base44Service.entities.PaymentLog.filter(
+      { customerId },
+      "-createdAt",
+      limit
+    );
+    return (results as PaymentLogRecord[]) || [];
   } catch {
     return [];
   }
@@ -462,9 +471,16 @@ async function fetchSupportTickets(
   customerId: string,
   status?: string
 ): Promise<SupportTicketRecord[]> {
+  if (!PRODUCTION_WIRING) return [];
   try {
-    // mcp__base44_tools__b44_query({ entity: 'SupportTicket', filter: { customerId, ...(status ? {status} : {}) }, sort: '-createdAt', limit: 20 })
-    return [];
+    const filter: Record<string, unknown> = { customerId };
+    if (status) filter.status = status;
+    const results = await base44Service.entities.SupportTicket.filter(
+      filter,
+      "-createdAt",
+      20
+    );
+    return (results as SupportTicketRecord[]) || [];
   } catch {
     return [];
   }
@@ -474,9 +490,20 @@ async function fetchCallLogs(
   customerId: string,
   limit: number = 10
 ): Promise<CallLogRecord[]> {
+  if (!PRODUCTION_WIRING) return [];
   try {
-    // mcp__base44_tools__query_warehouse({ table: 'agent_calls', where: `customer_id = '${customerId}'`, limit })
-    return [];
+    // CallLog may not be a CRUD entity; try warehouse fallback
+    try {
+      const results = await base44Service.entities.CallLog.filter(
+        { customerId },
+        "-createdAt",
+        limit
+      );
+      return (results as CallLogRecord[]) || [];
+    } catch {
+      // CallLog not available via SDK, skip
+      return [];
+    }
   } catch {
     return [];
   }
@@ -486,9 +513,14 @@ async function fetchEmails(
   customerId: string,
   limit: number = 5
 ): Promise<Record<string, unknown>[]> {
+  if (!PRODUCTION_WIRING) return [];
   try {
-    // mcp__base44_tools__query_warehouse({ table: 'emails', where: `customer_id = '${customerId}'`, limit })
-    return [];
+    const results = await base44Service.entities.EmailMessage.filter(
+      { customerId },
+      "-createdAt",
+      limit
+    );
+    return (results as Record<string, unknown>[]) || [];
   } catch {
     return [];
   }
@@ -498,9 +530,19 @@ async function fetchSmsMessages(
   customerId: string,
   limit: number = 5
 ): Promise<Record<string, unknown>[]> {
+  if (!PRODUCTION_WIRING) return [];
   try {
-    // mcp__base44_tools__query_warehouse({ table: 'sms_messages', where: `customer_id = '${customerId}'`, limit })
-    return [];
+    // SMS via GhlMessage or SMS-specific entity
+    try {
+      const results = await base44Service.entities.GhlMessage.filter(
+        { customerId },
+        "-createdAt",
+        limit
+      );
+      return (results as Record<string, unknown>[]) || [];
+    } catch {
+      return [];
+    }
   } catch {
     return [];
   }
@@ -509,8 +551,33 @@ async function fetchSmsMessages(
 async function queryNmiVault(
   customerId: string
 ): Promise<NmiSubscriptionState | null> {
+  if (!PRODUCTION_WIRING) return null;
   try {
-    // mcp__base44_tools__nmi_mcp_bridge({ action: 'customer_vault_query', payload: { customerId } })
+    // NMI vault query via the NMI MCP bridge
+    // The bridge is available as a server-side function call
+    const response = await fetch(`${process.env.BASE44_BRIDGE_URL || "http://localhost:8101"}/vpsAgentToolRouter`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        internalToken: process.env.BASE44_DIAG_KEY || "",
+        tool: "nmi_mcp_bridge",
+        action: "customer_vault_query",
+        payload: { customerId },
+      }),
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+
+    if (data?.subscriptions && Array.isArray(data.subscriptions) && data.subscriptions.length > 0) {
+      const sub = data.subscriptions[0];
+      return {
+        subscriptionId: sub.subscription_id || sub.id || null,
+        status: sub.status || "unknown",
+        nextChargeDate: sub.next_charge_date || null,
+        lastTransaction: sub.last_transaction || null,
+      };
+    }
     return null;
   } catch {
     return null;
@@ -521,23 +588,24 @@ async function queryNmiTransactions(
   customerId: string,
   days: number
 ): Promise<NmiTransactionRecord[]> {
+  if (!PRODUCTION_WIRING) return [];
   try {
-    // mcp__base44_tools__nmi_mcp_bridge({ action: 'transaction_query', payload: { customerId, days } })
-    return [];
+    const response = await fetch(`${process.env.BASE44_BRIDGE_URL || "http://localhost:8101"}/vpsAgentToolRouter`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        internalToken: process.env.BASE44_DIAG_KEY || "",
+        tool: "nmi_mcp_bridge",
+        action: "transaction_query",
+        payload: { customerId, days },
+      }),
+    });
+
+    if (!response.ok) return [];
+    const data = await response.json();
+    const txns = data?.transactions || data?.results || [];
+    return (Array.isArray(txns) ? txns : []) as NmiTransactionRecord[];
   } catch {
     return [];
   }
 }
-
-// ── Export the MCP stubs for external wiring ─────────────────────
-
-export const mcpStubs = {
-  fetchCustomerProfile,
-  fetchPaymentLogs,
-  fetchSupportTickets,
-  fetchCallLogs,
-  fetchEmails,
-  fetchSmsMessages,
-  queryNmiVault,
-  queryNmiTransactions,
-};
