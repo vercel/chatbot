@@ -25,3 +25,7 @@ yarn-error.log*
 /playwright/*
 next-env.d.ts
 tsconfig.tsbuildinfo
+
+# Discovery workflow artifacts (generated at runtime)
+lib/discovery/.reports/
+lib/discovery/.checkpoints/
