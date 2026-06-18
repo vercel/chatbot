@@ -347,18 +347,18 @@ The user has selected panel preset **"${presetName}"**. This preset LOCKS the mo
 |--------|----------------|-------|
 | Long Context Master | GLM 5.2, DeepSeek V4 Pro, Kimi K2.7 Code | GLM 5.2 |
 | Chinese Frontier | DeepSeek V4 Pro, Kimi K2.7 Code, GLM 5.2 | GLM 5.2 |
-| Deep Reasoning | DeepSeek R1, V3.2 Thinking, Kimi K2 Thinking, GLM 5.2, Qwen3 Max Thinking | Opus 4.8 |
-| Code Specialist | GLM 5.2, Kimi K2.7 Code, Qwen3 Coder Next, DeepSeek V4 Pro | Claude Sonnet 4.6 |
+| Deep Reasoning | DeepSeek R1, V3.2 Thinking, Kimi K2 Thinking, GLM 5.2, Qwen3 Max Thinking | GLM 5.2 |
+| Code Specialist | GLM 5.2, Kimi K2.7 Code, Qwen3 Coder Next, DeepSeek V4 Pro | GLM 5.2 |
 | Research Specialist | GLM 5.2, Gemini 2.5 Pro, Kimi K2.7 Code, DeepSeek R1 | GLM 5.2 |
 | Speed Trio | DeepSeek V4 Flash, Kimi K2.7 Code HS, Step 3.7 Flash | DeepSeek V4 Flash |
-| Sonnet Synth | DeepSeek V4 Pro, Kimi K2.7 Code, GLM 5.2, Qwen3 Max, MiniMax M3 | Claude Sonnet 4.6 |
+| Sonnet Synth | DeepSeek V4 Pro, Kimi K2.7 Code, GLM 5.2, Qwen3 Max, MiniMax M3 | GLM 5.2 |
 | Dual Frontier | DeepSeek V4 Pro, Kimi K2.7 Code | GLM 5.2 |
-| Vision Council | GLM 5V Turbo, Qwen3 VL 235B, Gemini 2.5 Pro | Claude Sonnet 4.6 |
+| Vision Council | GLM 5V Turbo, Qwen3 VL 235B, Gemini 2.5 Pro | GLM 5.2 |
 | MiniMax Ensemble | MiniMax M3, M2.7, DeepSeek V4 Pro | GLM 5.2 |
 
 ### Key rules:
 - "Long Context Master" uses **ONLY Chinese models** — NO Claude anywhere (agents or judge)
-- "Deep Reasoning" uses Opus 4.8 as judge ONLY (not as an agent)
+- "Deep Reasoning" uses GLM 5.2 as self-judge (no Claude anywhere)
 - When in doubt: **presetId first, agents[] NEVER overrides presetId**
 - The preset configuration is authoritative. Do not improvise model selection.
 `

@@ -15,7 +15,7 @@
  *       { role: "connector_cataloger", model: "moonshotai/kimi-k2.7-code", prompt: "..." },
  *       { role: "skill_cataloger", model: "deepseek/deepseek-v4-pro", prompt: "..." },
  *     ],
- *     synthesizer: { model: "anthropic/claude-sonnet-4-6", prompt: "..." }
+ *     synthesizer: { model: "zai/glm-5.2", prompt: "..." }
  *   })
  */
 
@@ -118,6 +118,8 @@ export interface SwarmDispatchResult {
   totalTokensUsed: number;
   success: boolean;
   error?: string;
+  /** Phase 23-D: Model overrides applied by preset enforcement */
+  overrides?: Array<{ agent: string; requested: string; forced: string }>;
 }
 
 // ── Agent Execution ─────────────────────────────────────────────────────
@@ -331,12 +333,13 @@ async function runSynthesizer(
 export async function swarmDispatch(
   input: SwarmDispatchInput
 ): Promise<SwarmDispatchResult> {
-  // ── PRESET ENFORCEMENT (Phase 23B fix) ───────────────────────────────────
+  // ── PRESET ENFORCEMENT (Phase 23-B/D fix) ──────────────────────────────────
   // If presetId is provided, OVERRIDE agents[] and synthesizer with the
   // preset's locked configuration. This prevents the LLM from freely picking
   // models (e.g., Claude Sonnet) when the user selected a Chinese model preset.
   let effectiveAgents = input.agents;
   let effectiveSynthesizer = input.synthesizer;
+  const overridesList: Array<{ agent: string; requested: string; forced: string }> = [];
 
   if (input.presetId) {
     const preset = getPresetByName(input.presetId);
@@ -358,40 +361,42 @@ export async function swarmDispatch(
       };
     }
 
-    // Validate: Long Context Master must use Chinese frontier models (NO Claude)
-    // Preset #10: GLM 5.2 + Kimi K2.7 Code + DeepSeek V4 Pro — GLM 5.2 judges
-    const FORBIDDEN_PROVIDERS: Record<string, string[]> = {
-      // "Long Context Master" requires Chinese models only; Claude is forbidden
-      "Long Context Master": ["anthropic"],
-      // "Deep Reasoning" uses Opus 4.8 as judge but never as an agent
-      "Deep Reasoning": [],
-      // "Sonnet Synth" uses Claude Sonnet as judge only, never as agent
-      // (agents are ALL Chinese: DeepSeek, Kimi, GLM, Qwen, MiniMax)
-    };
+    // ── UNIVERSAL PRESET ENFORCEMENT (Phase 23-D) ───────────────────────
+    // When presetId is provided, validate ALL agents[] and synthesizer
+    // against the preset's locked configuration. Any mismatch is force-overridden.
+    // This prevents the LLM from injecting Claude/GPT defaults when the user
+    // selected a Chinese Frontier or other Chinese-model preset.
 
-    if (input.presetId in FORBIDDEN_PROVIDERS) {
-      const forbiddenList = FORBIDDEN_PROVIDERS[input.presetId];
-      for (const agent of input.agents) {
-        const provider = agent.model.toLowerCase();
-        for (const forbidden of forbiddenList) {
-          if (provider.includes(forbidden)) {
-            console.error(
-              `[swarm-dispatch] REJECTED: Preset "${input.presetId}" forbids ${forbidden} models. ` +
-              `Agent "${agent.role}" requested ${agent.model}. Using preset agents instead.`
-            );
-            break;
-          }
-        }
+    // Track overrides for UI warnings
+
+    // Validate every agent against the preset
+    for (let i = 0; i < input.agents.length; i++) {
+      const agent = input.agents[i];
+      const presetAgent = preset.agents[i];
+      if (presetAgent && agent.model !== presetAgent.modelId) {
+        overridesList.push({
+          agent: agent.role,
+          requested: agent.model,
+          forced: presetAgent.modelId,
+        });
+        console.warn(
+          `[swarm-dispatch] 🔧 OVERRIDE: Preset "${input.presetId}" agent "${agent.role}" ` +
+          `requested ${agent.model} → forced ${presetAgent.modelId}`
+        );
       }
-      // Also check the synthesizer
-      for (const forbidden of forbiddenList) {
-        if (input.synthesizer.model.toLowerCase().includes(forbidden)) {
-          console.warn(
-            `[swarm-dispatch] OVERRIDE: Preset "${input.presetId}" synthesizer should use ` +
-            `preset's judge "${preset.judge.name}" (${preset.judge.modelId}), not ${input.synthesizer.model}`
-          );
-        }
-      }
+    }
+
+    // Validate synthesizer against preset judge
+    if (input.synthesizer.model !== preset.judge.modelId) {
+      overridesList.push({
+        agent: "synthesizer",
+        requested: input.synthesizer.model,
+        forced: preset.judge.modelId,
+      });
+      console.warn(
+        `[swarm-dispatch] 🔧 OVERRIDE: Preset "${input.presetId}" synthesizer ` +
+        `requested ${input.synthesizer.model} → forced ${preset.judge.modelId}`
+      );
     }
 
     // OVERRIDE agents[] with preset's locked agents
@@ -410,11 +415,21 @@ export async function swarmDispatch(
       maxTokens: input.synthesizer.maxTokens,
     };
 
-    console.log(
-      `[swarm-dispatch] 🔒 Preset "${input.presetId}" applied — ` +
-      `agents: [${effectiveAgents.map(a => `${a.role} (${a.model})`).join(", ")}] · ` +
-      `synthesizer: ${preset.judge.name} (${preset.judge.modelId})`
-    );
+    if (overrides.length > 0) {
+      console.log(
+        `[swarm-dispatch] 🔒 Preset "${input.presetId}" enforced ` +
+        `${overrides.length} override(s): ` +
+        overrides.map(o => `${o.agent}: ${o.requested}→${o.forced}`).join(", ") +
+        `. Final: [${effectiveAgents.map(a => `${a.role} (${a.model})`).join(", ")}] · ` +
+        `synthesizer: ${preset.judge.name} (${preset.judge.modelId})`
+      );
+    } else {
+      console.log(
+        `[swarm-dispatch] 🔒 Preset "${input.presetId}" applied cleanly — ` +
+        `agents: [${effectiveAgents.map(a => `${a.role} (${a.model})`).join(", ")}] · ` +
+        `synthesizer: ${preset.judge.name} (${preset.judge.modelId})`
+      );
+    }
   }
 
   const { goal, swarmType, timeoutMs = 300_000, onSwarmEvent } = input;
@@ -535,6 +550,7 @@ export async function swarmDispatch(
     totalDurationMs,
     totalTokensUsed,
     success: agentsSucceeded > 0 && synthesis !== null,
+    overrides: overridesList.length > 0 ? overridesList : undefined,
   };
 }
 
@@ -555,9 +571,9 @@ export const swarmDispatchTool = tool({
     "- \"Code Specialist\": GLM 5.2 lead + Kimi K2.7 Code + Qwen3 Coder Next + DeepSeek V4 Pro\n" +
     "- \"Research Specialist\": GLM 5.2 + Gemini 2.5 Pro + Kimi K2.7 Code + DeepSeek R1\n" +
     "- \"Speed Trio\": DeepSeek V4 Flash + Kimi K2.7 Code HS + Step 3.7 Flash\n" +
-    "- \"Sonnet Synth\": 5 Chinese agents + Claude Sonnet judge\n" +
-    "- \"Dual Frontier\": DeepSeek V4 Pro + Kimi K2.7 Code\n" +
-    "- \"Vision Council\": GLM 5V Turbo + Qwen3 VL 235B + Gemini 2.5 Pro\n" +
+    "- \"Sonnet Synth\": 5 Chinese agents + GLM 5.2 judge\n" +
+    "- \"Dual Frontier\": DeepSeek V4 Pro + Kimi K2.7 Code + GLM 5.2 judge\n" +
+    "- \"Vision Council\": GLM 5V Turbo + Qwen3 VL 235B + Gemini 2.5 Pro + GLM 5.2 judge\n" +
     "- \"MiniMax Ensemble\": MiniMax M3 + M2.7 + DeepSeek V4 Pro\n\n" +
     "RULE: When the user's domain matches a known preset, use presetId. " +
     "When BOTH presetId and agents[] are provided, presetId WINS and agents[] is overridden.",

@@ -2,10 +2,10 @@
  * Model Router — Phase 20: Multi-Model Intelligent Routing
  *
  * Automatically selects the best model for each task type:
- *   - Planning/Architecture → Claude Sonnet 4.6
- *   - Coding/Technical      → Kimi K2.7
- *   - Long-context/Docs      → GLM 5.1
- *   - Multilingual           → Qwen 3 235B
+ *   - Planning/Architecture → DeepSeek V4 Pro
+ *   - Coding/Technical      → Kimi K2.7 Code
+ *   - Long-context/Docs      → GLM 5.2
+ *   - Multilingual           → Qwen3 Max
  *   - Tool-heavy             → DeepSeek V4 Pro
  *   - General/Default        → DeepSeek V4 Pro
  *
@@ -51,9 +51,9 @@ export interface RoutingResult {
 const ROUTING_RULES: RoutingRule[] = [
   {
     taskType: "planning",
-    primaryModel: "anthropic/claude-sonnet-4-6",
-    fallbackModel: "deepseek/deepseek-v4-pro",
-    reasoning: "Claude Sonnet 4.6 excels at structured planning with clear reasoning chains, architecture design, and specification writing",
+    primaryModel: "deepseek/deepseek-v4-pro",
+    fallbackModel: "zai/glm-5.2",
+    reasoning: "DeepSeek V4 Pro excels at structured planning with clear reasoning chains, architecture design, and specification writing",
     signals: [
       /plan/i, /design/i, /architecture/i, /spec/i, /roadmap/i,
       /structure/i, /system\s*design/i, /blueprint/i, /prd/i,
@@ -74,9 +74,9 @@ const ROUTING_RULES: RoutingRule[] = [
   },
   {
     taskType: "long_context",
-    primaryModel: "zai/glm-5.1",
+    primaryModel: "zai/glm-5.2",
     fallbackModel: "deepseek/deepseek-v4-pro",
-    reasoning: "GLM 5.1 handles 202K tokens natively with vision, long-horizon autonomous tasks, and strong long-document synthesis",
+    reasoning: "GLM 5.2 handles 1M tokens natively with long-horizon autonomous tasks and strong long-document synthesis",
     signals: [
       /analyze.*file/i, /review.*codebase/i, /audit/i, /comprehensive/i,
       /entire/i, /whole.*repo/i, /full.*audit/i, /deep.*dive/i,
@@ -109,7 +109,7 @@ const ROUTING_RULES: RoutingRule[] = [
   {
     taskType: "tool_heavy",
     primaryModel: "deepseek/deepseek-v4-pro",
-    fallbackModel: "anthropic/claude-sonnet-4-6",
+    fallbackModel: "zai/glm-5.2",
     reasoning: "DeepSeek V4 Pro has strong tool-use capabilities with lower cost per call",
     signals: [
       /using.*tools/i, /with.*tool/i, /orchestrat/i, /workflow/i,
@@ -130,9 +130,9 @@ const ROUTING_RULES: RoutingRule[] = [
   },
   {
     taskType: "creative",
-    primaryModel: "anthropic/claude-sonnet-4-6",
-    fallbackModel: "alibaba/qwen3-235b",
-    reasoning: "Claude excels at creative content, nuanced writing, and design ideation",
+    primaryModel: "deepseek/deepseek-v4-pro",
+    fallbackModel: "zai/glm-5.2",
+    reasoning: "DeepSeek V4 Pro excels at creative content, nuanced writing, and design ideation",
     signals: [
       /write/i, /create/i, /story/i, /blog/i, /article/i,
       /content/i, /design.*idea/i, /brainstorm/i, /draft/i,
@@ -142,8 +142,8 @@ const ROUTING_RULES: RoutingRule[] = [
   {
     taskType: "analysis",
     primaryModel: "deepseek/deepseek-v4-pro",
-    fallbackModel: "zai/glm-5.1",
-    reasoning: "DeepSeek V4 Pro for structured analysis, GLM 5.1 for very large datasets",
+    fallbackModel: "zai/glm-5.2",
+    reasoning: "DeepSeek V4 Pro for structured analysis, GLM 5.2 for very large datasets (1M context)",
     signals: [
       /data/i, /analytics/i, /metrics/i, /statistics/i,
       /pattern/i, /insight/i, /trend/i, /report/i,
@@ -168,20 +168,37 @@ const VALID_MODELS = new Set([
   // Direct models
   "deepseek-v4-pro",
   "deepseek-reasoner",
-  // Gateway models
+  // Gateway models (Chinese frontier default)
   "deepseek/deepseek-v4-pro",
   "deepseek/deepseek-v3.2",
   "deepseek/deepseek-v4-flash",
+  "deepseek/deepseek-r1",
+  "deepseek/deepseek-v3.2-thinking",
   "moonshotai/kimi-k2.5",
+  "moonshotai/kimi-k2.7",
   "moonshotai/kimi-k2.7-code",
+  "moonshotai/kimi-k2.7-code-highspeed",
+  "moonshotai/kimi-k2-thinking",
+  "zai/glm-5",
+  "zai/glm-5.1",
+  "zai/glm-5.2",
+  "zai/glm-5v-turbo",
+  "alibaba/qwen3-max",
+  "alibaba/qwen3-max-thinking",
+  "alibaba/qwen3-coder-next",
+  "alibaba/qwen3-vl-235b-a22b-instruct",
+  "alibaba/qwen-3-235b",
+  "minimax/minimax-m3",
+  "minimax/minimax-m2.7",
+  "stepfun/step-3.7-flash",
+  "google/gemini-2.5-pro",
+  "google/gemini-2-flash",
+  // Selectable but NOT default — user must explicitly choose
+  "anthropic/claude-sonnet-4-6",
+  "anthropic/claude-opus-4-8",
   "openai/gpt-oss-20b",
   "openai/gpt-oss-120b",
   "xai/grok-4.1-fast-non-reasoning",
-  "anthropic/claude-sonnet-4-6",
-  "google/gemini-2-flash",
-  "zai/glm-5",
-  "zai/glm-5.1",
-  "alibaba/qwen-3-235b",
 ]);
 
 // ── User preferences (can be overridden at /settings/models) ───────

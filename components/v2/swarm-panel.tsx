@@ -11,8 +11,9 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/chat/toast";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -35,6 +36,10 @@ export interface SwarmPanelProps {
   synthesizerModel: string;
   onComplete?: () => void;
   className?: string;
+  /** Phase 23-D: Name of the enforced preset (if any) */
+  presetEnforced?: string;
+  /** Phase 23-D: Model overrides applied during enforcement */
+  overrides?: Array<{ agent: string; requested: string; forced: string }>;
 }
 
 // ── Status Badge ─────────────────────────────────────────────────────────
@@ -122,12 +127,37 @@ export function SwarmPanel({
   synthesizerModel,
   onComplete,
   className,
+  presetEnforced,
+  overrides,
 }: SwarmPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const toastShown = useRef(false);
 
   const allDone = agents.every((a) => a.status === "done" || a.status === "error");
   const successCount = agents.filter((a) => a.status === "done").length;
   const errorCount = agents.filter((a) => a.status === "error").length;
+
+  // Phase 23-D: Show toast when preset enforcement overrides model selection
+  useEffect(() => {
+    if (toastShown.current) return;
+    if (overrides && overrides.length > 0) {
+      toastShown.current = true;
+      const anthropicOverrides = overrides.filter(
+        (o) => o.requested.includes("anthropic") || o.requested.includes("openai")
+      );
+      if (anthropicOverrides.length > 0 && presetEnforced) {
+        toast({
+          type: "error",
+          description: `Override blocked: Claude/GPT models detected. Switching to preset "${presetEnforced}" models.`,
+        });
+      } else if (overrides.length > 0 && presetEnforced) {
+        toast({
+          type: "success",
+          description: `Preset "${presetEnforced}" enforced — ${overrides.length} model overrides applied.`,
+        });
+      }
+    }
+  }, [overrides, presetEnforced]);
 
   useEffect(() => {
     if (allDone && onComplete) {

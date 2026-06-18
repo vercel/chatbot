@@ -5,16 +5,16 @@
  * Mode (council/swarm/hybrid) is auto-detected at runtime, user can override.
  *
  * Presets:
- *   1. Chinese Frontier (DEFAULT) — updated with GLM 5.2
- *   2. Speed Trio — updated with StepFun
- *   3. Sonnet Synth — updated with MiniMax M3
- *   4. Deep Reasoning — Opus 4.8 judge ONLY HERE
- *   5. Code Specialist — GLM 5.2 PRIMARY coder
+ *   1. Chinese Frontier (DEFAULT) — Chinese frontier, GLM 5.2 self-judge
+ *   2. Speed Trio — fast + cheap, DeepSeek V4 Flash self-judge
+ *   3. Sonnet Synth — 5 Chinese agents, GLM 5.2 judge
+ *   4. Deep Reasoning — 5 reasoning agents, GLM 5.2 self-judge
+ *   5. Code Specialist — GLM 5.2 PRIMARY coder, GLM 5.2 self-judge
  *   6. Research Specialist — GLM 5.2 lead, 1M context
- *   7. Dual Frontier — minimalist
- *   8. Vision Council — NEW multimodal
- *   9. MiniMax Ensemble — NEW diverse reasoning
- *  10. Long Context Master — NEW 1M context, hybrid default
+ *   7. Dual Frontier — minimalist Chinese
+ *   8. Vision Council — multimodal, GLM 5.2 judge
+ *   9. MiniMax Ensemble — diverse reasoning, GLM 5.2 judge
+ *  10. Long Context Master — 1M context, GLM 5.2 self-judge
  *  11. Custom — user-defined placeholder
  */
 
@@ -72,7 +72,7 @@ export const SYSTEM_PRESETS: PanelPreset[] = [
     id: "",
     name: "Sonnet Synth",
     description:
-      "Balanced quality with Western judge. 5 Chinese frontier agents: DeepSeek V4 Pro + Kimi K2.7 Code + GLM 5.2 + Qwen3 Max + MiniMax M3. Claude Sonnet 4.6 judges with polish and precision.",
+      "Balanced quality. 5 Chinese frontier agents: DeepSeek V4 Pro + Kimi K2.7 Code + GLM 5.2 + Qwen3 Max + MiniMax M3. GLM 5.2 judges with polish and precision.",
     agents: [
       { modelId: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro" },
       { modelId: "moonshotai/kimi-k2.7-code", provider: "moonshotai", name: "Kimi K2.7 Code" },
@@ -80,7 +80,7 @@ export const SYSTEM_PRESETS: PanelPreset[] = [
       { modelId: "alibaba/qwen3-max", provider: "alibaba", name: "Qwen3 Max" },
       { modelId: "minimax/minimax-m3", provider: "minimax", name: "MiniMax M3" },
     ],
-    judge: { modelId: "anthropic/claude-sonnet-4-6", provider: "anthropic", name: "Claude Sonnet 4.6", role: "judge" },
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "general",
     defaultMode: "hybrid",
@@ -92,12 +92,12 @@ export const SYSTEM_PRESETS: PanelPreset[] = [
     createdBy: null,
   },
 
-  // ── 4. Deep Reasoning 👑 (FLAGSHIP — OPUS 4.8 ONLY HERE) ──────────────
+  // ── 4. Deep Reasoning 👑 (FLAGSHIP — GLM 5.2 SELF-JUDGE) ──────────────
   {
     id: "",
     name: "Deep Reasoning",
     description:
-      "💎 Flagship. 5 frontier reasoning agents: DeepSeek R1 + DeepSeek V3.2 Thinking + Kimi K2 Thinking + GLM 5.2 + Qwen3 Max Thinking. Claude Opus 4.8 as judge. Highest-stakes decisions, complex reasoning, critical analysis.",
+      "💎 Flagship. 5 frontier reasoning agents: DeepSeek R1 + DeepSeek V3.2 Thinking + Kimi K2 Thinking + GLM 5.2 + Qwen3 Max Thinking. GLM 5.2 self-judges. Highest-stakes decisions, complex reasoning, critical analysis.",
     agents: [
       { modelId: "deepseek/deepseek-r1", provider: "deepseek", name: "DeepSeek R1" },
       { modelId: "deepseek/deepseek-v3.2-thinking", provider: "deepseek", name: "DeepSeek V3.2 Thinking" },
@@ -105,7 +105,7 @@ export const SYSTEM_PRESETS: PanelPreset[] = [
       { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2" },
       { modelId: "alibaba/qwen3-max-thinking", provider: "alibaba", name: "Qwen3 Max Thinking" },
     ],
-    judge: { modelId: "anthropic/claude-opus-4-8", provider: "anthropic", name: "Claude Opus 4.8", role: "judge" },
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "reasoning",
     defaultMode: "council",
@@ -122,14 +122,14 @@ export const SYSTEM_PRESETS: PanelPreset[] = [
     id: "",
     name: "Code Specialist",
     description:
-      "⭐ GLM 5.2 leads as PRIMARY coder (best individual coder + 1M context). Backed by Kimi K2.7 Code + Qwen3 Coder Next + DeepSeek V4 Pro. Claude Sonnet 4.6 judges. Default mode: Swarm.",
+      "⭐ GLM 5.2 leads as PRIMARY coder (best individual coder + 1M context). Backed by Kimi K2.7 Code + Qwen3 Coder Next + DeepSeek V4 Pro. GLM 5.2 self-judges. Default mode: Swarm.",
     agents: [
       { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "lead-coder" },
       { modelId: "moonshotai/kimi-k2.7-code", provider: "moonshotai", name: "Kimi K2.7 Code" },
       { modelId: "alibaba/qwen3-coder-next", provider: "alibaba", name: "Qwen3 Coder Next" },
       { modelId: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro" },
     ],
-    judge: { modelId: "anthropic/claude-sonnet-4-6", provider: "anthropic", name: "Claude Sonnet 4.6", role: "judge" },
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "coding",
     defaultMode: "swarm",
@@ -192,13 +192,13 @@ export const SYSTEM_PRESETS: PanelPreset[] = [
     id: "",
     name: "Vision Council",
     description:
-      "Multimodal understanding. GLM 5V Turbo + Qwen3 VL 235B + Gemini 2.5 Pro for image analysis, charts, diagrams, and UI review. Claude Sonnet 4.6 judges.",
+      "Multimodal understanding. GLM 5V Turbo + Qwen3 VL 235B + Gemini 2.5 Pro for image analysis, charts, diagrams, and UI review. GLM 5.2 judges.",
     agents: [
       { modelId: "zai/glm-5v-turbo", provider: "zai", name: "GLM 5V Turbo" },
       { modelId: "alibaba/qwen3-vl-235b-a22b-instruct", provider: "alibaba", name: "Qwen3 VL 235B" },
       { modelId: "google/gemini-2.5-pro", provider: "google", name: "Gemini 2.5 Pro" },
     ],
-    judge: { modelId: "anthropic/claude-sonnet-4-6", provider: "anthropic", name: "Claude Sonnet 4.6", role: "judge" },
+    judge: { modelId: "zai/glm-5.2", provider: "zai", name: "GLM 5.2", role: "judge" },
     capabilities: ["council", "swarm", "hybrid"],
     domainHint: "general",
     defaultMode: "council",

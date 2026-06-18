@@ -7,7 +7,7 @@
  * Frontmatter format (per playbook .md):
  *   model_routing:
  *     default: "deepseek/deepseek-v4-pro"
- *     reasoning_heavy: "anthropic/claude-opus-4-6"
+ *     reasoning_heavy: "deepseek/deepseek-r1"
  *     fast_iteration: "deepseek/deepseek-v4-flash"
  *     coding: "deepseek/deepseek-v4-pro"
  *     vision: "google/gemini-2-flash"
@@ -61,9 +61,9 @@ export interface ModelRoutingResult {
 
 const DOMAIN_DEFAULT_MODELS: Record<string, string> = {
   "billing-flow": "deepseek/deepseek-v4-pro",
-  "credit-disputes": "anthropic/claude-sonnet-4-6",
+  "credit-disputes": "deepseek/deepseek-v4-pro",
   "customer-enrollment": "deepseek/deepseek-v4-pro",
-  "compliance-audit": "anthropic/claude-sonnet-4-6",
+  "compliance-audit": "zai/glm-5.2",
   "support-triage": "deepseek/deepseek-v4-flash",
   "agent-payments": "deepseek/deepseek-v4-pro",
   reporting: "deepseek/deepseek-v4-pro",
@@ -74,28 +74,28 @@ const DOMAIN_DEFAULT_MODELS: Record<string, string> = {
   engineering: "deepseek/deepseek-v4-pro",
   "vps-ops": "deepseek/deepseek-v4-flash",
   "code-review": "deepseek/deepseek-v4-pro",
-  "debugging-incident": "anthropic/claude-sonnet-4-6",
+  "debugging-incident": "deepseek/deepseek-v4-pro",
   "feature-build": "deepseek/deepseek-v4-pro",
-  "system-audit": "anthropic/claude-sonnet-4-6",
-  "planning-research": "anthropic/claude-sonnet-4-6",
+  "system-audit": "zai/glm-5.2",
+  "planning-research": "deepseek/deepseek-v4-pro",
 };
 
 const DOMAIN_TIER_MODELS: Record<string, Partial<ModelRoutingConfig>> = {
   "billing-flow": {
-    reasoning_heavy: "anthropic/claude-sonnet-4-6",
+    reasoning_heavy: "deepseek/deepseek-r1",
     fast_iteration: "deepseek/deepseek-v4-flash",
   },
   engineering: {
     coding: "deepseek/deepseek-v4-pro",
-    reasoning_heavy: "anthropic/claude-opus-4-6",
+    reasoning_heavy: "deepseek/deepseek-r1",
     fast_iteration: "deepseek/deepseek-v4-flash",
   },
   "code-review": {
     coding: "deepseek/deepseek-v4-pro",
-    reasoning_heavy: "anthropic/claude-sonnet-4-6",
+    reasoning_heavy: "deepseek/deepseek-r1",
   },
   "debugging-incident": {
-    reasoning_heavy: "anthropic/claude-opus-4-6",
+    reasoning_heavy: "deepseek/deepseek-r1",
     coding: "deepseek/deepseek-v4-pro",
   },
 };

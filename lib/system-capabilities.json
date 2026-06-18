@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-17T23:03:04.963Z",
+  "generatedAt": "2026-06-18T00:05:20.850Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "9ed2d67",
+  "commitSha": "d0552f3",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
@@ -10,7 +10,7 @@
     "functions": 12,
     "workflows": 5,
     "tools": 27,
-    "apiRoutes": 155,
+    "apiRoutes": 156,
     "models": 35,
     "uiComponents": 26
   },
@@ -1497,6 +1497,11 @@
       "method": "POST",
       "route": "/api/telemetry",
       "file": "app/api/telemetry/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/testing/deploy-hook",
+      "file": "app/api/testing/deploy-hook/route.ts"
     },
     {
       "method": "GET",
