@@ -3,7 +3,7 @@
 > Schema document for the Neptune Chat codebase.
 > Read before making changes. Updated on every major feature add.
 
-Last updated: 2026-06-08
+Last updated: 2026-06-20
 Repository: abhiswami2121/neptune-chat
 Deployment: Vercel → https://neptune-chat-ashy.vercel.app
 
@@ -164,6 +164,37 @@ HYPERSWITCH_API_KEY       # Hyperswitch
 4. **Horizontal scroll**: Never. Test at 375px width.
 5. **Nested Sheets/Drawers**: Never. Use Tabs for sub-navigation.
 6. **Inline styles**: Never. Use Tailwind + shadcn tokens.
+
+## AGENTIC ENGINEERING SKILLS (Pocock-Inspired)
+
+This repo includes engineering skills based on Matt Pocock's 7-phase agentic engineering framework (aihero.dev). The KEY INNOVATION is **Automated Grill** — the agent self-answers design tree questions by exploring the codebase, checking git history, reading docs, and inspecting connected services. Only truly unanswerable questions reach a human.
+
+Run `/grill` before ANY feature work. Use `/handoff` to pass structured context to V2 coding sessions.
+
+### Skills: `lib/connectors/skills/pocock-engineering/`
+
+| Skill | Phase | Trigger |
+|-------|-------|---------|
+| `automated-grill` | 1 — GRILL | `/grill`, `/grill-me` |
+| `grill-with-docs` | 2 — RESEARCH | `/grill-with-docs`, `/domain-grill` |
+| `prototype` | 3 — PROTOTYPE | `/prototype` |
+| `to-prd` | 4 — PRD | `/to-prd`, `/prd` |
+| `to-issues` | 5 — PLAN | `/to-issues`, `/plan` |
+| `tdd` | 6 — BUILD | `/tdd`, `red-green-refactor` |
+| `improve-codebase-architecture` | 6+ — REFACTOR | `/improve-architecture`, `/deepen` |
+| `handoff` | 6-7 — HANDOFF | `/handoff` |
+
+### Engines
+- `lib/connectors/skills/pocock-engineering/automated-grill.ts` — Self-answering design tree engine (3 modes: Self-Grill, Multi-Agent, Human-in-the-Loop)
+- `lib/connectors/skills/pocock-engineering/handoff.ts` — V2 context compression and prompt generation
+
+### Master Playbook
+- `playbooks/agentic-engineering/PLAYBOOK.md` — Full 7-phase pipeline with quality gates
+
+### Quick Reference
+```
+/grill → /to-prd → /to-issues → /handoff (to V2) → /tdd (on V2) → /qa
+```
 
 ## DESIGN SYSTEM
 

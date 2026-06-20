@@ -29,3 +29,4 @@ tsconfig.tsbuildinfo
 # Discovery workflow artifacts (generated at runtime)
 lib/discovery/.reports/
 lib/discovery/.checkpoints/
+.handoffs
