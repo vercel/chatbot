@@ -64,12 +64,28 @@ export async function spawnV2Session(
     if (!res.ok) {
       const body = await res.text();
       const isAuth = res.status === 401;
+      // Stream A: Auth diagnostics (2026-06-20)
+      const tokenSource = process.env.NEPTUNE_INTERNAL_TOKEN
+        ? "NEPTUNE_INTERNAL_TOKEN"
+        : process.env.V2_AGENT_TOKEN
+          ? "V2_AGENT_TOKEN"
+          : process.env.NEPTUNE_V2_HANDOFF_SECRET
+            ? "NEPTUNE_V2_HANDOFF_SECRET"
+            : "none (all empty)";
+      const tokenPreview = V2_AGENT_TOKEN
+        ? `${V2_AGENT_TOKEN.slice(0, 4)}...${V2_AGENT_TOKEN.slice(-4)}`
+        : "(empty)";
+      console.error(
+        `[handoff-client] V2 returned ${res.status}. ` +
+        `Token source: ${tokenSource}, preview: ${tokenPreview}. ` +
+        `V2 expects: NEPTUNE_INTERNAL_TOKEN. Match? ${tokenSource === "NEPTUNE_INTERNAL_TOKEN" ? "YES (first chain)" : "CHECK — may mismatch"}`,
+      );
       return {
         success: false,
         code: `V2_HTTP_${res.status}`,
         error: body.slice(0, 500),
         suggestion: isAuth
-          ? "V2 rejected auth. V2_AGENT_TOKEN on chat must match NEPTUNE_INTERNAL_TOKEN on V2."
+          ? `V2 rejected auth (token source: ${tokenSource}). Ensure this matches NEPTUNE_INTERNAL_TOKEN on V2.`
           : "Check V2 backend health at neptune-v2.vercel.app.",
       };
     }
