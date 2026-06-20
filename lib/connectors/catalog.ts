@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Dynamic Connector Catalog — generates formatted connector listing for:
  *   1. System prompt injection (Agent knows what tools are available)

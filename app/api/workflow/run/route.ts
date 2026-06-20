@@ -1,14 +1,11 @@
-// @ts-nocheck — pre-existing Phase 24 type issues, refined in Streams 3-5
 /**
- * Workflow SD K route — Durable workflow execution with full tool registry.
+ * Workflow SDK route — Durable workflow execution with WorkflowAgent.
  *
- * Uses @ai-sdk/workflow (WorkflowAgent = DurableAgent equivalent).
- * Full 'use workflow' durability requires Vercel Workflow infrastructure
- * (currently in beta). The route works without it for non-durable execution.
- *
+ * Uses @ai-sdk/workflow v1 (WorkflowAgent) for durable agent execution.
  * Tools wired: all inline tools + sandbox tools + MCP tools.
  * Streaming: SSE (Server-Sent Events) for real-time progress.
  */
+import { WorkflowAgent } from "@ai-sdk/workflow";
 import { getAvailableTools } from "@/lib/agent/inline-tools";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { getLanguageModel } from "@/lib/ai/providers";
@@ -19,6 +16,7 @@ import {
 import { checkConnectorEnv } from "@/lib/connectors/registry";
 import { sandboxTools } from "@/lib/sandbox/tools";
 import { requireAllowlist } from "@/lib/auth/require-allowlist";
+import type { ModelMessage } from "ai";
 
 export const maxDuration = 300; // 5 min max for workflow
 
@@ -53,7 +51,7 @@ export const POST = requireAllowlist(async (req: Request) => {
     if (ctx) {
       playbookPrompt = `\n\n## Connector Playbooks (Operational Context)\n\n${ctx}\n\n---\n*When using connector tools, follow the anti-patterns and safeguards from the playbooks above.*`;
     }
-  } catch (_) {
+  } catch {
     /* non-fatal */
   }
 
@@ -74,14 +72,7 @@ export const POST = requireAllowlist(async (req: Request) => {
           timestamp: Date.now(),
         });
 
-        // Use streamText for the actual AI execution since WorkflowAgent
-        // requires a writable stream that needs platform infrastructure.
-        // streamText provides equivalent functionality for non-durable workflows.
-        const { streamText } = await import("ai");
-
-        const result = streamText({
-          model,
-          system: `You are Neptune Workflow, a durable AI agent designed for long-running tasks.
+        const systemPrompt = `You are Neptune Workflow, a durable AI agent designed for long-running tasks.
 Your task: ${task}
 ${context ? `\nAdditional context: ${JSON.stringify(context)}` : ""}
 
@@ -89,20 +80,62 @@ You have access to all neptune tools including sandbox execution, V2 coding agen
 Slack integration, database queries, knowledge search, and file system operations.
 
 Complete the task thoroughly. If you encounter an error, try an alternative approach.
-Report your final result at the end.${playbookPrompt}`,
-          messages: [{ role: "user" as const, content: task }],
+Report your final result at the end.${playbookPrompt}`;
+
+        const agent = new WorkflowAgent({
+          model,
+          instructions: systemPrompt,
+          tools: allTools,
+          onStepEnd: ({ stepNumber, steps }) => {
+            const lastStep = steps[steps.length - 1];
+            if (lastStep?.text) {
+              send({
+                type: "step-end",
+                stepNumber,
+                textPreview: lastStep.text.slice(0, 500),
+                timestamp: Date.now(),
+              });
+            }
+          },
+          onToolExecutionStart: ({ toolCall }) => {
+            send({
+              type: "tool-start",
+              toolName: toolCall.toolName,
+              toolCallId: toolCall.toolCallId,
+              timestamp: Date.now(),
+            });
+          },
+          onToolExecutionEnd: ({ toolCall, success, output, error }) => {
+            send({
+              type: "tool-end",
+              toolName: toolCall.toolName,
+              toolCallId: toolCall.toolCallId,
+              success,
+              outputPreview: success ? JSON.stringify(output).slice(0, 200) : undefined,
+              error: !success ? String(error).slice(0, 200) : undefined,
+              timestamp: Date.now(),
+            });
+          },
+        });
+
+        const messages: ModelMessage[] = [
+          { role: "user", content: task },
+        ] as ModelMessage[];
+
+        const result = await agent.stream({
+          messages,
           tools: allTools,
         });
 
-        let fullText = "";
-        for await (const chunk of result.textStream) {
-          fullText += chunk;
-          send({ type: "text", data: chunk, timestamp: Date.now() });
-        }
+        const fullText = result.steps
+          .map((s) => s.text)
+          .filter(Boolean)
+          .join("\n");
 
         send({
           type: "done",
           fullText: fullText.slice(0, 5000),
+          stepCount: result.steps.length,
           timestamp: Date.now(),
         });
         controller.close();

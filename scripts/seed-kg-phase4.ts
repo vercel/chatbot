@@ -1,4 +1,3 @@
-// @ts-nocheck — seed script, not production code; TS strictness bypassed
 /**
  * PHASE 4: KG Seed — Wiki Content Foundation
  * Mission: KG-SEED-WIKI-CONTENT-2026-06-13

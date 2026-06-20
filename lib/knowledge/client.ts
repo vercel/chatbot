@@ -21,7 +21,7 @@ import type {
 let _kgSql: ReturnType<typeof postgres> | null = null;
 let _initError: Error | null = null;
 
-function getKgSql(): ReturnType<typeof postgres> {
+export function getKgSql(): ReturnType<typeof postgres> {
   if (_initError) throw _initError;
   if (!_kgSql) {
     const url = process.env.POSTGRES_URL;

@@ -36,7 +36,7 @@
     "@ai-sdk/openai-compatible": "^2.0.48",
     "@ai-sdk/provider": "^3.0.3",
     "@ai-sdk/react": "3.0.118",
-    "@ai-sdk/workflow": "0.0.0-bf6e4b15-20260402200305",
+    "@ai-sdk/workflow": "1.0.0-beta.101",
     "@base44/sdk": "^0.8.31",
     "@codemirror/lang-python": "^6.1.6",
     "@codemirror/state": "^6.5.0",

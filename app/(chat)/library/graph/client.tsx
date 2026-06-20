@@ -1,4 +1,3 @@
-// @ts-nocheck — react-force-graph-2d uses complex generic types incompatible with our GraphNode/GraphEdge
 "use client";
 
 /**

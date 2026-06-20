@@ -6,6 +6,8 @@
 import { NextResponse } from "next/server";
 import { getTelemetrySummary } from "@/connectors/neptune/functions/usage-telemetry";
 import { SKILL_REGISTRY } from "@/connectors/neptune/client";
+import { checkConnectorEnv } from "@/lib/connectors/registry";
+import { initConnectors, manifests } from "@/lib/connectors/init";
 
 interface DiagnosticSection {
   status: "healthy" | "degraded" | "down" | "unknown";
@@ -45,11 +47,30 @@ async function checkVpsHealth(): Promise<DiagnosticSection> {
 
 function checkConnectorHealth(): DiagnosticSection {
   const details: Record<string, unknown> = {};
-  const connectors = ["base44", "nmi", "slack", "github", "vercel", "ghl", "vapi", "forth"];
+
+  // Derive connector list from SKILL_REGISTRY (no hardcoded list)
+  const connectors = Object.keys(SKILL_REGISTRY);
+
+  // Build env key map from manifest imports
+  let manifestsMap: Map<string, string[]> = new Map();
+  try {
+    initConnectors();
+    for (const m of manifests) {
+      if (m.id) manifestsMap.set(m.id, m.envKeys || []);
+    }
+  } catch {
+    // non-fatal, env key check will be skipped
+  }
 
   for (const c of connectors) {
     const hasNeptuneSkills = c in (SKILL_REGISTRY || {});
-    details[c] = hasNeptuneSkills ? "configured" : "not-in-neptune-registry";
+    const envKeys = manifestsMap.get(c) || [];
+    const hasEnvKeys = envKeys.length > 0 && checkConnectorEnv(envKeys).ok;
+    details[c] = hasNeptuneSkills
+      ? "configured"
+      : hasEnvKeys
+        ? "env-ready"
+        : "not-configured";
   }
 
   return {

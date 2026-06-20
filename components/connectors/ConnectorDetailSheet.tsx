@@ -1,4 +1,3 @@
-// @ts-nocheck — pre-existing Phase 24 type issues, refined in Streams 3-5
 "use client";
 /**
  * ConnectorDetailSheet — right drawer with 5 tabs:

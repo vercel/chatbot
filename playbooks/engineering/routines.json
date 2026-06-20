@@ -1,9 +1,162 @@
 {
   "domain": "engineering",
   "priority": "P1",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "created": "2026-06-12",
+  "updated": "2026-06-20",
   "routines": [
+    {
+      "name": "Add Connector",
+      "trigger_keywords": [
+        "add connector",
+        "new connector",
+        "integrate",
+        "create connector",
+        "register connector"
+      ],
+      "steps": [
+        {
+          "action": "scaffold",
+          "description": "Create connectors/<name>/ folder with manifest.ts, SKILL.md, client.ts, GRAPH-TAG.json, PLAYBOOK.md"
+        },
+        {
+          "action": "register_skill_registry",
+          "description": "Add to SKILL_REGISTRY in connectors/neptune/client.ts"
+        },
+        {
+          "action": "register_playbook_router",
+          "description": "Add to PLAYBOOK-ROUTER.md inline map"
+        },
+        {
+          "action": "create_neptune_skill",
+          "description": "Create connectors/neptune/skills/<name>/SKILL.md with full action catalog"
+        },
+        {
+          "action": "kg_backfill",
+          "description": "POST /api/knowledge/backfill"
+        },
+        {
+          "action": "diagnostics_check",
+          "description": "GET /api/diagnostics — verify connector appears as configured"
+        },
+        {
+          "action": "verify_all_registrations",
+          "description": "Verify: SKILL_REGISTRY, manifest, GRAPH-TAG, diagnostics, playbook index"
+        }
+      ],
+      "pre_check_knowledge": {
+        "queries": [
+          "knowledge://engineering/PLAYBOOK-ENGINEERING",
+          "knowledge://engineering/cardinal-rules"
+        ],
+        "required": true,
+        "timeoutMs": 5000
+      }
+    },
+    {
+      "name": "Update SDK",
+      "trigger_keywords": [
+        "update sdk",
+        "upgrade packages",
+        "update dependencies",
+        "upgrade ai-sdk",
+        "update ai-sdk"
+      ],
+      "steps": [
+        {
+          "action": "branch",
+          "description": "git checkout -b feat/sdk-update-YYYY-MM-DD"
+        },
+        {
+          "action": "check_outdated",
+          "description": "pnpm outdated | grep @ai-sdk"
+        },
+        {
+          "action": "update_packages",
+          "description": "pnpm add <packages>@latest"
+        },
+        {
+          "action": "type_check",
+          "description": "pnpm type-check (MUST pass, zero errors)"
+        },
+        {
+          "action": "build",
+          "description": "pnpm build (MUST succeed)"
+        },
+        {
+          "action": "smoke_test",
+          "description": "Run smoke test workflow: GET /api/workflows/smoke-test"
+        },
+        {
+          "action": "commit_pr",
+          "description": "Commit + PR with changelog"
+        }
+      ],
+      "pre_check_knowledge": {
+        "queries": [
+          "knowledge://engineering/PLAYBOOK-ENGINEERING",
+          "knowledge://engineering/sdk-version-discipline"
+        ],
+        "required": true,
+        "timeoutMs": 5000
+      }
+    },
+    {
+      "name": "Deploy",
+      "trigger_keywords": [
+        "deploy",
+        "ship",
+        "push to production",
+        "release",
+        "publish"
+      ],
+      "steps": [
+        {
+          "action": "format",
+          "description": "pnpm format"
+        },
+        {
+          "action": "type_check",
+          "description": "pnpm type-check"
+        },
+        {
+          "action": "build",
+          "description": "pnpm build"
+        },
+        {
+          "action": "diagnostics",
+          "description": "GET /api/diagnostics"
+        },
+        {
+          "action": "browser_verify",
+          "description": "Run agent-browser-verify on localhost:3000"
+        },
+        {
+          "action": "push",
+          "description": "git push (triggers Vercel auto-deploy)"
+        },
+        {
+          "action": "wait_deploy",
+          "description": "Wait for deploy ready"
+        },
+        {
+          "action": "prod_verify",
+          "description": "Run agent-browser-verify on production URL"
+        },
+        {
+          "action": "slack_report",
+          "description": "Post results to Slack #jarvis-admin"
+        }
+      ],
+      "pre_check_knowledge": {
+        "queries": [
+          "knowledge://engineering/PLAYBOOK-ENGINEERING",
+          "knowledge://engineering/deploy-checklist"
+        ],
+        "required": true,
+        "timeoutMs": 5000
+      }
+    },
     {
       "name": "Code Review",
       "trigger_keywords": [

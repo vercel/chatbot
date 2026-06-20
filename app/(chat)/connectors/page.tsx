@@ -1,4 +1,3 @@
-// @ts-nocheck — pre-existing Phase 24 connector manifest types will be refined in Stream 3
 /**
  * Connectors Page — dynamic grid of connector cards from registry.
  * U1.3: Includes inventory wrap progress data for per-connector progress bars.

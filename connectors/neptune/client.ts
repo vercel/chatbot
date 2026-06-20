@@ -42,6 +42,11 @@ const SKILL_REGISTRY: Record<string, { path: string; actions: number }> = {
   wiki:    { path: "wiki/SKILL.md",    actions: 20 },
   "mcp-hub": { path: "mcp-hub/SKILL.md", actions: 15 },
   affy:    { path: "affy/SKILL.md",    actions: 15 },
+  base44:  { path: "base44/SKILL.md",  actions: 6 },
+  nmi:     { path: "nmi/SKILL.md",     actions: 5 },
+  slack:   { path: "slack/SKILL.md",   actions: 6 },
+  vapi:    { path: "vapi/SKILL.md",    actions: 3 },
+  hyperswitch: { path: "hyperswitch/SKILL.md", actions: 4 },
 };
 
 // ── Function Registry ──────────────────────────────────────────────────────

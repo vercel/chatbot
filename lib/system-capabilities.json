@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-06-20T08:25:16.832Z",
+  "generatedAt": "2026-06-20T09:14:44.333Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "2c2792e",
+  "commitSha": "ed73862",
   "counts": {
     "connectors": 17,
     "playbooks": 14,
     "skills": 6,
     "functions": 12,
     "workflows": 5,
-    "tools": 27,
-    "apiRoutes": 156,
+    "tools": 29,
+    "apiRoutes": 160,
     "models": 35,
     "uiComponents": 26
   },
@@ -887,6 +887,11 @@
       "description": "Create a new workflow from a natural language description. The workflow will be built on the React Flow canvas with trigger, action, conditional, parallel, transform, AI, and output nodes. Use this wh"
     },
     {
+      "name": "discoverResource",
+      "path": "lib/ai/tools/discover-resource.ts",
+      "description": "${info.actions} actions for ${connector}"
+    },
+    {
       "name": "executeCrmActionTool",
       "path": "lib/ai/tools/crm-action.ts",
       "description": "Execute a CRM action against Twenty CRM. Use this when the user wants to: - Update a person"
@@ -980,6 +985,11 @@
       "name": "selfCode",
       "path": "lib/ai/tools/self-code.ts",
       "description": "Make a SMALL change to Neptune Chat"
+    },
+    {
+      "name": "selfVerify",
+      "path": "lib/ai/tools/self-verify.ts",
+      "description": "Verify a deployed application URL for correctness. Checks that expected DOM elements exist on the page using agent-browser. Also verifies API endpoint health. Returns pass/fail with evidence."
     },
     {
       "name": "spawnCodingAgent",
@@ -1177,6 +1187,16 @@
       "method": "GET",
       "route": "/api/integrations",
       "file": "app/api/integrations/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/knowledge/backfill",
+      "file": "app/api/knowledge/backfill/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/knowledge/backfill",
+      "file": "app/api/knowledge/backfill/route.ts"
     },
     {
       "method": "GET",
@@ -1782,6 +1802,16 @@
       "method": "POST",
       "route": "/api/workflows/research-swarm",
       "file": "app/api/workflows/research-swarm/route.ts"
+    },
+    {
+      "method": "GET",
+      "route": "/api/workflows/smoke-test",
+      "file": "app/api/workflows/smoke-test/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflows/smoke-test",
+      "file": "app/api/workflows/smoke-test/route.ts"
     }
   ],
   "models": [
