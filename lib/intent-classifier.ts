@@ -100,6 +100,94 @@ const INTENT_PATTERNS: Array<{
     ],
   },
 
+  // ── POCOCK PHASE 1: GRILL (analyze, audit, understand, interview) ──
+  // MANDATORY Phase 0 — interview the problem before building.
+  // Routes to reasoning mode with /grill skill context.
+  {
+    mode: "reasoning",
+    confidence: "high",
+    patterns: [
+      /\b(grill|interview)\s+(me|this|the)\b/i,
+      /\bwalk\s+(me\s+)?down\s+(the|each|every)\s+(decision\s+tree|branch)\b/i,
+      /\bquestion\s+(my|the|this)\s+(approach|assumption|thinking|plan|architecture)\b/i,
+      /\bchallenge\s+(my|the|this)\s+(approach|assumption|thinking|plan)\b/i,
+    ],
+  },
+  {
+    mode: "reasoning",
+    confidence: "medium",
+    patterns: [
+      /\b(analy[sz]e|audit|understand)\s+(the|this|my|our)\s+(codebase|architecture|system|app|code|repo)\b/i,
+      /\bdeep\s*(dive|analysis)\s+(into|on|of)\b/i,
+    ],
+  },
+
+  // ── POCOCK PHASE 2: RESEARCH (investigate external deps) ──────────
+  {
+    mode: "reasoning",
+    confidence: "high",
+    patterns: [
+      /\bresearch\s+(the|this|a|an|how|what|why)\b/i,
+      /\b(find\s+out\s+about|look\s+into\s+(the|how|what))\b/i,
+      /\b(document|map\s*out)\s+(the|all|external)\s+(dependencies|apis|integrations)\b/i,
+    ],
+  },
+
+  // ── POCOCK PHASE 3: PROTOTYPE (spike, try, experiment) ──────────
+  {
+    mode: "code_handoff",
+    confidence: "high",
+    patterns: [
+      /\b(prototype|spike|proof\s*of\s*concept|poc)\s+(the|a|an|this)\b/i,
+      /\b(try|experiment)\s+(out\s+)?(a|an|the|this)\s+(approach|idea|design|pattern|route)\b/i,
+      /\bthrowaway\s+(route|endpoint|component|test)\b/i,
+    ],
+  },
+
+  // ── POCOCK PHASE 4+5: PLAN + TICKET (to-prd, to-issues) ──────────
+  {
+    mode: "code_handoff",
+    confidence: "high",
+    patterns: [
+      /\b(generate|create|write)\s+(a|an|the)\s+(prd|spec|specification)\b/i,
+      /\b(break\s*down|decompose|split)\s+(the|this|a)\s+(prd|spec|feature|task)\s+(into|to)\s+(issues|tickets|tasks)\b/i,
+      /\b(vertical\s*slice|independent\s+ticket|shippable\s+task)\b/i,
+    ],
+  },
+
+  // ── POCOCK PHASE 6: TDD (test-first development) ──────────────────
+  {
+    mode: "code_handoff",
+    confidence: "high",
+    patterns: [
+      /\b(tdd|test\s*first|test\s*driven)\b/i,
+      /\b(write|create)\s+(a|the)\s+(failing\s+)?test\s+(first|before)\b/i,
+      /\b(red\s*→|red\s+green\s+refactor|red-green-refactor)\b/i,
+    ],
+  },
+
+  // ── POCOCK PHASE 7: QA (verify, test, handoff) ─────────────────
+  {
+    mode: "reasoning",
+    confidence: "high",
+    patterns: [
+      /\b(qa|quality\s*assurance)\s+(plan|check|review|audit)\b/i,
+      /\b(structured\s+qa|acceptance\s+criteria\s+check|human\s+review\s+checklist)\b/i,
+      /\b(handoff|hand\s*off|context\s+compress)\s+(session|context|mission|task)\b/i,
+    ],
+  },
+
+  // ── POCOCK: CODEBASE IMPROVEMENT ────────────────────────────────
+  {
+    mode: "reasoning",
+    confidence: "medium",
+    patterns: [
+      /\b(improve|enhance)\s+(codebase|code\s+base|architecture|system\s+design)\b/i,
+      /\b(find|identify|flag)\s+(deepening|refactor|improvement)\s+(opportunit|candidate)\b/i,
+      /\b(pattern\s+consolidation|architectural\s+drift|technical\s+debt)\b/i,
+    ],
+  },
+
   // ── REASONING (analyze, why, compare, complex thinking) ─────────────
   {
     mode: "reasoning",

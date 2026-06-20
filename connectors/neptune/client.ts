@@ -48,6 +48,7 @@ const SKILL_REGISTRY: Record<string, { path: string; actions: number }> = {
   vapi:    { path: "vapi/SKILL.md",    actions: 3 },
   hyperswitch: { path: "hyperswitch/SKILL.md", actions: 4 },
   "youtube-research": { path: "youtube-research/SKILL.md", actions: 5 },
+  "pocock-engineering": { path: "pocock-engineering/SKILL.md", actions: 10 },
 };
 
 // ── Function Registry ──────────────────────────────────────────────────────
