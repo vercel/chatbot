@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-20T09:14:44.333Z",
+  "generatedAt": "2026-06-20T10:09:38.562Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "ed73862",
+  "commitSha": "a678af2",
   "counts": {
-    "connectors": 17,
+    "connectors": 18,
     "playbooks": 14,
     "skills": 6,
     "functions": 12,
@@ -308,6 +308,19 @@
       "playbooksReferencing": [
         "planning"
       ]
+    },
+    {
+      "name": "youtube-research",
+      "slug": "youtube-research",
+      "path": "connectors/youtube-research/",
+      "hasMcp": false,
+      "hasCustomClient": true,
+      "hasSchema": false,
+      "toolCount": 0,
+      "toolNames": [],
+      "hasPlaybookMd": false,
+      "hasSkillMd": true,
+      "playbooksReferencing": []
     }
   ],
   "playbooks": [

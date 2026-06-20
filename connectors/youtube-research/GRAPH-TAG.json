@@ -1,0 +1,34 @@
+{
+  "entity_type": "connector",
+  "entity_id": "connectors/youtube-research",
+  "version": "1.0.0",
+  "graph_version": "4d-v1",
+  "directions": {
+    "associated_playbooks": [
+      {"ref": "playbooks/agentic-engineering", "relationship": "research_source"},
+      {"ref": "playbooks/engineering", "relationship": "knowledge_mining"}
+    ],
+    "associated_skills": [
+      {"ref": "capabilities/deep-research", "relationship": "video_analysis"},
+      {"ref": "capabilities/framework-evaluation", "relationship": "technique_extraction"}
+    ],
+    "exposed_functions": [
+      "youtube_search_videos", "youtube_get_metadata", "youtube_get_transcript",
+      "youtube_summarize_channel", "youtube_extract_frameworks"
+    ],
+    "runtime_types": ["node", "vercel-serverless"],
+    "intent_tags": [
+      "youtube", "video", "channel", "creator", "transcript",
+      "framework extraction", "research", "content analysis"
+    ]
+  },
+  "metadata": {
+    "domain": "research",
+    "domain_tags": ["research"],
+    "function_tags": ["video_analysis", "content_research"],
+    "mcp": false,
+    "custom_client": true,
+    "function_count": 5,
+    "description": "YouTube Data API v3 + transcript extraction — search videos, get metadata, extract transcripts, summarize channels, and identify AI/agentic frameworks from video content"
+  }
+}

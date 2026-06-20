@@ -47,6 +47,7 @@ const SKILL_REGISTRY: Record<string, { path: string; actions: number }> = {
   slack:   { path: "slack/SKILL.md",   actions: 6 },
   vapi:    { path: "vapi/SKILL.md",    actions: 3 },
   hyperswitch: { path: "hyperswitch/SKILL.md", actions: 4 },
+  "youtube-research": { path: "youtube-research/SKILL.md", actions: 5 },
 };
 
 // ── Function Registry ──────────────────────────────────────────────────────
