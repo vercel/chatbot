@@ -73,7 +73,7 @@ User Message
     ▼
 Step 1: Read THIS Router First
     Always. Before any tool call. Before any KG query.
-    This is the canonical map of all 15 playbooks.
+    This is the canonical map of all 17 playbooks.
     │
     ▼
 Step 2: Match Intent → Playbook
@@ -121,7 +121,7 @@ Not every coding task goes to V2. Chat handles simple edits. V2 handles complex 
 
 ---
 
-## All Available Playbooks (15)
+## All Available Playbooks (17)
 
 | # | Playbook | Priority | Intent Triggers | Connectors Used | V2 Handoff? |
 |---|----------|----------|-----------------|-----------------|-------------|
@@ -140,6 +140,9 @@ Not every coding task goes to V2. Chat handles simple edits. V2 handles complex 
 | 13 | **sales** | P2 | "deal", "pipeline", "lead", "close", "CRM", "lead qualification", "prospect", "enrollment funnel", "opportunity" | ghl, base44, slack | Rarely |
 | 14 | **video-generation** | P2 | "video", "notebooklm", "generate video", "podcast", "edit video", "script to video", "AI video" | neptune | Rarely |
 | 15 | **other** | P2 | "fun", "random", "utility", "misc", "experimental", "unknown", "unclassified", catch-all | cat-facts, affy | Sometimes |
+| 16 | **loop-engineering** | P1 | "loop", "ralph", "paul", "long-running", "sprint", "coding loop", "iterate until done", "autonomous agent", "agent loop", "fix loop" | slack, base44 | Sometimes |
+| 17 | **twenty-crm** | P0 | "twenty", "crm", "workspace", "custom object", "sales pipeline", "contact", "opportunity", "client record", "twenty workflow", "twenty function", "defineObject", "logic function", "webhook", "custom field", "GraphQL", "API key", "role", "permission", "app publish", "self-host", "newleaf crm", "payment record", "subscription", "credit dispute", "enrollment" | twenty, postgres, redis, nmi, hyperswitch, slack, ghl | Rarely |
+| 18 | **hermes-vps** | P0 | "send to vps", "dispatch to vps", "send prd to vps", "run on vps", "fix on vps", "quick fix vps", "vps please", "execute on vps", "send this task", "kick off mission" | base44, slack | Never — this IS the handoff |
 
 ---
 
@@ -208,7 +211,8 @@ playbook-skills/playbooks/
 ├── hr/playbook-hr.md                                 (P2 — HR & Team)
 ├── sales/playbook-sales.md                           (P2 — Sales & Pipeline)
 ├── video-generation/playbook-video-generation.md     (P2 — Video Generation)
-└── other/playbook-other.md                           (P2 — Fallback: Orphan Catcher)
+├── other/playbook-other.md                           (P2 — Fallback: Orphan Catcher)
+└── loop-engineering/playbook-loop-engineering.md     (P1 — Loop Engineering: Ralph & Paul)
 ```
 
 ---
@@ -231,6 +235,7 @@ playbook-skills/connector-skills/
 ├── github/           (🐙 Repository Operations — P1)
 ├── vercel/           (☁️ Deployments — P1)
 ├── hostinger-vps/    (🖥️ Server Management — P1)
+├── hermes-vps/       (⚡ Quick VPS Claude SDK Dispatch — P0)
 └── resend/           (✉️ Email Delivery — P2)
 ```
 
@@ -265,6 +270,7 @@ playbook-skills/connector-skills/
 | lead-flow | ghl, base44, resend |
 | compliance-audit | base44, forth-dpp |
 | mcp-edits | github |
+| hermes-vps | base44, slack |
 
 ### How to Add a New Connector
 1. Create folder: `connector-skills/<name>/`
