@@ -1,3 +1,15 @@
+# === DISABLED 2026-06-21 23:08 UTC ===
+# Playwright Tests are failing reliably in CI (30+ min timeout)
+# due to missing browser deps / Vercel preview URL / service dependencies.
+# Each failure generates an email notification — 73 runs in 24h.
+#
+# DISABLED via if:false at job level to stop email avalanche.
+# Re-enable when fixed per M-WORKFLOW-FIX-DEFERRED mission.
+# Tracker: jarvis/cortex/missions/M-WORKFLOW-FIX-DEFERRED.md
+#
+# Original trigger: push (main/master), pull_request (main/master)
+# =========================================
+
 name: Playwright Tests
 on:
   push:
@@ -7,6 +19,7 @@ on:
 
 jobs:
   test:
+    if: false  # DISABLED 2026-06-21 23:08 UTC — failing reliably/timeout, causing email spam. Re-enable when fixed per M-WORKFLOW-FIX-DEFERRED mission.
     timeout-minutes: 30
     runs-on: ubuntu-latest
     env:
