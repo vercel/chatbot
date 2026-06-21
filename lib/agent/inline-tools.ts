@@ -21,6 +21,7 @@ import { selfCode } from "@/lib/ai/tools/self-code";
 import { loadSkill } from "@/lib/ai/tools/load-skill";
 import { queryKnowledge } from "@/lib/ai/tools/query-knowledge";
 import { graphQueryTool } from "@/lib/ai/tools/graph-query";
+import { viewGithubFile } from "@/lib/ai/tools/view-github-file";
 
 // ── Phase 38.5 Wiring Fix: Bulk Discovery Tools ───────────────────────────
 import { pullSlackChannelHistory as pullSlackChannelHistoryV2 } from "@/lib/agents/tools/pullSlackChannelHistory";
@@ -1500,6 +1501,7 @@ export const listPlaybooks = tool({
 export const inlineTools = {
   // ── Gatekeeper Tools (U2.1 Progressive Disclosure) ──
   viewFile,
+  viewGithubFile,
   executeSkill,
   listPlaybooks,
   loadSkill,
@@ -1540,6 +1542,7 @@ export const inlineTools = {
 export const TOOL_REQUIREMENTS: Record<string, string[]> = {
   // ── Gatekeeper Tools (U2.1 — Progressive Disclosure) ──
   viewFile: ["VPS_FS_BRIDGE_URL"],
+  viewGithubFile: ["GITHUB_TOKEN"],
   executeSkill: ["VPS_FS_BRIDGE_URL"],
   listPlaybooks: [],
   loadSkill: ["VPS_FS_BRIDGE_URL"],
@@ -1586,6 +1589,7 @@ export function getAvailableToolNames(): string[] {
     const allMet = reqs.every((env) => {
       switch (env) {
         case "VPS_FS_BRIDGE_URL": return !!secrets.vps.fsBridgeUrl;
+        case "GITHUB_TOKEN": return !!secrets.github.token;
         case "SLACK_BOT_TOKEN": return !!secrets.slack.botToken;
         case "POSTGRES_URL": return !!secrets.internal.postgresUrl;
         case "OPEN_AGENTS_API_KEY": return !!secrets.neptuneV2.openAgentsApiKey;
@@ -1611,6 +1615,7 @@ export function getAvailableTools(): Record<string, any> {
     const allMet = reqs.every((env) => {
       switch (env) {
         case "VPS_FS_BRIDGE_URL": return !!secrets.vps.fsBridgeUrl;
+        case "GITHUB_TOKEN": return !!secrets.github.token;
         case "SLACK_BOT_TOKEN": return !!secrets.slack.botToken;
         case "POSTGRES_URL": return !!secrets.internal.postgresUrl;
         case "OPEN_AGENTS_API_KEY": return !!secrets.neptuneV2.openAgentsApiKey;
@@ -1634,6 +1639,7 @@ export function getAvailableTools(): Record<string, any> {
  */
 export const GATEKEEPER_TOOL_NAMES = [
   "viewFile",
+  "viewGithubFile",
   "executeSkill",
   "listPlaybooks",
   "loadSkill",

@@ -50,6 +50,9 @@ export const TOOL_CARD_MAP: Record<string, string> = {
   "dispatchToVps": "AgentSessionCard",
   "v2-handoff": "AgentSessionCard",
   "createAgentSession": "AgentSessionCard",
+  // M-NEPTUNE-GAPS: view_file / viewGithubFile → ReadFileCard
+  "viewGithubFile": "ReadFileCard",
+  "viewFile": "ReadFileCard",
 };
 
 /** Known connector tools that return connector card data */
