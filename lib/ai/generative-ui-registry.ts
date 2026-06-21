@@ -263,6 +263,26 @@ export const BUILT_IN_TOOLS = [
       ("auditId" in output || "requiresConfirmation" in output || "status" in output),
     description: "MissionCard (CRM Action) — generative CRM action with audit trail + confirmation gates",
   },
+  // ── M-NEPTUNE-GAPS: view_file tool → ReadFileCard ──────────────────────
+  {
+    toolName: "viewGithubFile",
+    detect: (output: unknown) =>
+      typeof output === "object" &&
+      output !== null &&
+      ("content" in output || "error" in output) &&
+      ("repo" in output || "html_url" in output || "path" in output),
+    description: "ReadFileCard — GitHub file content with syntax highlighting, copy, and GitHub link",
+  },
+  {
+    toolName: "viewFile",
+    detect: (output: unknown) =>
+      typeof output === "object" &&
+      output !== null &&
+      ("content" in output || "error" in output) &&
+      ("path" in output) &&
+      !("repo" in output),
+    description: "ReadFileCard (local/VPS) — local file content with syntax highlighting",
+  },
 ];
 
 export function getBuiltInTools() {
