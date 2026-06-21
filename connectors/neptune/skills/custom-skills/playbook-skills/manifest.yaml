@@ -59,6 +59,7 @@ playbooks_included:
   - sales            (P2) — Pipeline, lead qualification, enrollment
   - video-generation (P2) — AI video generation and editing
   - other            (P2) — ⭐ FALLBACK: Miscellaneous / Orphan catcher
+  - loop-engineering (P1) — Ralph loop, Paul loop, Slack reporting, loop selection
   - newleaf          (ORG) — Organization-wide rules
   - index            (META) — Domain catalog, capability discovery
 

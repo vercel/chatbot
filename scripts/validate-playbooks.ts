@@ -118,6 +118,12 @@ function parseYaml(content: string): ManifestData | null {
           if (currentList.length > 0 && currentKey) {
             currentParent[currentKey] = currentList;
             currentList = [];
+            // Restore parent context from stack (back to the object containing this key)
+            if (stack.length > 0) {
+              const restored = stack.pop()!;
+              currentParent = restored.parent;
+              currentKey = restored.key;
+            }
           }
 
           const colonIdx = trimmed.indexOf(":");
@@ -130,7 +136,7 @@ function parseYaml(content: string): ManifestData | null {
           if (parentObj && typeof parentObj === "object" && !Array.isArray(parentObj)) {
             if (val === "") {
               // New nested object — push current context
-              stack.push({ key: currentKey, list: currentList, parent: currentParent });
+              stack.push({ key: currentKey, list: [], parent: currentParent });
               currentParent = parentObj as Record<string, unknown>;
               currentKey = key;
               (currentParent as Record<string, unknown>)[key] = {};
@@ -327,12 +333,19 @@ function getAvailableSkills(): Set<string> {
 function checkOrphanedReferences(infos: PlaybookInfo[], availableConnectors: Set<string>, availableSkills: Set<string>): ValidationError[] {
   const errors: ValidationError[] = [];
 
+  const toArray = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v as string[];
+    if (typeof v === "string") return [v];
+    if (v && typeof v === "object") return Object.keys(v as Record<string, unknown>);
+    return [];
+  };
+
   for (const info of infos) {
     if (!info.manifest || !info.manifest.requires) continue;
 
     // Check connectors
     if (info.manifest.requires.connectors) {
-      for (const connector of info.manifest.requires.connectors) {
+      for (const connector of toArray(info.manifest.requires.connectors)) {
         if (!availableConnectors.has(connector)) {
           errors.push({
             folder: info.folder,
@@ -345,7 +358,7 @@ function checkOrphanedReferences(infos: PlaybookInfo[], availableConnectors: Set
 
     // Check skills
     if (info.manifest.requires.skills) {
-      for (const skill of info.manifest.requires.skills) {
+      for (const skill of toArray(info.manifest.requires.skills)) {
         if (!availableSkills.has(skill)) {
           errors.push({
             folder: info.folder,
@@ -456,8 +469,14 @@ function main(): void {
 
       if (m.requires) {
         const r = m.requires;
+        const safeJoin = (v: unknown): string => {
+          if (Array.isArray(v)) return v.join(", ");
+          if (typeof v === "string") return v;
+          if (v && typeof v === "object") return Object.keys(v as Record<string, unknown>).join(", ");
+          return String(v ?? "");
+        };
         console.log(
-          `     Requires: connectors=[${(r.connectors || []).join(", ")}] skills=[${(r.skills || []).join(", ")}] functions=[${(r.functions || []).join(", ")}] workflows=[${(r.workflows || []).join(", ")}]`
+          `     Requires: connectors=[${safeJoin(r.connectors)}] skills=[${safeJoin(r.skills)}] functions=[${safeJoin(r.functions)}] workflows=[${safeJoin(r.workflows)}]`
         );
       }
     }

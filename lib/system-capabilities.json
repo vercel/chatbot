@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-06-20T10:09:38.562Z",
+  "generatedAt": "2026-06-21T22:58:46.218Z",
   "version": "1.0",
   "repo": "abhiswami2121/neptune-chat",
-  "commitSha": "a678af2",
+  "commitSha": "0fe14bd",
   "counts": {
     "connectors": 18,
-    "playbooks": 14,
+    "playbooks": 16,
     "skills": 6,
     "functions": 12,
     "workflows": 5,
     "tools": 29,
-    "apiRoutes": 160,
+    "apiRoutes": 168,
     "models": 35,
     "uiComponents": 26
   },
@@ -67,6 +67,7 @@
         "customer-support",
         "disputes",
         "engineering",
+        "loop-engineering",
         "newleaf",
         "marketing",
         "planning",
@@ -257,6 +258,7 @@
         "customer-support",
         "disputes",
         "hr",
+        "loop-engineering",
         "newleaf",
         "marketing",
         "planning",
@@ -511,8 +513,8 @@
       "name": "index",
       "slug": "index",
       "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/manifest-index.yaml",
-      "version": "1.0.0",
-      "description": "Full domain catalog and capability discovery — the master index of all playbooks",
+      "version": "1.1.0",
+      "description": "Full domain catalog and capability discovery — the master index of all 17 playbooks",
       "hasManifest": true,
       "hasPlaybookMd": true,
       "requires": {
@@ -531,6 +533,39 @@
         ]
       },
       "isMeta": true
+    },
+    {
+      "name": "loop-engineering",
+      "slug": "loop-engineering",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/loop-engineering/",
+      "domain": "loop-engineering",
+      "version": "1.0.0",
+      "description": "\"Loop engineering SOP — selection matrix for Ralph (long-horizon coding loops) vs Paul (sprint-style GSD), Slack reporting contracts, state persistence, done detection, dedupe protection. When to run autonomous agent loops, how to make them resilient, and how to NOT duplicate them.\"",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": [
+          "slack",
+          "base44"
+        ],
+        "skills": [
+          "loop-engineering/ralph-loop",
+          "loop-engineering/paul-loop",
+          "loop-engineering/slack-reporting",
+          "loop-engineering/loop-selection-matrix"
+        ],
+        "functions": [
+          "ralph_dispatch",
+          "paul_gather",
+          "dedupe_check",
+          "slack_heartbeat"
+        ],
+        "workflows": [
+          "ralph-loop-workflow",
+          "paul-loop-workflow"
+        ]
+      },
+      "isMeta": false
     },
     {
       "name": "marketing",
@@ -566,15 +601,16 @@
       "name": "newleaf",
       "slug": "newleaf",
       "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/manifest-newleaf.yaml",
-      "version": "1.0.0",
-      "description": "Organization-wide rules, cardinal constraints, and compliance standards",
+      "version": "2.0.0",
+      "description": "Organization-wide rules, cardinal constraints, compliance standards, and production playbook registry",
       "hasManifest": true,
       "hasPlaybookMd": true,
       "requires": {
         "connectors": [
           "slack",
           "base44",
-          "github"
+          "github",
+          "twenty"
         ],
         "skills": [
           "playbook-skills"
@@ -721,6 +757,23 @@
         "workflows": [
           "sales-pipeline-monitor"
         ]
+      },
+      "isMeta": false
+    },
+    {
+      "name": "twenty-crm",
+      "slug": "twenty-crm",
+      "path": "connectors/neptune/skills/custom-skills/playbook-skills/playbooks/twenty-crm/",
+      "domain": "twenty-crm",
+      "version": "\"1.0.0\"",
+      "description": "Twenty CRM — NewLeaf's custom CRM for credit repair operations. Connector + 10 custom skills for objects, data, workflows, functions, webhooks, and admin.",
+      "hasManifest": true,
+      "hasPlaybookMd": true,
+      "requires": {
+        "connectors": "",
+        "skills": "",
+        "functions": "",
+        "workflows": ""
       },
       "isMeta": false
     },
@@ -1197,6 +1250,21 @@
       "file": "app/api/health/route.ts"
     },
     {
+      "method": "POST",
+      "route": "/api/hermes-vps/cancel",
+      "file": "app/api/hermes-vps/cancel/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/hermes-vps/dispatch",
+      "file": "app/api/hermes-vps/dispatch/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/hermes-vps/poll",
+      "file": "app/api/hermes-vps/poll/route.ts"
+    },
+    {
       "method": "GET",
       "route": "/api/integrations",
       "file": "app/api/integrations/route.ts"
@@ -1488,6 +1556,11 @@
     },
     {
       "method": "POST",
+      "route": "/api/self-code/apply",
+      "file": "app/api/self-code/apply/route.ts"
+    },
+    {
+      "method": "POST",
       "route": "/api/self-healing/ingest",
       "file": "app/api/self-healing/ingest/route.ts"
     },
@@ -1520,6 +1593,16 @@
       "method": "GET",
       "route": "/api/skills/:name",
       "file": "app/api/skills/[name]/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/spawn-coding-agent",
+      "file": "app/api/spawn-coding-agent/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/submission",
+      "file": "app/api/submission/route.ts"
     },
     {
       "method": "GET",
@@ -1717,6 +1800,11 @@
       "file": "app/api/webhooks/deploy/route.ts"
     },
     {
+      "method": "POST",
+      "route": "/api/webhooks/slack-submission",
+      "file": "app/api/webhooks/slack-submission/route.ts"
+    },
+    {
       "method": "GET",
       "route": "/api/wiki",
       "file": "app/api/wiki/route.ts"
@@ -1800,6 +1888,11 @@
       "method": "POST",
       "route": "/api/workflows/:id/run",
       "file": "app/api/workflows/[id]/run/route.ts"
+    },
+    {
+      "method": "POST",
+      "route": "/api/workflows/billing-alignment",
+      "file": "app/api/workflows/billing-alignment/route.ts"
     },
     {
       "method": "POST",
@@ -2581,6 +2674,90 @@
       "edgeType": "runs"
     },
     {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "slack",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "base44",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "loop-engineering/ralph-loop",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "loop-engineering/paul-loop",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "loop-engineering/slack-reporting",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "loop-engineering/loop-selection-matrix",
+      "toType": "skill",
+      "edgeType": "uses"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "ralph_dispatch",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "paul_gather",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "dedupe_check",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "slack_heartbeat",
+      "toType": "function",
+      "edgeType": "invokes"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "ralph-loop-workflow",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
+      "from": "loop-engineering",
+      "fromType": "playbook",
+      "to": "paul-loop-workflow",
+      "toType": "workflow",
+      "edgeType": "runs"
+    },
+    {
       "from": "index",
       "fromType": "playbook",
       "to": "",
@@ -2633,6 +2810,13 @@
       "from": "newleaf",
       "fromType": "playbook",
       "to": "github",
+      "toType": "connector",
+      "edgeType": "requires"
+    },
+    {
+      "from": "newleaf",
+      "fromType": "playbook",
+      "to": "twenty",
       "toType": "connector",
       "edgeType": "requires"
     },
@@ -3256,6 +3440,27 @@
       "from": "slack",
       "fromType": "connector",
       "to": "github",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "slack",
+      "fromType": "connector",
+      "to": "twenty",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "base44",
+      "fromType": "connector",
+      "to": "twenty",
+      "toType": "connector",
+      "edgeType": "pairs_with"
+    },
+    {
+      "from": "github",
+      "fromType": "connector",
+      "to": "twenty",
       "toType": "connector",
       "edgeType": "pairs_with"
     },

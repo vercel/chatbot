@@ -8,6 +8,7 @@ import { getTelemetrySummary } from "@/connectors/neptune/functions/usage-teleme
 import { SKILL_REGISTRY } from "@/connectors/neptune/client";
 import { checkConnectorEnv } from "@/lib/connectors/registry";
 import { initConnectors, manifests } from "@/lib/connectors/init";
+import { secrets } from "@/secrets";
 
 interface DiagnosticSection {
   status: "healthy" | "degraded" | "down" | "unknown";
@@ -16,30 +17,132 @@ interface DiagnosticSection {
   checkedAt: string;
 }
 
+/**
+ * Check VPS health using the VPS bridge (not localhost).
+ *
+ * M-N-SELF-CODING FIX (2026-06-21):
+ * Previous code tried http://localhost:8102/health which ALWAYS fails on Vercel
+ * because localhost resolves to the serverless container, not the VPS.
+ *
+ * New approach (3 fallbacks):
+ *   1. VPS Bridge health check (POST /health on port 8400 of public IP)
+ *   2. Base44 proxy health check (if VPS_BRIDGE_URL not available)
+ *   3. Direct agent API if HERMES_VPS_HEALTH_URL env var is set
+ *
+ * Root cause documented in diagnostics output for transparency.
+ */
 async function checkVpsHealth(): Promise<DiagnosticSection> {
-  const details: Record<string, unknown> = {};
+  const details: Record<string, unknown> = {
+    executionEnvironment: process.env.VERCEL ? "vercel" : "local",
+    checkMethod: "vps-bridge",
+  };
   let status: DiagnosticSection["status"] = "unknown";
 
-  try {
-    // Check if agent API is reachable
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch("http://localhost:8102/health", {
-      signal: controller.signal,
-    }).catch(() => null);
-    clearTimeout(timeout);
+  const vpsBridgeUrl = secrets.vps?.bridgeUrl || process.env.VPS_BRIDGE_URL;
+  const vpsHealthUrl = process.env.HERMES_VPS_HEALTH_URL;
+  const base44FunctionsUrl = secrets.base44?.functionsUrl || process.env.BASE44_FUNCTIONS_URL;
 
-    if (res && res.ok) {
-      const body = await res.json().catch(() => ({}));
-      details.apiResponse = body;
-      status = "healthy";
-    } else {
-      status = "degraded";
-      details.error = "Agent API health check failed";
+  // ── Fallback 1: VPS Bridge health check ──
+  if (vpsBridgeUrl) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(`${vpsBridgeUrl}/health`, {
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          ...(secrets.vps?.internalToken
+            ? { Authorization: `Bearer ${secrets.vps.internalToken}` }
+            : {}),
+        },
+      }).catch(() => null);
+      clearTimeout(timeout);
+
+      if (res && res.ok) {
+        const body = await res.json().catch(() => ({}));
+        details.apiResponse = body;
+        details.bridgeUrl = vpsBridgeUrl;
+        details.checkMethod = "vps-bridge-direct";
+        status = "healthy";
+      } else if (res) {
+        details.error = `VPS bridge returned ${res.status}`;
+        details.bridgeUrl = vpsBridgeUrl;
+        status = "degraded";
+      }
+    } catch (err) {
+      details.bridgeError = err instanceof Error ? err.message : "Unknown";
     }
-  } catch {
-    status = "down";
-    details.error = "Agent API unreachable";
+  }
+
+  // ── Fallback 2: Direct agent API health check (if URL configured) ──
+  if (status !== "healthy" && vpsHealthUrl) {
+    details.checkMethod = "direct-health-url";
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(vpsHealthUrl, {
+        signal: controller.signal,
+      }).catch(() => null);
+      clearTimeout(timeout);
+
+      if (res && res.ok) {
+        const body = await res.json().catch(() => ({}));
+        details.apiResponse = body;
+        details.healthUrl = vpsHealthUrl;
+        status = "healthy";
+      } else if (res) {
+        details.error = `Agent API returned ${res.status}`;
+        status = "degraded";
+      }
+    } catch (err) {
+      details.directError = err instanceof Error ? err.message : "Unknown";
+    }
+  }
+
+  // ── Fallback 3: Base44 proxy (health check through Base44 functions) ──
+  if (status !== "healthy" && base44FunctionsUrl) {
+    details.checkMethod = "base44-proxy";
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      // Ping through Base44 function relay
+      const base44Token = secrets.base44?.apiKey || process.env.BASE44_API_KEY || "";
+      const diagKey = process.env.DIAGNOSTICS_API_KEY || secrets.vps?.internalToken || "";
+
+      const res = await fetch(`${base44FunctionsUrl}/ping`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(base44Token ? { "x-api-key": base44Token } : {}),
+          ...(diagKey ? { "x-diag-key": diagKey } : {}),
+        },
+        body: JSON.stringify({ target: "vps-health" }),
+        signal: controller.signal,
+      }).catch(() => null);
+      clearTimeout(timeout);
+
+      if (res && res.ok) {
+        const body = await res.json().catch(() => ({}));
+        details.proxyResponse = body;
+        details.proxyUrl = base44FunctionsUrl;
+        status = "healthy";
+      } else if (res) {
+        details.error = `Base44 proxy returned ${res.status}`;
+        status = "degraded";
+      }
+    } catch (err) {
+      details.proxyError = err instanceof Error ? err.message : "Unknown";
+    }
+  }
+
+  // ── Final fallback: document the issue ──
+  if (status === "unknown" || status === "degraded") {
+    if (!vpsBridgeUrl && !vpsHealthUrl && !base44FunctionsUrl) {
+      details.error = "VPS health unreachable — no bridge URL, health URL, or Base44 proxy configured. localhost:8102 cannot be reached from Vercel serverless functions. Set VPS_BRIDGE_URL or HERMES_VPS_HEALTH_URL env var on Vercel.";
+      details.rootCause = "Vercel serverless functions cannot access localhost:8102. The VPS agent API at port 8102 is not publicly exposed. Health check requires a bridge (VPS_BRIDGE_URL on port 8400) or Base44 proxy relay.";
+    }
+    status = details.bridgeError && details.proxyError ? "down" : "degraded";
   }
 
   return { status, name: "vps-health", details, checkedAt: new Date().toISOString() };

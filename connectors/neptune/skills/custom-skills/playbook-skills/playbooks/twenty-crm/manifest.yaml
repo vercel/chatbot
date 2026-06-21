@@ -1,0 +1,40 @@
+playbook: twenty-crm
+organization: newleaf-financial
+version: "1.0.0"
+description: "Twenty CRM — NewLeaf's custom CRM for credit repair operations. Connector + 10 custom skills for objects, data, workflows, functions, webhooks, and admin."
+requires:
+  connectors:
+    - twenty-api (GraphQL + REST at crm.newleaf.financial)
+    - postgres (twenty-newleaf-db :5434)
+    - redis (twenty-newleaf-redis :6382)
+  skills:
+    - twenty-connector
+    - create-custom-object
+    - query-twenty-data
+    - mutate-twenty-data
+    - manage-workflows
+    - manage-functions
+    - register-webhook
+    - manage-users-and-roles
+    - bulk-import-export
+    - troubleshoot-twenty
+  functions:
+    - query_code_graph (search repo)
+    - query_cortex_graph (search KG)
+    - b44_query (cross-reference Base44 data)
+  workflows:
+    - twenty-auth-health-check
+    - twenty-custom-object-deploy
+    - twenty-data-migration
+dependencies:
+  nmi: "NMI vault is SOURCE OF TRUTH for cards (mem 6a1f118b)"
+  hyperswitch: "HS routes payments, NMI vaults cards, Twenty owns lifecycle (mem 6a346df5)"
+  slack: "Notifications only to #jarvis-admin (mem 6a28a284)"
+  base44: "Bidirectional sync bridge during migration"
+  ghl: "Contact/deal sync via webhooks"
+cardinals:
+  - "NEVER modify running Twenty Docker containers"
+  - "NEVER use raw SQL on Twenty DB"
+  - "NEVER store card numbers or full SSN in Twenty"
+  - "ALWAYS backup DB before schema changes"
+  - "Slack #jarvis-admin ONLY"

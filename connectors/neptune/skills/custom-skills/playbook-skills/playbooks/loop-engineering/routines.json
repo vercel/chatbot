@@ -1,0 +1,86 @@
+{
+  "routines": [
+    {
+      "name": "spawn-ralph-loop",
+      "description": "Spawn a Ralph long-horizon coding loop for a goal directory",
+      "trigger_words": ["ralph", "coding loop", "iterate until done", "long-running", "fix loop", "autonomous coding"],
+      "pre_flight": [
+        "pgrep -f 'runner.sh.*<goal_id>' → must be empty",
+        "pgrep -cf 'runner.sh' → must be < 6",
+        "goal/<id>/PROMPT.md must exist",
+        "goal/<id>/fix_plan.md must exist",
+        "Post Slack: 🚀 Ralph loop started: <goal_id>"
+      ],
+      "execute": "/home/hermes/ralph/runner.sh <goal_id> <max_iters>",
+      "post_flight": [
+        "Check exit code (0=done, 2=max_iters)",
+        "Verify done.flag if exit 0",
+        "Post Slack thread: ✅ or ⛔",
+        "Write lessons file"
+      ],
+      "timeout_sec": 3600,
+      "max_concurrent": 6
+    },
+    {
+      "name": "spawn-paul-loop",
+      "description": "Spawn a Paul sprint-style GSD orchestrator",
+      "trigger_words": ["paul", "sprint", "gsd", "ticket loop", "build and deploy", "sandbox deploy"],
+      "pre_flight": [
+        "Query Base44 for queued JarvisTask entities",
+        "Verify KIMI_API_KEY is set",
+        "Post Slack: 🚀 Paul loop started"
+      ],
+      "execute": "python3 /home/hermes/brain/claude-sdk/paul_v3.py",
+      "post_flight": [
+        "Check Slack thread for state transitions",
+        "Verify ticket moved to awaiting_review or done in Base44"
+      ],
+      "timeout_sec": 7200,
+      "max_concurrent": 1
+    },
+    {
+      "name": "cancel-loop",
+      "description": "Cancel a running loop",
+      "trigger_words": ["cancel loop", "stop loop", "kill loop", "abort loop"],
+      "pre_flight": [
+        "Identify goal_id",
+        "Confirm loop type (Ralph/Paul)"
+      ],
+      "execute": "kill <pid> from state.json; write status=failed to state.json",
+      "post_flight": [
+        "Post Slack: 💀 Loop <goal_id> cancelled"
+      ]
+    },
+    {
+      "name": "loop-status",
+      "description": "Report status of all running loops",
+      "trigger_words": ["loop status", "running loops", "what loops are running", "agent status"],
+      "pre_flight": [
+        "pgrep -af 'runner.sh'",
+        "pgrep -af 'paul_v3.py'"
+      ],
+      "execute": "Read state.json for each running goal; format Slack message",
+      "post_flight": [
+        "Post to #jarvis-admin: running loops summary"
+      ]
+    }
+  ],
+  "trigger_word_map": {
+    "ralph": "spawn-ralph-loop",
+    "paul": "spawn-paul-loop",
+    "coding loop": "spawn-ralph-loop",
+    "sprint": "spawn-paul-loop",
+    "long-running": "spawn-ralph-loop",
+    "iterate until done": "spawn-ralph-loop",
+    "fix loop": "spawn-ralph-loop",
+    "autonomous coding": "spawn-ralph-loop",
+    "gsd": "spawn-paul-loop",
+    "ticket loop": "spawn-paul-loop",
+    "build and deploy": "spawn-paul-loop",
+    "cancel loop": "cancel-loop",
+    "stop loop": "cancel-loop",
+    "kill loop": "cancel-loop",
+    "loop status": "loop-status",
+    "running loops": "loop-status"
+  }
+}

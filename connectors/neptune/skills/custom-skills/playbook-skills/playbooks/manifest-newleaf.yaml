@@ -1,9 +1,33 @@
 playbook: newleaf
 organization: newleaf-financial
-version: "1.0.0"
-description: Organization-wide rules, cardinal constraints, and compliance standards
+version: "2.0.0"
+description: Organization-wide rules, cardinal constraints, compliance standards, and production playbook registry
 requires:
-  connectors: [slack, base44, github]
+  connectors: [slack, base44, github, twenty]
   skills: [playbook-skills]
   functions: [rule-enforce, compliance-check]
   workflows: [compliance-audit]
+active_playbooks:
+  - billing
+  - customer-support
+  - disputes
+  - deploy
+  - engineering
+  - agent-orchestration
+  - reporting
+  - vps-ops
+  - vercel-discipline
+  - marketing
+  - hr
+  - sales
+  - loop-engineering
+  - twenty-crm       # ACTIVE — 2026-06-20 via twenty-crm-full-ingestion mission
+cardinals:
+  - slack_jarvis_admin_only
+  - nmi_vault_source_of_truth
+  - hyperswitch_routes_nmi_vaults
+  - twenty_owns_lifecycle
+  - never_newleaf_admin
+  - api_keys_scoped_to_roles
+  - verify_all_webhook_signatures
+updated: "2026-06-20"

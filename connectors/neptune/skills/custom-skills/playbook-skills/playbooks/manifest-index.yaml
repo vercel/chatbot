@@ -1,9 +1,28 @@
 playbook: index
 organization: shared
-version: "1.0.0"
-description: Full domain catalog and capability discovery — the master index of all playbooks
+version: "1.1.0"
+description: Full domain catalog and capability discovery — the master index of all 17 playbooks
 requires:
   connectors: []
   skills: [playbook-skills]
   functions: [list-playbooks, domain-discovery]
   workflows: []
+domains:
+  - billing
+  - customer-support
+  - disputes
+  - planning
+  - deploy
+  - engineering
+  - agent-orchestration
+  - reporting
+  - vps-ops
+  - vercel-discipline
+  - marketing
+  - hr
+  - sales
+  - video-generation
+  - other
+  - loop-engineering
+  - twenty-crm
+updated: "2026-06-20"

@@ -87,7 +87,7 @@ export class BrowserAgent {
 
     // Playwright backend
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { chromium } = require('../../node_modules/.pnpm/playwright@1.51.0/node_modules/playwright');
+    const { chromium } = require('@playwright/test');
 
     this.browser = await chromium.launch({
       headless: this.config.headless,

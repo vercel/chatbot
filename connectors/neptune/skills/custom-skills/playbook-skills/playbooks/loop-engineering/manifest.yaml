@@ -1,0 +1,9 @@
+playbook: loop-engineering
+organization: newleaf-financial
+version: "1.0.0"
+description: Loop engineering playbook — Ralph (long-horizon coding loops), Paul (sprint-style GSD), Slack reporting contract, state persistence, done detection, and dedupe protection
+requires:
+  connectors: [slack, base44]
+  skills: [loop-engineering/ralph-loop, loop-engineering/paul-loop, loop-engineering/slack-reporting, loop-engineering/loop-selection-matrix]
+  functions: [ralph_dispatch, paul_gather, dedupe_check, slack_heartbeat]
+  workflows: [ralph-loop-workflow, paul-loop-workflow]

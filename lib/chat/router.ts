@@ -1,13 +1,22 @@
 /**
  * lib/chat/router.ts — Phase 38.5 Wiring Fix (2026-06-17)
+ * Extended: M-N-SELF-CODING 3-Lane Routing (2026-06-21)
  *
  * Chat routing entry point. Bridges the intent classifier with the Phase 38
- * Discovery Engine. Called BEFORE LLM dispatch in app/(chat)/api/chat/route.ts.
+ * Discovery Engine AND the 3-lane coding dispatch (V2/VPS/SELF).
+ * Called BEFORE LLM dispatch in app/(chat)/api/chat/route.ts.
  *
  * Flow:
  *   classifyMessage(text) → isBulkIntent?
  *     → YES: dispatchToDiscovery(workflowId, config) → SSE response
+ *     → NO:  checkCodingIntent?
+ *       → YES: routeCodingTask(text) → V2/VPS/SELF lane
  *     → NO:  return null → route.ts continues to normal LLM flow
+ *
+ * 3-Lane Coding Routing (M-N-SELF-CODING):
+ *   1. Long/complex tasks → V2 (neptune-v2 sandboxed coding agent)
+ *   2. Quick fixes → VPS (Base44 hybridDispatch, ephemeral)
+ *   3. Fallback → SELF (direct GitHub + Vercel, no handoff)
  */
 
 import {
@@ -16,6 +25,10 @@ import {
 } from "@/lib/chat/intent-classifier";
 
 export type { ClassificationResult };
+
+// ── Self-coding lane types (M-N-SELF-CODING) ───────────────────────────
+
+import type { CodingLane, LaneHealth, RoutingDecision } from "@/lib/self-coding/workflow";
 
 // ── Router Result Types ─────────────────────────────────────────────────
 
@@ -160,3 +173,191 @@ export async function dispatchToDiscovery(
 }
 
 export default classifyMessage;
+
+// ── M-N-SELF-CODING: 3-Lane Coding Router (2026-06-21) ──────────────────
+
+export type { CodingLane, LaneHealth, RoutingDecision };
+
+/**
+ * Coding intent keywords that indicate a user message should be routed
+ * through the 3-lane coding system rather than normal LLM flow.
+ */
+const CODING_INTENT_KEYWORDS = [
+  "create file",
+  "create a file",
+  "add a file",
+  "write code",
+  "implement",
+  "refactor",
+  "fix the",
+  "fix this",
+  "debug",
+  "build a",
+  "scaffold",
+  "add endpoint",
+  "create component",
+  "modify",
+  "update the code",
+  "change the code",
+  "push code",
+  "deploy",
+  "open PR",
+  "open a PR",
+  "merge",
+  "commit",
+] as const;
+
+/**
+ * Check if a user message contains coding intent keywords.
+ * Used by the chat route to decide whether to route through coding lanes.
+ */
+export function isCodingIntent(message: string): boolean {
+  if (!message || message.length < 10) return false;
+  const lower = message.toLowerCase();
+
+  for (const kw of CODING_INTENT_KEYWORDS) {
+    if (lower.includes(kw)) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Coding task routing result — what the chat route should do.
+ */
+export interface CodingRoute {
+  codingRouted: true;
+  lane: CodingLane;
+  reason: string;
+  recommendation: "handoff_to_v2" | "dispatch_to_vps" | "apply_directly";
+  sseEventType: string;
+  handoffUrl?: string;
+  dispatchId?: string;
+  fallbackChain: string[];
+}
+
+export interface CodingNoRoute {
+  codingRouted: false;
+}
+
+export type CodingRouteResult = CodingRoute | CodingNoRoute;
+
+/**
+ * Route a coding task through the 3-lane system.
+ *
+ * Priority:
+ *   1. Long task / refactor / multi-file  → V2 (recommend handoff)
+ *   2. Quick fix (short, single action)   → VPS (recommend dispatch)
+ *   3. Fallback / explicit self-code      → SELF (recommend apply_directly)
+ *
+ * This is a synchronous classification — actual health checking and
+ * handoff execution happen asynchronously so the chat route can respond quickly.
+ */
+export function routeCodingTask(message: string): CodingRouteResult {
+  const lower = message.toLowerCase();
+  const len = message.length;
+
+  // ── Self-code explicit keywords ──
+  const selfKeywords = [
+    "do it yourself",
+    "code it yourself",
+    "apply directly",
+    "don't hand off",
+    "don't handoff",
+    "self code",
+    "self-code",
+  ];
+  const isExplicitSelf = selfKeywords.some((kw) => lower.includes(kw));
+
+  if (isExplicitSelf) {
+    return {
+      codingRouted: true,
+      lane: "self",
+      reason: "User explicitly requested self-coding",
+      recommendation: "apply_directly",
+      sseEventType: "self-code:plan-generated",
+      fallbackChain: ["self"],
+    };
+  }
+
+  // ── Long/complex task → V2 ──
+  const longKeywords = [
+    "refactor",
+    "multi-file",
+    "multi file",
+    "scaffold",
+    "bootstrap",
+    "migration",
+    "rewrite",
+    "architecture",
+    "restructure",
+    "new feature",
+    "build a new",
+    "implement a new",
+  ];
+  const isLongTask = len > 500 || longKeywords.some((kw) => lower.includes(kw));
+
+  if (isLongTask) {
+    return {
+      codingRouted: true,
+      lane: "v2",
+      reason: "Long/complex task — routing to V2 sandboxed agent",
+      recommendation: "handoff_to_v2",
+      sseEventType: "lane:assigned",
+      fallbackChain: ["v2", "vps", "self"],
+    };
+  }
+
+  // ── Quick fix → VPS ──
+  const quickKeywords = [
+    "fix",
+    "check",
+    "run",
+    "query",
+    "look up",
+    "find",
+    "analyze",
+    "debug",
+    "inspect",
+    "show",
+    "get",
+  ];
+  const isQuick = len < 300 || quickKeywords.some((kw) => lower.includes(kw));
+
+  if (isQuick) {
+    return {
+      codingRouted: true,
+      lane: "vps",
+      reason: "Quick fix — routing to VPS ephemeral dispatch",
+      recommendation: "dispatch_to_vps",
+      sseEventType: "lane:assigned",
+      fallbackChain: ["vps", "self"],
+    };
+  }
+
+  // ── Default: moderate → VPS with self-code fallback ──
+  return {
+    codingRouted: true,
+    lane: "vps",
+    reason: "Moderate task — VPS dispatch with self-code fallback",
+    recommendation: "dispatch_to_vps",
+    sseEventType: "lane:assigned",
+    fallbackChain: ["vps", "self"],
+  };
+}
+
+/**
+ * Classify user message — first try discovery, then coding.
+ * Returns the first matching route, or NoRoute if neither matches.
+ */
+export function classifyAndRoute(message: string): RouteResult | CodingRouteResult {
+  // Try discovery first
+  const discoveryRoute = classifyMessage(message);
+  if (discoveryRoute.discoveryRouted) return discoveryRoute;
+
+  // Try coding route
+  if (isCodingIntent(message)) return routeCodingTask(message);
+
+  // Neither matched — normal LLM flow
+  return { discoveryRouted: false, classification: null };
+}

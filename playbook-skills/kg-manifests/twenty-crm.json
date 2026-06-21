@@ -1,0 +1,117 @@
+{
+  "manifest": "twenty-crm-knowledge-graph",
+  "version": "1.0.0",
+  "date": "2026-06-20",
+  "conversationId": "6a262f7d2b2c475ea6554ab8",
+  "nodes": [
+    {
+      "type": "Connector",
+      "id": "twenty-crm",
+      "label": "Twenty CRM",
+      "description": "Self-hosted Twenty CRM for NewLeaf Financial — credit repair operations platform",
+      "production": true,
+      "url": "https://crm.newleaf.financial",
+      "workspaceId": "cebc5a0a-e707-409e-bed6-4373a675704e",
+      "repoPath": "/home/hermes/repos/twenty/",
+      "docsPath": "/home/hermes/cortex/research/twenty/"
+    },
+    {
+      "type": "Playbook",
+      "id": "twenty-crm-playbook",
+      "label": "Twenty CRM Playbook",
+      "domain": "twenty-crm",
+      "path": "/home/neptune/neptune-chat/connectors/neptune/skills/custom-skills/playbook-skills/playbooks/twenty-crm/",
+      "triggerWords": ["twenty", "crm", "workspace", "custom object", "sales pipeline", "contact", "opportunity", "client record", "twenty workflow", "twenty function"]
+    },
+    {
+      "type": "Skill",
+      "id": "twenty-connector",
+      "label": "Twenty Connector",
+      "path": "playbooks/twenty-crm/skills/twenty-connector/",
+      "description": "Authenticate and connect to Twenty CRM API"
+    },
+    {
+      "type": "Skill",
+      "id": "create-custom-object",
+      "label": "Create Custom Object",
+      "path": "playbooks/twenty-crm/skills/create-custom-object/",
+      "description": "Define and deploy custom objects in Twenty workspace"
+    },
+    {
+      "type": "Skill",
+      "id": "query-twenty-data",
+      "label": "Query Twenty Data",
+      "path": "playbooks/twenty-crm/skills/query-twenty-data/",
+      "description": "GraphQL and REST query patterns for Twenty data"
+    },
+    {
+      "type": "Skill",
+      "id": "mutate-twenty-data",
+      "label": "Mutate Twenty Data",
+      "path": "playbooks/twenty-crm/skills/mutate-twenty-data/",
+      "description": "Create, update, delete records via GraphQL and REST"
+    },
+    {
+      "type": "Skill",
+      "id": "manage-workflows",
+      "label": "Manage Workflows",
+      "path": "playbooks/twenty-crm/skills/manage-workflows/",
+      "description": "Create and manage Twenty workflow automations"
+    },
+    {
+      "type": "Skill",
+      "id": "manage-functions",
+      "label": "Manage Functions",
+      "path": "playbooks/twenty-crm/skills/manage-functions/",
+      "description": "Develop and deploy logic functions (serverless TypeScript)"
+    },
+    {
+      "type": "Skill",
+      "id": "register-webhook",
+      "label": "Register Webhook",
+      "path": "playbooks/twenty-crm/skills/register-webhook/",
+      "description": "Register and verify webhook endpoints"
+    },
+    {
+      "type": "Skill",
+      "id": "manage-users-and-roles",
+      "label": "Manage Users & Roles",
+      "path": "playbooks/twenty-crm/skills/manage-users-and-roles/",
+      "description": "Admin operations for users, roles, and permissions"
+    },
+    {
+      "type": "Skill",
+      "id": "bulk-import-export",
+      "label": "Bulk Import/Export",
+      "path": "playbooks/twenty-crm/skills/bulk-import-export/",
+      "description": "Data migration and bulk operations"
+    },
+    {
+      "type": "Skill",
+      "id": "troubleshoot-twenty",
+      "label": "Troubleshoot Twenty",
+      "path": "playbooks/twenty-crm/skills/troubleshoot-twenty/",
+      "description": "Common issues and debugging Twenty CRM"
+    }
+  ],
+  "edges": [
+    {"from": "twenty-crm", "to": "nmi", "type": "integrates_with", "note": "NMI vault is source of truth for cards (mem 6a1f118b)"},
+    {"from": "twenty-crm", "to": "hyperswitch", "type": "integrates_with", "note": "HS routes, NMI vaults, Twenty owns lifecycle (mem 6a346df5)"},
+    {"from": "twenty-crm", "to": "slack", "type": "pairs_with", "note": "Notifications to #jarvis-admin (mem 6a28a284)"},
+    {"from": "twenty-crm", "to": "base44", "type": "pairs_with", "note": "Bidirectional sync bridge during migration"},
+    {"from": "twenty-crm", "to": "ghl", "type": "integrates_with", "note": "Contact/deal sync via GHL webhooks"},
+    {"from": "twenty-crm", "to": "postgres", "type": "depends_on", "note": "Port 5434 on VPS"},
+    {"from": "twenty-crm", "to": "redis", "type": "depends_on", "note": "Port 6382 on VPS"},
+    {"from": "twenty-crm-playbook", "to": "twenty-crm", "type": "uses"},
+    {"from": "twenty-connector", "to": "twenty-crm", "type": "uses"},
+    {"from": "create-custom-object", "to": "twenty-crm", "type": "uses"},
+    {"from": "query-twenty-data", "to": "twenty-crm", "type": "uses"},
+    {"from": "mutate-twenty-data", "to": "twenty-crm", "type": "uses"},
+    {"from": "manage-workflows", "to": "twenty-crm", "type": "uses"},
+    {"from": "manage-functions", "to": "twenty-crm", "type": "uses"},
+    {"from": "register-webhook", "to": "twenty-crm", "type": "uses"},
+    {"from": "manage-users-and-roles", "to": "twenty-crm", "type": "uses"},
+    {"from": "bulk-import-export", "to": "twenty-crm", "type": "uses"},
+    {"from": "troubleshoot-twenty", "to": "twenty-crm", "type": "uses"}
+  ]
+}

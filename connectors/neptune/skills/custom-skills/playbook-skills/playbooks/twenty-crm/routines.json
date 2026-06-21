@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "playbook": "twenty-crm",
+  "triggerWords": [
+    "twenty", "crm", "twenty crm",
+    "workspace", "twenty workspace",
+    "custom object", "create object", "defineObject",
+    "sales pipeline", "pipeline stage", "opportunity",
+    "contact", "person record", "company record",
+    "client record", "customer record",
+    "twenty workflow", "workflow",
+    "twenty function", "logic function", "serverless function",
+    "defineField", "defineRelation", "defineFrontComponent",
+    "twenty api", "graphql", "twenty graphql",
+    "webhook", "register webhook",
+    "import data", "export data", "migration",
+    "role", "permission", "user management",
+    "twenty deploy", "app publish",
+    "credit dispute", "payment record", "subscription",
+    "enrollment", "recovery task",
+    "twenty error", "troubleshoot twenty",
+    "defineAgent", "defineSkill", "ai agent"
+  ],
+  "intentMappings": {
+    "connection": ["twenty-connector"],
+    "create_object": ["create-custom-object"],
+    "query_data": ["query-twenty-data"],
+    "mutate_data": ["mutate-twenty-data"],
+    "workflow": ["manage-workflows"],
+    "function": ["manage-functions"],
+    "webhook": ["register-webhook"],
+    "admin": ["manage-users-and-roles"],
+    "import_export": ["bulk-import-export"],
+    "troubleshoot": ["troubleshoot-twenty"]
+  }
+}
