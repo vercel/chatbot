@@ -640,6 +640,50 @@ export const libraryWorkflowRun = pgTable("library_workflow_runs", {
 
 export type LibraryWorkflowRun = InferSelectModel<typeof libraryWorkflowRun>;
 
+// ── Phase 31: Agent Sessions — Unified V2+VPS Session Tracking (0015) ────
+
+export const agentSessions = pgTable("agent_sessions", {
+  sessionId: text("session_id").primaryKey(),
+  // Existing fields from handoff pattern
+  goal: text("goal"),
+  mode: text("mode"), // investigation | modify_existing | new_project
+  repoName: text("repo_name"),
+  branch: text("branch"),
+  status: text("status").notNull().default("routing"), // routing | spawning | running | building | deploying | complete | failed
+  progress: integer("progress").default(0),
+  steps: jsonb("steps").default([]),
+  filesChanged: jsonb("files_changed").default([]),
+  deployUrl: text("deploy_url"),
+  prUrl: text("pr_url"),
+  v2DirectUrl: text("v2_direct_url"),
+  chatId: text("chat_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  // NEW fields per M-N-META gap analysis
+  lane: text("lane"), // v2 | vps | mcp
+  runtime: text("runtime"), // claude_sdk | deepseek | opus_4_6
+  model: text("model"),
+  enhancementFindings: jsonb("enhancement_findings"), // per cardinal 6a37787b
+  parentSessionId: text("parent_session_id"),
+  conversationId: text("conversation_id"),
+  cardState: text("card_state"), // resume target: inline | expanded | minimized
+  costCents: integer("cost_cents").default(0), // running spend
+  userEmail: text("user_email"),
+  pocockPhase: text("pocock_phase"), // grill | research | prototype | prd | plan | build | qa | handoff
+});
+
+export type AgentSession = InferSelectModel<typeof agentSessions>;
+
+export const agentSessionEvents = pgTable("agent_session_events", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  sessionId: text("session_id").notNull().references(() => agentSessions.sessionId, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(),
+  payload: jsonb("payload").default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type AgentSessionEvent = InferSelectModel<typeof agentSessionEvents>;
+
 // ── Phase 31: Generative CRM Actions (0017) ───────────────────────────────
 
 export const libraryCrmAction = pgTable("library_crm_actions", {

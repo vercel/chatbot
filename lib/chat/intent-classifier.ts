@@ -18,7 +18,8 @@ export type DiscoveryWorkflowId =
   | "recovery-stale-tasks-audit"
   | "customer-360-deep-pull"
   | "agent-promise-tracker"
-  | "churn-risk-analysis";
+  | "churn-risk-analysis"
+  | "prd-generation"; // M-N-META: PRD Quality auto-inject
 
 export interface ClassificationResult {
   /** Whether this is a bulk/discovery operation */
@@ -118,6 +119,19 @@ const KEYWORD_MAP: KeywordEntry[] = [
     ],
     weight: 1.0,
   },
+  // ── M-N-META: PRD Quality auto-inject keywords ─────────────────
+  {
+    workflowId: "prd-generation",
+    keywords: [
+      "write a prd", "write prd", "generate prd", "create prd",
+      "plan this feature", "plan this project", "design this feature",
+      "design this system", "specs for", "write specs", "spec this out",
+      "create a spec", "prd for", "specification for",
+      "requirements doc", "product requirements", "feature spec",
+      "architecture plan", "technical spec", "build plan",
+    ],
+    weight: 1.0,
+  },
 ];
 
 // ── Secondary keywords with lower weight ────────────────────────────────
@@ -178,9 +192,11 @@ const NON_BULK_PATTERNS = [
   /^help$/i,
   /^help me$/i,
   /^can you help$/i,
-  /^write (a|me)/i,
-  /^create (a|an)/i,
-  /^generate (a|an)/i,
+  // M-N-META: PRD-related patterns should NOT be blocked (they trigger Pocock injection)
+  // /^write (a|me)/i,   ← REMOVED: "write a PRD" must pass through
+  /^write me/i,           // "write me a poem" still blocked, "write a PRD" passes
+  /^create (a|an)/i,      // "create a PRD" → now handled by PRD keyword matching (isNonBulk check happens FIRST)
+  /^generate (a|an)/i,    // Same: PRD keyword matching overrides
   /^what (is|are|does|do)/i,
   /^how (do|does|can|to|should|would)/i,
   /^explain/i,
@@ -296,6 +312,17 @@ function keywordMatch(query: string): {
 // ── Phase 2: Non-Bulk Check ─────────────────────────────────────────────
 
 function isNonBulk(query: string): boolean {
+  // M-N-META: PRD intent overrides non-bulk check
+  const lower = query.toLowerCase();
+  if (
+    lower.includes("prd") ||
+    lower.includes("spec") ||
+    lower.includes("requirements doc") ||
+    lower.includes("architecture plan") ||
+    lower.includes("build plan")
+  ) {
+    return false; // Let PRD keywords match
+  }
   for (const pattern of NON_BULK_PATTERNS) {
     if (pattern.test(query)) {
       return true;

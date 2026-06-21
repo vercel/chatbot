@@ -112,6 +112,94 @@ export const BUILT_IN_TOOLS = [
       typeof output === "object" && output !== null && "handoff" in output,
     description: "HandoffCard — V2 coding agent handoff with sandbox preview",
   },
+  // ── M-N4: New generative UI cards ───────────────────────────────────
+  {
+    toolName: "billingAlignment",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "type" in output && (output as Record<string, unknown>).type === "billing-alignment",
+    description: "BillingAlignmentCard — billing drift analysis between Base44 and NMI",
+  },
+  {
+    toolName: "getCustomerProfile",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "customerId" in output,
+    description: "CustomerProfileCard — rich customer 360 with subscription, payments, calls, messages",
+  },
+  {
+    toolName: "reportingHub",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      ("action" in output || "report" in output),
+    description: "ReportCard — rendered markdown report with export actions",
+  },
+  {
+    toolName: "reportingHubQuery",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      ("action" in output || "report" in output),
+    description: "ReportCard — markdown report with export (alias for reportingHub)",
+  },
+  {
+    toolName: "queryKnowledge",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "results" in output,
+    description: "SearchResultCard — knowledge graph search results with relevance scores",
+  },
+  {
+    toolName: "graphQuery",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "results" in output,
+    description: "SearchResultCard — graph query results with relevance scores",
+  },
+  {
+    toolName: "discoverResource",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "results" in output,
+    description: "SearchResultCard — resource discovery results with relevance scores",
+  },
+  // ── M-N-META: Multi-lane Agent Session Cards ────────────────────────
+  {
+    toolName: "spawn-coding-agent",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      ("handoff" in output || "sessionId" in output),
+    description: "AgentSessionCard — V2 coding agent session with live progress + file diffs + deploy",
+  },
+  {
+    toolName: "hermes-vps",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "dispatchId" in output,
+    description: "AgentSessionCard (lane=vps) — VPS dispatch progress with step-by-step todo list + Slack bridge",
+  },
+  {
+    toolName: "v2-handoff",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      ("lane" in output && (output as Record<string, unknown>).lane === "v2"),
+    description: "AgentSessionCard (lane=v2) — V2 handoff with PR creation + Vercel deploy",
+  },
+  {
+    toolName: "createAgentSession",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "lane" in output && "sessionId" in output,
+    description: "AgentSessionCard — Multi-lane agent session with auto-lane detection",
+  },
+  // ── Legacy VPS entry (redirected to AgentSessionCard with lane=vps) ──
+  {
+    toolName: "dispatchToVps",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "dispatchId" in output,
+    description: "AgentSessionCard (lane=vps) — Redirected from legacy VpsProgressCard pattern",
+  },
+  // ── Existing connector cards ────────────────────────────────────────
   {
     toolName: "getWeather",
     detect: (output: unknown) =>
@@ -138,15 +226,6 @@ export const BUILT_IN_TOOLS = [
       "connectorType" in output &&
       (output as Record<string, unknown>).connectorType === "slack",
     description: "UniversalConnectorCard (slack) — channel + reactions + replies",
-  },
-  {
-    toolName: "getCustomerProfile",
-    detect: (output: unknown) =>
-      typeof output === "object" &&
-      output !== null &&
-      "connectorType" in output &&
-      (output as Record<string, unknown>).connectorType === "base44",
-    description: "UniversalConnectorCard (base44) — entity type + records",
   },
   {
     toolName: "getVapiCall",

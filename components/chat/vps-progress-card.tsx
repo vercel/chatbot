@@ -21,6 +21,7 @@ import {
   Zap,
   Loader2,
   CheckCircle2,
+  Circle,
   XCircle,
   AlertTriangle,
   Clock,
@@ -45,6 +46,23 @@ export interface VpsProgressCardProps {
 }
 
 type CardStatus = "queued" | "running" | "completed" | "failed" | "cancelled" | "lost";
+
+// ── Step & Tool Call types (VpsProgressCard enhancement) ──────────────────
+
+export interface VpsStep {
+  id: string;
+  name: string;
+  status: "pending" | "running" | "complete" | "failed";
+  evidence?: string[];
+}
+
+export interface ToolCallEntry {
+  id?: string;
+  toolName: string;
+  timestamp?: string;
+  status: "running" | "complete" | "error";
+  preview?: string;
+}
 
 // ── Status config ────────────────────────────────────────────────────────
 
@@ -232,11 +250,115 @@ export function VpsProgressCard({
         </div>
       )}
 
+      {/* Progress bar (also shown for running/queued states) */}
+      {!isTerminal && (
+        <div className="mb-2">
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+            <span>Turns: {turnsUsed}/{maxTurns}</span>
+            <span>{elapsedStr}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <motion.div
+              className={cn(
+                "h-full rounded-full",
+                status === "running" ? "bg-amber-500" : "bg-blue-500"
+              )}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(progressPct, 100)}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Step-by-step progress (Todo list mirror) */}
+      {progress?.steps && progress.steps.length > 0 && (
+        <div className="mb-3 space-y-1">
+          <span className="text-[10px] font-medium text-white/30 uppercase tracking-wider">Steps</span>
+          <div className="space-y-0.5">
+            {progress.steps.map((step) => {
+              const stepIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+                pending: Circle,
+                running: Loader2,
+                complete: CheckCircle2,
+                failed: XCircle,
+              };
+              const stepColors: Record<string, string> = {
+                pending: "text-white/20",
+                running: "text-amber-400",
+                complete: "text-emerald-400",
+                failed: "text-red-400",
+              };
+              const StepIcon = stepIcons[step.status] || Circle;
+              return (
+                <div
+                  key={step.id}
+                  className={cn(
+                    "flex items-center gap-1.5 text-xs py-0.5 px-1 rounded",
+                    step.status === "running" && "bg-amber-500/5"
+                  )}
+                >
+                  <StepIcon
+                    className={cn(
+                      "size-3 shrink-0",
+                      stepColors[step.status],
+                      step.status === "running" && "animate-spin"
+                    )}
+                  />
+                  <span className={cn(
+                    "text-xs truncate",
+                    stepColors[step.status],
+                    step.status === "pending" && "opacity-50"
+                  )}>
+                    {step.name}
+                  </span>
+                  {step.evidence && step.evidence.length > 0 && (
+                    <span className="ml-auto text-[9px] text-white/20 shrink-0">
+                      {step.evidence.length} evidence
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Current step */}
       {progress?.currentStep && status === "running" && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
           <Terminal className="size-3" />
           <span className="font-mono truncate">{progress.currentStep}</span>
+        </div>
+      )}
+
+      {/* Live tool call stream */}
+      {progress?.recentToolCalls && progress.recentToolCalls.length > 0 && (
+        <div className="mb-2">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Bot className="size-3 text-muted-foreground" />
+            <span className="text-[10px] font-medium text-white/30 uppercase tracking-wider">
+              Tool Calls ({progress.recentToolCalls.length})
+            </span>
+          </div>
+          <pre className="text-[10px] bg-black/20 rounded-lg p-2 max-h-[150px] overflow-y-auto text-white/50 font-mono leading-relaxed">
+            {progress.recentToolCalls.map((tc, i) => (
+              <div key={tc.id || i} className="flex items-start gap-1.5">
+                <span className={cn(
+                  "shrink-0 mt-px",
+                  tc.status === "running" ? "text-amber-400" :
+                  tc.status === "error" ? "text-red-400" :
+                  "text-emerald-400"
+                )}>
+                  {tc.status === "running" ? "⟳" : tc.status === "error" ? "✕" : "✓"}
+                </span>
+                <span className="text-cyan-400/70">{tc.toolName}</span>
+                {tc.preview && (
+                  <span className="text-white/30 truncate">{tc.preview}</span>
+                )}
+              </div>
+            ))}
+          </pre>
         </div>
       )}
 
@@ -248,7 +370,7 @@ export function VpsProgressCard({
         </div>
       )}
 
-      {/* Result (completed) */}
+      {/* Result (completed or failed) */}
       {status === "completed" && result && (
         <div className="mt-2 space-y-2">
           <p className="text-xs text-foreground/80 leading-relaxed">
@@ -259,22 +381,28 @@ export function VpsProgressCard({
               {result.output.length > 500 ? result.output.slice(0, 500) + "..." : result.output}
             </pre>
           )}
-          {result.slackThreadTs && (
-            <a
-              href={`https://newleaf-financial.slack.com/archives/C0AQDDC3HAB/p${result.slackThreadTs.replace(".", "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
-            >
-              <ExternalLink className="size-3" />
-              View in #jarvis-admin
-            </a>
-          )}
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
             <Zap className="size-3" />
             <span>{turnsUsed} turns · {elapsedStr}</span>
           </div>
         </div>
+      )}
+
+      {/* Slack thread link — always visible when available */}
+      {result?.slackThreadTs && (
+        <a
+          href={`https://newleaf-financial.slack.com/archives/C0AQDDC3HAB/p${result.slackThreadTs.replace(".", "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-2"
+        >
+          <ExternalLink className="size-3" />
+          {status === "completed"
+            ? "View result in #jarvis-admin"
+            : status === "failed"
+            ? "View error in #jarvis-admin"
+            : "View progress in #jarvis-admin"}
+        </a>
       )}
 
       {/* Error (failed/lost) */}
@@ -288,35 +416,33 @@ export function VpsProgressCard({
         </div>
       )}
 
-      {/* Action buttons */}
-      {!isTerminal && (
-        <div className="flex items-center gap-2 mt-3 pt-2 border-t border-white/5">
-          <button
-            onClick={handleCancel}
-            disabled={isCancelling}
-            className={cn(
-              "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
-              "border border-red-500/20 text-red-400 hover:bg-red-500/10",
-              isCancelling && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            {isCancelling ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : (
-              <XCircle className="size-3" />
-            )}
-            Cancel
-          </button>
-          <button
-            onClick={poll}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs text-muted-foreground
-                       border border-white/5 hover:bg-white/[0.04] transition-all"
-          >
-            <RotateCw className="size-3" />
-            Refresh now
-          </button>
-        </div>
-      )}
+      {/* Action buttons — cancel always visible */}
+      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-white/5">
+        <button
+          onClick={handleCancel}
+          disabled={isCancelling || isTerminal}
+          className={cn(
+            "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
+            "border border-red-500/20 text-red-400 hover:bg-red-500/10",
+            (isCancelling || isTerminal) && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          {isCancelling ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : (
+            <XCircle className="size-3" />
+          )}
+          Cancel
+        </button>
+        <button
+          onClick={poll}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs text-muted-foreground
+                     border border-white/5 hover:bg-white/[0.04] transition-all"
+        >
+          <RotateCw className="size-3" />
+          Refresh now
+        </button>
+      </div>
 
       {/* Retry on failure */}
       {status === "failed" && (

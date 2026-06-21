@@ -35,6 +35,7 @@ import { runDiscoveryWorkflow } from "@/lib/ai/tools/run-discovery-workflow";
 import { bulkNmiQuery } from "@/lib/ai/tools/bulk-nmi-query";
 import { bulkBase44Pull } from "@/lib/ai/tools/bulk-base44-pull";
 import { getCustomerProfile } from "@/lib/ai/tools/get-customer-profile";
+import { billingAlignment } from "@/lib/ai/tools/billing-alignment";
 import { getVapiCall } from "@/lib/ai/tools/get-vapi-call";
 import { getGithubPr } from "@/lib/ai/tools/get-github-pr";
 import { getVercelDeploy } from "@/lib/ai/tools/get-vercel-deploy";
@@ -427,6 +428,7 @@ export async function POST(request: Request) {
               "pullSlackChannelHistory",
               "searchSlackMessages",
               "getCustomerProfile",
+              "billingAlignment",
               "getVapiCall",
               "getGithubPr",
               "getVercelDeploy",
@@ -460,6 +462,7 @@ export async function POST(request: Request) {
           pullSlackChannelHistory,
           searchSlackMessages,
           getCustomerProfile,
+          billingAlignment,
           getVapiCall,
           getGithubPr,
           getVercelDeploy,

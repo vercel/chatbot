@@ -26,6 +26,32 @@ interface CardRouterProps {
   className?: string;
 }
 
+/**
+ * M-N4: Tool-to-Card Mapping
+ *
+ * Maps tool names to the generative card component they should render.
+ * Used by message.tsx for the primary dispatch path; also exported for
+ * documentation and future use by the generative-ui-registry.
+ */
+export const TOOL_CARD_MAP: Record<string, string> = {
+  "billingAlignment": "BillingAlignmentCard",
+  "getCustomerProfile": "CustomerProfileCard",
+  "reportingHub": "ReportCard",
+  "reportingHubQuery": "ReportCard",
+  "reporting_hub": "ReportCard",
+  "queryKnowledge": "SearchResultCard",
+  "graphQuery": "SearchResultCard",
+  "discoverResource": "SearchResultCard",
+  "searchKnowledge": "SearchResultCard",
+  // M-N-META: Multi-lane agent session cards
+  "spawn-coding-agent": "AgentSessionCard",
+  "spawnCodingAgent": "AgentSessionCard",
+  "hermes-vps": "AgentSessionCard",
+  "dispatchToVps": "AgentSessionCard",
+  "v2-handoff": "AgentSessionCard",
+  "createAgentSession": "AgentSessionCard",
+};
+
 /** Known connector tools that return connector card data */
 const CONNECTOR_TOOL_PATTERNS = [
   "nmi_",
@@ -40,6 +66,11 @@ const CONNECTOR_TOOL_PATTERNS = [
   "cross_system",
   "customer_360",
   "reporting_",
+  // M-N4: explicit tool names for billing/search routing
+  "billingAlignment",
+  "queryKnowledge",
+  "graphQuery",
+  "discoverResource",
 ];
 
 function detectConnector(

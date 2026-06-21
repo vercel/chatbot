@@ -115,12 +115,59 @@ export async function POST(req: NextRequest) {
       `[spawn-coding-agent] [${requestId}] ✅ V2 session spawned: ${result.sessionId}`,
     );
 
+    // ── M-N-META: Also create local agent session for inline card ────────────
+    const localSessionId = `as-v2-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    try {
+      const { createSession } = await import("@/lib/agent-session-store");
+      const { emitSessionEvent } = await import("@/lib/agent-sse-manager");
+
+      await createSession({
+        sessionId: localSessionId,
+        goal,
+        mode: v2Mode as "modify_existing" | "new_project" | "investigation",
+        repoName: targetRepo,
+        status: "spawning",
+        lane: "v2",
+        runtime: "opus_4_6",
+        model: "claude-sonnet-4-20250514",
+        chatId: sessionId || null,
+        userEmail: session?.user?.email || null,
+        cardState: "inline",
+        v2DirectUrl: `https://neptune-v2.vercel.app/agent-sessions/${result.sessionId}`,
+      });
+
+      await emitSessionEvent(localSessionId, "session:created", {
+        goal,
+        lane: "v2",
+        mode: v2Mode,
+      });
+
+      await emitSessionEvent(localSessionId, "lane:assigned", {
+        lane: "v2",
+        v2SessionId: result.sessionId,
+      });
+    } catch (storeErr) {
+      // Non-fatal: V2 session created but local card tracking failed
+      console.warn(`[spawn-coding-agent] [${requestId}] Local session store failed:`, storeErr);
+    }
+
     return NextResponse.json({
       success: true,
       sessionId: result.sessionId,
       status: result.status || "started",
       streamUrl: result.streamUrl,
       v2Url: result.v2Url,
+      // M-N-META: Include agent session data for inline card
+      agentSession: localSessionId
+        ? {
+            sessionId: localSessionId,
+            lane: "v2" as const,
+            goal,
+            status: "spawning" as const,
+            model: "Claude Sonnet 4",
+            streamUrl: `/api/agent-sessions/${localSessionId}/sse`,
+          }
+        : null,
       handoffUrl: result.v2Url || `https://neptune-v2.vercel.app/agent-sessions/${result.sessionId}`,
       handoff: {
         sessionId: result.sessionId,

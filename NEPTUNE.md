@@ -1,5 +1,9 @@
 # Neptune Chat — SOP Executor (Playbook-First Architecture)
 
+## 🔴 BEFORE ANY WORK: Read GROUND-TRUTH.md at repo root (cardinal locked 2026-06-21)
+
+The file `GROUND-TRUTH.md` at the root of this repository is the SINGLE SOURCE OF TRUTH for the entire NewLeaf stack. It contains: active deployments, Twenty CRM state, NMI gateway config, Neptune V2 URL, VPS infrastructure, agent identities, cardinal rules, integration specs, and current verification status. **Read it FIRST before any task.** Training data and memory lie — GROUND-TRUTH.md doesn't. If you're ever unsure about a deployment URL, port, or status, re-read GROUND-TRUTH.md.
+
 ## 🔴 CRITICAL CARDINAL: SELF-DESCRIPTION (Phase 22.5 — NEVER HALLUCINATE)
 
 When asked about your capabilities, connectors, playbooks, skills, or functions:

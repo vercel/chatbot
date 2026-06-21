@@ -6,6 +6,7 @@ import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
 import { MessageContent, MessageResponse } from "../ai-elements/message";
 import { Shimmer } from "../ai-elements/shimmer";
+import { codeBlockComponents } from "../ai-elements/streamdown-code-block";
 import {
   Tool,
   ToolContent,
@@ -26,6 +27,15 @@ import { Weather } from "./weather";
 import { UniversalConnectorCard } from "@/components/generative/universal-connector-card";
 import { MissionCard } from "@/components/generative/mission-card";
 import { HandoffCard } from "@/components/generative/handoff-card";
+import { BillingAlignmentCard } from "@/components/generative/billing-alignment-card";
+import type { BillingAlignmentData } from "@/components/generative/billing-alignment-card";
+import { CustomerProfileCard } from "@/components/generative/customer-profile-card";
+import type { CustomerProfileData } from "@/components/generative/customer-profile-card";
+import { ReportCard } from "@/components/generative/report-card";
+import type { ReportCardData } from "@/components/generative/report-card";
+import { SearchResultCard } from "@/components/generative/search-result-card";
+import type { SearchResultData } from "@/components/generative/search-result-card";
+import { VpsProgressCard } from "./vps-progress-card";
 import {
   groupToolCalls,
   CollapsedToolGroup,
@@ -168,7 +178,7 @@ const PurePreviewMessage = ({
           data-testid="message-content"
           key={key}
         >
-          <MessageResponse>{sanitizeText(part.text)}</MessageResponse>
+          <MessageResponse components={codeBlockComponents as any}>{sanitizeText(part.text)}</MessageResponse>
         </MessageContent>
       );
     }
@@ -464,6 +474,63 @@ const PurePreviewMessage = ({
                       libraryUrl?: string;
                     }}
                   />
+                // ── M-N4: billing-alignment → BillingAlignmentCard ──────
+                ) : toolName === "billingAlignment" &&
+                  toolPart.output &&
+                  typeof toolPart.output === "object" &&
+                  "type" in toolPart.output &&
+                  (toolPart.output as Record<string, unknown>).type === "billing-alignment" ? (
+                  <BillingAlignmentCard
+                    data={toolPart.output as unknown as BillingAlignmentData}
+                  />
+
+                // ── M-N4: getCustomerProfile with customerId → CustomerProfileCard ──
+                ) : toolName === "getCustomerProfile" &&
+                  toolPart.output &&
+                  typeof toolPart.output === "object" &&
+                  "customerId" in toolPart.output ? (
+                  <CustomerProfileCard
+                    data={toolPart.output as unknown as CustomerProfileData}
+                  />
+
+                // ── M-N4: reporting-hub → ReportCard ──────────────────
+                ) : (toolName === "reportingHub" || toolName === "reportingHubQuery" || toolName === "reporting_hub") &&
+                  toolPart.output &&
+                  typeof toolPart.output === "object" &&
+                  ("report" in toolPart.output || "action" in toolPart.output) ? (
+                  <ReportCard
+                    data={{
+                      title: ((toolPart.output as Record<string, unknown>).action as string) || "Report",
+                      timestamp: new Date().toISOString(),
+                      body: typeof (toolPart.output as Record<string, unknown>).report === "string"
+                        ? (toolPart.output as Record<string, unknown>).report as string
+                        : JSON.stringify((toolPart.output as Record<string, unknown>).report || toolPart.output, null, 2),
+                      sources: [],
+                      reportType: (toolPart.output as Record<string, unknown>).action as string,
+                    }}
+                  />
+
+                // ── M-N4: search tools → SearchResultCard ─────────────
+                ) : (toolName === "queryKnowledge" || toolName === "graphQuery" ||
+                     toolName === "discoverResource" || toolName === "searchKnowledge") &&
+                  toolPart.output &&
+                  typeof toolPart.output === "object" &&
+                  "results" in toolPart.output ? (
+                  <SearchResultCard
+                    data={toolPart.output as unknown as SearchResultData}
+                  />
+
+                // ── M-N4: hermes-vps dispatch → VpsProgressCard ───────
+                ) : (toolName === "hermes-vps" || toolName === "dispatchToVps") &&
+                  toolPart.output &&
+                  typeof toolPart.output === "object" &&
+                  "dispatchId" in toolPart.output ? (
+                  <VpsProgressCard
+                    dispatchId={(toolPart.output as Record<string, unknown>).dispatchId as string}
+                    prompt={(toolPart.output as Record<string, unknown>).prompt as string || ""}
+                  />
+
+                // ── Existing: connectorType envelope → UniversalConnectorCard ──
                 ) : toolPart.output &&
                   typeof toolPart.output === "object" &&
                   "connectorType" in toolPart.output &&

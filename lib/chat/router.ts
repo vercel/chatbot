@@ -88,6 +88,31 @@ export function classifyMessage(messageText: string): RouteResult {
     };
   }
 
+  // M-N-META: PRD intent → inject Pocock skills (different route)
+  if (classification.workflowId === "prd-generation") {
+    const sseUrl = `/api/agent-sessions/sse?workflowId=${encodeURIComponent("prd-generation")}`;
+    return {
+      discoveryRouted: true,
+      workflowId: classification.workflowId,
+      confidence: classification.confidence,
+      config: {
+        ...classification.extractedConfig,
+        // Auto-inject Pocock engineering skills
+        injectedSkills: [
+          "pocock-engineering/grill",
+          "pocock-engineering/to-prd",
+          "pocock-engineering/grill-with-docs",
+          "pocock-engineering/improve-codebase-architecture",
+        ],
+        discoveryPreamble: true, // Signal to include discovery preamble
+        pocockPhase: "grill",    // Start with grill phase
+      } as Record<string, unknown>,
+      reasoning: `${classification.reasoning} [Pocock 7-phase discipline injected]`,
+      sseUrl,
+      runId: "",
+    };
+  }
+
   // Build the SSE URL (runId assigned by discovery engine on dispatch)
   const sseUrl = `/api/discovery/sse?workflowId=${encodeURIComponent(classification.workflowId)}`;
 

@@ -81,6 +81,21 @@ export interface PollResult {
     maxTurns: number;
     currentStep?: string;
     toolCalls?: number;
+    // M-N4: Step-by-step progress (todo list mirror)
+    steps?: Array<{
+      id: string;
+      name: string;
+      status: "pending" | "running" | "complete" | "failed";
+      evidence?: string[];
+    }>;
+    // M-N4: Live tool call stream
+    recentToolCalls?: Array<{
+      id?: string;
+      toolName: string;
+      timestamp?: string;
+      status: "running" | "complete" | "error";
+      preview?: string;
+    }>;
   };
   result?: {
     summary: string;

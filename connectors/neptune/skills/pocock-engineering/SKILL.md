@@ -1,7 +1,16 @@
 # Pocock Engineering Framework — Master Playbook
 
-**Version:** 1.0.0 | **Domain:** pocock-engineering | **Actions:** 10
+**Version:** 1.0.1 | **Domain:** pocock-engineering | **Actions:** 12
 **Based on:** Matt Pocock's Agentic Engineering Deep Analysis (2026-06-20)
+**Updated:** M-N-META PRD Quality + Beautiful Handoff (2026-06-21)
+
+## ⚠️ CARDINAL RULE (LOCKED)
+
+> **EVERY PRD MUST GO THROUGH THE 7-PHASE CYCLE.** Skipping phases = automatic rejection.
+> `/grill` before `/to-prd`. Reference existing infrastructure FIRST.
+> Include enhancement research section per cardinal 6a37787b.
+> PRD template MUST include all 17 required sections (see to-prd skill).
+> This rule is NON-NEGOTIABLE and enforced by the intent classifier.
 
 ## 7-Phase Engineering Cycle
 
@@ -54,6 +63,12 @@
 ### /improve-codebase-architecture
 "Find deepening opportunities in existing code. Identify refactor candidates. Flag architectural drift. Suggest pattern consolidation."
 
+### /codebase-design (v1.0.1 NEW · Sprint 0D)
+"Survey the codebase for domain concepts and existing architectural patterns. Map coupling points and dependency graphs. Identify reusable abstractions. Use BEFORE designing new systems to avoid reinvention."
+
+### /domain-modeling (v1.0.1 NEW · Sprint 0D)
+"Extract ubiquitous language from codebase identifiers, comments, and docs. Build shared vocabulary before implementation. Align team on entity names, relationships, and bounded contexts."
+
 ## Intent Classification Rules
 
 | User says | Route to | Phase |
@@ -66,6 +81,7 @@
 | "plan X", "break down X" | /to-issues | 5 |
 | "test X", "verify X" | /qa | 7 |
 | "improve codebase", "refactor X" | /improve-codebase-architecture | any |
+| "write a PRD", "spec this", "design X" | /grill → /research → /to-prd | 1→2→4 |
 
 ## Phase 0 Grill (MANDATORY)
 
