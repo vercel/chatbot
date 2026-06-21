@@ -555,13 +555,13 @@ async function queryNmiVault(
   try {
     // NMI vault query via the NMI MCP bridge
     // The bridge is available as a server-side function call
-    const response = await fetch(`${process.env.BASE44_BRIDGE_URL || "http://localhost:8101"}/vpsAgentToolRouter`, {
+    const response = await fetch(`${process.env.VPS_BRIDGE_URL || "http://localhost:8400"}/vpsAgentToolRouter`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        internalToken: process.env.BASE44_DIAG_KEY || "",
+        internalToken: process.env.NEPTUNE_INTERNAL_TOKEN || "",
         tool: "nmi_mcp_bridge",
-        action: "customer_vault_query",
+        action: "query_vault",
         payload: { customerId },
       }),
     });
@@ -590,13 +590,13 @@ async function queryNmiTransactions(
 ): Promise<NmiTransactionRecord[]> {
   if (!PRODUCTION_WIRING) return [];
   try {
-    const response = await fetch(`${process.env.BASE44_BRIDGE_URL || "http://localhost:8101"}/vpsAgentToolRouter`, {
+    const response = await fetch(`${process.env.VPS_BRIDGE_URL || "http://localhost:8400"}/vpsAgentToolRouter`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        internalToken: process.env.BASE44_DIAG_KEY || "",
+        internalToken: process.env.NEPTUNE_INTERNAL_TOKEN || "",
         tool: "nmi_mcp_bridge",
-        action: "transaction_query",
+        action: "query_transactions",
         payload: { customerId, days },
       }),
     });

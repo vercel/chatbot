@@ -224,6 +224,52 @@
         "required": true,
         "timeoutMs": 5000
       }
+    },
+    {
+      "name": "Billing Alignment Audit",
+      "trigger_keywords": [
+        "run billing alignment",
+        "check slack billing alerts",
+        "sync slack to NMI",
+        "show recent billing requests",
+        "billing alignment",
+        "alignment report",
+        "audit billing",
+        "cross-reference billing",
+        "verify billing status"
+      ],
+      "steps": [
+        {
+          "action": "http.post",
+          "input": "/api/workflows/billing-alignment",
+          "payload": {
+            "lookbackDays": 7,
+            "channelId": "C0AQDDC3HAB"
+          },
+          "description": "Run billing alignment: Slack → NameResolver → Base44 → NMI cross-reference"
+        },
+        {
+          "action": "report",
+          "input": "{alignment_report}",
+          "description": "Present alignment report with categories: critical_misalignment, card_validation_failures, payment_reschedules, cancellations"
+        },
+        {
+          "action": "slack.send_message",
+          "channel": "#jarvis-admin",
+          "description": "Post synthesis of findings to #jarvis-admin"
+        }
+      ],
+      "pre_check_knowledge": {
+        "queries": [
+          "knowledge://billing/cardinal-rules",
+          "knowledge://billing/recent-patterns",
+          "knowledge://billing/connector-quirks",
+          "knowledge://nmi/transaction-patterns",
+          "knowledge://connectors/name-resolver"
+        ],
+        "required": true,
+        "timeoutMs": 5000
+      }
     }
   ]
 }

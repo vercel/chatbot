@@ -53,8 +53,8 @@ export const bulkNmiQuery = tool({
     }> = {};
 
     let totalTokens = 0;
-    const bridgeUrl = process.env.BASE44_BRIDGE_URL || "http://localhost:8101";
-    const diagKey = process.env.BASE44_DIAG_KEY || "";
+    const bridgeUrl = process.env.VPS_BRIDGE_URL || "http://localhost:8400";
+    const diagKey = process.env.NEPTUNE_INTERNAL_TOKEN || "";
 
     for (let i = 0; i < customerIds.length; i++) {
       const customerId = customerIds[i];
@@ -69,7 +69,7 @@ export const bulkNmiQuery = tool({
           body: JSON.stringify({
             internalToken: diagKey,
             tool: "nmi_mcp_bridge",
-            action: "customer_vault_query",
+            action: "query_vault",
             payload: { customerId },
           }),
         });

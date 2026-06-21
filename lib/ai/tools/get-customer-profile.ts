@@ -11,13 +11,13 @@ export const getCustomerProfile = tool({
     customerId: z.string().describe("Customer ID or email"),
   }),
   execute: async ({ customerId }) => {
-    const bridgeUrl = process.env.BASE44_BRIDGE_URL || "";
+    const bridgeUrl = process.env.VPS_BRIDGE_URL || "";
     try {
       const res = await fetch(`${bridgeUrl}/vpsAgentToolRouter`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          internalToken: process.env.BASE44_DIAG_KEY || "",
+          internalToken: process.env.NEPTUNE_INTERNAL_TOKEN || "",
           tool: "cross_system_lookup",
           identifier: customerId,
           identifier_type: customerId.includes("@") ? "email" : "customer_id",

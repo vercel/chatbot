@@ -12,15 +12,15 @@ export const getNmiTransaction = tool({
   }),
   execute: async ({ transactionId }) => {
     // Bridge to Base44 NMI MCP
-    const nmiUrl = process.env.BASE44_BRIDGE_URL || "";
+    const nmiUrl = process.env.VPS_BRIDGE_URL || "";
     try {
       const res = await fetch(`${nmiUrl}/vpsAgentToolRouter`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          internalToken: process.env.BASE44_DIAG_KEY || "",
+          internalToken: process.env.NEPTUNE_INTERNAL_TOKEN || "",
           tool: "nmi_mcp_bridge",
-          action: "transaction_query",
+          action: "query_transactions",
           payload: { transactionId },
         }),
       });

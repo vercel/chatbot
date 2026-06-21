@@ -40,7 +40,7 @@ async function callNmiBridge(
   const bridgeUrl =
     process.env.VPS_BRIDGE_URL || "http://187.127.250.171:8400";
   const bridgeToken = process.env.VPS_BRIDGE_TOKEN || "";
-  const diagKey = process.env.BASE44_DIAG_KEY || bridgeToken;
+  const diagKey = process.env.NEPTUNE_INTERNAL_TOKEN || bridgeToken;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), BRIDGE_TIMEOUT_MS);
@@ -52,7 +52,7 @@ async function callNmiBridge(
       body: JSON.stringify({
         internalToken: diagKey,
         tool: "nmi_mcp_bridge",
-        action: "customer_vault_query",
+        action: "query_vault",
         payload: { customerId },
       }),
       signal: controller.signal,
