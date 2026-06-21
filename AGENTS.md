@@ -3,9 +3,10 @@
 > Schema document for the Neptune Chat codebase.
 > Read before making changes. Updated on every major feature add.
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 Repository: abhiswami2121/neptune-chat
 Deployment: Vercel → https://neptune-chat-ashy.vercel.app
+Latest commit: be260a2 — Connector Fortress (Phase 2-6 landing)
 
 ## ARCHITECTURE
 
@@ -156,14 +157,62 @@ HYPERSWITCH_API_KEY       # Hyperswitch
 - V2 → Chat: progress streaming via SSE on `/api/sandbox/status`
 - V2 → Chat: PR card rendering when V2 opens PRs
 
+## PLAYBOOK SKILLS & WORKFLOWS
+
+### NameResolver (`playbook-skills/connectors/name-resolver/`)
+Resolves Slack customer names → Base44 profiles → NMI vault IDs. Essential for any workflow that connects Slack mentions to billing data.
+
+```typescript
+import { nameResolver } from "@/playbook-skills/connectors/name-resolver";
+const result = await nameResolver.resolve("Mary Nazworth");
+const bulk = await nameResolver.resolveMany(["Mary Nazworth", "Zachary Taylor"]);
+```
+
+See: `playbook-skills/connectors/name-resolver/SKILL.md`
+
+### Billing Alignment (`app/api/workflows/billing-alignment/route.ts`)
+Cross-references Slack billing requests against NMI subscription state. 5-step pipeline: Slack pull → name extraction → identity resolution → NMI query → alignment categorization.
+
+Endpoint: `POST /api/workflows/billing-alignment`
+```json
+{ "lookbackDays": 7, "channelId": "C0AQDDC3HAB" }
+```
+
+### Multi-Source Puller (`lib/discovery/multi-source-puller.ts`)
+Parallel pull of Base44 + NMI + Warehouse data for customer lists. Uses caching layer to avoid redundant API calls.
+
+### Playbook Router (`playbooks/billing/routines.json`)
+Routines trigger discovery workflows from chat keywords. Add new routines with `trigger_keywords`, `steps`, and `domain` fields.
+
+## CONNECTOR WIRING RULES
+
+### VPS Bridge
+- URL: `VPS_BRIDGE_URL=http://187.127.250.171:8400` (NOT :8101 or :8102)
+- Auth: `NEPTUNE_INTERNAL_TOKEN`
+- Never use `BASE44_BRIDGE_URL` or `BASE44_DIAG_KEY` — these don't exist
+
+### NMI MCP Bridge Actions (CORRECT names)
+| Action | Purpose |
+|--------|---------|
+| `query_vault` | Customer vault + subscription state |
+| `query_subscription` | Single subscription details |
+| `query_transactions` | Transaction history |
+
+### Base44 Client
+- Graceful degradation via Proxy stub when `BASE44_API_KEY` is missing
+- Never `throw new Error()` at module load — use conditional checks
+- Valid key: `BASE44_API_KEY=336ada860f0648a98e62113cd62c8055`
+
 ## KNOWN ANTI-PATTERNS
 
 1. **hostingerBridge**: Never call from VPS. Use native Bash/Read/Write.
 2. **source_transaction_id**: Never pass in NMI MIT charges.
-3. **force-dynamic**: Incompatible with cacheComponents experiment.
-4. **Horizontal scroll**: Never. Test at 375px width.
-5. **Nested Sheets/Drawers**: Never. Use Tabs for sub-navigation.
-6. **Inline styles**: Never. Use Tailwind + shadcn tokens.
+3. **BASE44_BRIDGE_URL / BASE44_DIAG_KEY**: Don't exist. Use VPS_BRIDGE_URL + NEPTUNE_INTERNAL_TOKEN.
+4. **customer_vault_query / transaction_query / subscription_query**: Wrong NMI action names. Use query_vault / query_transactions / query_subscription.
+5. **force-dynamic**: Incompatible with cacheComponents experiment.
+6. **Horizontal scroll**: Never. Test at 375px width.
+7. **Nested Sheets/Drawers**: Never. Use Tabs for sub-navigation.
+8. **Inline styles**: Never. Use Tailwind + shadcn tokens.
 
 ## AGENTIC ENGINEERING SKILLS (Pocock-Inspired)
 

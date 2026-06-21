@@ -1,0 +1,138 @@
+{
+  "mission": "neptune-chat-connector-research-and-tier1",
+  "date": "2026-06-21T03:45:00Z",
+  "status": "COMPLETE",
+  "executor": "Hermes Claude SDK Agent",
+  "phases": {
+    "1_audit": {
+      "status": "COMPLETE",
+      "findings": {
+        "playbook_skills_connectors": ["hermes-vps (proven pattern)"],
+        "main_connectors": 18,
+        "wired_manifests": 13,
+        "not_wired": ["cat-facts", "neptune", "youtube-research", "custom-skills"],
+        "total_wrapped_tools": 206,
+        "total_available_tools": 461,
+        "coverage_pct": 44.7,
+        "env_tokens_wired": 50,
+        "env_example_missing": 20
+      }
+    },
+    "2_diagnostic": {
+      "status": "COMPLETE",
+      "root_causes": {
+        "base44_405": {
+          "cause": "POST to /entities/X/filter not supported; Base44 REST API uses GET with query params",
+          "fix": "Use SDK path (GET internally) for entity reads; fix function invoke auth",
+          "severity": "P0"
+        },
+        "base44_403_functions": {
+          "cause": "APP_API_KEY lacks admin scope for function invocation",
+          "fix": "Use NEPTUNE_INTERNAL_TOKEN or admin-scope key for function calls",
+          "severity": "P0"
+        },
+        "nmi_fetch": {
+          "cause": "VPS tools-bridge at jarvis.newleaf.financial health unverified; no fallback",
+          "fix": "Verify bridge deployment; add health check + Base44 functions fallback",
+          "severity": "P0"
+        },
+        "env_example_incomplete": {
+          "cause": ".env.example missing 20+ connector tokens",
+          "fix": "Add all NEPTUNE_ prefix vars to .env.example",
+          "severity": "P1"
+        }
+      },
+      "live_proof": {
+        "timestamp": "2026-06-21T03:20:00Z",
+        "test_1_get_entity": "200 OK — real customer data returned",
+        "test_2_post_filter": "405 Method Not Allowed",
+        "test_3_get_functions": "403 Admin required",
+        "test_4_post_functions": "403 Admin required"
+      }
+    },
+    "3_research": {
+      "status": "COMPLETE",
+      "artifacts": [
+        "cortex/research/connector-architecture-best-practices-2026-06-21.md",
+        "cortex/research/n8n-composio-smithery-mcp-patterns-2026-06-21.md"
+      ],
+      "key_findings": {
+        "vercel_ai_sdk": "createMCPClient() per-server, tools() adapter, Schema Discovery vs Schema Definition modes",
+        "context_safety": "Per-domain instances + RAG-style retrieval + namespaced names recommended",
+        "recommended_architecture": "Central router with tool index, semantic retrieval, per-service MCP servers"
+      }
+    },
+    "4_identity_resolver": {
+      "status": "DESIGN_COMPLETE",
+      "artifact": "cortex/research/phase-4-customer-identity-resolver-design-2026-06-21.md",
+      "design": {
+        "phases": ["name_parser", "multi_source_search", "confidence_scoring", "enrichment"],
+        "query_strategies": 8,
+        "estimated_turns": 250,
+        "acceptance_criteria": 7
+      }
+    },
+    "5_vercel_env_sync": {
+      "status": "DESIGN_COMPLETE",
+      "artifact": "cortex/skills/neptune-chat-secrets-sync-runbook.md",
+      "design": {
+        "pattern": "NEPTUNE_<SERVICE>_<KEY>",
+        "source": "/etc/newleaf/.env",
+        "method": "Vercel REST API (never CLI)",
+        "cardinal": "6a20a6a7",
+        "env_vars_defined": 20
+      }
+    },
+    "6_mission_specs": {
+      "status": "COMPLETE",
+      "artifact": "cortex/research/phase-6-12-mission-specs-2026-06-21.md",
+      "missions": {
+        "tier_1_p0": [
+          {"id": "M-NC-1", "name": "Base44 + Functions", "budget": 400, "deps": []},
+          {"id": "M-NC-2", "name": "NMI + Hyperswitch", "budget": 350, "deps": ["M-NC-1"]},
+          {"id": "M-NC-3", "name": "Customer Identity Resolver", "budget": 250, "deps": ["M-NC-1","M-NC-2"]},
+          {"id": "M-NC-4", "name": "Reporting Hub + Slack", "budget": 300, "deps": ["M-NC-1"]}
+        ],
+        "tier_2_p1": [
+          {"id": "M-NC-5", "name": "GHL + Vapi + Freshcaller", "budget": 450, "deps": ["M-NC-1"]},
+          {"id": "M-NC-6", "name": "Forth + Twilio + Resend", "budget": 350, "deps": []},
+          {"id": "M-NC-7", "name": "GitHub + Vercel + Linear", "budget": 400, "deps": []},
+          {"id": "M-NC-8", "name": "Twenty CRM (spec only)", "budget": 300, "deps": [], "note": "GATED — cardinal e7129f554293 blocks implementation"}
+        ],
+        "tier_3_p2": [
+          {"id": "M-NC-9", "name": "n8n Native MCP", "budget": 250, "deps": []},
+          {"id": "M-NC-10", "name": "Composio + Smithery", "budget": 300, "deps": ["phase_3"]},
+          {"id": "M-NC-11", "name": "AI Gateway Model Roster", "budget": 350, "deps": []},
+          {"id": "M-NC-12", "name": "Discovery Workflow Library", "budget": 400, "deps": ["M-NC-1","M-NC-2","M-NC-3","M-NC-4"]}
+        ],
+        "total_budget": 4400
+      }
+    }
+  },
+  "top_5_connectors_by_priority": [
+    {"connector": "Base44 CRM", "current_wrapped": 63, "available": 246, "gap": 183, "blocking": "P0 403 functions"},
+    {"connector": "NMI Payments", "current_wrapped": 41, "available": 41, "gap": 0, "blocking": "P0 bridge health"},
+    {"connector": "Customer Identity", "current_wrapped": 0, "available": 8, "gap": 8, "blocking": "New connector needed"},
+    {"connector": "Reporting Hub", "current_wrapped": 16, "available": 16, "gap": 0, "blocking": "P0 403 functions"},
+    {"connector": "Slack", "current_wrapped": 27, "available": 27, "gap": 0, "blocking": "None"}
+  ],
+  "cardinals_enforced": [
+    "Slack #jarvis-admin only (C0AQDDC3HAB)",
+    "No Twenty CRM touching (e7129f554293)",
+    "No neptune-v2 touching (4d529f967554)",
+    "No hermes-vps touching (3c7615c3234f)",
+    "No parallel sessions",
+    "Reserved 80 turns for landing",
+    "No committing secrets to git",
+    "hermes-vps pattern followed (b363a90)"
+  ],
+  "output_files": [
+    "cortex/research/phase-2-diagnostic-405-root-cause-2026-06-21.md",
+    "cortex/research/connector-architecture-best-practices-2026-06-21.md",
+    "cortex/research/n8n-composio-smithery-mcp-patterns-2026-06-21.md",
+    "cortex/research/phase-4-customer-identity-resolver-design-2026-06-21.md",
+    "cortex/skills/neptune-chat-secrets-sync-runbook.md",
+    "cortex/research/phase-6-12-mission-specs-2026-06-21.md",
+    "proofs/neptune-chat-connector-research-complete.json"
+  ]
+}
