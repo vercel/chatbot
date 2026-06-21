@@ -118,12 +118,6 @@ function parseYaml(content: string): ManifestData | null {
           if (currentList.length > 0 && currentKey) {
             currentParent[currentKey] = currentList;
             currentList = [];
-            // Restore parent context from stack (back to the object containing this key)
-            if (stack.length > 0) {
-              const restored = stack.pop()!;
-              currentParent = restored.parent;
-              currentKey = restored.key;
-            }
           }
 
           const colonIdx = trimmed.indexOf(":");
@@ -136,7 +130,7 @@ function parseYaml(content: string): ManifestData | null {
           if (parentObj && typeof parentObj === "object" && !Array.isArray(parentObj)) {
             if (val === "") {
               // New nested object — push current context
-              stack.push({ key: currentKey, list: [], parent: currentParent });
+              stack.push({ key: currentKey, list: currentList, parent: currentParent });
               currentParent = parentObj as Record<string, unknown>;
               currentKey = key;
               (currentParent as Record<string, unknown>)[key] = {};
@@ -332,40 +326,32 @@ function getAvailableSkills(): Set<string> {
 
 function checkOrphanedReferences(infos: PlaybookInfo[], availableConnectors: Set<string>, availableSkills: Set<string>): ValidationError[] {
   const errors: ValidationError[] = [];
-
-  const toArray = (v: unknown): string[] => {
-    if (Array.isArray(v)) return v as string[];
-    if (typeof v === "string") return [v];
-    if (v && typeof v === "object") return Object.keys(v as Record<string, unknown>);
-    return [];
-  };
+  const toArr = (v: unknown): string[] => Array.isArray(v) ? v : (typeof v === 'string' ? [v] : []);
 
   for (const info of infos) {
     if (!info.manifest || !info.manifest.requires) continue;
 
     // Check connectors
-    if (info.manifest.requires.connectors) {
-      for (const connector of toArray(info.manifest.requires.connectors)) {
-        if (!availableConnectors.has(connector)) {
-          errors.push({
-            folder: info.folder,
-            type: "orphaned_reference",
-            message: `Connector "${connector}" referenced in manifest but not found in connectors/`,
-          });
-        }
+    const connectors = toArr(info.manifest.requires.connectors);
+    for (const connector of connectors) {
+      if (!availableConnectors.has(connector)) {
+        errors.push({
+          folder: info.folder,
+          type: "orphaned_reference",
+          message: `Connector "${connector}" referenced in manifest but not found in connectors/`,
+        });
       }
     }
 
     // Check skills
-    if (info.manifest.requires.skills) {
-      for (const skill of toArray(info.manifest.requires.skills)) {
-        if (!availableSkills.has(skill)) {
-          errors.push({
-            folder: info.folder,
-            type: "warning",
-            message: `Skill "${skill}" referenced in manifest but not found as a directory in connectors/neptune/skills/`,
-          });
-        }
+    const skills = toArr(info.manifest.requires.skills);
+    for (const skill of skills) {
+      if (!availableSkills.has(skill)) {
+        errors.push({
+          folder: info.folder,
+          type: "warning",
+          message: `Skill "${skill}" referenced in manifest but not found as a directory in connectors/neptune/skills/`,
+        });
       }
     }
   }
@@ -469,14 +455,9 @@ function main(): void {
 
       if (m.requires) {
         const r = m.requires;
-        const safeJoin = (v: unknown): string => {
-          if (Array.isArray(v)) return v.join(", ");
-          if (typeof v === "string") return v;
-          if (v && typeof v === "object") return Object.keys(v as Record<string, unknown>).join(", ");
-          return String(v ?? "");
-        };
+        const toArr = (v: unknown): string[] => Array.isArray(v) ? v : (typeof v === 'string' ? [v] : []);
         console.log(
-          `     Requires: connectors=[${safeJoin(r.connectors)}] skills=[${safeJoin(r.skills)}] functions=[${safeJoin(r.functions)}] workflows=[${safeJoin(r.workflows)}]`
+          `     Requires: connectors=[${toArr(r.connectors).join(", ")}] skills=[${toArr(r.skills).join(", ")}] functions=[${toArr(r.functions).join(", ")}] workflows=[${toArr(r.workflows).join(", ")}]`
         );
       }
     }
