@@ -23,6 +23,8 @@ import { queryKnowledge } from "@/lib/ai/tools/query-knowledge";
 import { graphQueryTool } from "@/lib/ai/tools/graph-query";
 import { viewGithubFile } from "@/lib/ai/tools/view-github-file";
 import { view_file, query_knowledge, listPlaybookSkill } from "@/lib/ai/tools/aliases";
+import { executeSkill as executeSkillV2 } from "@/lib/ai/tools/execute-skill";
+import { runWorkflowTool } from "@/lib/ai/tools/run-workflow";
 
 // ── Phase 38.5 Wiring Fix: Bulk Discovery Tools ───────────────────────────
 import { pullSlackChannelHistory as pullSlackChannelHistoryV2 } from "@/lib/agents/tools/pullSlackChannelHistory";
@@ -1534,6 +1536,9 @@ export const inlineTools = {
   queryKnowledge,
   // ── Phase 24: Visual KG Explorer slash command ──
   graphQuery: graphQueryTool,
+  // ── M-NEPTUNE-PERFECT Phase 5: Enhanced execute + workflow tools ──
+  executeSkillV2,
+  runWorkflowTool,
   // ── Legacy Integration Discovery ──
   listIntegrations,
   // ── Phase 38.5: Bulk Discovery Tools (V2 — cursor pagination + batch) ──
@@ -1579,6 +1584,9 @@ export const TOOL_REQUIREMENTS: Record<string, string[]> = {
   queryKnowledge: ["POSTGRES_URL"],
   // ── Phase 24: Visual KG Explorer slash command ──
   graphQuery: ["POSTGRES_URL"],
+  // ── M-NEPTUNE-PERFECT Phase 5: Enhanced tools ──
+  executeSkillV2: ["VPS_FS_BRIDGE_URL"],
+  runWorkflowTool: [],
   // ── Legacy Integration Discovery ──
   listIntegrations: [],
   // ── Phase 38.5: Bulk Discovery Tools ──
@@ -1660,6 +1668,8 @@ export const GATEKEEPER_TOOL_NAMES = [
   "runWorkflow",   // U2.1.D: 7th gatekeeper tool — U3.6 Workflow Engine
   "queryKnowledge", // U7.4: 8th gatekeeper tool — Postgres KG query (Pattern A+2 documented exception)
   "graphQuery",     // Phase 24: 9th gatekeeper tool — Visual KG explorer slash command
+  "executeSkillV2", // M-NEPTUNE-PERFECT Phase 5a: Enhanced skill executor with step traces
+  "runWorkflowTool", // M-NEPTUNE-PERFECT Phase 5b: Named workflow runner with SSE
 ];
 
 /**

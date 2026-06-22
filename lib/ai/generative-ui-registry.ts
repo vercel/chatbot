@@ -314,6 +314,21 @@ export const BUILT_IN_TOOLS = [
       ("skill_name" in output || "content" in output || "frontmatter" in output || "loaded" in output),
     description: "SkillLoadCard — playbook skill loading (alias for loadSkill/listPlaybookSkill)",
   },
+  // ── M-NEPTUNE-PERFECT Phase 5: Enhanced skill + workflow tools ──────────
+  {
+    toolName: "executeSkillV2",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "steps" in output && Array.isArray((output as Record<string, unknown>).steps),
+    description: "SkillExecutionCard — step-by-step execution traces with per-step status and timing (Phase 5a)",
+  },
+  {
+    toolName: "runWorkflowTool",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "workflowRunId" in output && "sseUrl" in output,
+    description: "WorkflowRunCard — named workflow execution with SSE progress URL and report link (Phase 5b)",
+  },
 ];
 
 export function getBuiltInTools() {
