@@ -22,6 +22,24 @@ export const GET = requireAllowlist(async () => {
         "Read any file from the knowledge base or codebase. Use for playbooks, skills, PRDs, configuration, or source code. Paths: playbooks/<domain>/playbook-*.md, connectors/<name>/PLAYBOOK.md, jarvis/cortex/skills/<name>.md, lib/, app/.",
     },
     {
+      name: "view_github_file",
+      category: "gatekeeper",
+      description:
+        "Read any file from a GitHub repository using the GitHub Contents API. Provide repo (owner/name), path, and optional ref (branch/sha). Alias for view_file on remote repos.",
+    },
+    {
+      name: "query_knowledge",
+      category: "gatekeeper",
+      description:
+        "Query the Knowledge Graph (Postgres library_* tables) for connectors, playbooks, skills, functions, workflows. Returns structured results with relevance. Use BEFORE describing system capabilities to avoid hallucination.",
+    },
+    {
+      name: "load_skill",
+      category: "gatekeeper",
+      description:
+        "Load detailed skill content on-demand. Categories: connectors/ (NMI, Slack, GitHub, Vercel), capabilities/ (self-coding, sandbox), playbooks/<domain>/ (domain-specific playbooks). Keeps context efficient — only load what you need, when you need it. Alias: listPlaybookSkill.",
+    },
+    {
       name: "execute_skill",
       category: "gatekeeper",
       description:

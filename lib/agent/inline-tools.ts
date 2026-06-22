@@ -22,6 +22,7 @@ import { loadSkill } from "@/lib/ai/tools/load-skill";
 import { queryKnowledge } from "@/lib/ai/tools/query-knowledge";
 import { graphQueryTool } from "@/lib/ai/tools/graph-query";
 import { viewGithubFile } from "@/lib/ai/tools/view-github-file";
+import { view_file, query_knowledge, listPlaybookSkill } from "@/lib/ai/tools/aliases";
 
 // ── Phase 38.5 Wiring Fix: Bulk Discovery Tools ───────────────────────────
 import { pullSlackChannelHistory as pullSlackChannelHistoryV2 } from "@/lib/agents/tools/pullSlackChannelHistory";
@@ -1502,6 +1503,10 @@ export const inlineTools = {
   // ── Gatekeeper Tools (U2.1 Progressive Disclosure) ──
   viewFile,
   viewGithubFile,
+  // ── M-NEPTUNE-PERFECT Phase 2: Snake_case aliases ──
+  view_file,
+  query_knowledge,
+  listPlaybookSkill,
   executeSkill,
   listPlaybooks,
   loadSkill,
@@ -1543,6 +1548,10 @@ export const TOOL_REQUIREMENTS: Record<string, string[]> = {
   // ── Gatekeeper Tools (U2.1 — Progressive Disclosure) ──
   viewFile: ["VPS_FS_BRIDGE_URL"],
   viewGithubFile: ["GITHUB_TOKEN"],
+  // ── M-NEPTUNE-PERFECT Phase 2: Snake_case aliases ──
+  view_file: ["GITHUB_TOKEN"],
+  query_knowledge: ["POSTGRES_URL"],
+  listPlaybookSkill: ["VPS_FS_BRIDGE_URL"],
   executeSkill: ["VPS_FS_BRIDGE_URL"],
   listPlaybooks: [],
   loadSkill: ["VPS_FS_BRIDGE_URL"],
@@ -1640,6 +1649,10 @@ export function getAvailableTools(): Record<string, any> {
 export const GATEKEEPER_TOOL_NAMES = [
   "viewFile",
   "viewGithubFile",
+  // ── M-NEPTUNE-PERFECT Phase 2: Snake_case aliases ──
+  "view_file",
+  "query_knowledge",
+  "listPlaybookSkill",
   "executeSkill",
   "listPlaybooks",
   "loadSkill",

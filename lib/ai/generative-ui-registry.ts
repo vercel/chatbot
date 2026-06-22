@@ -283,6 +283,37 @@ export const BUILT_IN_TOOLS = [
       !("repo" in output),
     description: "ReadFileCard (local/VPS) — local file content with syntax highlighting",
   },
+  // ── M-NEPTUNE-PERFECT Phase 2: Snake_case aliases ──────────────────────────
+  {
+    toolName: "view_file",
+    detect: (output: unknown) =>
+      typeof output === "object" &&
+      output !== null &&
+      ("content" in output || "error" in output) &&
+      ("path" in output || "repo" in output),
+    description: "ReadFileCard — file content with syntax highlighting (snake_case alias for viewGithubFile)",
+  },
+  {
+    toolName: "query_knowledge",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      "results" in output,
+    description: "SearchResultCard — KG search results (snake_case alias for queryKnowledge)",
+  },
+  {
+    toolName: "load_skill",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      ("skill_name" in output || "content" in output || "frontmatter" in output || "loaded" in output),
+    description: "SkillLoadCard — skill/playbook content and execution contract (snake_case alias for loadSkill)",
+  },
+  {
+    toolName: "listPlaybookSkill",
+    detect: (output: unknown) =>
+      typeof output === "object" && output !== null &&
+      ("skill_name" in output || "content" in output || "frontmatter" in output || "loaded" in output),
+    description: "SkillLoadCard — playbook skill loading (alias for loadSkill/listPlaybookSkill)",
+  },
 ];
 
 export function getBuiltInTools() {
