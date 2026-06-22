@@ -59,7 +59,10 @@ function readGraphTag(path: string): GraphTag | null {
   try {
     if (!existsSync(path)) return null;
     const raw = readFileSync(path, "utf-8");
-    return JSON.parse(raw) as GraphTag;
+    const parsed = JSON.parse(raw);
+    // Guard: skip files missing the required entity_id field
+    if (!parsed.entity_id) return null;
+    return parsed as GraphTag;
   } catch {
     return null;
   }
@@ -103,7 +106,7 @@ function discoverGraphTags(): { path: string; tag: GraphTag; kind: "connector" |
 }
 
 /**
- * Upsert a single entity into library_entities.
+ * Upsert a single entity into kg_entities.
  * Uses ON CONFLICT (type, name) DO UPDATE to avoid duplicates.
  */
 async function upsertEntity(
@@ -111,22 +114,20 @@ async function upsertEntity(
   entity: EntityInsert
 ): Promise<"created" | "updated"> {
   const result = await sql`
-    INSERT INTO library_entities (type, name, description, properties, path, confidence)
+    INSERT INTO kg_entities (type, name, description, properties, confidence)
     VALUES (
       ${entity.type},
       ${entity.name},
       ${entity.description || null},
       ${sql.json(entity.properties || {})},
-      ${entity.path || null},
       ${entity.confidence || 1.0}
     )
     ON CONFLICT (type, name)
     DO UPDATE SET
       description = EXCLUDED.description,
       properties = EXCLUDED.properties,
-      path = EXCLUDED.path,
       confidence = EXCLUDED.confidence,
-      updated_at = NOW()
+      updated_at = now()
     RETURNING id
   `;
 
@@ -141,7 +142,7 @@ async function upsertRelation(
   relation: RelationInsert
 ): Promise<"created" | "updated"> {
   const result = await sql`
-    INSERT INTO library_relations (from_entity_id, to_entity_id, type, properties, confidence)
+    INSERT INTO kg_relations (from_entity_id, to_entity_id, type, properties, confidence)
     VALUES (
       ${relation.from_entity_id},
       ${relation.to_entity_id},
@@ -214,7 +215,7 @@ export async function backfillGraphTags(): Promise<BackfillResult> {
 
         // Look up the entity ID
         const entityRow = await sql<{ id: string }[]>`
-          SELECT id FROM library_entities WHERE type = ${entityType} AND name = ${tag.entity_id} LIMIT 1
+          SELECT id FROM kg_entities WHERE type = ${entityType} AND name = ${tag.entity_id} LIMIT 1
         `;
         if (entityRow.length > 0) {
           entityIdMap.set(tag.entity_id, entityRow[0].id);
@@ -227,7 +228,7 @@ export async function backfillGraphTags(): Promise<BackfillResult> {
         if (tag.directions?.associated_playbooks) {
           for (const playbook of tag.directions.associated_playbooks) {
             const playbookEntityRow = await sql<{ id: string }[]>`
-              SELECT id FROM library_entities WHERE name = ${playbook.ref} LIMIT 1
+              SELECT id FROM kg_entities WHERE name = ${playbook.ref} LIMIT 1
             `;
             const fromId = entityIdMap.get(tag.entity_id);
             const toId = playbookEntityRow[0]?.id;
@@ -248,7 +249,7 @@ export async function backfillGraphTags(): Promise<BackfillResult> {
         if (tag.directions?.associated_skills) {
           for (const skill of tag.directions.associated_skills) {
             const skillEntityRow = await sql<{ id: string }[]>`
-              SELECT id FROM library_entities WHERE name LIKE ${"%" + skill.ref} LIMIT 1
+              SELECT id FROM kg_entities WHERE name LIKE ${"%" + skill.ref} LIMIT 1
             `;
             const fromId = entityIdMap.get(tag.entity_id);
             const toId = skillEntityRow[0]?.id;

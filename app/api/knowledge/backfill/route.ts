@@ -42,16 +42,16 @@ export const GET = requireAllowlist(async (_req: Request) => {
     const sql = (await import("@/lib/knowledge/backfill-graph-tags")).getKgSql();
 
     const entityCount = await sql<{ count: number }[]>`
-      SELECT COUNT(*)::int as count FROM library_entities
+      SELECT COUNT(*)::int as count FROM kg_entities
     `;
     const relationCount = await sql<{ count: number }[]>`
-      SELECT COUNT(*)::int as count FROM library_relations
+      SELECT COUNT(*)::int as count FROM kg_relations
     `;
     const connectorCount = await sql<{ count: number }[]>`
-      SELECT COUNT(*)::int as count FROM library_entities WHERE type = 'Connector'
+      SELECT COUNT(*)::int as count FROM kg_entities WHERE type = 'Connector'
     `;
     const lastBackfill = await sql<{ updated_at: string }[]>`
-      SELECT MAX(updated_at) as updated_at FROM library_entities
+      SELECT MAX(updated_at) as updated_at FROM kg_entities
     `;
 
     return NextResponse.json({
