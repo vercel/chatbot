@@ -113,3 +113,16 @@ A panel is a smart container holding N agents + 1 judge. Modes:
 - Code → Code Specialist (GLM 5.2 lead) | Research → Research Specialist
 - Vision → Vision Council | Long context → Long Context Master
 - Minimalist → Dual Frontier | Diverse → MiniMax Ensemble
+
+## 🔵 VPS HEALTH PROXY (M-NEPTUNE-PERFECT Phase 11 — 2026-06-22)
+
+The VPS health check now resolves through `HERMES_VPS_HEALTH_URL` (set on Vercel) pointing to
+`http://187.127.250.171:8100/vps-health`. This endpoint returns live VPS metrics:
+pm2_count, uptime, load, cpu_pct, mem_pct, disk_pct, pm2_status, top_cpu.
+
+Previously the `/api/diagnostics` vps-health section returned "Base44 proxy 404" because
+no VPS bridge was configured. The hermes-api now serves `/vps-health` directly on port 8100,
+and the diagnostics fallback chain (VPS Bridge → direct URL → Base44 proxy) picks it up
+as Fallback 2.
+
+GROUND-TRUTH.md is now V3.0 (2026-06-22) at /home/hermes/cortex/GROUND-TRUTH.md.
