@@ -38,7 +38,7 @@ import type { FileChange } from "./FileDiffPreview";
 import type { LogLine } from "./BuildLogStream";
 import type { VpsStep, ToolCallEntry } from "./VpsSessionCardBody";
 import { cn } from "@/lib/utils";
-import { getBackoffDelay } from "@/lib/agent-sse-manager";
+import { getBackoffDelay } from "@/lib/agent-sse-utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
