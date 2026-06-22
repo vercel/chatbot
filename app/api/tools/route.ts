@@ -43,19 +43,13 @@ export const GET = requireAllowlist(async () => {
       name: "execute_skill",
       category: "gatekeeper",
       description:
-        "Execute a named skill from the knowledge base. Loads SKILL.md, parses YAML frontmatter (Anthropic Agent Skills Spec), and returns the full execution contract with steps and tool references. Use for domain-specific operations that have documented procedures.",
+        "Execute a named skill from the knowledge base. Loads SKILL.md, parses YAML frontmatter (Anthropic Agent Skills Spec), resolves from playbook-skills/playbooks/{domain}/skills/{name}.md or jarvis/cortex/skills/{name}.md, and returns the full execution contract with step-by-step traces. Use for domain-specific operations that have documented procedures.",
     },
     {
       name: "list_playbooks",
       category: "gatekeeper",
       description:
         "List all available domain playbooks from playbooks/. Returns each playbook's path, domain, title, routine count, and safeguard count. Use to discover what operational procedures are documented before loading a specific playbook.",
-    },
-    {
-      name: "load_skill",
-      category: "gatekeeper",
-      description:
-        "Load detailed skill content on-demand. Categories: connectors/ (NMI, Slack, GitHub, Vercel), capabilities/ (self-coding, sandbox), playbooks/<domain>/ (domain-specific playbooks). Keeps context efficient — only load what you need, when you need it.",
     },
     {
       name: "self_code",
@@ -73,7 +67,19 @@ export const GET = requireAllowlist(async () => {
       name: "run_workflow",
       category: "gatekeeper",
       description:
-        "Execute a predefined YAML workflow from playbooks/<domain>/workflows/. Workflows chain multiple steps: research, PRD generation, gap analysis, implementation planning, mission dispatch, and tech design. Use for automated planning-research pipelines and domain-specific automation.",
+        "Execute a predefined workflow by name (e.g., 'discover-customers', 'audit-billing'). Posts to /api/workflow/{workflow_name}/run with inputs. Returns workflowRunId + sseUrl for live progress tracking. Fallbacks to legacy /api/workflow/run. Workflows chain multiple steps: research, PRD generation, gap analysis, implementation planning, mission dispatch.",
+    },
+    {
+      name: "execute_skill_v2",
+      category: "gatekeeper",
+      description:
+        "Execute a skill with step-level tracing. Same as execute_skill but with additional step-by-step execution traces showing per-step status (pending/running/completed/failed), timing, and tool references. Use when you need detailed visibility into skill execution.",
+    },
+    {
+      name: "run_workflow_named",
+      category: "gatekeeper",
+      description:
+        "Run a named workflow with workflow_name + inputs. Enhanced workflow runner with SSE URL, report URL, and structured error handling. Supports async execution with live progress streaming. Falls back gracefully to legacy workflow endpoint.",
     },
   ];
 
