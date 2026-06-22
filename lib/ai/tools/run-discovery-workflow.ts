@@ -51,11 +51,15 @@ export const runDiscoveryWorkflow = tool({
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000";
+    const internalToken = process.env.NEPTUNE_INTERNAL_TOKEN || "";
 
     try {
       const res = await fetch(`${baseUrl}/api/discovery/run`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(internalToken ? { Authorization: `Bearer ${internalToken}` } : {}),
+        },
         body: JSON.stringify({ workflowId, config: config || {} }),
       });
 

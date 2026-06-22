@@ -91,7 +91,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session?.user) {
+
+  // Allow internal tool calls via NEPTUNE_INTERNAL_TOKEN (bypasses session auth)
+  const authHeader = request.headers.get("authorization") || "";
+  const internalToken = process.env.NEPTUNE_INTERNAL_TOKEN || "";
+  const isInternalCall = internalToken && authHeader === `Bearer ${internalToken}`;
+
+  if (!isInternalCall && !session?.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

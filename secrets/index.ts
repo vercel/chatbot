@@ -29,6 +29,7 @@ const optionalUrl = urlSchema.default("");
 
 const slackSchema = z.object({
   botToken: apiKeySchema,
+  userToken: z.string().default(""),
   jarvisAdminChannelId: z.string().min(1),
   newleafAdminChannelId: z.string().default("C096PSS45Q9"),
   jarvisAdminWebhookUrl: optionalUrl,
@@ -235,6 +236,7 @@ function parseEnv(): Secrets {
   const raw = {
     slack: {
       botToken: process.env.SLACK_BOT_TOKEN ?? "",
+      userToken: process.env.SLACK_USER_TOKEN ?? "",
       jarvisAdminChannelId: process.env.JARVIS_ADMIN_CHANNEL_ID ?? "",
       newleafAdminChannelId: process.env.NEWLEAF_ADMIN_CHANNEL_ID ?? "C096PSS45Q9",
       jarvisAdminWebhookUrl: process.env.SLACK_JARVIS_ADMIN_WEBHOOK_URL ?? "",

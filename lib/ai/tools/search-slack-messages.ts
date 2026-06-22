@@ -12,6 +12,7 @@ import { WebClient } from "@slack/web-api";
 import { secrets } from "@/secrets";
 
 const SLACK_BOT_TOKEN = secrets.slack.botToken;
+const SLACK_USER_TOKEN = secrets.slack.userToken || process.env.SLACK_USER_TOKEN || "";
 
 let channelListCache: { name: string; id: string }[] | null = null;
 let channelListCacheTime = 0;
@@ -61,11 +62,13 @@ export const searchSlackMessages = tool({
     ),
   }),
   execute: async ({ query, channels, days, maxResults }) => {
-    if (!SLACK_BOT_TOKEN) {
-      return { error: "SLACK_BOT_TOKEN not configured" };
+    // Prefer user token for search (OAuth scope: search:read); fall back to bot token
+    const token = SLACK_USER_TOKEN || SLACK_BOT_TOKEN;
+    if (!token) {
+      return { error: "SLACK_USER_TOKEN and SLACK_BOT_TOKEN not configured — Slack search unavailable" };
     }
 
-    const slack = new WebClient(SLACK_BOT_TOKEN);
+    const slack = new WebClient(token);
 
     try {
       // Build search query
@@ -131,11 +134,13 @@ export const listSlackChannels = tool({
     ),
   }),
   execute: async ({ filter }) => {
-    if (!SLACK_BOT_TOKEN) {
-      return { error: "SLACK_BOT_TOKEN not configured" };
+    // Prefer user token for channel listing; fall back to bot token
+    const token = SLACK_USER_TOKEN || SLACK_BOT_TOKEN;
+    if (!token) {
+      return { error: "SLACK_USER_TOKEN and SLACK_BOT_TOKEN not configured" };
     }
 
-    const slack = new WebClient(SLACK_BOT_TOKEN);
+    const slack = new WebClient(token);
 
     try {
       const allChannels = await getChannelList(slack);
