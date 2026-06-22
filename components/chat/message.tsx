@@ -36,6 +36,7 @@ import type { ReportCardData } from "@/components/generative/report-card";
 import { SearchResultCard } from "@/components/generative/search-result-card";
 import type { SearchResultData } from "@/components/generative/search-result-card";
 import { VpsProgressCard } from "./vps-progress-card";
+import { AgentSessionCard } from "@/components/agent-session/AgentSessionCard";
 import {
   groupToolCalls,
   CollapsedToolGroup,
@@ -456,23 +457,18 @@ const PurePreviewMessage = ({
                 ) : (toolName === "spawnCodingAgent" || toolName === "spawnCodingAgent") &&
                   toolPart.output &&
                   typeof toolPart.output === "object" &&
-                  "handoff" in toolPart.output ? (
-                  <HandoffCard
-                    handoff={(toolPart.output as Record<string, unknown>).handoff as {
-                      sessionId: string;
-                      mode: string;
-                      goal: string;
-                      status: "spawning" | "running" | "ready_for_preview" | "ready_to_merge" | "completed" | "failed";
-                      branch?: string;
-                      prUrl?: string;
-                      deployUrl?: string;
-                      sandboxUrl?: string;
-                      repo?: string;
-                      progress?: number;
-                      errorMessage?: string;
-                      v2DirectUrl?: string;
-                      libraryUrl?: string;
-                    }}
+                  ("handoff" in toolPart.output || "sessionId" in toolPart.output) ? (
+                  <AgentSessionCard
+                    sessionId={
+                      ((toolPart.output as Record<string, unknown>).handoff as Record<string, unknown>)?.sessionId as string ||
+                      (toolPart.output as Record<string, unknown>).sessionId as string ||
+                      "unknown"
+                    }
+                    goal={
+                      ((toolPart.output as Record<string, unknown>).handoff as Record<string, unknown>)?.goal as string ||
+                      "Coding session"
+                    }
+                    lane="v2"
                   />
                 // ── M-N4: billing-alignment → BillingAlignmentCard ──────
                 ) : toolName === "billingAlignment" &&
@@ -520,14 +516,15 @@ const PurePreviewMessage = ({
                     data={toolPart.output as unknown as SearchResultData}
                   />
 
-                // ── M-N4: hermes-vps dispatch → VpsProgressCard ───────
+                // ── M-NEPTUNE-PERFECT Phase 3: hermes-vps dispatch → AgentSessionCard ──
                 ) : (toolName === "hermes-vps" || toolName === "dispatchToVps") &&
                   toolPart.output &&
                   typeof toolPart.output === "object" &&
                   "dispatchId" in toolPart.output ? (
-                  <VpsProgressCard
-                    dispatchId={(toolPart.output as Record<string, unknown>).dispatchId as string}
-                    prompt={(toolPart.output as Record<string, unknown>).prompt as string || ""}
+                  <AgentSessionCard
+                    sessionId={(toolPart.output as Record<string, unknown>).dispatchId as string}
+                    goal={(toolPart.output as Record<string, unknown>).prompt as string || "VPS dispatch"}
+                    lane="vps"
                   />
 
                 // ── Existing: connectorType envelope → UniversalConnectorCard ──
