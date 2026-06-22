@@ -153,8 +153,7 @@ async function upsertRelation(
     ON CONFLICT (from_entity_id, to_entity_id, type)
     DO UPDATE SET
       properties = EXCLUDED.properties,
-      confidence = EXCLUDED.confidence,
-      updated_at = NOW()
+      confidence = EXCLUDED.confidence
     RETURNING id
   `;
 
@@ -227,17 +226,49 @@ export async function backfillGraphTags(): Promise<BackfillResult> {
         // ── Create relations to associated playbooks ──
         if (tag.directions?.associated_playbooks) {
           for (const playbook of tag.directions.associated_playbooks) {
+            // Handle both string format (playbooks) and {ref, relationship} format (connectors)
+            const ref = typeof playbook === "string" ? playbook : playbook.ref;
+            const relationship = typeof playbook === "string" ? "references" : (playbook.relationship || "references");
+            if (!ref) continue;
+
             const playbookEntityRow = await sql<{ id: string }[]>`
-              SELECT id FROM kg_entities WHERE name = ${playbook.ref} LIMIT 1
+              SELECT id FROM kg_entities WHERE name = ${ref} LIMIT 1
             `;
             const fromId = entityIdMap.get(tag.entity_id);
             const toId = playbookEntityRow[0]?.id;
             if (fromId && toId) {
+              const relType = relationship.toUpperCase().replace(/[\s-]+/g, "_").replace(/[^A-Z0-9_]/g, "").slice(0, 30) as RelationType;
               const relStatus = await upsertRelation(sql, {
                 from_entity_id: fromId,
                 to_entity_id: toId,
-                type: playbook.relationship.toUpperCase().replace(/\s+/g, "_") as RelationType,
-                properties: { source: "GRAPH-TAG", relationship: playbook.relationship },
+                type: relType || "REFERENCES",
+                properties: { source: "GRAPH-TAG", relationship },
+              });
+              if (relStatus === "created") result.relationsCreated++;
+              else result.relationsUpdated++;
+            }
+          }
+        }
+
+        // ── Create relations to associated connectors ──
+        if (tag.directions?.associated_connectors) {
+          for (const conn of tag.directions.associated_connectors) {
+            const ref = typeof conn === "string" ? conn : conn.ref;
+            const relationship = typeof conn === "string" ? "uses" : (conn.relationship || "uses");
+            if (!ref) continue;
+
+            const connEntityRow = await sql<{ id: string }[]>`
+              SELECT id FROM kg_entities WHERE name = ${ref} LIMIT 1
+            `;
+            const fromId = entityIdMap.get(tag.entity_id);
+            const toId = connEntityRow[0]?.id;
+            if (fromId && toId) {
+              const relType = relationship.toUpperCase().replace(/[\s-]+/g, "_").replace(/[^A-Z0-9_]/g, "").slice(0, 30) as RelationType;
+              const relStatus = await upsertRelation(sql, {
+                from_entity_id: fromId,
+                to_entity_id: toId,
+                type: relType || "USES",
+                properties: { source: "GRAPH-TAG", relationship },
               });
               if (relStatus === "created") result.relationsCreated++;
               else result.relationsUpdated++;
@@ -248,17 +279,22 @@ export async function backfillGraphTags(): Promise<BackfillResult> {
         // ── Create relations to associated skills ──
         if (tag.directions?.associated_skills) {
           for (const skill of tag.directions.associated_skills) {
+            const ref = typeof skill === "string" ? skill : skill.ref;
+            const relationship = typeof skill === "string" ? "uses" : (skill.relationship || "uses");
+            if (!ref) continue;
+
             const skillEntityRow = await sql<{ id: string }[]>`
-              SELECT id FROM kg_entities WHERE name LIKE ${"%" + skill.ref} LIMIT 1
+              SELECT id FROM kg_entities WHERE name LIKE ${"%" + ref} LIMIT 1
             `;
             const fromId = entityIdMap.get(tag.entity_id);
             const toId = skillEntityRow[0]?.id;
             if (fromId && toId) {
+              const relType = relationship.toUpperCase().replace(/[\s-]+/g, "_").replace(/[^A-Z0-9_]/g, "").slice(0, 30) as RelationType;
               const relStatus = await upsertRelation(sql, {
                 from_entity_id: fromId,
                 to_entity_id: toId,
-                type: "USES" as RelationType,
-                properties: { source: "GRAPH-TAG", relationship: skill.relationship },
+                type: relType || "USES",
+                properties: { source: "GRAPH-TAG", relationship },
               });
               if (relStatus === "created") result.relationsCreated++;
               else result.relationsUpdated++;
