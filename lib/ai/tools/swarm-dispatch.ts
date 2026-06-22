@@ -415,11 +415,11 @@ export async function swarmDispatch(
       maxTokens: input.synthesizer.maxTokens,
     };
 
-    if (overrides.length > 0) {
+    if (overridesList.length > 0) {
       console.log(
         `[swarm-dispatch] 🔒 Preset "${input.presetId}" enforced ` +
-        `${overrides.length} override(s): ` +
-        overrides.map(o => `${o.agent}: ${o.requested}→${o.forced}`).join(", ") +
+        `${overridesList.length} override(s): ` +
+        overridesList.map(o => `${o.agent}: ${o.requested}→${o.forced}`).join(", ") +
         `. Final: [${effectiveAgents.map(a => `${a.role} (${a.model})`).join(", ")}] · ` +
         `synthesizer: ${preset.judge.name} (${preset.judge.modelId})`
       );

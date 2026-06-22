@@ -35,8 +35,8 @@ export const bulkBase44Pull = tool({
     ),
   }),
   execute: async ({ entity, ids, fields }) => {
-    const bridgeUrl = process.env.VPS_BRIDGE_URL || "http://localhost:8400";
-    const diagKey = process.env.NEPTUNE_INTERNAL_TOKEN || "";
+    const bridgeUrl = process.env.BASE44_BRIDGE_URL || process.env.VPS_BRIDGE_URL || "http://localhost:8400";
+    const diagKey = process.env.BASE44_API_KEY || process.env.BASE44_DIAG_KEY || process.env.NEPTUNE_INTERNAL_TOKEN || "";
 
     const results: Record<string, Record<string, unknown> | null> = {};
     let successCount = 0;
