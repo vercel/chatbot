@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "installCommand": "npm install -g pnpm@10.32.1 && pnpm install",
   "headers": [
     {
       "source": "/command-center(.*)",
@@ -24,7 +25,5 @@
       "path": "/api/cron/refinement-loop",
       "schedule": "0 2 * * 0"
     }
-  ],
-  "installCommand": "npm install -g pnpm@10.32.1 && pnpm install",
-  "nodeVersion": "22.x"
+  ]
 }
