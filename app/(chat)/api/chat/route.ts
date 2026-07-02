@@ -4,8 +4,9 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   generateId,
-  stepCountIs,
+  isStepCount,
   streamText,
+  toUIMessageStream,
 } from "ai";
 import { checkBotId } from "botid/server";
 import { after } from "next/server";
@@ -193,10 +194,10 @@ export async function POST(request: Request) {
       execute: async ({ writer: dataStream }) => {
         const result = streamText({
           model: getLanguageModel(chatModel),
-          system: systemPrompt({ requestHints, supportsTools }),
+          instructions: systemPrompt({ requestHints, supportsTools }),
           messages: modelMessages,
-          stopWhen: stepCountIs(5),
-          experimental_activeTools:
+          stopWhen: isStepCount(5),
+          activeTools:
             isReasoningModel && !supportsTools
               ? []
               : [
@@ -233,14 +234,17 @@ export async function POST(request: Request) {
               modelId: chatModel,
             }),
           },
-          experimental_telemetry: {
+          telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
           },
         });
 
         dataStream.merge(
-          result.toUIMessageStream({ sendReasoning: isReasoningModel })
+          toUIMessageStream({
+            stream: result.stream,
+            sendReasoning: isReasoningModel,
+          })
         );
 
         if (titlePromise) {
@@ -254,7 +258,7 @@ export async function POST(request: Request) {
         }
       },
       generateId: generateUUID,
-      onFinish: async ({ messages: finishedMessages }) => {
+      onEnd: async ({ messages: finishedMessages }) => {
         if (isToolApprovalFlow) {
           for (const finishedMsg of finishedMessages) {
             const existingMsg = uiMessages.find((m) => m.id === finishedMsg.id);
