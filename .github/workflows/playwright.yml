@@ -10,7 +10,7 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     env:
-      AUTH_SECRET: {{ secrets.AUTH_SECRET }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
       REDIS_URL: ${{ secrets.REDIS_URL }}
