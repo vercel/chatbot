@@ -1,20 +1,19 @@
 import equal from "fast-deep-equal";
 import { memo } from "react";
 import { toast } from "sonner";
-import { useSWRConfig } from "swr";
 import { useCopyToClipboard } from "usehooks-ts";
-import type { Vote } from "@/lib/db/schema";
+import type { Vote } from "@/lib/chat/types";
 import type { ChatMessage } from "@/lib/types";
 import {
   MessageAction as Action,
   MessageActions as Actions,
 } from "../ai-elements/message";
-import { CopyIcon, PencilEditIcon, ThumbDownIcon, ThumbUpIcon } from "./icons";
+import { CopyIcon, PencilEditIcon } from "./icons";
 
 export function PureMessageActions({
-  chatId,
+  chatId: _chatId,
   message,
-  vote,
+  vote: _vote,
   isLoading,
   onEdit,
 }: {
@@ -24,7 +23,6 @@ export function PureMessageActions({
   isLoading: boolean;
   onEdit?: () => void;
 }) {
-  const { mutate } = useSWRConfig();
   const [_, copyToClipboard] = useCopyToClipboard();
 
   if (isLoading) {
@@ -81,112 +79,6 @@ export function PureMessageActions({
         tooltip="Copy"
       >
         <CopyIcon />
-      </Action>
-
-      <Action
-        className="text-muted-foreground/50 hover:text-foreground"
-        data-testid="message-upvote"
-        disabled={vote?.isUpvoted}
-        onClick={() => {
-          const upvote = fetch(
-            `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                chatId,
-                messageId: message.id,
-                type: "up",
-              }),
-            }
-          );
-
-          toast.promise(upvote, {
-            loading: "Upvoting Response...",
-            success: () => {
-              mutate<Vote[]>(
-                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote?chatId=${chatId}`,
-                (currentVotes) => {
-                  if (!currentVotes) {
-                    return [];
-                  }
-
-                  const votesWithoutCurrent = currentVotes.filter(
-                    (currentVote) => currentVote.messageId !== message.id
-                  );
-
-                  return [
-                    ...votesWithoutCurrent,
-                    {
-                      chatId,
-                      messageId: message.id,
-                      isUpvoted: true,
-                    },
-                  ];
-                },
-                { revalidate: false }
-              );
-
-              return "Upvoted Response!";
-            },
-            error: "Failed to upvote response.",
-          });
-        }}
-        tooltip="Upvote Response"
-      >
-        <ThumbUpIcon />
-      </Action>
-
-      <Action
-        className="text-muted-foreground/50 hover:text-foreground"
-        data-testid="message-downvote"
-        disabled={vote && !vote.isUpvoted}
-        onClick={() => {
-          const downvote = fetch(
-            `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                chatId,
-                messageId: message.id,
-                type: "down",
-              }),
-            }
-          );
-
-          toast.promise(downvote, {
-            loading: "Downvoting Response...",
-            success: () => {
-              mutate<Vote[]>(
-                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote?chatId=${chatId}`,
-                (currentVotes) => {
-                  if (!currentVotes) {
-                    return [];
-                  }
-
-                  const votesWithoutCurrent = currentVotes.filter(
-                    (currentVote) => currentVote.messageId !== message.id
-                  );
-
-                  return [
-                    ...votesWithoutCurrent,
-                    {
-                      chatId,
-                      messageId: message.id,
-                      isUpvoted: false,
-                    },
-                  ];
-                },
-                { revalidate: false }
-              );
-
-              return "Downvoted Response!";
-            },
-            error: "Failed to downvote response.",
-          });
-        }}
-        tooltip="Downvote Response"
-      >
-        <ThumbDownIcon />
       </Action>
     </Actions>
   );

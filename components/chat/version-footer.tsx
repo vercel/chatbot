@@ -1,15 +1,10 @@
 "use client";
 
-import { isAfter } from "date-fns";
 import { motion } from "framer-motion";
 import { ChevronLeftIcon, ChevronRightIcon, DiffIcon } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
-import { useState } from "react";
-import { useSWRConfig } from "swr";
-import { useArtifact } from "@/hooks/use-artifact";
-import type { Document } from "@/lib/db/schema";
-import { cn, getDocumentTimestampByIndex } from "@/lib/utils";
-import { LoaderIcon } from "./icons";
+import type { Document } from "@/lib/chat/types";
+import { cn } from "@/lib/utils";
 
 type VersionFooterProps = {
   handleVersionChange: (type: "next" | "prev" | "toggle" | "latest") => void;
@@ -26,11 +21,6 @@ export const VersionFooter = ({
   mode,
   setMode,
 }: VersionFooterProps) => {
-  const { artifact } = useArtifact();
-
-  const { mutate } = useSWRConfig();
-  const [isMutating, setIsMutating] = useState(false);
-
   if (!documents) {
     return;
   }
@@ -85,52 +75,13 @@ export const VersionFooter = ({
       <div className="flex flex-row gap-2">
         <button
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-foreground px-3 py-1.5 text-sm font-medium text-background transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-          disabled={isMutating}
-          onClick={async () => {
-            setIsMutating(true);
-
-            try {
-              await mutate(
-                `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}`,
-                await fetch(
-                  `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/document?id=${artifact.documentId}&timestamp=${getDocumentTimestampByIndex(
-                    documents,
-                    currentVersionIndex
-                  )}`,
-                  {
-                    method: "DELETE",
-                  }
-                ),
-                {
-                  optimisticData: documents
-                    ? [
-                        ...documents.filter((document) =>
-                          isAfter(
-                            new Date(document.createdAt),
-                            new Date(
-                              getDocumentTimestampByIndex(
-                                documents,
-                                currentVersionIndex
-                              )
-                            )
-                          )
-                        ),
-                      ]
-                    : [],
-                }
-              );
-            } finally {
-              setIsMutating(false);
-            }
+          onClick={() => {
+            handleVersionChange("latest");
+            setMode("edit");
           }}
           type="button"
         >
           Restore
-          {isMutating && (
-            <div className="animate-spin">
-              <LoaderIcon size={14} />
-            </div>
-          )}
         </button>
         <button
           className="inline-flex items-center justify-center rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-all duration-150 hover:bg-muted active:scale-[0.98]"

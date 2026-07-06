@@ -1,12 +1,10 @@
 import { tool, type UIMessageStreamWriter } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
-import {
-  artifactKinds,
-  documentHandlersByArtifactKind,
-} from "@/lib/artifacts/server";
 import type { ChatMessage } from "@/lib/types";
 import { generateUUID } from "@/lib/utils";
+
+const artifactKinds = ["text", "code", "sheet"] as const;
 
 type CreateDocumentProps = {
   session: Session;
@@ -15,9 +13,9 @@ type CreateDocumentProps = {
 };
 
 export const createDocument = ({
-  session,
+  session: _session,
   dataStream,
-  modelId,
+  modelId: _modelId,
 }: CreateDocumentProps) =>
   tool({
     description:
@@ -57,33 +55,13 @@ export const createDocument = ({
         transient: true,
       });
 
-      const documentHandler = documentHandlersByArtifactKind.find(
-        (documentHandlerByArtifactKind) =>
-          documentHandlerByArtifactKind.kind === kind
-      );
-
-      if (!documentHandler) {
-        throw new Error(`No document handler found for kind: ${kind}`);
-      }
-
-      await documentHandler.onCreateDocument({
-        id,
-        title,
-        dataStream,
-        session,
-        modelId,
-      });
-
       dataStream.write({ type: "data-finish", data: null, transient: true });
 
       return {
         id,
         title,
         kind,
-        content:
-          kind === "code"
-            ? "A script was created and is now visible to the user."
-            : "A document was created and is now visible to the user.",
+        content: "Document tools are disabled in UI-only mode.",
       };
     },
   });

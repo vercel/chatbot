@@ -1,0 +1,11 @@
+node_modules
+.pnpm-store
+.next
+out
+build
+coverage
+pnpm-lock.yaml
+tsconfig.tsbuildinfo
+test-results
+playwright-report
+blob-report

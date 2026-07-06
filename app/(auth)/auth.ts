@@ -1,12 +1,10 @@
-import { compare } from "bcrypt-ts";
 import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
-import Credentials from "next-auth/providers/credentials";
-import { DUMMY_PASSWORD } from "@/lib/constants";
-import { createGuestUser, getUser } from "@/lib/db/queries";
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import { hasEntraAuthConfig } from "@/lib/auth-mode";
 import { authConfig } from "./auth.config";
 
-export type UserType = "guest" | "regular";
+export type UserType = "regular";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
@@ -14,12 +12,14 @@ declare module "next-auth" {
       id: string;
       type: UserType;
     } & DefaultSession["user"];
+    accessToken?: string;
+    idToken?: string;
   }
 
   interface User {
     id?: string;
     email?: string | null;
-    type: UserType;
+    type?: UserType;
   }
 }
 
@@ -27,8 +27,26 @@ declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
     type: UserType;
+    accessToken?: string;
+    idToken?: string;
   }
 }
+
+const tenantId = process.env.AUTH_MICROSOFT_ENTRA_ID_TENANT_ID;
+const entraProvider =
+  hasEntraAuthConfig()
+    ? MicrosoftEntraID({
+        clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
+        clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
+        ...(tenantId && {
+          issuer: `https://login.microsoftonline.com/${tenantId}/v2.0`,
+        }),
+      })
+    : null;
+
+const providers = [entraProvider].filter(
+  (provider): provider is NonNullable<typeof provider> => Boolean(provider)
+);
 
 export const {
   handlers: { GET, POST },
@@ -37,52 +55,20 @@ export const {
   signOut,
 } = NextAuth({
   ...authConfig,
-  providers: [
-    Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        const email = String(credentials.email ?? "");
-        const password = String(credentials.password ?? "");
-        const users = await getUser(email);
-
-        if (users.length === 0) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
-        }
-
-        const [user] = users;
-
-        if (!user.password) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
-        }
-
-        const passwordsMatch = await compare(password, user.password);
-
-        if (!passwordsMatch) {
-          return null;
-        }
-
-        return { ...user, type: "regular" };
-      },
-    }),
-    Credentials({
-      id: "guest",
-      credentials: {},
-      async authorize() {
-        const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: "guest" };
-      },
-    }),
-  ],
+  providers,
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id as string;
-        token.type = user.type;
+        token.id = user.id ?? token.sub ?? user.email ?? "";
+        token.type = "regular";
+      }
+
+      if (account?.access_token) {
+        token.accessToken = account.access_token;
+      }
+
+      if (account?.id_token) {
+        token.idToken = account.id_token;
       }
 
       return token;
@@ -90,8 +76,11 @@ export const {
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
-        session.user.type = token.type;
+        session.user.type = token.type ?? "regular";
       }
+
+      session.accessToken = token.accessToken;
+      session.idToken = token.idToken;
 
       return session;
     },
