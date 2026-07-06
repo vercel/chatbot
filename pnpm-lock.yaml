@@ -10,13 +10,13 @@ importers:
     dependencies:
       '@ai-sdk/otel':
         specifier: ^1.0.9
-        version: 1.0.9(zod@3.25.76)
+        version: 1.0.9(zod@4.3.5)
       '@ai-sdk/provider':
         specifier: ^4.0.1
         version: 4.0.1
       '@ai-sdk/react':
         specifier: 4.0.10
-        version: 4.0.10(react@19.0.1)(zod@3.25.76)
+        version: 4.0.10(react@19.0.1)(zod@4.3.5)
       '@codemirror/lang-python':
         specifier: ^6.1.6
         version: 6.1.7
@@ -64,7 +64,7 @@ importers:
         version: 1.14.0(@opentelemetry/api-logs@0.200.0)(@opentelemetry/api@1.9.0)(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.0))(@opentelemetry/resources@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.57.2(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.0))
       ai:
         specifier: 7.0.9
-        version: 7.0.9(zod@3.25.76)
+        version: 7.0.9(zod@4.3.5)
       bcrypt-ts:
         specifier: ^5.0.2
         version: 5.0.3
@@ -204,8 +204,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.1(react@19.0.1)
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.3.5
+        version: 4.3.5
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.11
@@ -4085,9 +4085,6 @@ packages:
       utf-8-validate:
         optional: true
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
   zod@4.3.5:
     resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
 
@@ -4096,46 +4093,46 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/gateway@4.0.7(zod@3.25.76)':
+  '@ai-sdk/gateway@4.0.7(zod@4.3.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.1
-      '@ai-sdk/provider-utils': 5.0.2(zod@3.25.76)
+      '@ai-sdk/provider-utils': 5.0.2(zod@4.3.5)
       '@vercel/oidc': 3.2.0
-      zod: 3.25.76
+      zod: 4.3.5
 
-  '@ai-sdk/mcp@2.0.4(zod@3.25.76)':
+  '@ai-sdk/mcp@2.0.4(zod@4.3.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.1
-      '@ai-sdk/provider-utils': 5.0.2(zod@3.25.76)
+      '@ai-sdk/provider-utils': 5.0.2(zod@4.3.5)
       pkce-challenge: 5.0.1
-      zod: 3.25.76
+      zod: 4.3.5
 
-  '@ai-sdk/otel@1.0.9(zod@3.25.76)':
+  '@ai-sdk/otel@1.0.9(zod@4.3.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.1
       '@opentelemetry/api': 1.9.1
-      ai: 7.0.9(zod@3.25.76)
+      ai: 7.0.9(zod@4.3.5)
     transitivePeerDependencies:
       - zod
 
-  '@ai-sdk/provider-utils@5.0.2(zod@3.25.76)':
+  '@ai-sdk/provider-utils@5.0.2(zod@4.3.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.1
       '@standard-schema/spec': 1.1.0
       '@workflow/serde': 4.1.0
       eventsource-parser: 3.1.0
-      zod: 3.25.76
+      zod: 4.3.5
 
   '@ai-sdk/provider@4.0.1':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@4.0.10(react@19.0.1)(zod@3.25.76)':
+  '@ai-sdk/react@4.0.10(react@19.0.1)(zod@4.3.5)':
     dependencies:
-      '@ai-sdk/mcp': 2.0.4(zod@3.25.76)
+      '@ai-sdk/mcp': 2.0.4(zod@4.3.5)
       '@ai-sdk/provider': 4.0.1
-      '@ai-sdk/provider-utils': 5.0.2(zod@3.25.76)
-      ai: 7.0.9(zod@3.25.76)
+      '@ai-sdk/provider-utils': 5.0.2(zod@4.3.5)
+      ai: 7.0.9(zod@4.3.5)
       react: 19.0.1
       swr: 2.4.2(react@19.0.1)
       throttleit: 2.1.0
@@ -4733,7 +4730,7 @@ snapshots:
 
   '@opentelemetry/api-logs@0.57.2':
     dependencies:
-      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api': 1.9.1
 
   '@opentelemetry/api@1.9.0': {}
 
@@ -5949,12 +5946,12 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  ai@7.0.9(zod@3.25.76):
+  ai@7.0.9(zod@4.3.5):
     dependencies:
-      '@ai-sdk/gateway': 4.0.7(zod@3.25.76)
+      '@ai-sdk/gateway': 4.0.7(zod@4.3.5)
       '@ai-sdk/provider': 4.0.1
-      '@ai-sdk/provider-utils': 5.0.2(zod@3.25.76)
-      zod: 3.25.76
+      '@ai-sdk/provider-utils': 5.0.2(zod@4.3.5)
+      zod: 4.3.5
 
   argparse@2.0.1: {}
 
@@ -8081,8 +8078,6 @@ snapshots:
     optionalDependencies:
       bufferutil: 4.0.9
     optional: true
-
-  zod@3.25.76: {}
 
   zod@4.3.5: {}
 
