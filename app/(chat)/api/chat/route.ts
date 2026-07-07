@@ -187,7 +187,37 @@ export async function POST(request: Request) {
     const isReasoningModel = capabilities?.reasoning === true;
     const supportsTools = capabilities?.tools === true;
 
-    const modelMessages = await convertToModelMessages(uiMessages);
+    // Clean up unhandled tool approvals: strip pending parts from model context and mark them as denied in DB
+    const isPendingApproval = (part: Record<string, unknown>) =>
+      part.state === "approval-requested";
+
+    const cleanedMessages = uiMessages
+      .map((msg) => {
+        if (msg.role !== "assistant") return msg;
+        const cleanedParts = msg.parts.filter(
+          (part) => !isPendingApproval(part as Record<string, unknown>),
+        );
+        if (cleanedParts.length === msg.parts.length) return msg;
+        return { ...msg, parts: cleanedParts };
+      })
+      .filter((msg) => msg.role !== "assistant" || msg.parts.length > 0);
+
+
+    // Sync changes to the database
+    await Promise.all(
+      messagesFromDb.map(async (dbMsg) => {
+        const parts = dbMsg.parts as Record<string, unknown>[];
+        if (!parts.some(isPendingApproval)) return;
+        await updateMessage({
+          id: dbMsg.id,
+          parts: parts.map((p) =>
+            isPendingApproval(p) ? { ...p, state: "output-denied" } : p,
+          ) as DBMessage["parts"],
+        });
+      }),
+    );
+
+    const modelMessages = await convertToModelMessages(cleanedMessages);
 
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,

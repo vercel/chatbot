@@ -6,6 +6,7 @@ import { DefaultChatTransport } from "ai";
 import { usePathname } from "next/navigation";
 import {
   createContext,
+  useCallback,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
@@ -117,8 +118,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
           (part) =>
             "state" in part &&
             part.state === "approval-responded" &&
-            "approval" in part &&
-            (part.approval as { approved?: boolean })?.approved === true
+            "approval" in part
         ) ?? false
       );
     },
@@ -128,7 +128,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       prepareSendMessagesRequest(request) {
         const lastMessage = request.messages.at(-1);
         const isToolApprovalContinuation =
-          lastMessage?.role !== "user" ||
+          lastMessage?.role !== "user" &&
           request.messages.some((msg) =>
             msg.parts?.some((part) => {
               const state = (part as { state?: string }).state;
@@ -244,12 +244,47 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     { revalidateOnFocus: false }
   );
 
+  // Automatically change all messages still in the 'approval-requested' state to 'output-denied' when sending a new message.
+  // Ensure the user can continue chatting even without explicit approval (neither 'Allow' nor 'Deny').
+  const wrappedSendMessage: typeof sendMessage = useCallback(
+    (...args) => {
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.role !== "assistant") return msg;
+
+          const hasPending = msg.parts.some(
+            (part) =>
+              "state" in part &&
+              (part as Record<string, unknown>).state === "approval-requested",
+          );
+          if (!hasPending) return msg;
+
+          return {
+            ...msg,
+            parts: msg.parts.map((part) => {
+              if (
+                "state" in part &&
+                (part as Record<string, unknown>).state === "approval-requested"
+              ) {
+                return { ...part, state: "output-denied" } as typeof part;
+              }
+              return part;
+            }),
+          };
+        }),
+      );
+
+      return sendMessage(...args);
+    },
+    [sendMessage, setMessages],
+  );
+
   const value = useMemo<ActiveChatContextValue>(
     () => ({
       chatId,
       messages,
       setMessages,
-      sendMessage,
+      sendMessage: wrappedSendMessage,
       status,
       stop,
       regenerate,
@@ -269,7 +304,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       chatId,
       messages,
       setMessages,
-      sendMessage,
+      wrappedSendMessage,
       status,
       stop,
       regenerate,
