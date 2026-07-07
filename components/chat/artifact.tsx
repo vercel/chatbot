@@ -379,7 +379,7 @@ function PureArtifact({
           title={artifact.title}
         />
         <AnimatePresence>
-          {isCurrentVersion && (
+          {isCurrentVersion ? (
             <Toolbar
               artifactActions={
                 <ArtifactActions
@@ -405,7 +405,7 @@ function PureArtifact({
               status={status}
               stop={stop}
             />
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
       <AnimatePresence>

@@ -33,14 +33,14 @@ export const PreviewAttachment = ({
         </div>
       )}
 
-      {isUploading && (
+      {isUploading ? (
         <div
           className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 backdrop-blur-sm"
           data-testid="input-attachment-loader"
         >
           <Spinner className="size-5" />
         </div>
-      )}
+      ) : null}
 
       {onRemove && !isUploading && (
         <button

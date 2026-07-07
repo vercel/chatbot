@@ -24,11 +24,11 @@ export function SubmitButton({
     >
       {children}
 
-      {(pending || isSuccessful) && (
+      {pending || isSuccessful ? (
         <span className="absolute right-4 animate-spin">
           <LoaderIcon />
         </span>
-      )}
+      ) : null}
 
       <output aria-live="polite" className="sr-only">
         {pending || isSuccessful ? "Loading" : "Submit form"}

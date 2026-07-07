@@ -370,7 +370,7 @@ function PureMultimodalInput({
 
   return (
     <div className={cn("relative flex w-full flex-col gap-4", className)}>
-      {editingMessage && onCancelEdit && (
+      {editingMessage && onCancelEdit ? (
         <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
           <span>Editing message</span>
           <button
@@ -384,7 +384,7 @@ function PureMultimodalInput({
             Cancel
           </button>
         </div>
-      )}
+      ) : null}
 
       {!editingMessage &&
         !isLoading &&
@@ -408,14 +408,14 @@ function PureMultimodalInput({
       />
 
       <div className="relative">
-        {slashOpen && (
+        {slashOpen ? (
           <SlashCommandMenu
             onClose={() => setSlashOpen(false)}
             onSelect={handleSlashSelect}
             query={slashQuery}
             selectedIndex={slashIndex}
           />
-        )}
+        ) : null}
       </div>
 
       <PromptInput
@@ -659,7 +659,7 @@ function PureModelSelectorCompact({
           data-testid="model-selector"
           variant="ghost"
         >
-          {provider && <ModelSelectorLogo provider={provider} />}
+          {provider ? <ModelSelectorLogo provider={provider} /> : null}
           <ModelSelectorName>{selectedModel.name}</ModelSelectorName>
         </Button>
       </ModelSelectorTrigger>
@@ -764,15 +764,15 @@ function PureModelSelectorCompact({
                       <ModelSelectorLogo provider={logoProvider} />
                       <ModelSelectorName>{model.name}</ModelSelectorName>
                       <div className="ml-auto flex items-center gap-2 text-foreground/70">
-                        {capabilities?.[model.id]?.tools && (
+                        {capabilities?.[model.id]?.tools ? (
                           <WrenchIcon className="size-3.5" />
-                        )}
-                        {capabilities?.[model.id]?.vision && (
+                        ) : null}
+                        {capabilities?.[model.id]?.vision ? (
                           <EyeIcon className="size-3.5" />
-                        )}
-                        {capabilities?.[model.id]?.reasoning && (
+                        ) : null}
+                        {capabilities?.[model.id]?.reasoning ? (
                           <BrainIcon className="size-3.5" />
-                        )}
+                        ) : null}
                         {!curated && (
                           <LockIcon className="size-3 text-muted-foreground/50" />
                         )}

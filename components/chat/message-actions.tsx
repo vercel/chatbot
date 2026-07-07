@@ -51,7 +51,7 @@ export function PureMessageActions({
     return (
       <Actions className="-mr-0.5 justify-end opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
         <div className="flex items-center gap-0.5">
-          {onEdit && (
+          {onEdit ? (
             <Action
               className="size-7 text-muted-foreground/50 hover:text-foreground"
               data-testid="message-edit-button"
@@ -60,7 +60,7 @@ export function PureMessageActions({
             >
               <PencilEditIcon />
             </Action>
-          )}
+          ) : null}
           <Action
             className="size-7 text-muted-foreground/50 hover:text-foreground"
             onClick={handleCopy}

@@ -117,7 +117,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     <span className="font-medium">New chat</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {user && (
+                {user ? (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       className="rounded-lg text-sidebar-foreground/40 transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive"
@@ -128,14 +128,14 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                       <span className="text-[13px]">Delete all</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                )}
+                ) : null}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
           <SidebarHistory user={user} />
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border pt-2 pb-3">
-          {user && <SidebarUserNav user={user} />}
+          {user ? <SidebarUserNav user={user} /> : null}
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>

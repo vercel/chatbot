@@ -6,6 +6,7 @@ import { WrenchIcon, XIcon } from "lucide-react";
 import { nanoid } from "nanoid";
 import {
   type Dispatch,
+  isValidElement,
   memo,
   type ReactNode,
   type SetStateAction,
@@ -113,7 +114,11 @@ const Tool = ({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
-          {selectedTool === description ? <ArrowUpIcon /> : icon}
+          {selectedTool === description ? (
+            <ArrowUpIcon />
+          ) : isValidElement(icon) ? (
+            icon
+          ) : null}
         </motion.div>
       </TooltipTrigger>
       <TooltipContent
@@ -411,7 +416,7 @@ const PureToolbar = ({
         ref={toolbarRef}
         transition={{ damping: 25, stiffness: 300, type: "spring" }}
       >
-        {onClose && (
+        {onClose ? (
           <motion.div
             animate={{ opacity: 1 }}
             className="p-3 text-muted-foreground transition-colors hover:text-foreground"
@@ -420,7 +425,7 @@ const PureToolbar = ({
           >
             <XIcon className="size-4" />
           </motion.div>
-        )}
+        ) : null}
 
         {status === "streaming" ? (
           <motion.div

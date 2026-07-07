@@ -217,7 +217,7 @@ export const codeArtifact = new Artifact<"code", Metadata>({
         <CodeEditor {...props} />
       </div>
 
-      {metadata?.outputs && (
+      {metadata?.outputs ? (
         <Console
           consoleOutputs={metadata.outputs}
           setConsoleOutputs={() => {
@@ -227,7 +227,7 @@ export const codeArtifact = new Artifact<"code", Metadata>({
             });
           }}
         />
-      )}
+      ) : null}
     </>
   ),
   description:

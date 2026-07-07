@@ -124,11 +124,11 @@ export function SlashCommandMenu({
             <span className="text-[12px] text-muted-foreground/50">
               {cmd.description}
             </span>
-            {cmd.shortcut && (
+            {cmd.shortcut ? (
               <span className="ml-auto text-[11px] text-muted-foreground/30">
                 {cmd.shortcut}
               </span>
-            )}
+            ) : null}
           </button>
         ))}
       </div>

@@ -126,11 +126,11 @@ export const VersionFooter = ({
           type="button"
         >
           Restore
-          {isMutating && (
+          {isMutating ? (
             <div className="animate-spin">
               <LoaderIcon size={14} />
             </div>
-          )}
+          ) : null}
         </button>
         <button
           className="inline-flex items-center justify-center rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-all duration-150 hover:bg-muted active:scale-[0.98]"
