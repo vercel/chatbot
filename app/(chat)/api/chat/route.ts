@@ -51,7 +51,7 @@ export const maxDuration = 60;
 function getStreamContext() {
   try {
     return createResumableStreamContext({ waitUntil: after });
-  } catch (_) {
+  } catch {
     return null;
   }
 }
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
   try {
     const json = await request.json();
     requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
+  } catch {
     return new ChatbotError("bad_request:api").toResponse();
   }
 
@@ -252,7 +252,7 @@ export async function POST(request: Request) {
             const title = await titlePromise;
             dataStream.write({ type: "data-chat-title", data: title });
             updateChatTitleById({ chatId: id, title });
-          } catch (_) {
+          } catch {
             /* non-fatal */
           }
         }
@@ -324,7 +324,7 @@ export async function POST(request: Request) {
               () => sseStream
             );
           }
-        } catch (_) {
+        } catch {
           /* non-critical */
         }
       },

@@ -281,7 +281,7 @@ function PureMultimodalInput({
       }
       const { error } = await response.json();
       toast.error(error);
-    } catch (_error) {
+    } catch {
       toast.error("Failed to upload file, please try again!");
     }
   }, []);
@@ -303,7 +303,7 @@ function PureMultimodalInput({
           ...currentAttachments,
           ...successfullyUploadedAttachments,
         ]);
-      } catch (_error) {
+      } catch {
         toast.error("Failed to upload files");
       } finally {
         setUploadQueue([]);
@@ -349,7 +349,7 @@ function PureMultimodalInput({
           ...curr,
           ...(successfullyUploadedAttachments as Attachment[]),
         ]);
-      } catch (_error) {
+      } catch {
         toast.error("Failed to upload pasted image(s)");
       } finally {
         setUploadQueue([]);
