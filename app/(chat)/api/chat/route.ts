@@ -218,14 +218,14 @@ export async function POST(request: Request) {
             return;
           }
           dataStream.write({
-            type: "data-waiting-status",
             data: {
-              phase,
               message: messageText,
               modelId: chatModel,
               modelName,
+              phase,
             },
             transient: true,
+            type: "data-waiting-status",
           });
         };
 
@@ -276,6 +276,20 @@ export async function POST(request: Request) {
           instructions: systemPrompt({ requestHints, supportsTools }),
           messages: modelMessages,
           model: getLanguageModel(chatModel),
+          onAbort() {
+            stopWaitingStatus();
+          },
+          onChunk({ chunk }) {
+            if (isModelStreamActivity(chunk)) {
+              markModelActive();
+            }
+          },
+          onEnd() {
+            stopWaitingStatus();
+          },
+          onError() {
+            stopWaitingStatus();
+          },
           providerOptions: {
             ...(modelConfig?.gatewayOrder && {
               gateway: { order: modelConfig.gatewayOrder },
@@ -307,20 +321,6 @@ export async function POST(request: Request) {
               modelId: chatModel,
               session,
             }),
-          },
-          onChunk({ chunk }) {
-            if (isModelStreamActivity(chunk)) {
-              markModelActive();
-            }
-          },
-          onEnd() {
-            stopWaitingStatus();
-          },
-          onError() {
-            stopWaitingStatus();
-          },
-          onAbort() {
-            stopWaitingStatus();
           },
         });
 

@@ -29,7 +29,7 @@ export function DataStreamProvider({
   const [waitingStatus, setWaitingStatus] = useState<WaitingStatusData>();
 
   const value = useMemo(
-    () => ({ dataStream, setDataStream, waitingStatus, setWaitingStatus }),
+    () => ({ dataStream, setDataStream, setWaitingStatus, waitingStatus }),
     [dataStream, waitingStatus]
   );
 
