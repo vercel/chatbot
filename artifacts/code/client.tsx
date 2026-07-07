@@ -122,8 +122,12 @@ export const codeArtifact = new Artifact<"code", Metadata>({
           });
 
           const requiredHandlers = detectRequiredHandlers(content);
-          for (const handler of requiredHandlers) {
-            if (OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]) {
+          await Promise.all(
+            requiredHandlers.map(async (handler) => {
+              if (!OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]) {
+                return;
+              }
+
               await currentPyodideInstance.runPythonAsync(
                 OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]
               );
@@ -133,8 +137,8 @@ export const codeArtifact = new Artifact<"code", Metadata>({
                   "setup_matplotlib_output()"
                 );
               }
-            }
-          }
+            })
+          );
 
           await currentPyodideInstance.runPythonAsync(content);
 

@@ -45,7 +45,8 @@ const createMockModel = (): LanguageModel =>
         stream: new ReadableStream({
           async start(controller) {
             controller.enqueue({ id: "t1", type: "text-start" });
-            for (const word of words) {
+            await words.reduce<Promise<void>>(async (previous, word) => {
+              await previous;
               controller.enqueue({
                 delta: `${word} `,
                 id: "t1",
@@ -54,7 +55,7 @@ const createMockModel = (): LanguageModel =>
               await new Promise((resolve) => {
                 setTimeout(resolve, 10);
               });
-            }
+            }, Promise.resolve());
             controller.enqueue({ id: "t1", type: "text-end" });
             controller.enqueue({
               finishReason: "stop",
