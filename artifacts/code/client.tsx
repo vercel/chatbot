@@ -148,8 +148,6 @@ export const codeArtifact = new Artifact<"code", Metadata>({
           });
 
           const requiredHandlers = detectRequiredHandlers(content);
-          // Pyodide runs in a single shared interpreter, so handler setup must
-          // stay sequential to avoid interleaving Python global state changes.
           await requiredHandlers.reduce<Promise<void>>(
             async (previous, handler) => {
               await previous;
