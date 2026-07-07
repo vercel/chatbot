@@ -148,8 +148,12 @@ export const codeArtifact = new Artifact<"code", Metadata>({
           });
 
           const requiredHandlers = detectRequiredHandlers(content);
-          await Promise.all(
-            requiredHandlers.map(async (handler) => {
+          // Pyodide runs in a single shared interpreter, so handler setup must
+          // stay sequential to avoid interleaving Python global state changes.
+          await requiredHandlers.reduce<Promise<void>>(
+            async (previous, handler) => {
+              await previous;
+
               if (!OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]) {
                 return;
               }
@@ -163,7 +167,8 @@ export const codeArtifact = new Artifact<"code", Metadata>({
                   "setup_matplotlib_output()"
                 );
               }
-            })
+            },
+            Promise.resolve()
           );
 
           await currentPyodideInstance.runPythonAsync(content);
