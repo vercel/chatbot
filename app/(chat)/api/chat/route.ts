@@ -18,7 +18,7 @@ import {
   chatModels,
   DEFAULT_CHAT_MODEL,
   getCapabilities,
-  getModelHealth,
+  getModelAvailability,
 } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
@@ -49,17 +49,12 @@ import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
 export const maxDuration = 60;
 
-const STILL_WAITING_DELAY_MS = 4000;
-const HEALTH_CHECK_DELAY_MS = 12_000;
+const HEALTH_CHECK_DELAY_MS = 9000;
 
 function isModelStreamActivity(chunk: { type: string }) {
   return !["start", "start-step", "finish-step", "finish", "raw"].includes(
     chunk.type
   );
-}
-
-function isImpactedHealthStatus(status: string | undefined) {
-  return status === "degraded" || status === "down";
 }
 
 function getStreamContext() {
@@ -208,13 +203,12 @@ export async function POST(request: Request) {
       execute: async ({ writer: dataStream }) => {
         const modelName = modelConfig?.name ?? chatModel;
         let hasModelActivity = false;
-        const waitingTimers: ReturnType<typeof setTimeout>[] = [];
+        let healthCheckTimer: ReturnType<typeof setTimeout> | undefined;
 
-        const clearWaitingTimers = () => {
-          for (const timer of waitingTimers) {
-            clearTimeout(timer);
+        const clearHealthCheckTimer = () => {
+          if (healthCheckTimer) {
+            clearTimeout(healthCheckTimer);
           }
-          waitingTimers.length = 0;
         };
 
         const writeWaitingStatus = (
@@ -238,39 +232,35 @@ export async function POST(request: Request) {
 
         writeWaitingStatus("waiting", "Waiting...");
 
-        waitingTimers.push(
-          setTimeout(() => {
-            writeWaitingStatus("still-waiting", "Still waiting...");
-          }, STILL_WAITING_DELAY_MS)
-        );
-
-        waitingTimers.push(
-          setTimeout(() => {
-            getModelHealth(chatModel)
-              .then((health) => {
-                if (isImpactedHealthStatus(health?.status)) {
-                  writeWaitingStatus(
-                    "health",
-                    `${modelName} may be slow or unavailable right now...`
-                  );
-                }
-              })
-              .catch(() => undefined);
-          }, HEALTH_CHECK_DELAY_MS)
-        );
+        healthCheckTimer = setTimeout(() => {
+          getModelAvailability(chatModel)
+            .then((availability) => {
+              if (availability === "impacted") {
+                writeWaitingStatus(
+                  "health",
+                  `${modelName} may be slow or unavailable right now...`
+                );
+              } else {
+                writeWaitingStatus("still-waiting", "Still waiting...");
+              }
+            })
+            .catch(() => {
+              writeWaitingStatus("still-waiting", "Still waiting...");
+            });
+        }, HEALTH_CHECK_DELAY_MS);
 
         const markModelActive = () => {
           if (hasModelActivity) {
             return;
           }
           hasModelActivity = true;
-          clearWaitingTimers();
+          clearHealthCheckTimer();
           writeWaitingStatus("thinking", "Thinking...");
         };
 
         const stopWaitingStatus = () => {
           hasModelActivity = true;
-          clearWaitingTimers();
+          clearHealthCheckTimer();
         };
 
         const result = streamText({
