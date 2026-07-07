@@ -21,6 +21,23 @@ import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
 
+function WaitingText() {
+  const { waitingStatus } = useDataStream();
+  const waitingText = waitingStatus?.message ?? "Waiting...";
+
+  return (
+    <div className="flex min-h-[calc(13px*1.65)] min-w-0 items-center text-[13px] leading-[1.65]">
+      <Shimmer
+        as="span"
+        className="font-medium whitespace-normal break-words"
+        duration={1}
+      >
+        {waitingText}
+      </Shimmer>
+    </div>
+  );
+}
+
 const PurePreviewMessage = ({
   addToolApprovalResponse,
   chatId,
@@ -316,11 +333,7 @@ const PurePreviewMessage = ({
   );
 
   const content = isThinking ? (
-    <div className="flex h-[calc(13px*1.65)] items-center text-[13px] leading-[1.65]">
-      <Shimmer className="font-medium" duration={1}>
-        Thinking...
-      </Shimmer>
-    </div>
+    <WaitingText />
   ) : (
     <>
       {attachments}
@@ -375,11 +388,7 @@ export const ThinkingMessage = () => (
         </div>
       </div>
 
-      <div className="flex h-[calc(13px*1.65)] items-center text-[13px] leading-[1.65]">
-        <Shimmer className="font-medium" duration={1}>
-          Thinking...
-        </Shimmer>
-      </div>
+      <WaitingText />
     </div>
   </div>
 );

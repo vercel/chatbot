@@ -58,7 +58,7 @@ function extractChatId(pathname: string): string | null {
 
 export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { setDataStream } = useDataStream();
+  const { setDataStream, setWaitingStatus } = useDataStream();
   const { mutate } = useSWRConfig();
 
   const chatIdFromUrl = extractChatId(pathname);
@@ -152,6 +152,10 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       },
     }),
     onData: (dataPart) => {
+      if (dataPart.type === "data-waiting-status") {
+        setWaitingStatus(dataPart.data);
+        return;
+      }
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
     },
     onFinish: () => {
@@ -170,6 +174,12 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       }
     },
   });
+
+  useEffect(() => {
+    if (status === "submitted" || status === "ready" || status === "error") {
+      setWaitingStatus(undefined);
+    }
+  }, [status, setWaitingStatus]);
 
   const loadedChatIds = useRef(new Set<string>());
 

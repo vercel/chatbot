@@ -18,6 +18,7 @@ import {
   chatModels,
   DEFAULT_CHAT_MODEL,
   getCapabilities,
+  getModelHealth,
 } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
@@ -41,12 +42,25 @@ import {
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
 import { checkIpRateLimit } from "@/lib/ratelimit";
-import type { ChatMessage } from "@/lib/types";
+import type { ChatMessage, WaitingStatusData } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
 export const maxDuration = 60;
+
+const STILL_WAITING_DELAY_MS = 4000;
+const HEALTH_CHECK_DELAY_MS = 12_000;
+
+function isModelStreamActivity(chunk: { type: string }) {
+  return !["start", "start-step", "finish-step", "finish", "raw"].includes(
+    chunk.type
+  );
+}
+
+function isImpactedHealthStatus(status: string | undefined) {
+  return status === "degraded" || status === "down";
+}
 
 function getStreamContext() {
   try {
@@ -192,6 +206,73 @@ export async function POST(request: Request) {
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
+        const modelName = modelConfig?.name ?? chatModel;
+        let hasModelActivity = false;
+        const waitingTimers: ReturnType<typeof setTimeout>[] = [];
+
+        const clearWaitingTimers = () => {
+          for (const timer of waitingTimers) {
+            clearTimeout(timer);
+          }
+          waitingTimers.length = 0;
+        };
+
+        const writeWaitingStatus = (
+          phase: WaitingStatusData["phase"],
+          messageText: string
+        ) => {
+          if (hasModelActivity && phase !== "thinking") {
+            return;
+          }
+          dataStream.write({
+            type: "data-waiting-status",
+            data: {
+              phase,
+              message: messageText,
+              modelId: chatModel,
+              modelName,
+            },
+            transient: true,
+          });
+        };
+
+        writeWaitingStatus("waiting", "Waiting...");
+
+        waitingTimers.push(
+          setTimeout(() => {
+            writeWaitingStatus("still-waiting", "Still waiting...");
+          }, STILL_WAITING_DELAY_MS)
+        );
+
+        waitingTimers.push(
+          setTimeout(() => {
+            getModelHealth(chatModel)
+              .then((health) => {
+                if (isImpactedHealthStatus(health?.status)) {
+                  writeWaitingStatus(
+                    "health",
+                    `${modelName} may be slow or unavailable right now...`
+                  );
+                }
+              })
+              .catch(() => undefined);
+          }, HEALTH_CHECK_DELAY_MS)
+        );
+
+        const markModelActive = () => {
+          if (hasModelActivity) {
+            return;
+          }
+          hasModelActivity = true;
+          clearWaitingTimers();
+          writeWaitingStatus("thinking", "Thinking...");
+        };
+
+        const stopWaitingStatus = () => {
+          hasModelActivity = true;
+          clearWaitingTimers();
+        };
+
         const result = streamText({
           model: getLanguageModel(chatModel),
           instructions: systemPrompt({ requestHints, supportsTools }),
@@ -233,6 +314,20 @@ export async function POST(request: Request) {
               dataStream,
               modelId: chatModel,
             }),
+          },
+          onChunk({ chunk }) {
+            if (isModelStreamActivity(chunk)) {
+              markModelActive();
+            }
+          },
+          onEnd() {
+            stopWaitingStatus();
+          },
+          onError() {
+            stopWaitingStatus();
+          },
+          onAbort() {
+            stopWaitingStatus();
           },
           telemetry: {
             isEnabled: isProductionEnvironment,

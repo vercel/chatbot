@@ -27,6 +27,13 @@ export type ChatTools = {
   requestSuggestions: requestSuggestionsTool;
 };
 
+export type WaitingStatusData = {
+  phase: "waiting" | "still-waiting" | "health" | "thinking";
+  message: string;
+  modelId: string;
+  modelName: string;
+};
+
 export type CustomUIDataTypes = {
   textDelta: string;
   imageDelta: string;
@@ -40,6 +47,7 @@ export type CustomUIDataTypes = {
   clear: null;
   finish: null;
   "chat-title": string;
+  "waiting-status": WaitingStatusData;
 };
 
 export type ChatMessage = UIMessage<
