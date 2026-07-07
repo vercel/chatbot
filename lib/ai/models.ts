@@ -202,25 +202,26 @@ export async function getModelAvailability(
 ): Promise<ModelAvailability> {
   const model = chatModels.find((item) => item.id === modelId);
 
-  if (!model) return "unknown";
+  if (!model) {
+    return "unknown";
+  }
 
   try {
     const res = await fetch(
       `https://ai-gateway.vercel.sh/v1/models/${model.id}/endpoints`,
       { next: { revalidate: 60 } }
     );
-    if (!res.ok) return "unknown";
-    
+    if (!res.ok) {
+      return "unknown";
+    }
 
     const json = await res.json();
-    const providerSet = model.gatewayOrder ? new Set(model.gatewayOrder) : null;
-    const endpoints = (json.data?.endpoints ?? []).filter(
-      (endpoint: GatewayEndpoint) =>
-        providerSet ? providerSet.has(endpoint.provider_name ?? "") : true
-    );
+    const endpoints = (json.data?.endpoints ?? []) as GatewayEndpoint[];
 
-    if (endpoints.length === 0) return "unknown";
-    
+    if (endpoints.length === 0) {
+      return "unknown";
+    }
+
     return endpoints.some(isEndpointImpacted) ? "impacted" : "healthy";
   } catch {
     return "unknown";
