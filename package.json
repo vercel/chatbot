@@ -86,7 +86,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.2",
+    "@biomejs/biome": "2.3.11",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.2",
     "@tailwindcss/typography": "^0.5.20",
@@ -102,7 +102,7 @@
     "tailwindcss": "^4.3.2",
     "tsx": "^4.23.0",
     "typescript": "^5.6.3",
-    "ultracite": "^7.8.4"
+    "ultracite": "^7.0.11"
   },
   "packageManager": "pnpm@10.32.1"
 }
