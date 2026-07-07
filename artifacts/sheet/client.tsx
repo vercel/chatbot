@@ -13,35 +13,10 @@ import { SpreadsheetEditor } from "@/components/chat/sheet-editor";
 type Metadata = Record<string, never>;
 
 export const sheetArtifact = new Artifact<"sheet", Metadata>({
-  kind: "sheet",
-  description: "Useful for working with spreadsheets",
-  initialize: () => null,
-  onStreamPart: ({ setArtifact, streamPart }) => {
-    if (streamPart.type === "data-sheetDelta") {
-      setArtifact((draftArtifact) => ({
-        ...draftArtifact,
-        content: streamPart.data,
-        isVisible: true,
-        status: "streaming",
-      }));
-    }
-  },
-  content: ({ content, currentVersionIndex, onSaveContent, status }) => (
-    <SpreadsheetEditor
-      content={content}
-      currentVersionIndex={currentVersionIndex}
-      isCurrentVersion={true}
-      saveContent={onSaveContent}
-      status={status}
-    />
-  ),
   actions: [
     {
-      icon: <UndoIcon size={18} />,
       description: "View Previous version",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("prev");
-      },
+      icon: <UndoIcon size={18} />,
       isDisabled: ({ currentVersionIndex }) => {
         if (currentVersionIndex === 0) {
           return true;
@@ -49,13 +24,13 @@ export const sheetArtifact = new Artifact<"sheet", Metadata>({
 
         return false;
       },
+      onClick: ({ handleVersionChange }) => {
+        handleVersionChange("prev");
+      },
     },
     {
-      icon: <RedoIcon size={18} />,
       description: "View Next version",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("next");
-      },
+      icon: <RedoIcon size={18} />,
       isDisabled: ({ isCurrentVersion }) => {
         if (isCurrentVersion) {
           return true;
@@ -63,10 +38,13 @@ export const sheetArtifact = new Artifact<"sheet", Metadata>({
 
         return false;
       },
+      onClick: ({ handleVersionChange }) => {
+        handleVersionChange("next");
+      },
     },
     {
-      icon: <CopyIcon />,
       description: "Copy as .csv",
+      icon: <CopyIcon />,
       onClick: ({ content }) => {
         const parsed = parse<string[]>(content, { skipEmptyLines: true });
 
@@ -81,16 +59,38 @@ export const sheetArtifact = new Artifact<"sheet", Metadata>({
       },
     },
   ],
+  content: ({ content, currentVersionIndex, onSaveContent, status }) => (
+    <SpreadsheetEditor
+      content={content}
+      currentVersionIndex={currentVersionIndex}
+      isCurrentVersion={true}
+      saveContent={onSaveContent}
+      status={status}
+    />
+  ),
+  description: "Useful for working with spreadsheets",
+  initialize: () => null,
+  kind: "sheet",
+  onStreamPart: ({ setArtifact, streamPart }) => {
+    if (streamPart.type === "data-sheetDelta") {
+      setArtifact((draftArtifact) => ({
+        ...draftArtifact,
+        content: streamPart.data,
+        isVisible: true,
+        status: "streaming",
+      }));
+    }
+  },
   toolbar: [
     {
       description: "Format and clean data",
       icon: <SparklesIcon />,
       onClick: ({ sendMessage }) => {
         sendMessage({
-          role: "user",
           parts: [
-            { type: "text", text: "Can you please format and clean the data?" },
+            { text: "Can you please format and clean the data?", type: "text" },
           ],
+          role: "user",
         });
       },
     },
@@ -99,13 +99,13 @@ export const sheetArtifact = new Artifact<"sheet", Metadata>({
       icon: <LineChartIcon />,
       onClick: ({ sendMessage }) => {
         sendMessage({
-          role: "user",
           parts: [
             {
-              type: "text",
               text: "Can you please analyze and visualize the data by creating a new code artifact in python?",
+              type: "text",
             },
           ],
+          role: "user",
         });
       },
     },

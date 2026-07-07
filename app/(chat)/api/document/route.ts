@@ -11,9 +11,9 @@ import { ChatbotError } from "@/lib/errors";
 
 const documentSchema = z.object({
   content: z.string(),
-  title: z.string(),
-  kind: z.enum(["text", "code", "image", "sheet"]),
   isManualEdit: z.boolean().optional(),
+  kind: z.enum(["text", "code", "image", "sheet"]),
+  title: z.string(),
 });
 
 export async function GET(request: Request) {
@@ -94,15 +94,15 @@ export async function POST(request: Request) {
   }
 
   if (isManualEdit && documents.length > 0) {
-    const result = await updateDocumentContent({ id, content });
+    const result = await updateDocumentContent({ content, id });
     return Response.json(result, { status: 200 });
   }
 
   const document = await saveDocument({
-    id,
     content,
-    title,
+    id,
     kind,
+    title,
     userId: session.user.id,
   });
 

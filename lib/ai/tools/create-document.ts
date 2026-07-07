@@ -22,39 +22,31 @@ export const createDocument = ({
   tool({
     description:
       "Create an artifact. You MUST specify kind: use 'code' for any programming/algorithm request (creates a script), 'text' for essays/writing (creates a document), 'sheet' for spreadsheets/data.",
-    inputSchema: z.object({
-      title: z.string().describe("The title of the artifact"),
-      kind: z
-        .enum(artifactKinds)
-        .describe(
-          "REQUIRED. 'code' for programming/algorithms, 'text' for essays/writing, 'sheet' for spreadsheets"
-        ),
-    }),
     execute: async ({ title, kind }) => {
       const id = generateUUID();
 
       dataStream.write({
-        type: "data-kind",
         data: kind,
         transient: true,
+        type: "data-kind",
       });
 
       dataStream.write({
-        type: "data-id",
         data: id,
         transient: true,
+        type: "data-id",
       });
 
       dataStream.write({
-        type: "data-title",
         data: title,
         transient: true,
+        type: "data-title",
       });
 
       dataStream.write({
-        type: "data-clear",
         data: null,
         transient: true,
+        type: "data-clear",
       });
 
       const documentHandler = documentHandlersByArtifactKind.find(
@@ -67,23 +59,31 @@ export const createDocument = ({
       }
 
       await documentHandler.onCreateDocument({
-        id,
-        title,
         dataStream,
-        session,
+        id,
         modelId,
+        session,
+        title,
       });
 
-      dataStream.write({ type: "data-finish", data: null, transient: true });
+      dataStream.write({ data: null, transient: true, type: "data-finish" });
 
       return {
-        id,
-        title,
-        kind,
         content:
           kind === "code"
             ? "A script was created and is now visible to the user."
             : "A document was created and is now visible to the user.",
+        id,
+        kind,
+        title,
       };
     },
+    inputSchema: z.object({
+      kind: z
+        .enum(artifactKinds)
+        .describe(
+          "REQUIRED. 'code' for programming/algorithms, 'text' for essays/writing, 'sheet' for spreadsheets"
+        ),
+      title: z.string().describe("The title of the artifact"),
+    }),
   });

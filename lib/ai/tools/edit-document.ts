@@ -13,21 +13,6 @@ export const editDocument = ({ session, dataStream }: EditDocumentProps) =>
   tool({
     description:
       "Make a targeted edit to an existing artifact by finding and replacing an exact string. Preferred over updateDocument for small changes. The old_string must match exactly.",
-    inputSchema: z.object({
-      id: z.string().describe("The ID of the artifact to edit"),
-      old_string: z
-        .string()
-        .describe(
-          "Exact string to find. Include 3-5 surrounding lines for uniqueness."
-        ),
-      new_string: z.string().describe("Replacement string"),
-      replace_all: z
-        .boolean()
-        .optional()
-        .describe(
-          "Replace all occurrences instead of just the first (default false)"
-        ),
-    }),
     execute: async ({ id, old_string, new_string, replace_all }) => {
       const document = await getDocumentById({ id });
 
@@ -52,49 +37,64 @@ export const editDocument = ({ session, dataStream }: EditDocumentProps) =>
         : document.content.replace(old_string, new_string);
 
       await saveDocument({
-        id: document.id,
-        title: document.title,
-        kind: document.kind,
         content: updated,
+        id: document.id,
+        kind: document.kind,
+        title: document.title,
         userId: document.userId,
       });
 
       dataStream.write({
-        type: "data-clear",
         data: null,
         transient: true,
+        type: "data-clear",
       });
 
       if (document.kind === "code") {
         dataStream.write({
-          type: "data-codeDelta",
           data: updated,
           transient: true,
+          type: "data-codeDelta",
         });
       } else if (document.kind === "sheet") {
         dataStream.write({
-          type: "data-sheetDelta",
           data: updated,
           transient: true,
+          type: "data-sheetDelta",
         });
       } else {
         dataStream.write({
-          type: "data-textDelta",
           data: updated,
           transient: true,
+          type: "data-textDelta",
         });
       }
 
-      dataStream.write({ type: "data-finish", data: null, transient: true });
+      dataStream.write({ data: null, transient: true, type: "data-finish" });
 
       return {
-        id,
-        title: document.title,
-        kind: document.kind,
         content:
           document.kind === "code"
             ? "The script has been edited successfully."
             : "The document has been edited successfully.",
+        id,
+        kind: document.kind,
+        title: document.title,
       };
     },
+    inputSchema: z.object({
+      id: z.string().describe("The ID of the artifact to edit"),
+      new_string: z.string().describe("Replacement string"),
+      old_string: z
+        .string()
+        .describe(
+          "Exact string to find. Include 3-5 surrounding lines for uniqueness."
+        ),
+      replace_all: z
+        .boolean()
+        .optional()
+        .describe(
+          "Replace all occurrences instead of just the first (default false)"
+        ),
+    }),
   });

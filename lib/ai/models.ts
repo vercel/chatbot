@@ -1,11 +1,11 @@
 export const DEFAULT_CHAT_MODEL = "moonshotai/kimi-k2.5";
 
 export const titleModel = {
+  description: "Fast model for title generation",
+  gatewayOrder: ["fireworks", "bedrock"],
   id: "moonshotai/kimi-k2.5",
   name: "Kimi K2.5",
   provider: "moonshotai",
-  description: "Fast model for title generation",
-  gatewayOrder: ["fireworks", "bedrock"],
 };
 
 export type ModelCapabilities = {
@@ -25,41 +25,41 @@ export type ChatModel = {
 
 export const chatModels: ChatModel[] = [
   {
+    description: "Fast and capable model with tool use",
+    gatewayOrder: ["bedrock", "deepinfra"],
     id: "deepseek/deepseek-v3.2",
     name: "DeepSeek V3.2",
     provider: "deepseek",
-    description: "Fast and capable model with tool use",
-    gatewayOrder: ["bedrock", "deepinfra"],
   },
   {
+    description: "Moonshot AI flagship model",
+    gatewayOrder: ["fireworks", "bedrock"],
     id: "moonshotai/kimi-k2.5",
     name: "Kimi K2.5",
     provider: "moonshotai",
-    description: "Moonshot AI flagship model",
-    gatewayOrder: ["fireworks", "bedrock"],
   },
   {
+    description: "Compact reasoning model",
+    gatewayOrder: ["groq", "bedrock"],
     id: "openai/gpt-oss-20b",
     name: "GPT OSS 20B",
     provider: "openai",
-    description: "Compact reasoning model",
-    gatewayOrder: ["groq", "bedrock"],
     reasoningEffort: "low",
   },
   {
+    description: "Open-source 120B parameter model",
+    gatewayOrder: ["fireworks", "bedrock"],
     id: "openai/gpt-oss-120b",
     name: "GPT OSS 120B",
     provider: "openai",
-    description: "Open-source 120B parameter model",
-    gatewayOrder: ["fireworks", "bedrock"],
     reasoningEffort: "low",
   },
   {
+    description: "Fast non-reasoning model with tool use",
+    gatewayOrder: ["xai"],
     id: "xai/grok-4.1-fast-non-reasoning",
     name: "Grok 4.1 Fast",
     provider: "xai",
-    description: "Fast non-reasoning model with tool use",
-    gatewayOrder: ["xai"],
   },
 ];
 
@@ -74,7 +74,7 @@ export async function getCapabilities(): Promise<
           { next: { revalidate: 86_400 } }
         );
         if (!res.ok) {
-          return [model.id, { tools: false, vision: false, reasoning: false }];
+          return [model.id, { reasoning: false, tools: false, vision: false }];
         }
 
         const json = await res.json();
@@ -92,13 +92,13 @@ export async function getCapabilities(): Promise<
         return [
           model.id,
           {
+            reasoning: params.has("reasoning"),
             tools: params.has("tools"),
             vision: inputModalities.has("image"),
-            reasoning: params.has("reasoning"),
           },
         ];
       } catch {
-        return [model.id, { tools: false, vision: false, reasoning: false }];
+        return [model.id, { reasoning: false, tools: false, vision: false }];
       }
     })
   );
@@ -134,15 +134,15 @@ export async function getAllGatewayModels(): Promise<
     return (json.data ?? [])
       .filter((m: GatewayModel) => m.type === "language")
       .map((m: GatewayModel) => ({
+        capabilities: {
+          reasoning: m.tags?.includes("reasoning") ?? false,
+          tools: m.tags?.includes("tool-use") ?? false,
+          vision: m.tags?.includes("vision") ?? false,
+        },
+        description: "",
         id: m.id,
         name: m.name,
         provider: m.id.split("/")[0],
-        description: "",
-        capabilities: {
-          tools: m.tags?.includes("tool-use") ?? false,
-          vision: m.tags?.includes("vision") ?? false,
-          reasoning: m.tags?.includes("reasoning") ?? false,
-        },
       }));
   } catch {
     return [];

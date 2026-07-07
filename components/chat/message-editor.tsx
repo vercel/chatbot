@@ -25,7 +25,7 @@ export async function submitEditedMessage({
 
     return [
       ...messages.slice(0, index),
-      { ...message, parts: [{ type: "text" as const, text }] },
+      { ...message, parts: [{ text, type: "text" as const }] },
     ];
   });
 

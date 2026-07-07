@@ -21,13 +21,6 @@ export const requestSuggestions = ({
   tool({
     description:
       "Request writing suggestions for an existing document artifact. Only use this when the user explicitly asks to improve or get suggestions for a document they have already created. Never use for general questions.",
-    inputSchema: z.object({
-      documentId: z
-        .string()
-        .describe(
-          "The UUID of an existing document artifact that was previously created with createDocument"
-        ),
-    }),
     execute: async ({ documentId }) => {
       const document = await getDocumentById({ id: documentId });
 
@@ -47,19 +40,19 @@ export const requestSuggestions = ({
       >[] = [];
 
       const { partialOutputStream } = streamText({
-        model: getLanguageModel(modelId),
         instructions:
           "You are a writing assistant. Given a piece of writing, offer up to 5 suggestions to improve it. Each suggestion must contain full sentences, not just individual words. Describe what changed and why.",
-        prompt: document.content,
+        model: getLanguageModel(modelId),
         output: Output.array({
           element: z.object({
-            originalSentence: z.string().describe("The original sentence"),
-            suggestedSentence: z.string().describe("The suggested sentence"),
             description: z
               .string()
               .describe("The description of the suggestion"),
+            originalSentence: z.string().describe("The original sentence"),
+            suggestedSentence: z.string().describe("The suggested sentence"),
           }),
         }),
+        prompt: document.content,
       });
 
       let processedCount = 0;
@@ -79,18 +72,18 @@ export const requestSuggestions = ({
           }
 
           const suggestion = {
+            description: element.description,
+            documentId,
+            id: generateUUID(),
+            isResolved: false,
             originalText: element.originalSentence,
             suggestedText: element.suggestedSentence,
-            description: element.description,
-            id: generateUUID(),
-            documentId,
-            isResolved: false,
           };
 
           dataStream.write({
-            type: "data-suggestion",
             data: suggestion as Suggestion,
             transient: true,
+            type: "data-suggestion",
           });
 
           suggestions.push(suggestion);
@@ -104,18 +97,25 @@ export const requestSuggestions = ({
         await saveSuggestions({
           suggestions: suggestions.map((suggestion) => ({
             ...suggestion,
-            userId,
             createdAt: new Date(),
             documentCreatedAt: document.createdAt,
+            userId,
           })),
         });
       }
 
       return {
         id: documentId,
-        title: document.title,
         kind: document.kind,
         message: "Suggestions have been added to the document",
+        title: document.title,
       };
     },
+    inputSchema: z.object({
+      documentId: z
+        .string()
+        .describe(
+          "The UUID of an existing document artifact that was previously created with createDocument"
+        ),
+    }),
   });

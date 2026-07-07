@@ -88,8 +88,8 @@ const PurePreviewMessage = ({
       {attachmentsFromMessage.map((attachment) => (
         <PreviewAttachment
           attachment={{
-            name: attachment.filename ?? "file",
             contentType: attachment.mediaType,
+            name: attachment.filename ?? "file",
             url: attachment.url,
           }}
           key={attachment.url}
@@ -102,15 +102,15 @@ const PurePreviewMessage = ({
     (acc, part) => {
       if (part.type === "reasoning" && part.text?.trim().length > 0) {
         return {
-          text: acc.text ? `${acc.text}\n\n${part.text}` : part.text,
           isStreaming: "state" in part ? part.state === "streaming" : false,
           rendered: false,
+          text: acc.text ? `${acc.text}\n\n${part.text}` : part.text,
         };
       }
       return acc;
     },
-    { text: "", isStreaming: false, rendered: false }
-  ) ?? { text: "", isStreaming: false, rendered: false };
+    { isStreaming: false, rendered: false, text: "" }
+  ) ?? { isStreaming: false, rendered: false, text: "" };
 
   const parts = message.parts?.map((part, index) => {
     const { type } = part;
@@ -206,8 +206,8 @@ const PurePreviewMessage = ({
                     className="rounded-md px-3 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
                     onClick={() => {
                       addToolApprovalResponse({
-                        id: approvalId,
                         approved: false,
+                        id: approvalId,
                         reason: "User denied weather lookup",
                       });
                     }}
@@ -219,8 +219,8 @@ const PurePreviewMessage = ({
                     className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
                     onClick={() => {
                       addToolApprovalResponse({
-                        id: approvalId,
                         approved: true,
+                        id: approvalId,
                       });
                     }}
                     type="button"

@@ -37,12 +37,26 @@ export const {
   signOut,
 } = NextAuth({
   ...authConfig,
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id as string;
+        token.type = user.type;
+      }
+
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.type = token.type;
+      }
+
+      return session;
+    },
+  },
   providers: [
     Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
       async authorize(credentials) {
         const email = String(credentials.email ?? "");
         const password = String(credentials.password ?? "");
@@ -68,32 +82,18 @@ export const {
 
         return { ...user, type: "regular" };
       },
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
     }),
     Credentials({
-      id: "guest",
-      credentials: {},
       async authorize() {
         const [guestUser] = await createGuestUser();
         return { ...guestUser, type: "guest" };
       },
+      credentials: {},
+      id: "guest",
     }),
   ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id as string;
-        token.type = user.type;
-      }
-
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id;
-        session.user.type = token.type;
-      }
-
-      return session;
-    },
-  },
 });

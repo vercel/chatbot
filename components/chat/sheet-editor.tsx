@@ -45,27 +45,27 @@ const PureSpreadsheetEditor = ({ content, saveContent }: SheetEditorProps) => {
 
   const columns = useMemo(() => {
     const rowNumberColumn = {
-      key: "rowNumber",
-      name: "",
-      frozen: true,
-      width: 50,
-      renderCell: ({ rowIdx }: { rowIdx: number }) => rowIdx + 1,
       cellClass: "border-t border-r dark:bg-neutral-950 dark:text-neutral-50",
+      frozen: true,
       headerCellClass:
         "border-t border-r dark:bg-neutral-900 dark:text-neutral-50",
+      key: "rowNumber",
+      name: "",
+      renderCell: ({ rowIdx }: { rowIdx: number }) => rowIdx + 1,
+      width: 50,
     };
 
     const dataColumns = Array.from({ length: MIN_COLS }, (_, i) => ({
-      key: i.toString(),
-      name: String.fromCharCode(65 + i),
-      renderEditCell: textEditor,
-      width: 120,
       cellClass: cn("border-t dark:bg-neutral-950 dark:text-neutral-50", {
         "border-l": i !== 0,
       }),
       headerCellClass: cn("border-t dark:bg-neutral-900 dark:text-neutral-50", {
         "border-l": i !== 0,
       }),
+      key: i.toString(),
+      name: String.fromCharCode(65 + i),
+      renderEditCell: textEditor,
+      width: 120,
     }));
 
     return [rowNumberColumn, ...dataColumns];

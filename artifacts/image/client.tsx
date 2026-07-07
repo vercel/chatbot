@@ -4,26 +4,10 @@ import { CopyIcon, RedoIcon, UndoIcon } from "@/components/chat/icons";
 import { ImageEditor } from "@/components/chat/image-editor";
 
 export const imageArtifact = new Artifact({
-  kind: "image",
-  description: "Useful for image generation",
-  onStreamPart: ({ streamPart, setArtifact }) => {
-    if (streamPart.type === "data-imageDelta") {
-      setArtifact((draftArtifact) => ({
-        ...draftArtifact,
-        content: streamPart.data,
-        isVisible: true,
-        status: "streaming",
-      }));
-    }
-  },
-  content: ImageEditor,
   actions: [
     {
-      icon: <UndoIcon size={18} />,
       description: "View Previous version",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("prev");
-      },
+      icon: <UndoIcon size={18} />,
       isDisabled: ({ currentVersionIndex }) => {
         if (currentVersionIndex === 0) {
           return true;
@@ -31,13 +15,13 @@ export const imageArtifact = new Artifact({
 
         return false;
       },
+      onClick: ({ handleVersionChange }) => {
+        handleVersionChange("prev");
+      },
     },
     {
-      icon: <RedoIcon size={18} />,
       description: "View Next version",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("next");
-      },
+      icon: <RedoIcon size={18} />,
       isDisabled: ({ isCurrentVersion }) => {
         if (isCurrentVersion) {
           return true;
@@ -45,10 +29,13 @@ export const imageArtifact = new Artifact({
 
         return false;
       },
+      onClick: ({ handleVersionChange }) => {
+        handleVersionChange("next");
+      },
     },
     {
-      icon: <CopyIcon size={18} />,
       description: "Copy image to clipboard",
+      icon: <CopyIcon size={18} />,
       onClick: ({ content }) => {
         const img = new Image();
         img.src = `data:image/png;base64,${content}`;
@@ -72,5 +59,18 @@ export const imageArtifact = new Artifact({
       },
     },
   ],
+  content: ImageEditor,
+  description: "Useful for image generation",
+  kind: "image",
+  onStreamPart: ({ streamPart, setArtifact }) => {
+    if (streamPart.type === "data-imageDelta") {
+      setArtifact((draftArtifact) => ({
+        ...draftArtifact,
+        content: streamPart.data,
+        isVisible: true,
+        status: "streaming",
+      }));
+    }
+  },
   toolbar: [],
 });

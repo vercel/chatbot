@@ -58,9 +58,9 @@ test.describe("Chat Error Handling", () => {
   test("handles API error gracefully", async ({ page }) => {
     await page.route("**/api/chat", async (route) => {
       await route.fulfill({
-        status: 500,
-        contentType: "application/json",
         body: JSON.stringify({ error: "Internal server error" }),
+        contentType: "application/json",
+        status: 500,
       });
     });
 

@@ -68,11 +68,11 @@ const groupChatsByDate = (chats: Chat[]): GroupedChats => {
       return groups;
     },
     {
+      lastMonth: [],
+      lastWeek: [],
+      older: [],
       today: [],
       yesterday: [],
-      lastWeek: [],
-      lastMonth: [],
-      older: [],
     } as GroupedChats
   );
 };

@@ -70,7 +70,7 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
 
   useEffect(() => {
     if (consoleOutputs.length > 0) {
-      consoleContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      consoleContainerRef.current?.scrollTo({ behavior: "smooth", top: 0 });
     }
   }, [consoleOutputs.length]);
 
@@ -133,11 +133,11 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
             >
               <div
                 className={cn("w-10 shrink-0 tabular-nums", {
+                  "text-emerald-500": consoleOutput.status === "completed",
                   "text-muted-foreground": [
                     "in_progress",
                     "loading_packages",
                   ].includes(consoleOutput.status),
-                  "text-emerald-500": consoleOutput.status === "completed",
                   "text-red-400": consoleOutput.status === "failed",
                 })}
               >

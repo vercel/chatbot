@@ -18,10 +18,10 @@ export async function GET(request: Request) {
 
   if (!chat) {
     return Response.json({
-      messages: [],
-      visibility: "private",
-      userId: null,
       isReadonly: false,
+      messages: [],
+      userId: null,
+      visibility: "private",
     });
   }
 
@@ -35,9 +35,9 @@ export async function GET(request: Request) {
   const isReadonly = !session?.user || session.user.id !== chat.userId;
 
   return Response.json({
-    messages: convertToUIMessages(messages),
-    visibility: chat.visibility,
-    userId: chat.userId,
     isReadonly,
+    messages: convertToUIMessages(messages),
+    userId: chat.userId,
+    visibility: chat.visibility,
   });
 }

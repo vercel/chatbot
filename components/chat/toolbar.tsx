@@ -89,11 +89,11 @@ const Tool = ({
             "bg-primary text-primary-foreground!": selectedTool === description,
           })}
           exit={{
-            scale: 0.9,
             opacity: 0,
+            scale: 0.9,
             transition: { duration: 0.1 },
           }}
-          initial={{ scale: 1, opacity: 0 }}
+          initial={{ opacity: 0, scale: 1 }}
           onClick={() => {
             handleSelect();
           }}
@@ -186,24 +186,24 @@ const ReadingLevelSelector = ({
               className={cx(
                 "absolute flex flex-row items-center rounded-full border bg-background p-3",
                 {
-                  "bg-primary text-primary-foreground": currentLevel !== 2,
                   "bg-background text-foreground": currentLevel === 2,
+                  "bg-primary text-primary-foreground": currentLevel !== 2,
                 }
               )}
               drag="y"
-              dragConstraints={{ top: -dragConstraints, bottom: 0 }}
+              dragConstraints={{ bottom: 0, top: -dragConstraints }}
               dragElastic={0}
               dragMomentum={false}
               onClick={() => {
                 if (currentLevel !== 2 && hasUserSelectedLevel) {
                   sendMessage({
-                    role: "user",
                     parts: [
                       {
-                        type: "text",
                         text: `Please adjust the reading level to ${LEVELS[currentLevel]} level.`,
+                        type: "text",
                       },
                     ],
+                    role: "user",
                   });
 
                   setSelectedTool(null);
@@ -278,17 +278,17 @@ const createFixErrorTool = (
   consoleOutput: string,
   documentId?: string
 ): ArtifactToolbarItem => ({
-  icon: <WrenchIcon className="size-4" />,
   description: "Fix error",
+  icon: <WrenchIcon className="size-4" />,
   onClick: ({ sendMessage: send }) => {
     send({
-      role: "user",
       parts: [
         {
-          type: "text",
           text: `Fix the error in the existing script${documentId ? ` (id: ${documentId})` : ""} using updateDocument. Do not create a new script. Console error:\n\n${consoleOutput}`,
+          type: "text",
         },
       ],
+      role: "user",
     });
   },
 });
@@ -383,10 +383,10 @@ const PureToolbar = ({
   return (
     <TooltipProvider delayDuration={0}>
       <motion.div
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         className="fixed right-6 bottom-6 z-50 flex cursor-pointer flex-col items-center rounded-3xl border bg-background py-1 shadow-lg"
-        exit={{ opacity: 0, y: -20, transition: { duration: 0.1 } }}
-        initial={{ opacity: 0, y: -20, scale: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1 }, y: -20 }}
+        initial={{ opacity: 0, scale: 1, y: -20 }}
         onAnimationComplete={() => {
           setIsAnimating(false);
         }}
@@ -409,7 +409,7 @@ const PureToolbar = ({
           setIsToolbarVisible(true);
         }}
         ref={toolbarRef}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        transition={{ damping: 25, stiffness: 300, type: "spring" }}
       >
         {onClose && (
           <motion.div

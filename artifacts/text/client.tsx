@@ -19,36 +19,58 @@ type TextArtifactMetadata = {
 };
 
 export const textArtifact = new Artifact<"text", TextArtifactMetadata>({
-  kind: "text",
-  description: "Useful for text content, like drafting essays and emails.",
-  initialize: async ({ documentId, setMetadata }) => {
-    const suggestions = await getSuggestions({ documentId });
+  actions: [
+    {
+      description: "View changes",
+      icon: <ClockRewind size={18} />,
+      isDisabled: ({ currentVersionIndex }) => {
+        if (currentVersionIndex === 0) {
+          return true;
+        }
 
-    setMetadata({
-      suggestions,
-    });
-  },
-  onStreamPart: ({ streamPart, setMetadata, setArtifact }) => {
-    if (streamPart.type === "data-suggestion") {
-      setMetadata((metadata) => ({
-        suggestions: [...metadata.suggestions, streamPart.data],
-      }));
-    }
+        return false;
+      },
+      onClick: ({ handleVersionChange }) => {
+        handleVersionChange("toggle");
+      },
+    },
+    {
+      description: "View Previous version",
+      icon: <UndoIcon size={18} />,
+      isDisabled: ({ currentVersionIndex }) => {
+        if (currentVersionIndex === 0) {
+          return true;
+        }
 
-    if (streamPart.type === "data-textDelta") {
-      setArtifact((draftArtifact) => ({
-        ...draftArtifact,
-        content: draftArtifact.content + streamPart.data,
-        isVisible:
-          draftArtifact.status === "streaming" &&
-          draftArtifact.content.length > 400 &&
-          draftArtifact.content.length < 450
-            ? true
-            : draftArtifact.isVisible,
-        status: "streaming",
-      }));
-    }
-  },
+        return false;
+      },
+      onClick: ({ handleVersionChange }) => {
+        handleVersionChange("prev");
+      },
+    },
+    {
+      description: "View Next version",
+      icon: <RedoIcon size={18} />,
+      isDisabled: ({ isCurrentVersion }) => {
+        if (isCurrentVersion) {
+          return true;
+        }
+
+        return false;
+      },
+      onClick: ({ handleVersionChange }) => {
+        handleVersionChange("next");
+      },
+    },
+    {
+      description: "Copy to clipboard",
+      icon: <CopyIcon size={18} />,
+      onClick: ({ content }) => {
+        navigator.clipboard.writeText(content);
+        toast.success("Copied to clipboard!");
+      },
+    },
+  ],
   content: ({
     mode,
     status,
@@ -95,86 +117,64 @@ export const textArtifact = new Artifact<"text", TextArtifactMetadata>({
       </div>
     );
   },
-  actions: [
-    {
-      icon: <ClockRewind size={18} />,
-      description: "View changes",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("toggle");
-      },
-      isDisabled: ({ currentVersionIndex }) => {
-        if (currentVersionIndex === 0) {
-          return true;
-        }
+  description: "Useful for text content, like drafting essays and emails.",
+  initialize: async ({ documentId, setMetadata }) => {
+    const suggestions = await getSuggestions({ documentId });
 
-        return false;
-      },
-    },
-    {
-      icon: <UndoIcon size={18} />,
-      description: "View Previous version",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("prev");
-      },
-      isDisabled: ({ currentVersionIndex }) => {
-        if (currentVersionIndex === 0) {
-          return true;
-        }
+    setMetadata({
+      suggestions,
+    });
+  },
+  kind: "text",
+  onStreamPart: ({ streamPart, setMetadata, setArtifact }) => {
+    if (streamPart.type === "data-suggestion") {
+      setMetadata((metadata) => ({
+        suggestions: [...metadata.suggestions, streamPart.data],
+      }));
+    }
 
-        return false;
-      },
-    },
-    {
-      icon: <RedoIcon size={18} />,
-      description: "View Next version",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("next");
-      },
-      isDisabled: ({ isCurrentVersion }) => {
-        if (isCurrentVersion) {
-          return true;
-        }
-
-        return false;
-      },
-    },
-    {
-      icon: <CopyIcon size={18} />,
-      description: "Copy to clipboard",
-      onClick: ({ content }) => {
-        navigator.clipboard.writeText(content);
-        toast.success("Copied to clipboard!");
-      },
-    },
-  ],
+    if (streamPart.type === "data-textDelta") {
+      setArtifact((draftArtifact) => ({
+        ...draftArtifact,
+        content: draftArtifact.content + streamPart.data,
+        isVisible:
+          draftArtifact.status === "streaming" &&
+          draftArtifact.content.length > 400 &&
+          draftArtifact.content.length < 450
+            ? true
+            : draftArtifact.isVisible,
+        status: "streaming",
+      }));
+    }
+  },
   toolbar: [
     {
-      icon: <PenIcon />,
       description: "Add final polish",
+      icon: <PenIcon />,
       onClick: ({ sendMessage }) => {
         sendMessage({
-          role: "user",
           parts: [
             {
-              type: "text",
               text: "Please add final polish and check for grammar, add section titles for better structure, and ensure everything reads smoothly.",
+              type: "text",
             },
           ],
+          role: "user",
         });
       },
     },
     {
-      icon: <MessageIcon />,
       description: "Request suggestions",
+      icon: <MessageIcon />,
       onClick: ({ sendMessage }) => {
         sendMessage({
-          role: "user",
           parts: [
             {
-              type: "text",
               text: "Please add suggestions you have that could improve the writing.",
+              type: "text",
             },
           ],
+          role: "user",
         });
       },
     },

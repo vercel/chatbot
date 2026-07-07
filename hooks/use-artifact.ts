@@ -5,18 +5,18 @@ import useSWR from "swr";
 import type { UIArtifact } from "@/components/chat/artifact";
 
 export const initialArtifactData: UIArtifact = {
-  documentId: "init",
-  content: "",
-  kind: "text",
-  title: "",
-  status: "idle",
-  isVisible: false,
   boundingBox: {
-    top: 0,
-    left: 0,
-    width: 0,
     height: 0,
+    left: 0,
+    top: 0,
+    width: 0,
   },
+  content: "",
+  documentId: "init",
+  isVisible: false,
+  kind: "text",
+  status: "idle",
+  title: "",
 };
 
 type Selector<T> = (state: UIArtifact) => T;
@@ -80,8 +80,8 @@ export function useArtifact() {
   return useMemo(
     () => ({
       artifact,
-      setArtifact,
       metadata: localArtifactMetadata,
+      setArtifact,
       setMetadata: setLocalArtifactMetadata,
     }),
     [artifact, setArtifact, localArtifactMetadata, setLocalArtifactMetadata]

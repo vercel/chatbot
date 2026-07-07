@@ -9,8 +9,8 @@ export const sheetDocumentHandler = createDocumentHandler<"sheet">({
     let draftContent = "";
 
     const { stream } = streamText({
-      model: getLanguageModel(modelId),
       instructions: `${sheetPrompt}\n\nOutput ONLY the raw CSV data. No explanations, no markdown fences.`,
+      model: getLanguageModel(modelId),
       prompt: title,
     });
 
@@ -18,9 +18,9 @@ export const sheetDocumentHandler = createDocumentHandler<"sheet">({
       if (delta.type === "text-delta") {
         draftContent += delta.text;
         dataStream.write({
-          type: "data-sheetDelta",
           data: draftContent,
           transient: true,
+          type: "data-sheetDelta",
         });
       }
     }
@@ -31,8 +31,8 @@ export const sheetDocumentHandler = createDocumentHandler<"sheet">({
     let draftContent = "";
 
     const { stream } = streamText({
-      model: getLanguageModel(modelId),
       instructions: `${updateDocumentPrompt(document.content, "sheet")}\n\nOutput ONLY the raw CSV data. No explanations, no markdown fences.`,
+      model: getLanguageModel(modelId),
       prompt: description,
     });
 
@@ -40,9 +40,9 @@ export const sheetDocumentHandler = createDocumentHandler<"sheet">({
       if (delta.type === "text-delta") {
         draftContent += delta.text;
         dataStream.write({
-          type: "data-sheetDelta",
           data: draftContent,
           transient: true,
+          type: "data-sheetDelta",
         });
       }
     }

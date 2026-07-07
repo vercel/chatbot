@@ -63,8 +63,8 @@ export async function createGuestUser() {
 
   try {
     return await db.insert(user).values({ email, password }).returning({
-      id: user.id,
       email: user.email,
+      id: user.id,
     });
   } catch {
     throw new ChatbotError(
@@ -87,10 +87,10 @@ export async function saveChat({
 }) {
   try {
     return await db.insert(chat).values({
-      id,
       createdAt: new Date(),
-      userId,
+      id,
       title,
+      userId,
       visibility,
     });
   } catch {
@@ -297,8 +297,8 @@ export async function voteMessage({
     }
     return await db.insert(vote).values({
       chatId,
-      messageId,
       isUpvoted: type === "up",
+      messageId,
     });
   } catch {
     throw new ChatbotError("bad_request:database", "Failed to vote message");
@@ -333,12 +333,12 @@ export async function saveDocument({
     return await db
       .insert(document)
       .values({
-        id,
-        title,
-        kind,
         content,
-        userId,
         createdAt: new Date(),
+        id,
+        kind,
+        title,
+        userId,
       })
       .returning();
   } catch {
@@ -555,9 +555,7 @@ export async function updateChatTitleById({
 }) {
   try {
     return await db.update(chat).set({ title }).where(eq(chat.id, chatId));
-  } catch {
-    return;
-  }
+  } catch {}
 }
 
 export async function getMessageCountByUserId({
@@ -604,7 +602,7 @@ export async function createStreamId({
   try {
     await db
       .insert(stream)
-      .values({ id: streamId, chatId, createdAt: new Date() });
+      .values({ chatId, createdAt: new Date(), id: streamId });
   } catch {
     throw new ChatbotError(
       "bad_request:database",

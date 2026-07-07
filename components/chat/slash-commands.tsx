@@ -22,46 +22,46 @@ export type SlashCommand = {
 
 export const slashCommands: SlashCommand[] = [
   {
-    name: "new",
+    action: "new",
     description: "Start a new chat",
     icon: <PenSquareIcon className="size-3.5" />,
-    action: "new",
+    name: "new",
   },
   {
-    name: "clear",
+    action: "clear",
     description: "Clear current chat",
     icon: <Trash2Icon className="size-3.5" />,
-    action: "clear",
+    name: "clear",
   },
   {
-    name: "rename",
+    action: "rename",
     description: "Rename current chat",
     icon: <PenLineIcon className="size-3.5" />,
-    action: "rename",
+    name: "rename",
   },
   {
-    name: "model",
+    action: "model",
     description: "Change the AI model",
     icon: <ListIcon className="size-3.5" />,
-    action: "model",
+    name: "model",
   },
   {
-    name: "theme",
+    action: "theme",
     description: "Toggle dark/light mode",
     icon: <PaletteIcon className="size-3.5" />,
-    action: "theme",
+    name: "theme",
   },
   {
-    name: "delete",
+    action: "delete",
     description: "Delete current chat",
     icon: <XIcon className="size-3.5" />,
-    action: "delete",
+    name: "delete",
   },
   {
-    name: "purge",
+    action: "purge",
     description: "Delete all chats",
     icon: <BombIcon className="size-3.5" />,
-    action: "purge",
+    name: "purge",
   },
 ];
 

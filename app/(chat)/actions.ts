@@ -26,8 +26,8 @@ export async function generateTitleFromUserMessage({
   message: UIMessage;
 }) {
   const { text } = await generateText({
-    model: getTitleModel(),
     instructions: titlePrompt,
+    model: getTitleModel(),
     prompt: getTextFromMessage(message),
     providerOptions: {
       gateway: { order: titleModel.gatewayOrder },

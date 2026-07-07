@@ -47,45 +47,41 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
     kind: config.kind,
     onCreateDocument: async (args: CreateDocumentCallbackProps) => {
       const draftContent = await config.onCreateDocument({
-        id: args.id,
-        title: args.title,
         dataStream: args.dataStream,
-        session: args.session,
+        id: args.id,
         modelId: args.modelId,
+        session: args.session,
+        title: args.title,
       });
 
       if (args.session?.user?.id) {
         await saveDocument({
-          id: args.id,
-          title: args.title,
           content: draftContent,
+          id: args.id,
           kind: config.kind,
+          title: args.title,
           userId: args.session.user.id,
         });
       }
-
-      return;
     },
     onUpdateDocument: async (args: UpdateDocumentCallbackProps) => {
       const draftContent = await config.onUpdateDocument({
-        document: args.document,
-        description: args.description,
         dataStream: args.dataStream,
-        session: args.session,
+        description: args.description,
+        document: args.document,
         modelId: args.modelId,
+        session: args.session,
       });
 
       if (args.session?.user?.id) {
         await saveDocument({
-          id: args.document.id,
-          title: args.document.title,
           content: draftContent,
+          id: args.document.id,
           kind: config.kind,
+          title: args.document.title,
           userId: args.session.user.id,
         });
       }
-
-      return;
     },
   };
 }

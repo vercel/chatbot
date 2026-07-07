@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 import { CheckCircleFillIcon, WarningIcon } from "./icons";
 
 const iconsByType: Record<"success" | "error", ReactNode> = {
-  success: <CheckCircleFillIcon />,
   error: <WarningIcon />,
+  success: <CheckCircleFillIcon />,
 };
 
 export function toast(props: Omit<ToastProps, "id">) {

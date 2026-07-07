@@ -19,13 +19,6 @@ export const updateDocument = ({
   tool({
     description:
       "Full rewrite of an existing artifact. Only use for major changes where most content needs replacing. Prefer editDocument for targeted changes.",
-    inputSchema: z.object({
-      id: z.string().describe("The ID of the artifact to rewrite"),
-      description: z
-        .string()
-        .default("Improve the content")
-        .describe("The description of changes that need to be made"),
-    }),
     execute: async ({ id, description }) => {
       const document = await getDocumentById({ id });
 
@@ -40,9 +33,9 @@ export const updateDocument = ({
       }
 
       dataStream.write({
-        type: "data-clear",
         data: null,
         transient: true,
+        type: "data-clear",
       });
 
       const documentHandler = documentHandlersByArtifactKind.find(
@@ -55,23 +48,30 @@ export const updateDocument = ({
       }
 
       await documentHandler.onUpdateDocument({
-        document,
-        description,
         dataStream,
-        session,
+        description,
+        document,
         modelId,
+        session,
       });
 
-      dataStream.write({ type: "data-finish", data: null, transient: true });
+      dataStream.write({ data: null, transient: true, type: "data-finish" });
 
       return {
-        id,
-        title: document.title,
-        kind: document.kind,
         content:
           document.kind === "code"
             ? "The script has been updated successfully."
             : "The document has been updated successfully.",
+        id,
+        kind: document.kind,
+        title: document.title,
       };
     },
+    inputSchema: z.object({
+      description: z
+        .string()
+        .default("Improve the content")
+        .describe("The description of changes that need to be made"),
+      id: z.string().describe("The ID of the artifact to rewrite"),
+    }),
   });

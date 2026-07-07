@@ -16,8 +16,8 @@ export const codeDocumentHandler = createDocumentHandler<"code">({
     let draftContent = "";
 
     const { stream } = streamText({
-      model: getLanguageModel(modelId),
       instructions: `${codePrompt}\n\nOutput ONLY the code. No explanations, no markdown fences, no wrapping.`,
+      model: getLanguageModel(modelId),
       prompt: title,
     });
 
@@ -25,9 +25,9 @@ export const codeDocumentHandler = createDocumentHandler<"code">({
       if (delta.type === "text-delta") {
         draftContent += delta.text;
         dataStream.write({
-          type: "data-codeDelta",
           data: stripFences(draftContent),
           transient: true,
+          type: "data-codeDelta",
         });
       }
     }
@@ -38,8 +38,8 @@ export const codeDocumentHandler = createDocumentHandler<"code">({
     let draftContent = "";
 
     const { stream } = streamText({
-      model: getLanguageModel(modelId),
       instructions: `${updateDocumentPrompt(document.content, "code")}\n\nOutput ONLY the complete updated code. No explanations, no markdown fences, no wrapping.`,
+      model: getLanguageModel(modelId),
       prompt: description,
     });
 
@@ -47,9 +47,9 @@ export const codeDocumentHandler = createDocumentHandler<"code">({
       if (delta.type === "text-delta") {
         draftContent += delta.text;
         dataStream.write({
-          type: "data-codeDelta",
           data: stripFences(draftContent),
           transient: true,
+          type: "data-codeDelta",
         });
       }
     }

@@ -120,17 +120,49 @@ type WeatherAtLocation = {
 };
 
 const SAMPLE = {
-  latitude: 37.763_283,
-  longitude: -122.412_86,
-  generationtime_ms: 0.027_894_973_754_882_812,
-  utc_offset_seconds: 0,
-  timezone: "GMT",
-  timezone_abbreviation: "GMT",
+  current: { interval: 900, temperature_2m: 29.3, time: "2024-10-07T19:30" },
+  current_units: { interval: "seconds", temperature_2m: "°C", time: "iso8601" },
+  daily: {
+    sunrise: [
+      "2024-10-07T07:15",
+      "2024-10-08T07:16",
+      "2024-10-09T07:17",
+      "2024-10-10T07:18",
+      "2024-10-11T07:19",
+    ],
+    sunset: [
+      "2024-10-07T19:00",
+      "2024-10-08T18:58",
+      "2024-10-09T18:57",
+      "2024-10-10T18:55",
+      "2024-10-11T18:54",
+    ],
+    time: [
+      "2024-10-07",
+      "2024-10-08",
+      "2024-10-09",
+      "2024-10-10",
+      "2024-10-11",
+    ],
+  },
+  daily_units: {
+    sunrise: "iso8601",
+    sunset: "iso8601",
+    time: "iso8601",
+  },
   elevation: 18,
-  current_units: { time: "iso8601", interval: "seconds", temperature_2m: "°C" },
-  current: { time: "2024-10-07T19:30", interval: 900, temperature_2m: 29.3 },
-  hourly_units: { time: "iso8601", temperature_2m: "°C" },
+  generationtime_ms: 0.027_894_973_754_882_812,
   hourly: {
+    temperature_2m: [
+      36.6, 32.8, 29.5, 28.6, 29.2, 28.2, 27.5, 26.6, 26.5, 26, 25, 23.5, 23.9,
+      24.2, 22.9, 21, 24, 28.1, 31.4, 33.9, 32.1, 28.9, 26.9, 25.2, 23, 21.1,
+      19.6, 18.6, 17.7, 16.8, 16.2, 15.5, 14.9, 14.4, 14.2, 13.7, 13.3, 12.9,
+      12.5, 13.5, 15.8, 17.7, 19.6, 21, 21.9, 22.3, 22, 20.7, 18.9, 17.9, 17.3,
+      17, 16.7, 16.2, 15.6, 15.2, 15, 15, 15.1, 14.8, 14.8, 14.9, 14.7, 14.8,
+      15.3, 16.2, 17.9, 19.6, 20.5, 21.6, 21, 20.7, 19.3, 18.7, 18.4, 17.9,
+      17.3, 17, 17, 16.8, 16.4, 16.2, 16, 15.8, 15.7, 15.4, 15.4, 16.1, 16.7,
+      17, 18.6, 19, 19.5, 19.4, 18.5, 17.9, 17.5, 16.7, 16.3, 16.1,
+    ],
     time: [
       "2024-10-07T00:00",
       "2024-10-07T01:00",
@@ -233,45 +265,13 @@ const SAMPLE = {
       "2024-10-11T02:00",
       "2024-10-11T03:00",
     ],
-    temperature_2m: [
-      36.6, 32.8, 29.5, 28.6, 29.2, 28.2, 27.5, 26.6, 26.5, 26, 25, 23.5, 23.9,
-      24.2, 22.9, 21, 24, 28.1, 31.4, 33.9, 32.1, 28.9, 26.9, 25.2, 23, 21.1,
-      19.6, 18.6, 17.7, 16.8, 16.2, 15.5, 14.9, 14.4, 14.2, 13.7, 13.3, 12.9,
-      12.5, 13.5, 15.8, 17.7, 19.6, 21, 21.9, 22.3, 22, 20.7, 18.9, 17.9, 17.3,
-      17, 16.7, 16.2, 15.6, 15.2, 15, 15, 15.1, 14.8, 14.8, 14.9, 14.7, 14.8,
-      15.3, 16.2, 17.9, 19.6, 20.5, 21.6, 21, 20.7, 19.3, 18.7, 18.4, 17.9,
-      17.3, 17, 17, 16.8, 16.4, 16.2, 16, 15.8, 15.7, 15.4, 15.4, 16.1, 16.7,
-      17, 18.6, 19, 19.5, 19.4, 18.5, 17.9, 17.5, 16.7, 16.3, 16.1,
-    ],
   },
-  daily_units: {
-    time: "iso8601",
-    sunrise: "iso8601",
-    sunset: "iso8601",
-  },
-  daily: {
-    time: [
-      "2024-10-07",
-      "2024-10-08",
-      "2024-10-09",
-      "2024-10-10",
-      "2024-10-11",
-    ],
-    sunrise: [
-      "2024-10-07T07:15",
-      "2024-10-08T07:16",
-      "2024-10-09T07:17",
-      "2024-10-10T07:18",
-      "2024-10-11T07:19",
-    ],
-    sunset: [
-      "2024-10-07T19:00",
-      "2024-10-08T18:58",
-      "2024-10-09T18:57",
-      "2024-10-10T18:55",
-      "2024-10-11T18:54",
-    ],
-  },
+  hourly_units: { temperature_2m: "°C", time: "iso8601" },
+  latitude: 37.763_283,
+  longitude: -122.412_86,
+  timezone: "GMT",
+  timezone_abbreviation: "GMT",
+  utc_offset_seconds: 0,
 };
 
 function n(num: number): number {
@@ -291,8 +291,8 @@ export function Weather({
   );
 
   const isDay = isWithinInterval(new Date(weatherAtLocation.current.time), {
-    start: new Date(weatherAtLocation.daily.sunrise[0]),
     end: new Date(weatherAtLocation.daily.sunset[0]),
+    start: new Date(weatherAtLocation.daily.sunrise[0]),
   });
 
   const [isMobile, setIsMobile] = useState(false);
@@ -354,8 +354,8 @@ export function Weather({
           <div className="flex items-center gap-3">
             <div
               className={cx("text-white/90", {
-                "text-yellow-200": isDay,
                 "text-blue-200": !isDay,
+                "text-yellow-200": isDay,
               })}
             >
               {isDay ? <SunIcon size={32} /> : <MoonIcon size={32} />}
@@ -402,8 +402,8 @@ export function Weather({
 
                   <div
                     className={cx("text-white/60", {
-                      "text-yellow-200": isDay,
                       "text-blue-200": !isDay,
+                      "text-yellow-200": isDay,
                     })}
                   >
                     <CloudIcon size={16} />

@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
   }
 
   const chats = await getChatsByUserId({
+    endingBefore,
     id: session.user.id,
     limit,
     startingAfter,
-    endingBefore,
   });
 
   return Response.json(chats);

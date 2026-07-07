@@ -91,16 +91,17 @@ export function PureMessageActions({
           const upvote = fetch(
             `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`,
             {
-              method: "PATCH",
               body: JSON.stringify({
                 chatId,
                 messageId: message.id,
                 type: "up",
               }),
+              method: "PATCH",
             }
           );
 
           toast.promise(upvote, {
+            error: "Failed to upvote response.",
             loading: "Upvoting Response...",
             success: () => {
               mutate<Vote[]>(
@@ -118,8 +119,8 @@ export function PureMessageActions({
                     ...votesWithoutCurrent,
                     {
                       chatId,
-                      messageId: message.id,
                       isUpvoted: true,
+                      messageId: message.id,
                     },
                   ];
                 },
@@ -128,7 +129,6 @@ export function PureMessageActions({
 
               return "Upvoted Response!";
             },
-            error: "Failed to upvote response.",
           });
         }}
         tooltip="Upvote Response"
@@ -144,16 +144,17 @@ export function PureMessageActions({
           const downvote = fetch(
             `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/vote`,
             {
-              method: "PATCH",
               body: JSON.stringify({
                 chatId,
                 messageId: message.id,
                 type: "down",
               }),
+              method: "PATCH",
             }
           );
 
           toast.promise(downvote, {
+            error: "Failed to downvote response.",
             loading: "Downvoting Response...",
             success: () => {
               mutate<Vote[]>(
@@ -171,8 +172,8 @@ export function PureMessageActions({
                     ...votesWithoutCurrent,
                     {
                       chatId,
-                      messageId: message.id,
                       isUpvoted: false,
+                      messageId: message.id,
                     },
                   ];
                 },
@@ -181,7 +182,6 @@ export function PureMessageActions({
 
               return "Downvoted Response!";
             },
-            error: "Failed to downvote response.",
           });
         }}
         tooltip="Downvote Response"

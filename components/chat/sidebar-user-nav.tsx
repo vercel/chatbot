@@ -92,9 +92,9 @@ export function SidebarUserNav({ user }: { user: User }) {
                 onClick={() => {
                   if (status === "loading") {
                     toast({
-                      type: "error",
                       description:
                         "Checking authentication status, please try again!",
+                      type: "error",
                     });
 
                     return;

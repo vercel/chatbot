@@ -24,16 +24,16 @@ export default function Page() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: router and updateSession are stable refs
   useEffect(() => {
     if (state.status === "user_exists") {
-      toast({ type: "error", description: "Account already exists!" });
+      toast({ description: "Account already exists!", type: "error" });
     } else if (state.status === "failed") {
-      toast({ type: "error", description: "Failed to create account!" });
+      toast({ description: "Failed to create account!", type: "error" });
     } else if (state.status === "invalid_data") {
       toast({
-        type: "error",
         description: "Failed validating your submission!",
+        type: "error",
       });
     } else if (state.status === "success") {
-      toast({ type: "success", description: "Account created!" });
+      toast({ description: "Account created!", type: "success" });
       setIsSuccessful(true);
       updateSession();
       router.refresh();

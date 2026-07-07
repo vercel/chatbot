@@ -66,10 +66,10 @@ export function DocumentPreview({
       setArtifact((currentArtifact) => ({
         ...currentArtifact,
         boundingBox: {
+          height: boundingBox.height,
           left: boundingBox.x,
           top: boundingBox.y,
           width: boundingBox.width,
-          height: boundingBox.height,
         },
       }));
     }
@@ -103,11 +103,11 @@ export function DocumentPreview({
     ? previewDocument
     : artifact.status === "streaming"
       ? {
-          title: artifact.title,
-          kind: artifact.kind,
           content: artifact.content,
-          id: artifact.documentId,
           createdAt: new Date(),
+          id: artifact.documentId,
+          kind: artifact.kind,
+          title: artifact.title,
           userId: "noop",
         }
       : null;
@@ -174,13 +174,13 @@ const PureHitboxLayer = ({
         ...(result?.id && { documentId: result.id }),
         ...(result?.title && { title: result.title }),
         ...(result?.kind && { kind: result.kind }),
-        isVisible: true,
         boundingBox: {
+          height: boundingBox.height,
           left: boundingBox.x,
           top: boundingBox.y,
           width: boundingBox.width,
-          height: boundingBox.height,
         },
+        isVisible: true,
       }));
     },
     [setArtifact, result]
@@ -257,17 +257,17 @@ const DocumentContent = ({ document }: { document: Document }) => {
   const containerClassName = cn(
     "h-[257px] overflow-hidden rounded-b-2xl border border-t-0 border-border/50 dark:bg-muted",
     {
-      "p-4 sm:px-10 sm:py-10": document.kind === "text",
       "p-0": document.kind === "code",
+      "p-4 sm:px-10 sm:py-10": document.kind === "text",
     }
   );
 
   const commonProps = {
     content: document.content ?? "",
-    isCurrentVersion: true,
     currentVersionIndex: 0,
-    status: artifact.status,
+    isCurrentVersion: true,
     saveContent: () => null,
+    status: artifact.status,
     suggestions: [],
   };
 

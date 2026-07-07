@@ -223,19 +223,19 @@ function PureMultimodalInput({
     );
 
     sendMessage({
-      role: "user",
       parts: [
         ...attachments.map((attachment) => ({
+          mediaType: attachment.contentType,
+          name: attachment.name,
           type: "file" as const,
           url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
         })),
         {
-          type: "text",
           text: input,
+          type: "text",
         },
       ],
+      role: "user",
     });
 
     setAttachments([]);
@@ -264,8 +264,8 @@ function PureMultimodalInput({
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/files/upload`,
         {
-          method: "POST",
           body: formData,
+          method: "POST",
         }
       );
 
@@ -274,9 +274,9 @@ function PureMultimodalInput({
         const { url, pathname, contentType } = data;
 
         return {
-          url,
-          name: pathname,
           contentType,
+          name: pathname,
+          url,
         };
       }
       const { error } = await response.json();
@@ -462,9 +462,9 @@ function PureMultimodalInput({
             {uploadQueue.map((filename) => (
               <PreviewAttachment
                 attachment={{
-                  url: "",
-                  name: filename,
                   contentType: "",
+                  name: filename,
+                  url: "",
                 }}
                 isUploading={true}
                 key={filename}
@@ -596,7 +596,7 @@ function PureAttachmentsButton({
   const { data: modelsResponse } = useSWR(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
     (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
+    { dedupingInterval: 3_600_000, revalidateOnFocus: false }
   );
 
   const caps: Record<string, ModelCapabilities> | undefined =
@@ -619,7 +619,7 @@ function PureAttachmentsButton({
       }}
       variant="ghost"
     >
-      <PaperclipIcon size={14} style={{ width: 14, height: 14 }} />
+      <PaperclipIcon size={14} style={{ height: 14, width: 14 }} />
     </Button>
   );
 }
@@ -637,7 +637,7 @@ function PureModelSelectorCompact({
   const { data: modelsData } = useSWR(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
     (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
+    { dedupingInterval: 3_600_000, revalidateOnFocus: false }
   );
 
   const capabilities: Record<string, ModelCapabilities> | undefined =
@@ -686,7 +686,7 @@ function PureModelSelectorCompact({
               if (!grouped[key]) {
                 grouped[key] = [];
               }
-              grouped[key].push({ model, curated: curatedIds.has(model.id) });
+              grouped[key].push({ curated: curatedIds.has(model.id), model });
             }
 
             const sortedKeys = Object.keys(grouped).sort((a, b) => {
@@ -719,8 +719,8 @@ function PureModelSelectorCompact({
               openai: "OpenAI",
               perplexity: "Perplexity",
               "prime-intellect": "Prime Intellect",
-              xiaomi: "Xiaomi",
               xai: "xAI",
+              xiaomi: "Xiaomi",
               zai: "Zai",
             };
 

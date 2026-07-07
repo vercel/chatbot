@@ -130,9 +130,9 @@ export function ChatShell() {
                           setEditingMessage(null);
                           await submitEditedMessage({
                             message: msg,
-                            text: input,
-                            setMessages,
                             regenerate,
+                            setMessages,
+                            text: input,
                           });
                           setInput("");
                         }

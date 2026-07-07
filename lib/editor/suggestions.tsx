@@ -22,8 +22,8 @@ function findPositionsInDoc(doc: Node, searchText: string): Position | null {
 
       if (index !== -1) {
         positions = {
-          start: pos + index,
           end: pos + index + searchText.length,
+          start: pos + index,
         };
 
         return false;
@@ -46,15 +46,15 @@ export function projectWithPositions(
     if (!positions) {
       return {
         ...suggestion,
-        selectionStart: 0,
         selectionEnd: 0,
+        selectionStart: 0,
       };
     }
 
     return {
       ...suggestion,
-      selectionStart: positions.start,
       selectionEnd: positions.end,
+      selectionStart: positions.start,
     };
   });
 }
@@ -62,22 +62,6 @@ export function projectWithPositions(
 export const suggestionsPluginKey = new PluginKey("suggestions");
 export const suggestionsPlugin = new Plugin({
   key: suggestionsPluginKey,
-  state: {
-    init() {
-      return { decorations: DecorationSet.empty, selected: null };
-    },
-    apply(tr, state) {
-      const newDecorations = tr.getMeta(suggestionsPluginKey);
-      if (newDecorations) {
-        return newDecorations;
-      }
-
-      return {
-        decorations: state.decorations.map(tr.mapping, tr.doc),
-        selected: state.selected,
-      };
-    },
-  },
   props: {
     decorations(state) {
       return this.getState(state)?.decorations ?? DecorationSet.empty;
@@ -91,6 +75,22 @@ export const suggestionsPlugin = new Plugin({
         }
         return false;
       },
+    },
+  },
+  state: {
+    apply(tr, state) {
+      const newDecorations = tr.getMeta(suggestionsPluginKey);
+      if (newDecorations) {
+        return newDecorations;
+      }
+
+      return {
+        decorations: state.decorations.map(tr.mapping, tr.doc),
+        selected: state.selected,
+      };
+    },
+    init() {
+      return { decorations: DecorationSet.empty, selected: null };
     },
   },
 });

@@ -107,9 +107,31 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     resumeStream,
     addToolApprovalResponse,
   } = useChat<ChatMessage>({
+    generateId: generateUUID,
     id: chatId,
     messages: initialMessages,
-    generateId: generateUUID,
+    onData: (dataPart) => {
+      if (dataPart.type === "data-waiting-status") {
+        setWaitingStatus(dataPart.data);
+        return;
+      }
+      setDataStream((ds) => (ds ? [...ds, dataPart] : []));
+    },
+    onError: (error) => {
+      if (error.message?.includes("AI Gateway requires a valid credit card")) {
+        setShowCreditCardAlert(true);
+      } else if (error instanceof ChatbotError) {
+        toast({ description: error.message, type: "error" });
+      } else {
+        toast({
+          description: error.message || "Oops, an error occurred!",
+          type: "error",
+        });
+      }
+    },
+    onFinish: () => {
+      mutate(unstable_serialize(getChatHistoryPaginationKey));
+    },
     sendAutomaticallyWhen: ({ messages: currentMessages }) => {
       const lastMessage = currentMessages.at(-1);
       return (
@@ -151,28 +173,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         };
       },
     }),
-    onData: (dataPart) => {
-      if (dataPart.type === "data-waiting-status") {
-        setWaitingStatus(dataPart.data);
-        return;
-      }
-      setDataStream((ds) => (ds ? [...ds, dataPart] : []));
-    },
-    onFinish: () => {
-      mutate(unstable_serialize(getChatHistoryPaginationKey));
-    },
-    onError: (error) => {
-      if (error.message?.includes("AI Gateway requires a valid credit card")) {
-        setShowCreditCardAlert(true);
-      } else if (error instanceof ChatbotError) {
-        toast({ type: "error", description: error.message });
-      } else {
-        toast({
-          type: "error",
-          description: error.message || "Oops, an error occurred!",
-        });
-      }
-    },
   });
 
   useEffect(() => {
@@ -231,8 +231,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
         `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${chatId}`
       );
       sendMessage({
+        parts: [{ text: query, type: "text" }],
         role: "user" as const,
-        parts: [{ type: "text", text: query }],
       });
     }
   }, [sendMessage, chatId]);
@@ -256,24 +256,24 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ActiveChatContextValue>(
     () => ({
+      addToolApprovalResponse,
       chatId,
+      currentModelId,
+      input,
+      isLoading: !isNewChat && isLoading,
+      isReadonly,
       messages,
-      setMessages,
+      regenerate,
       sendMessage,
+      setCurrentModelId,
+      setInput,
+      setMessages,
+      setShowCreditCardAlert,
+      showCreditCardAlert,
       status,
       stop,
-      regenerate,
-      addToolApprovalResponse,
-      input,
-      setInput,
       visibilityType: visibility,
-      isReadonly,
-      isLoading: !isNewChat && isLoading,
       votes,
-      currentModelId,
-      setCurrentModelId,
-      showCreditCardAlert,
-      setShowCreditCardAlert,
     }),
     [
       chatId,

@@ -22,9 +22,9 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
       className="flex w-full gap-2.5 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible"
       data-testid="suggested-actions"
       style={{
+        msOverflowStyle: "none",
         scrollbarWidth: "none",
         WebkitOverflowScrolling: "touch",
-        msOverflowStyle: "none",
       }}
     >
       {suggestedActions.map((suggestedAction, index) => (
@@ -49,8 +49,8 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
                 `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${chatId}`
               );
               sendMessage({
+                parts: [{ text: suggestion, type: "text" }],
                 role: "user",
-                parts: [{ type: "text", text: suggestion }],
               });
             }}
             suggestion={suggestedAction}
