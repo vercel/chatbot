@@ -47,10 +47,7 @@ export async function PATCH(request: Request) {
   let type: "up" | "down";
 
   try {
-    const parsed = voteSchema.parse(await request.json());
-    chatId = parsed.chatId;
-    messageId = parsed.messageId;
-    type = parsed.type;
+    ({ chatId, messageId, type } = voteSchema.parse(await request.json()));
   } catch {
     return new ChatbotError(
       "bad_request:api",

@@ -361,7 +361,7 @@ export async function updateDocumentContent({
       .orderBy(desc(document.createdAt))
       .limit(1);
 
-    const latest = docs[0];
+    const [latest] = docs;
     if (!latest) {
       throw new ChatbotError("not_found:database", "Document not found");
     }

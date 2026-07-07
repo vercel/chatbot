@@ -71,11 +71,9 @@ export async function POST(request: Request) {
   let isManualEdit: boolean | undefined;
 
   try {
-    const parsed = documentSchema.parse(await request.json());
-    content = parsed.content;
-    title = parsed.title;
-    kind = parsed.kind;
-    isManualEdit = parsed.isManualEdit;
+    ({ content, isManualEdit, kind, title } = documentSchema.parse(
+      await request.json()
+    ));
   } catch {
     return new ChatbotError(
       "bad_request:api",

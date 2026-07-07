@@ -153,7 +153,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
           lastMessage?.role !== "user" ||
           request.messages.some((msg) =>
             msg.parts?.some((part) => {
-              const state = (part as { state?: string }).state;
+              const { state } = part as { state?: string };
               return (
                 state === "approval-responded" || state === "output-denied"
               );

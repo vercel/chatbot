@@ -734,7 +734,7 @@ function PureModelSelectorCompact({
                 key={key}
               >
                 {grouped[key].map(({ model, curated }) => {
-                  const logoProvider = model.id.split("/")[0];
+                  const [logoProvider] = model.id.split("/");
                   return (
                     <ModelSelectorItem
                       className={cn(

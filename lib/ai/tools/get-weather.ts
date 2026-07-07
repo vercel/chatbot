@@ -19,7 +19,7 @@ async function geocodeCity(
       return null;
     }
 
-    const result = data.results[0];
+    const [result] = data.results;
     return {
       latitude: result.latitude,
       longitude: result.longitude,
@@ -43,11 +43,11 @@ export const getWeather = tool({
           error: `Could not find coordinates for "${input.city}". Please check the city name.`,
         };
       }
-      latitude = coords.latitude;
-      longitude = coords.longitude;
+      ({ latitude, longitude } = coords);
     } else if (input.latitude !== undefined && input.longitude !== undefined) {
-      latitude = input.latitude;
-      longitude = input.longitude;
+      const { latitude: inputLatitude, longitude: inputLongitude } = input;
+      latitude = inputLatitude;
+      longitude = inputLongitude;
     } else {
       return {
         error:
