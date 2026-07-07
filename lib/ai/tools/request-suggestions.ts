@@ -61,7 +61,7 @@ export const requestSuggestions = ({
           continue;
         }
 
-        for (let i = processedCount; i < partialOutput.length; i++) {
+        for (let i = processedCount; i < partialOutput.length; i += 1) {
           const element = partialOutput[i];
           if (
             !element?.originalSentence ||
@@ -87,7 +87,7 @@ export const requestSuggestions = ({
           });
 
           suggestions.push(suggestion);
-          processedCount++;
+          processedCount += 1;
         }
       }
 
