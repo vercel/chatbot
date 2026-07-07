@@ -1,0 +1,1 @@
+corepack pnpm exec lint-staged
