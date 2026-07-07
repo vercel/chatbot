@@ -40,15 +40,19 @@ export class ChatbotError extends Error {
   surface: Surface;
   statusCode: number;
 
-  constructor(errorCode: ErrorCode, cause?: string) {
-    super();
+  constructor(errorCode: ErrorCode, cause?: string | ErrorOptions) {
+    const message = getMessageByErrorCode(errorCode);
+    const options = typeof cause === "string" ? undefined : cause;
+
+    super(message, options);
 
     const [type, surface] = errorCode.split(":");
 
     this.type = type as ErrorType;
-    this.cause = cause;
+    if (typeof cause === "string") {
+      this.cause = cause;
+    }
     this.surface = surface as Surface;
-    this.message = getMessageByErrorCode(errorCode);
     this.statusCode = getStatusCodeByType(this.type);
   }
 
