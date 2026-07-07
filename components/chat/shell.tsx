@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,6 +69,47 @@ export function ChatShell() {
     }
   }, [chatId, setArtifact]);
 
+  const handleEditMessage = useCallback(
+    (msg: ChatMessage) => {
+      const text = msg.parts
+        ?.filter((p) => p.type === "text")
+        .map((p) => p.text)
+        .join("");
+      setInput(text ?? "");
+      setEditingMessage(msg);
+    },
+    [setInput]
+  );
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingMessage(null);
+    setInput("");
+  }, [setInput]);
+
+  const handleSendEditedMessage = useCallback(async () => {
+    if (!editingMessage) {
+      return;
+    }
+
+    const msg = editingMessage;
+    setEditingMessage(null);
+    await submitEditedMessage({
+      message: msg,
+      regenerate,
+      setMessages,
+      text: input,
+    });
+    setInput("");
+  }, [editingMessage, input, regenerate, setInput, setMessages]);
+
+  const handleActivateGateway = useCallback(() => {
+    window.open(
+      "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card",
+      "_blank"
+    );
+    window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/`;
+  }, []);
+
   return (
     <>
       <div className="flex h-dvh w-full flex-row overflow-hidden">
@@ -92,14 +133,7 @@ export function ChatShell() {
               isLoading={isLoading}
               isReadonly={isReadonly}
               messages={messages}
-              onEditMessage={(msg) => {
-                const text = msg.parts
-                  ?.filter((p) => p.type === "text")
-                  .map((p) => p.text)
-                  .join("");
-                setInput(text ?? "");
-                setEditingMessage(msg);
-              }}
+              onEditMessage={handleEditMessage}
               regenerate={regenerate}
               selectedModelId={currentModelId}
               setMessages={setMessages}
@@ -116,27 +150,12 @@ export function ChatShell() {
                   input={input}
                   isLoading={isLoading}
                   messages={messages}
-                  onCancelEdit={() => {
-                    setEditingMessage(null);
-                    setInput("");
-                  }}
+                  onCancelEdit={handleCancelEdit}
                   onModelChange={setCurrentModelId}
                   selectedModelId={currentModelId}
                   selectedVisibilityType={visibilityType}
                   sendMessage={
-                    editingMessage
-                      ? async () => {
-                          const msg = editingMessage;
-                          setEditingMessage(null);
-                          await submitEditedMessage({
-                            message: msg,
-                            regenerate,
-                            setMessages,
-                            text: input,
-                          });
-                          setInput("");
-                        }
-                      : sendMessage
+                    editingMessage ? handleSendEditedMessage : sendMessage
                   }
                   setAttachments={setAttachments}
                   setInput={setInput}
@@ -186,15 +205,7 @@ export function ChatShell() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                window.open(
-                  "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card",
-                  "_blank"
-                );
-                window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/`;
-              }}
-            >
+            <AlertDialogAction onClick={handleActivateGateway}>
               Activate
             </AlertDialogAction>
           </AlertDialogFooter>

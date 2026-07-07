@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { toast } from "sonner";
 import { useArtifact } from "@/hooks/use-artifact";
 import type { ArtifactKind } from "./artifact";
@@ -34,37 +34,41 @@ function PureDocumentToolResult({
   isReadonly,
 }: DocumentToolResultProps) {
   const { setArtifact } = useArtifact();
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (isReadonly) {
+        toast.error(
+          "Viewing files in shared chats is currently not supported."
+        );
+        return;
+      }
+
+      const rect = event.currentTarget.getBoundingClientRect();
+
+      const boundingBox = {
+        height: rect.height,
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+      };
+
+      setArtifact((currentArtifact) => ({
+        boundingBox,
+        content: currentArtifact.content,
+        documentId: result.id,
+        isVisible: true,
+        kind: result.kind,
+        status: "idle",
+        title: result.title,
+      }));
+    },
+    [isReadonly, result, setArtifact]
+  );
 
   return (
     <button
       className="flex w-fit cursor-pointer flex-row items-center gap-2 rounded-xl border bg-background px-3 py-2"
-      onClick={(event) => {
-        if (isReadonly) {
-          toast.error(
-            "Viewing files in shared chats is currently not supported."
-          );
-          return;
-        }
-
-        const rect = event.currentTarget.getBoundingClientRect();
-
-        const boundingBox = {
-          height: rect.height,
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-        };
-
-        setArtifact((currentArtifact) => ({
-          boundingBox,
-          content: currentArtifact.content,
-          documentId: result.id,
-          isVisible: true,
-          kind: result.kind,
-          status: "idle",
-          title: result.title,
-        }));
-      }}
+      onClick={handleClick}
       type="button"
     >
       <div className="text-muted-foreground">
@@ -100,33 +104,37 @@ function PureDocumentToolCall({
   isReadonly,
 }: DocumentToolCallProps) {
   const { setArtifact } = useArtifact();
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (isReadonly) {
+        toast.error(
+          "Viewing files in shared chats is currently not supported."
+        );
+        return;
+      }
+
+      const rect = event.currentTarget.getBoundingClientRect();
+
+      const boundingBox = {
+        height: rect.height,
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+      };
+
+      setArtifact((currentArtifact) => ({
+        ...currentArtifact,
+        boundingBox,
+        isVisible: true,
+      }));
+    },
+    [isReadonly, setArtifact]
+  );
 
   return (
     <button
       className="cursor pointer flex w-fit flex-row items-start justify-between gap-3 rounded-xl border px-3 py-2"
-      onClick={(event) => {
-        if (isReadonly) {
-          toast.error(
-            "Viewing files in shared chats is currently not supported."
-          );
-          return;
-        }
-
-        const rect = event.currentTarget.getBoundingClientRect();
-
-        const boundingBox = {
-          height: rect.height,
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-        };
-
-        setArtifact((currentArtifact) => ({
-          ...currentArtifact,
-          boundingBox,
-          isVisible: true,
-        }));
-      }}
+      onClick={handleClick}
       type="button"
     >
       <div className="flex flex-row items-start gap-3">

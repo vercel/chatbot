@@ -9,7 +9,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "next-auth";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
@@ -50,7 +50,24 @@ export function AppSidebar({ user }: { user: User | undefined }) {
   const { mutate } = useSWRConfig();
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
-  const handleDeleteAll = () => {
+  const closeMobile = useCallback(() => {
+    setOpenMobile(false);
+  }, [setOpenMobile]);
+
+  const handleToggleSidebar = useCallback(() => {
+    toggleSidebar();
+  }, [toggleSidebar]);
+
+  const handleNewChat = useCallback(() => {
+    setOpenMobile(false);
+    router.push("/");
+  }, [router, setOpenMobile]);
+
+  const handleShowDeleteAllDialog = useCallback(() => {
+    setShowDeleteAllDialog(true);
+  }, []);
+
+  const handleDeleteAll = useCallback(() => {
     setShowDeleteAllDialog(false);
     router.replace("/");
     mutate(unstable_serialize(getChatHistoryPaginationKey), [], {
@@ -62,7 +79,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
     });
 
     toast.success("All chats deleted");
-  };
+  }, [mutate, router]);
 
   return (
     <>
@@ -76,7 +93,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   className="size-8 !px-0 items-center justify-center group-data-[collapsible=icon]:group-hover/logo:opacity-0"
                   tooltip="Chatbot"
                 >
-                  <Link href="/" onClick={() => setOpenMobile(false)}>
+                  <Link href="/" onClick={closeMobile}>
                     <MessageSquareIcon className="size-4 text-sidebar-foreground/50" />
                   </Link>
                 </SidebarMenuButton>
@@ -84,7 +101,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   <TooltipTrigger asChild>
                     <SidebarMenuButton
                       className="pointer-events-none absolute inset-0 size-8 opacity-0 group-data-[collapsible=icon]:pointer-events-auto group-data-[collapsible=icon]:group-hover/logo:opacity-100"
-                      onClick={() => toggleSidebar()}
+                      onClick={handleToggleSidebar}
                     >
                       <PanelLeftIcon className="size-4" />
                     </SidebarMenuButton>
@@ -107,10 +124,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     className="h-8 rounded-lg border border-sidebar-border text-[13px] text-sidebar-foreground/70 transition-colors duration-150 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                    onClick={() => {
-                      setOpenMobile(false);
-                      router.push("/");
-                    }}
+                    onClick={handleNewChat}
                     tooltip="New Chat"
                   >
                     <PenSquareIcon className="size-4" />
@@ -121,7 +135,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       className="rounded-lg text-sidebar-foreground/40 transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => setShowDeleteAllDialog(true)}
+                      onClick={handleShowDeleteAllDialog}
                       tooltip="Delete All Chats"
                     >
                       <TrashIcon className="size-4" />

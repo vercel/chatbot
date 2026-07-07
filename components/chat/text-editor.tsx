@@ -209,6 +209,10 @@ function PureEditor({
     setActiveSuggestion(null);
   }, [activeSuggestion]);
 
+  const handleCloseSuggestion = useCallback(() => {
+    setActiveSuggestion(null);
+  }, []);
+
   return (
     <>
       <div
@@ -220,7 +224,7 @@ function PureEditor({
         createPortal(
           <SuggestionDialog
             onApply={handleApply}
-            onClose={() => setActiveSuggestion(null)}
+            onClose={handleCloseSuggestion}
             suggestion={activeSuggestion}
           />,
           containerRef.current.closest(

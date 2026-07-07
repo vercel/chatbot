@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
 import type { Chat } from "@/lib/db/schema";
 import {
@@ -41,6 +41,21 @@ const PureChatItem = ({
     chatId: chat.id,
     initialVisibilityType: chat.visibility,
   });
+  const closeMobile = useCallback(() => {
+    setOpenMobile(false);
+  }, [setOpenMobile]);
+
+  const handleSetPrivate = useCallback(() => {
+    setVisibilityType("private");
+  }, [setVisibilityType]);
+
+  const handleSetPublic = useCallback(() => {
+    setVisibilityType("public");
+  }, [setVisibilityType]);
+
+  const handleDelete = useCallback(() => {
+    onDelete(chat.id);
+  }, [chat.id, onDelete]);
 
   return (
     <SidebarMenuItem>
@@ -49,7 +64,7 @@ const PureChatItem = ({
         className="h-8 rounded-none text-[13px] text-sidebar-foreground/50 transition-all duration-150 hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:font-normal data-active:text-sidebar-foreground/50 data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium data-[active=true]:border-b data-[active=true]:border-dashed data-[active=true]:border-sidebar-foreground/50"
         isActive={isActive}
       >
-        <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)}>
+        <Link href={`/chat/${chat.id}`} onClick={closeMobile}>
           <span className="truncate">{chat.title}</span>
         </Link>
       </SidebarMenuButton>
@@ -75,9 +90,7 @@ const PureChatItem = ({
               <DropdownMenuSubContent>
                 <DropdownMenuItem
                   className="cursor-pointer flex-row justify-between"
-                  onClick={() => {
-                    setVisibilityType("private");
-                  }}
+                  onClick={handleSetPrivate}
                 >
                   <div className="flex flex-row items-center gap-2">
                     <LockIcon size={12} />
@@ -89,9 +102,7 @@ const PureChatItem = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer flex-row justify-between"
-                  onClick={() => {
-                    setVisibilityType("public");
-                  }}
+                  onClick={handleSetPublic}
                 >
                   <div className="flex flex-row items-center gap-2">
                     <GlobeIcon />
@@ -103,10 +114,7 @@ const PureChatItem = ({
             </DropdownMenuPortal>
           </DropdownMenuSub>
 
-          <DropdownMenuItem
-            onSelect={() => onDelete(chat.id)}
-            variant="destructive"
-          >
+          <DropdownMenuItem onSelect={handleDelete} variant="destructive">
             <TrashIcon />
             <span>Delete</span>
           </DropdownMenuItem>

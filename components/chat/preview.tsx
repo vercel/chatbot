@@ -1,16 +1,46 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { suggestions } from "@/lib/constants";
 import { SparklesIcon } from "./icons";
+
+function PreviewSuggestionButton({
+  suggestion,
+  onAction,
+}: {
+  suggestion: string;
+  onAction: (query?: string) => void;
+}) {
+  const handleClick = useCallback(() => {
+    onAction(suggestion);
+  }, [onAction, suggestion]);
+
+  return (
+    <button
+      className="rounded-xl border border-border/30 bg-card/20 px-3 py-2.5 text-left text-[11px] leading-relaxed text-muted-foreground/70 transition-all duration-200 hover:border-border/60 hover:bg-card/40 hover:text-muted-foreground"
+      onClick={handleClick}
+      type="button"
+    >
+      {suggestion}
+    </button>
+  );
+}
 
 export function Preview() {
   const router = useRouter();
 
-  const handleAction = (query?: string) => {
-    const url = query ? `/?query=${encodeURIComponent(query)}` : "/";
-    router.push(url);
-  };
+  const handleAction = useCallback(
+    (query?: string) => {
+      const url = query ? `/?query=${encodeURIComponent(query)}` : "/";
+      router.push(url);
+    },
+    [router]
+  );
+
+  const handleDefaultAction = useCallback(() => {
+    handleAction();
+  }, [handleAction]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-tl-2xl bg-background">
@@ -33,14 +63,11 @@ export function Preview() {
 
         <div className="grid w-full max-w-md grid-cols-2 gap-2">
           {suggestions.map((suggestion) => (
-            <button
-              className="rounded-xl border border-border/30 bg-card/20 px-3 py-2.5 text-left text-[11px] leading-relaxed text-muted-foreground/70 transition-all duration-200 hover:border-border/60 hover:bg-card/40 hover:text-muted-foreground"
+            <PreviewSuggestionButton
               key={suggestion}
-              onClick={() => handleAction(suggestion)}
-              type="button"
-            >
-              {suggestion}
-            </button>
+              onAction={handleAction}
+              suggestion={suggestion}
+            />
           ))}
         </div>
       </div>
@@ -48,7 +75,7 @@ export function Preview() {
       <div className="shrink-0 px-5 pb-5">
         <button
           className="flex w-full items-center rounded-2xl border border-border/30 bg-card/30 px-4 py-3 text-left text-[13px] text-muted-foreground/40 transition-colors hover:border-border/50 hover:text-muted-foreground/60"
-          onClick={() => handleAction()}
+          onClick={handleDefaultAction}
           type="button"
         >
           Ask anything...

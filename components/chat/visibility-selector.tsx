@@ -1,6 +1,13 @@
 "use client";
 
-import { type ReactNode, useMemo, useState } from "react";
+import {
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,6 +45,44 @@ const visibilities: Array<{
     label: "Public",
   },
 ];
+
+function VisibilitySelectorItem({
+  setOpen,
+  setVisibilityType,
+  visibility,
+  visibilityType,
+}: {
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  setVisibilityType: (visibilityType: VisibilityType) => void;
+  visibility: (typeof visibilities)[number];
+  visibilityType: VisibilityType;
+}) {
+  const handleSelect = useCallback(() => {
+    setVisibilityType(visibility.id);
+    setOpen(false);
+  }, [setOpen, setVisibilityType, visibility.id]);
+
+  return (
+    <DropdownMenuItem
+      className="group/item flex flex-row items-center justify-between gap-4"
+      data-active={visibility.id === visibilityType}
+      data-testid={`visibility-selector-item-${visibility.id}`}
+      onSelect={handleSelect}
+    >
+      <div className="flex flex-col items-start gap-1">
+        {visibility.label}
+        {visibility.description ? (
+          <div className="text-muted-foreground text-xs">
+            {visibility.description}
+          </div>
+        ) : null}
+      </div>
+      <div className="text-foreground opacity-0 group-data-[active=true]/item:opacity-100 dark:text-foreground">
+        <CheckCircleFillIcon />
+      </div>
+    </DropdownMenuItem>
+  );
+}
 
 export function VisibilitySelector({
   chatId,
@@ -82,28 +127,13 @@ export function VisibilitySelector({
 
       <DropdownMenuContent align="start" className="min-w-[300px]">
         {visibilities.map((visibility) => (
-          <DropdownMenuItem
-            className="group/item flex flex-row items-center justify-between gap-4"
-            data-active={visibility.id === visibilityType}
-            data-testid={`visibility-selector-item-${visibility.id}`}
+          <VisibilitySelectorItem
             key={visibility.id}
-            onSelect={() => {
-              setVisibilityType(visibility.id);
-              setOpen(false);
-            }}
-          >
-            <div className="flex flex-col items-start gap-1">
-              {visibility.label}
-              {visibility.description ? (
-                <div className="text-muted-foreground text-xs">
-                  {visibility.description}
-                </div>
-              ) : null}
-            </div>
-            <div className="text-foreground opacity-0 group-data-[active=true]/item:opacity-100 dark:text-foreground">
-              <CheckCircleFillIcon />
-            </div>
-          </DropdownMenuItem>
+            setOpen={setOpen}
+            setVisibilityType={setVisibilityType}
+            visibility={visibility}
+            visibilityType={visibilityType}
+          />
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

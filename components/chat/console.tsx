@@ -57,6 +57,18 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
     [isResizing]
   );
 
+  const handleResizeKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "ArrowUp") {
+      setHeight((prev) => Math.min(prev + 10, maxHeight));
+    } else if (e.key === "ArrowDown") {
+      setHeight((prev) => Math.max(prev - 10, minHeight));
+    }
+  }, []);
+
+  const handleClearConsoleOutputs = useCallback(() => {
+    setConsoleOutputs([]);
+  }, [setConsoleOutputs]);
+
   useEffect(() => {
     window.addEventListener("mousemove", resize);
     window.addEventListener("mouseup", stopResizing);
@@ -89,13 +101,7 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
         aria-valuemin={minHeight}
         aria-valuenow={height}
         className="fixed z-50 h-2 w-full cursor-ns-resize"
-        onKeyDown={(e) => {
-          if (e.key === "ArrowUp") {
-            setHeight((prev) => Math.min(prev + 10, maxHeight));
-          } else if (e.key === "ArrowDown") {
-            setHeight((prev) => Math.max(prev - 10, minHeight));
-          }
-        }}
+        onKeyDown={handleResizeKeyDown}
         onMouseDown={startResizing}
         role="slider"
         style={{ bottom: height - 4 }}
@@ -117,7 +123,7 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
           </div>
           <Button
             className="size-7 text-muted-foreground/50 hover:text-foreground"
-            onClick={() => setConsoleOutputs([])}
+            onClick={handleClearConsoleOutputs}
             size="icon-sm"
             variant="ghost"
           >

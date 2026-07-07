@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, type ReactNode, useCallback, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
@@ -14,6 +14,64 @@ type ArtifactActionsProps = {
   metadata: ArtifactActionContext["metadata"];
   setMetadata: ArtifactActionContext["setMetadata"];
 };
+
+type ArtifactAction = {
+  description: string;
+  icon: ReactNode;
+  onClick: (context: ArtifactActionContext) => Promise<void> | void;
+};
+
+function ArtifactActionButton({
+  action,
+  actionContext,
+  disabled,
+  isActive,
+  setIsLoading,
+}: {
+  action: ArtifactAction;
+  actionContext: ArtifactActionContext;
+  disabled: boolean;
+  isActive: boolean;
+  setIsLoading: (isLoading: boolean) => void;
+}) {
+  const handleClick = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      await Promise.resolve(action.onClick(actionContext));
+    } catch {
+      toast.error("Failed to execute action");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [action, actionContext, setIsLoading]);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          className={cn(
+            "flex items-center justify-center rounded-full p-3 text-muted-foreground transition-all duration-150",
+            "hover:text-foreground",
+            "active:scale-95",
+            "disabled:pointer-events-none disabled:opacity-30",
+            {
+              "text-foreground": isActive,
+            }
+          )}
+          disabled={disabled}
+          onClick={handleClick}
+          type="button"
+        >
+          {action.icon}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="left" sideOffset={8}>
+        {action.description}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function PureArtifactActions({
   artifact,
@@ -55,40 +113,14 @@ function PureArtifactActions({
               : false;
 
         return (
-          <Tooltip key={action.description}>
-            <TooltipTrigger asChild>
-              <button
-                className={cn(
-                  "flex items-center justify-center rounded-full p-3 text-muted-foreground transition-all duration-150",
-                  "hover:text-foreground",
-                  "active:scale-95",
-                  "disabled:pointer-events-none disabled:opacity-30",
-                  {
-                    "text-foreground":
-                      mode === "diff" && action.description === "View changes",
-                  }
-                )}
-                disabled={disabled}
-                onClick={async () => {
-                  setIsLoading(true);
-
-                  try {
-                    await Promise.resolve(action.onClick(actionContext));
-                  } catch {
-                    toast.error("Failed to execute action");
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-                type="button"
-              >
-                {action.icon}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left" sideOffset={8}>
-              {action.description}
-            </TooltipContent>
-          </Tooltip>
+          <ArtifactActionButton
+            action={action}
+            actionContext={actionContext}
+            disabled={disabled}
+            isActive={mode === "diff" && action.description === "View changes"}
+            key={action.description}
+            setIsLoading={setIsLoading}
+          />
         );
       })}
     </div>

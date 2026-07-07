@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { parse, unparse } from "papaparse";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import DataGrid, { textEditor } from "react-data-grid";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +107,18 @@ const PureSpreadsheetEditor = ({ content, saveContent }: SheetEditorProps) => {
     saveContent(newCsvContent, true);
   };
 
+  const handleCellClick = useCallback(
+    (args: {
+      column: { key: string };
+      selectCell: (enableEditor?: boolean) => void;
+    }) => {
+      if (args.column.key !== "rowNumber") {
+        args.selectCell(true);
+      }
+    },
+    []
+  );
+
   return (
     <DataGrid
       className={resolvedTheme === "dark" ? "rdg-dark" : "rdg-light"}
@@ -116,11 +128,7 @@ const PureSpreadsheetEditor = ({ content, saveContent }: SheetEditorProps) => {
         sortable: true,
       }}
       enableVirtualization
-      onCellClick={(args) => {
-        if (args.column.key !== "rowNumber") {
-          args.selectCell(true);
-        }
-      }}
+      onCellClick={handleCellClick}
       onRowsChange={handleRowsChange}
       rows={localRows}
       style={{ height: "100%" }}

@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { toast } from "sonner";
 import { CodeEditor } from "@/components/chat/code-editor";
 import {
@@ -65,6 +66,31 @@ function detectRequiredHandlers(code: string): string[] {
 type Metadata = {
   outputs: ConsoleOutput[];
 };
+
+const codeArtifactContent: Artifact<"code", Metadata>["content"] =
+  function CodeArtifactContent({ metadata, setMetadata, ...props }) {
+    const clearConsoleOutputs = useCallback(() => {
+      setMetadata((currentMetadata) => ({
+        ...currentMetadata,
+        outputs: [],
+      }));
+    }, [setMetadata]);
+
+    return (
+      <>
+        <div className="relative min-h-[200px]">
+          <CodeEditor {...props} />
+        </div>
+
+        {metadata?.outputs ? (
+          <Console
+            consoleOutputs={metadata.outputs}
+            setConsoleOutputs={clearConsoleOutputs}
+          />
+        ) : null}
+      </>
+    );
+  };
 
 export const codeArtifact = new Artifact<"code", Metadata>({
   actions: [
@@ -211,25 +237,7 @@ export const codeArtifact = new Artifact<"code", Metadata>({
       },
     },
   ],
-  content: ({ metadata, setMetadata, ...props }) => (
-    <>
-      <div className="relative min-h-[200px]">
-        <CodeEditor {...props} />
-      </div>
-
-      {metadata?.outputs ? (
-        <Console
-          consoleOutputs={metadata.outputs}
-          setConsoleOutputs={() => {
-            setMetadata({
-              ...metadata,
-              outputs: [],
-            });
-          }}
-        />
-      ) : null}
-    </>
-  ),
+  content: codeArtifactContent,
   description:
     "Useful for code generation; Code execution is only available for python code.",
   initialize: ({ setMetadata }) => {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "next-auth";
 import { signOut, useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
+import { useCallback } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +36,28 @@ export function SidebarUserNav({ user }: { user: User }) {
   const { setTheme, resolvedTheme } = useTheme();
 
   const isGuest = guestRegex.test(data?.user?.email ?? "");
+  const handleThemeSelect = useCallback(() => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  }, [resolvedTheme, setTheme]);
+
+  const handleAuthClick = useCallback(() => {
+    if (status === "loading") {
+      toast({
+        description: "Checking authentication status, please try again!",
+        type: "error",
+      });
+
+      return;
+    }
+
+    if (isGuest) {
+      router.push("/login");
+    } else {
+      signOut({
+        redirectTo: "/",
+      });
+    }
+  }, [isGuest, router, status]);
 
   return (
     <SidebarMenu>
@@ -79,9 +102,7 @@ export function SidebarUserNav({ user }: { user: User }) {
             <DropdownMenuItem
               className="cursor-pointer text-[13px]"
               data-testid="user-nav-item-theme"
-              onSelect={() =>
-                setTheme(resolvedTheme === "dark" ? "light" : "dark")
-              }
+              onSelect={handleThemeSelect}
             >
               {`Toggle ${resolvedTheme === "light" ? "dark" : "light"} mode`}
             </DropdownMenuItem>
@@ -89,25 +110,7 @@ export function SidebarUserNav({ user }: { user: User }) {
             <DropdownMenuItem asChild data-testid="user-nav-item-auth">
               <button
                 className="w-full cursor-pointer text-[13px]"
-                onClick={() => {
-                  if (status === "loading") {
-                    toast({
-                      description:
-                        "Checking authentication status, please try again!",
-                      type: "error",
-                    });
-
-                    return;
-                  }
-
-                  if (isGuest) {
-                    router.push("/login");
-                  } else {
-                    signOut({
-                      redirectTo: "/",
-                    });
-                  }
-                }}
+                onClick={handleAuthClick}
                 type="button"
               >
                 {isGuest ? "Login to your account" : "Sign out"}

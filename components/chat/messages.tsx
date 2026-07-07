@@ -1,6 +1,6 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { ArrowDownIcon } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -58,6 +58,10 @@ function PureMessages({
       reset();
     }
   }, [chatId, reset]);
+
+  const handleScrollToBottom = useCallback(() => {
+    scrollToBottom("smooth");
+  }, [scrollToBottom]);
 
   return (
     <div className="relative flex-1 bg-background">
@@ -117,7 +121,7 @@ function PureMessages({
             ? "pointer-events-none scale-90 opacity-0"
             : "pointer-events-auto scale-100 opacity-100"
         }`}
-        onClick={() => scrollToBottom("smooth")}
+        onClick={handleScrollToBottom}
         type="button"
       >
         <ArrowDownIcon className="size-3 text-muted-foreground" />

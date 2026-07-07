@@ -4,7 +4,7 @@ import { isToday, isYesterday, subMonths, subWeeks } from "date-fns";
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import type { User } from "next-auth";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import useSWRInfinite from "swr/infinite";
 import {
@@ -127,7 +127,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     ? paginatedChatHistories.every((page) => page.chats.length === 0)
     : false;
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     const chatToDelete = deleteId;
     const isCurrentChat = pathname === `/chat/${chatToDelete}`;
 
@@ -152,7 +152,18 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     );
 
     toast.success("Chat deleted");
-  };
+  }, [deleteId, mutate, pathname, router]);
+
+  const handleShowDeleteDialog = useCallback((chatId: string) => {
+    setDeleteId(chatId);
+    setShowDeleteDialog(true);
+  }, []);
+
+  const handleViewportEnter = useCallback(() => {
+    if (!isValidating && !hasReachedEnd) {
+      setSize((size) => size + 1);
+    }
+  }, [hasReachedEnd, isValidating, setSize]);
 
   if (!user) {
     return (
@@ -238,10 +249,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               chat={chat}
                               isActive={chat.id === id}
                               key={chat.id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
+                              onDelete={handleShowDeleteDialog}
                               setOpenMobile={setOpenMobile}
                             />
                           ))}
@@ -258,10 +266,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               chat={chat}
                               isActive={chat.id === id}
                               key={chat.id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
+                              onDelete={handleShowDeleteDialog}
                               setOpenMobile={setOpenMobile}
                             />
                           ))}
@@ -278,10 +283,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               chat={chat}
                               isActive={chat.id === id}
                               key={chat.id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
+                              onDelete={handleShowDeleteDialog}
                               setOpenMobile={setOpenMobile}
                             />
                           ))}
@@ -298,10 +300,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               chat={chat}
                               isActive={chat.id === id}
                               key={chat.id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
+                              onDelete={handleShowDeleteDialog}
                               setOpenMobile={setOpenMobile}
                             />
                           ))}
@@ -318,10 +317,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               chat={chat}
                               isActive={chat.id === id}
                               key={chat.id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
+                              onDelete={handleShowDeleteDialog}
                               setOpenMobile={setOpenMobile}
                             />
                           ))}
@@ -333,13 +329,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
               : null}
           </SidebarMenu>
 
-          <motion.div
-            onViewportEnter={() => {
-              if (!isValidating && !hasReachedEnd) {
-                setSize((size) => size + 1);
-              }
-            }}
-          />
+          <motion.div onViewportEnter={handleViewportEnter} />
 
           {hasReachedEnd ? null : (
             <div className="mt-1 flex flex-row items-center gap-2 px-4 py-2 text-sidebar-foreground/50">

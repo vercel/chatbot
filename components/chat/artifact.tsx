@@ -224,38 +224,60 @@ function PureArtifact({
     [handleContentChange]
   );
 
-  function getDocumentContentById(index: number) {
-    if (!documents) {
-      return "";
-    }
-    if (!documents[index]) {
-      return "";
-    }
-    return documents[index].content ?? "";
-  }
+  const getDocumentContentById = useCallback(
+    (index: number) => {
+      if (!documents) {
+        return "";
+      }
+      if (!documents[index]) {
+        return "";
+      }
+      return documents[index].content ?? "";
+    },
+    [documents]
+  );
 
-  const handleVersionChange = (type: "next" | "prev" | "toggle" | "latest") => {
-    if (!documents) {
+  const handleVersionChange = useCallback(
+    (type: "next" | "prev" | "toggle" | "latest") => {
+      if (!documents) {
+        return;
+      }
+
+      if (type === "latest") {
+        setCurrentVersionIndex(documents.length - 1);
+        setMode("edit");
+      }
+
+      if (type === "toggle") {
+        setMode((currentMode) => (currentMode === "edit" ? "diff" : "edit"));
+      }
+
+      if (type === "prev") {
+        if (currentVersionIndex > 0) {
+          setCurrentVersionIndex((index) => index - 1);
+        }
+      } else if (
+        type === "next" &&
+        currentVersionIndex < documents.length - 1
+      ) {
+        setCurrentVersionIndex((index) => index + 1);
+      }
+    },
+    [currentVersionIndex, documents]
+  );
+
+  const handleArtifactScroll = useCallback(() => {
+    const el = artifactContentRef.current;
+    if (!el) {
       return;
     }
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    userScrolledArtifact.current = !atBottom;
+  }, []);
 
-    if (type === "latest") {
-      setCurrentVersionIndex(documents.length - 1);
-      setMode("edit");
-    }
-
-    if (type === "toggle") {
-      setMode((currentMode) => (currentMode === "edit" ? "diff" : "edit"));
-    }
-
-    if (type === "prev") {
-      if (currentVersionIndex > 0) {
-        setCurrentVersionIndex((index) => index - 1);
-      }
-    } else if (type === "next" && currentVersionIndex < documents.length - 1) {
-      setCurrentVersionIndex((index) => index + 1);
-    }
-  };
+  const handleClose = useCallback(() => {
+    setArtifact((prev) => ({ ...prev, isVisible: false }));
+  }, [setArtifact]);
 
   const [isToolbarVisible, setIsToolbarVisible] = useState(true);
 
@@ -348,15 +370,7 @@ function PureArtifact({
       <div
         className="relative flex-1 overflow-y-auto bg-background"
         data-slot="artifact-content"
-        onScroll={() => {
-          const el = artifactContentRef.current;
-          if (!el) {
-            return;
-          }
-          const atBottom =
-            el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-          userScrolledArtifact.current = !atBottom;
-        }}
+        onScroll={handleArtifactScroll}
         ref={artifactContentRef}
       >
         <artifactDefinition.content
@@ -396,9 +410,7 @@ function PureArtifact({
               consoleError={consoleError}
               documentId={artifact.documentId}
               isToolbarVisible={isToolbarVisible}
-              onClose={() => {
-                setArtifact((prev) => ({ ...prev, isVisible: false }));
-              }}
+              onClose={handleClose}
               sendMessage={sendMessage}
               setIsToolbarVisible={setIsToolbarVisible}
               setMessages={setMessages}

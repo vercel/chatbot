@@ -9,7 +9,7 @@ import {
   Trash2Icon,
   XIcon,
 } from "lucide-react";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export type SlashCommand = {
@@ -72,6 +72,55 @@ type SlashCommandMenuProps = {
   selectedIndex: number;
 };
 
+function SlashCommandMenuItem({
+  cmd,
+  index,
+  onSelect,
+  selectedIndex,
+}: {
+  cmd: SlashCommand;
+  index: number;
+  onSelect: (command: SlashCommand) => void;
+  selectedIndex: number;
+}) {
+  const handleClick = useCallback(() => {
+    onSelect(cmd);
+  }, [cmd, onSelect]);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+    },
+    []
+  );
+
+  return (
+    <button
+      className={cn(
+        "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
+        index === selectedIndex ? "bg-muted/70" : "hover:bg-muted/40"
+      )}
+      data-selected={index === selectedIndex}
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      type="button"
+    >
+      <div className="flex size-6 shrink-0 items-center justify-center text-muted-foreground/60">
+        {cmd.icon}
+      </div>
+      <span className="font-mono text-[13px] text-foreground">/{cmd.name}</span>
+      <span className="text-[12px] text-muted-foreground/50">
+        {cmd.description}
+      </span>
+      {cmd.shortcut ? (
+        <span className="ml-auto text-[11px] text-muted-foreground/30">
+          {cmd.shortcut}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 export function SlashCommandMenu({
   query,
   onSelect,
@@ -104,32 +153,13 @@ export function SlashCommandMenu({
       </div>
       <div className="max-h-64 overflow-y-auto pb-1 no-scrollbar">
         {filtered.map((cmd, index) => (
-          <button
-            className={cn(
-              "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
-              index === selectedIndex ? "bg-muted/70" : "hover:bg-muted/40"
-            )}
-            data-selected={index === selectedIndex}
+          <SlashCommandMenuItem
+            cmd={cmd}
+            index={index}
             key={cmd.name}
-            onClick={() => onSelect(cmd)}
-            onMouseDown={(e) => e.preventDefault()}
-            type="button"
-          >
-            <div className="flex size-6 shrink-0 items-center justify-center text-muted-foreground/60">
-              {cmd.icon}
-            </div>
-            <span className="font-mono text-[13px] text-foreground">
-              /{cmd.name}
-            </span>
-            <span className="text-[12px] text-muted-foreground/50">
-              {cmd.description}
-            </span>
-            {cmd.shortcut ? (
-              <span className="ml-auto text-[11px] text-muted-foreground/30">
-                {cmd.shortcut}
-              </span>
-            ) : null}
-          </button>
+            onSelect={onSelect}
+            selectedIndex={selectedIndex}
+          />
         ))}
       </div>
     </div>

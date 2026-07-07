@@ -1,5 +1,6 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
+import { useCallback } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
@@ -34,6 +35,48 @@ function WaitingText() {
       >
         {waitingText}
       </Shimmer>
+    </div>
+  );
+}
+
+function ToolApprovalActions({
+  addToolApprovalResponse,
+  approvalId,
+}: {
+  addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
+  approvalId: string;
+}) {
+  const handleDeny = useCallback(() => {
+    addToolApprovalResponse({
+      approved: false,
+      id: approvalId,
+      reason: "User denied weather lookup",
+    });
+  }, [addToolApprovalResponse, approvalId]);
+
+  const handleAllow = useCallback(() => {
+    addToolApprovalResponse({
+      approved: true,
+      id: approvalId,
+    });
+  }, [addToolApprovalResponse, approvalId]);
+
+  return (
+    <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+      <button
+        className="rounded-md px-3 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+        onClick={handleDeny}
+        type="button"
+      >
+        Deny
+      </button>
+      <button
+        className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
+        onClick={handleAllow}
+        type="button"
+      >
+        Allow
+      </button>
     </div>
   );
 }
@@ -201,33 +244,10 @@ const PurePreviewMessage = ({
                 <ToolInput input={part.input} />
               )}
               {state === "approval-requested" && approvalId && (
-                <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
-                  <button
-                    className="rounded-md px-3 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
-                    onClick={() => {
-                      addToolApprovalResponse({
-                        approved: false,
-                        id: approvalId,
-                        reason: "User denied weather lookup",
-                      });
-                    }}
-                    type="button"
-                  >
-                    Deny
-                  </button>
-                  <button
-                    className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
-                    onClick={() => {
-                      addToolApprovalResponse({
-                        approved: true,
-                        id: approvalId,
-                      });
-                    }}
-                    type="button"
-                  >
-                    Allow
-                  </button>
-                </div>
+                <ToolApprovalActions
+                  addToolApprovalResponse={addToolApprovalResponse}
+                  approvalId={approvalId}
+                />
               )}
             </ToolContent>
           </Tool>
