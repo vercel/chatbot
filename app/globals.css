@@ -145,11 +145,11 @@
     @apply border-border ring-0;
   }
   body {
-    @apply bg-background text-foreground;
     font-feature-settings: "ss01", "ss02", "cv01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    @apply bg-background text-foreground;
   }
 }
 
@@ -165,8 +165,8 @@
 
 @layer base {
   body {
-    overflow-x: hidden;
     position: relative;
+    overflow-x: hidden;
   }
 
   html {
@@ -179,8 +179,8 @@
   h4,
   h5,
   h6 {
-    letter-spacing: -0.025em;
     line-height: 1.2;
+    letter-spacing: -0.025em;
   }
 
   p {
@@ -351,7 +351,6 @@ textarea:focus-visible {
 }
 
 @utility shimmer {
-  animation: shimmer 2s linear infinite;
   background: linear-gradient(
     90deg,
     transparent,
@@ -359,6 +358,7 @@ textarea:focus-visible {
     transparent
   );
   background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
 }
 
 @utility dot-pulse {
@@ -382,10 +382,10 @@ textarea:focus-visible {
 }
 
 .cm-editor {
-  @apply bg-transparent! outline-hidden! text-[13px]! leading-[1.6]!;
   font-family:
     "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", ui-monospace,
     monospace !important;
+  @apply bg-transparent! outline-hidden! text-[13px]! leading-[1.6]!;
 }
 
 .cm-gutters {
@@ -443,21 +443,21 @@ textarea:focus-visible {
 }
 
 .cm-matchingBracket {
-  background: oklch(0.55 0.12 250 / 0.12) !important;
   outline: 1px solid oklch(0.55 0.12 250 / 0.3);
+  background: oklch(0.55 0.12 250 / 0.12) !important;
   border-radius: 2px;
 }
 
 .suggestion-highlight {
-  @apply cursor-pointer rounded-sm bg-blue-200 transition-colors hover:bg-blue-300 dark:bg-blue-500/40 dark:text-blue-50 dark:hover:bg-blue-400/50;
-  user-select: none;
   -webkit-user-select: none;
+  user-select: none;
+  @apply cursor-pointer rounded-sm bg-blue-200 transition-colors hover:bg-blue-300 dark:bg-blue-500/40 dark:text-blue-50 dark:hover:bg-blue-400/50;
 }
 
 @layer base {
   * {
-    scrollbar-width: thin;
     scrollbar-color: oklch(0 0 0 / 0.12) transparent;
+    scrollbar-width: thin;
   }
 
   .dark * {

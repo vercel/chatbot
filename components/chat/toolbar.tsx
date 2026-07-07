@@ -252,29 +252,27 @@ export const Tools = ({
   sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
   isAnimating: boolean;
   tools: ArtifactToolbarItem[];
-}) => {
-  return (
-    <motion.div
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex flex-col gap-1.5"
-      exit={{ opacity: 0, scale: 0.95 }}
-      initial={{ opacity: 0, scale: 0.95 }}
-    >
-      {[...tools].reverse().map((tool) => (
-        <Tool
-          description={tool.description}
-          icon={tool.icon}
-          isAnimating={isAnimating}
-          key={tool.description}
-          onClick={tool.onClick}
-          selectedTool={selectedTool}
-          sendMessage={sendMessage}
-          setSelectedTool={setSelectedTool}
-        />
-      ))}
-    </motion.div>
-  );
-};
+}) => (
+  <motion.div
+    animate={{ opacity: 1, scale: 1 }}
+    className="flex flex-col gap-1.5"
+    exit={{ opacity: 0, scale: 0.95 }}
+    initial={{ opacity: 0, scale: 0.95 }}
+  >
+    {[...tools].reverse().map((tool) => (
+      <Tool
+        description={tool.description}
+        icon={tool.icon}
+        isAnimating={isAnimating}
+        key={tool.description}
+        onClick={tool.onClick}
+        selectedTool={selectedTool}
+        sendMessage={sendMessage}
+        setSelectedTool={setSelectedTool}
+      />
+    ))}
+  </motion.div>
+);
 
 const createFixErrorTool = (
   consoleOutput: string,
@@ -348,13 +346,14 @@ const PureToolbar = ({
     }
   };
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-    };
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     if (status === "streaming") {

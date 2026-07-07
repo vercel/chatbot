@@ -4,8 +4,8 @@ import { DecorationSet } from "prosemirror-view";
 import type { Suggestion } from "@/lib/db/schema";
 
 export interface UISuggestion extends Suggestion {
-  selectionStart: number;
   selectionEnd: number;
+  selectionStart: number;
 }
 
 type Position = {

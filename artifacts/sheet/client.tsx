@@ -26,17 +26,15 @@ export const sheetArtifact = new Artifact<"sheet", Metadata>({
       }));
     }
   },
-  content: ({ content, currentVersionIndex, onSaveContent, status }) => {
-    return (
-      <SpreadsheetEditor
-        content={content}
-        currentVersionIndex={currentVersionIndex}
-        isCurrentVersion={true}
-        saveContent={onSaveContent}
-        status={status}
-      />
-    );
-  },
+  content: ({ content, currentVersionIndex, onSaveContent, status }) => (
+    <SpreadsheetEditor
+      content={content}
+      currentVersionIndex={currentVersionIndex}
+      isCurrentVersion={true}
+      saveContent={onSaveContent}
+      status={status}
+    />
+  ),
   actions: [
     {
       icon: <UndoIcon size={18} />,

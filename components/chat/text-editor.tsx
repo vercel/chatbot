@@ -182,9 +182,12 @@ function PureEditor({
     if (currentDecorations) {
       const newDecorations = DecorationSet.create(
         state.doc,
-        currentDecorations.find().filter((decoration: Decoration) => {
-          return decoration.spec.suggestionId !== activeSuggestion.id;
-        })
+        currentDecorations
+          .find()
+          .filter(
+            (decoration: Decoration) =>
+              decoration.spec.suggestionId !== activeSuggestion.id
+          )
       );
 
       const decorationTransaction = state.tr;
