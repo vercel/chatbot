@@ -25,7 +25,8 @@
         "noExplicitAny": "off",
         "noUnknownAtRules": "off",
         "noConsole": "off",
-        "noBitwiseOperators": "off"
+        "noBitwiseOperators": "off",
+        "noUnnecessaryConditions": "off"
       },
       "style": {
         "noMagicNumbers": "off",
