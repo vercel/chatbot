@@ -4,11 +4,14 @@ import { titleModel } from "./models";
 
 export const myProvider = isTestEnvironment
   ? (() => {
-      const { chatModel, titleModel } = require("./models.mock");
+      const {
+        chatModel,
+        titleModel: mockTitleModel,
+      } = require("./models.mock");
       return customProvider({
         languageModels: {
           "chat-model": chatModel,
-          "title-model": titleModel,
+          "title-model": mockTitleModel,
         },
       });
     })()
