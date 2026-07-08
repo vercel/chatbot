@@ -9,15 +9,22 @@
 //!   blocks), which is the least lossy normal form for tool-calling loops.
 //! * [`MockModel`] — a scriptable model for deterministic tests and examples.
 //! * [`AnthropicModel`] — a thin HTTP adapter for the Anthropic API.
+//! * [`OpenAiModel`] — an OpenAI-compatible Chat Completions adapter, with an
+//!   [`OpenAiModel::lm_studio`] preset for driving a local [LM Studio] server
+//!   (or Ollama, vLLM, llama.cpp, …) with no API key.
 //!
 //! Additional providers implement [`LanguageModel`] in their own crates.
+//!
+//! [LM Studio]: https://lmstudio.ai
 
 mod anthropic;
 mod mock;
+mod openai;
 mod types;
 
 pub use anthropic::AnthropicModel;
 pub use mock::{MockModel, ScriptedTurn};
+pub use openai::OpenAiModel;
 pub use types::{ContentBlock, Message, ModelRequest, ModelResponse, Role, StopReason, TokenUsage};
 
 use async_trait::async_trait;
