@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { font-family: ui-sans-serif, system-ui, sans-serif; width: 280px; margin: 0; padding: 14px; color: #18181b; }
+  h1 { font-size: 14px; margin: 0 0 12px; }
+  label { display: block; font-size: 11px; color: #71717a; margin: 8px 0 3px; }
+  input { width: 100%; box-sizing: border-box; padding: 7px 8px; font-size: 12px; border: 1px solid #e4e4e7; border-radius: 6px; }
+  button { margin-top: 12px; width: 100%; padding: 8px; font-size: 13px; font-weight: 600; border: 0; border-radius: 7px; background: #7c3aed; color: #fff; cursor: pointer; }
+  button.ghost { background: #f4f4f5; color: #3f3f46; }
+  #status { margin-top: 10px; font-size: 11px; padding: 8px; border-radius: 6px; background: #f4f4f5; word-break: break-all; }
+  .ok { color: #15803d; } .err { color: #b91c1c; }
+</style>
+</head>
+<body>
+  <h1>Rustra Browser Bridge</h1>
+  <label>Server</label>
+  <input id="server" value="http://127.0.0.1:4111" />
+  <label>Bearer token</label>
+  <input id="token" placeholder="rsk_..." />
+  <button id="connect">Connect</button>
+  <button id="disconnect" class="ghost">Disconnect</button>
+  <div id="status">Not connected.</div>
+  <script src="popup.js"></script>
+</body>
+</html>

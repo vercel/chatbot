@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Rustra Browser Bridge",
+  "version": "0.1.0",
+  "description": "Polls a Rustra server for browser commands and runs them in the active tab.",
+  "permissions": ["scripting", "tabs", "activeTab", "storage"],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "<all_urls>"
+  ],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Rustra Browser Bridge"
+  }
+}
