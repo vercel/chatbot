@@ -81,10 +81,14 @@ export async function POST(request: Request) {
     const { id, message, messages, selectedChatModel, selectedVisibilityType } =
       requestBody;
 
-    const [, session] = await Promise.all([
+    const [botIdResult, session] = await Promise.all([
       checkBotId().catch(() => null),
       auth(),
     ]);
+
+    if (botIdResult?.isBot) {
+      return new ChatbotError("forbidden:api").toResponse();
+    }
 
     if (!session?.user) {
       return new ChatbotError("unauthorized:chat").toResponse();
