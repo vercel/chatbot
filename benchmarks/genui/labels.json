@@ -1,0 +1,14 @@
+{
+  "01-plain-html": {
+    "title": "Plain HTML + CSS (baseline)",
+    "note": "Hand-rolled, system fonts, no framework, no JS. The naive 'just emit HTML' genUI output — and roughly what rustra-ui ships today."
+  },
+  "02-v0-shadcn": {
+    "title": "v0 · shadcn/ui + Tailwind (static)",
+    "note": "Vercel v0's output stack, rendered statically (SSR'd HTML + purged Tailwind, no client framework to paint). Neutral shadcn design tokens, no brand accent."
+  },
+  "03-react-genui": {
+    "title": "React genUI (Crayon / tambo / AI Elements)",
+    "note": "Client-rendered React: a canned spec hydrated in the browser with the real React runtime inlined. Shared render-cost profile of Thesys C1/Crayon, tambo, Vercel AI SDK + AI Elements, and assistant-ui."
+  }
+}

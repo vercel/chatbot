@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>v0 / shadcn — Revenue overview</title>
+<style>
+  /* Vercel v0 output style: shadcn/ui + Tailwind, rendered STATICALLY (as a
+     v0/Next.js page ships it after SSR — the paint you see is server HTML +
+     purged Tailwind CSS, no client framework needed to display it). Faithful
+     to the shadcn design tokens (neutral scale, no brand accent, radius 0.5rem)
+     and the Vercel aesthetic (#fafafa surfaces, near-black ink, Geist stack). */
+  :root {
+    --background: #ffffff;
+    --foreground: #0a0a0a;
+    --muted: #f5f5f5;
+    --muted-foreground: #737373;
+    --border: #e5e5e5;
+    --primary: #171717;
+    --primary-foreground: #fafafa;
+    --radius: 0.6rem;
+    --pos: #16a34a;
+    --neg: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #fafafa;
+    color: var(--foreground);
+    font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+    padding: 32px;
+  }
+  .container { max-width: 940px; margin: 0 auto; }
+  .head { margin-bottom: 22px; }
+  .head h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .head p { color: var(--muted-foreground); font-size: 14px; margin: 0; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+  .card {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.04);
+  }
+  .card.pad { padding: 20px; }
+  .stat .label { font-size: 13px; font-weight: 500; color: var(--muted-foreground); display: flex; justify-content: space-between; align-items: center; }
+  .stat .num { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 10px 0 6px; font-variant-numeric: tabular-nums; }
+  .delta { font-size: 12px; font-weight: 500; }
+  .delta.pos { color: var(--pos); }
+  .delta.neg { color: var(--neg); }
+  .ico { width: 15px; height: 15px; color: var(--muted-foreground); }
+  .section { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .card h3 { font-size: 15px; font-weight: 600; margin: 0; padding: 18px 20px 0; }
+  .card .cap { font-size: 13px; color: var(--muted-foreground); padding: 2px 20px 0; }
+  .chart { display: flex; align-items: flex-end; gap: 10px; height: 150px; padding: 20px; }
+  .chart .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+  .chart .bar { width: 100%; background: var(--primary); border-radius: 5px; transition: none; }
+  .chart .mo { font-size: 11px; color: var(--muted-foreground); }
+  .list { padding: 14px 20px 20px; }
+  .row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .row:last-child { border-bottom: 0; }
+  .row .who { font-weight: 500; }
+  .row .plan { color: var(--muted-foreground); font-size: 12px; }
+  .badge { font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--border); }
+  .badge.paid { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+  .badge.pending { background: var(--muted); color: var(--muted-foreground); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: var(--primary-foreground); border: 0; border-radius: calc(var(--radius) - 2px); padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="head">
+      <h1>Revenue overview</h1>
+      <p>Acme Analytics · last 30 days</p>
+    </div>
+
+    <div class="grid">
+      <div class="card pad stat">
+        <div class="label">Revenue
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="num">$128,430</div>
+        <div class="delta pos">+12.4% from last month</div>
+      </div>
+      <div class="card pad stat">
+        <div class="label">Active users
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        </div>
+        <div class="num">8,942</div>
+        <div class="delta pos">+3.1% from last month</div>
+      </div>
+      <div class="card pad stat">
+        <div class="label">Conversion
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div class="num">3.8%</div>
+        <div class="delta neg">−0.4% from last month</div>
+      </div>
+      <div class="card pad stat">
+        <div class="label">Churn
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </div>
+        <div class="num">1.2%</div>
+        <div class="delta pos">+0.2% from last month</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="card">
+        <h3>Revenue trend</h3>
+        <div class="cap">Monthly gross, Jan–Jun</div>
+        <div class="chart">
+          <div class="col"><div class="bar" style="height:52%"></div><span class="mo">Jan</span></div>
+          <div class="col"><div class="bar" style="height:63%"></div><span class="mo">Feb</span></div>
+          <div class="col"><div class="bar" style="height:58%"></div><span class="mo">Mar</span></div>
+          <div class="col"><div class="bar" style="height:78%"></div><span class="mo">Apr</span></div>
+          <div class="col"><div class="bar" style="height:71%"></div><span class="mo">May</span></div>
+          <div class="col"><div class="bar" style="height:92%"></div><span class="mo">Jun</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Recent invoices</h3>
+        <div class="list">
+          <div class="row"><div><div class="who">Northwind Ltd</div><div class="plan">Enterprise</div></div><span class="badge paid">Paid</span></div>
+          <div class="row"><div><div class="who">Globex</div><div class="plan">Team</div></div><span class="badge paid">Paid</span></div>
+          <div class="row"><div><div class="who">Initech</div><div class="plan">Team</div></div><span class="badge pending">Pending</span></div>
+          <div class="row"><div><div class="who">Umbrella</div><div class="plan">Starter</div></div><span class="badge paid">Paid</span></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn">
+      View full report
+      <svg class="ico" style="color:currentColor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+</body>
+</html>

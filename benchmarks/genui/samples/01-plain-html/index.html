@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plain HTML — Revenue overview</title>
+<style>
+  /* Baseline: hand-rolled HTML + CSS, system fonts, no framework, no JS.
+     This is the shape of a naive "just emit HTML" genUI output. */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f5f7;
+    color: #1f2430;
+    padding: 28px;
+  }
+  .panel { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #e2e5ea; border-radius: 10px; padding: 24px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; }
+  h1 { font-size: 20px; margin: 0; }
+  .sub { color: #6b7280; font-size: 13px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .kpi { border: 1px solid #e2e5ea; border-radius: 8px; padding: 14px; }
+  .kpi .label { color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .value { font-size: 24px; font-weight: 700; margin: 6px 0 2px; }
+  .up { color: #157347; font-size: 12px; }
+  .down { color: #b02a37; font-size: 12px; }
+  .chart { display: flex; align-items: flex-end; gap: 12px; height: 140px; padding: 12px; border: 1px solid #e2e5ea; border-radius: 8px; margin-bottom: 22px; }
+  .bar { flex: 1; background: #3b82f6; border-radius: 4px 4px 0 0; }
+  .bar span { display: block; text-align: center; color: #6b7280; font-size: 11px; margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #eceef1; }
+  th { color: #6b7280; font-weight: 600; font-size: 12px; }
+  .btn { display: inline-block; margin-top: 18px; background: #2563eb; color: #fff; border: 0; border-radius: 7px; padding: 9px 16px; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <header>
+      <div>
+        <h1>Acme Analytics</h1>
+        <div class="sub">Revenue overview · last 30 days</div>
+      </div>
+      <div class="sub">Updated 2 min ago</div>
+    </header>
+
+    <div class="kpis">
+      <div class="kpi"><div class="label">Revenue</div><div class="value">$128,430</div><div class="up">▲ 12.4%</div></div>
+      <div class="kpi"><div class="label">Active users</div><div class="value">8,942</div><div class="up">▲ 3.1%</div></div>
+      <div class="kpi"><div class="label">Conversion</div><div class="value">3.8%</div><div class="down">▼ 0.4%</div></div>
+      <div class="kpi"><div class="label">Churn</div><div class="value">1.2%</div><div class="up">▲ 0.2%</div></div>
+    </div>
+
+    <div class="chart">
+      <div class="bar" style="height:52%"><span>Jan</span></div>
+      <div class="bar" style="height:63%"><span>Feb</span></div>
+      <div class="bar" style="height:58%"><span>Mar</span></div>
+      <div class="bar" style="height:78%"><span>Apr</span></div>
+      <div class="bar" style="height:71%"><span>May</span></div>
+      <div class="bar" style="height:92%"><span>Jun</span></div>
+    </div>
+
+    <table>
+      <thead><tr><th>Customer</th><th>Plan</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Northwind Ltd</td><td>Enterprise</td><td>$4,200</td><td>Paid</td></tr>
+        <tr><td>Globex</td><td>Team</td><td>$890</td><td>Paid</td></tr>
+        <tr><td>Initech</td><td>Team</td><td>$890</td><td>Pending</td></tr>
+        <tr><td>Umbrella</td><td>Starter</td><td>$120</td><td>Paid</td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn">View full report</button>
+  </div>
+</body>
+</html>
