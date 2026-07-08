@@ -10,6 +10,7 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     env:
+      # These should be the same ones as used in production
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
