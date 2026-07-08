@@ -62,7 +62,10 @@ impl AnthropicModel {
         serde_json::from_value(block.clone()).ok()
     }
 
-    fn request_body(&self, request: &ModelRequest) -> Value {
+    /// Encode a [`ModelRequest`] into the Anthropic Messages request body.
+    /// Public so hosts can log or inspect the exact wire payload without
+    /// issuing a call.
+    pub fn encode_request(&self, request: &ModelRequest) -> Value {
         let mut body = json!({
             "model": self.model,
             "max_tokens": request.max_tokens.unwrap_or(DEFAULT_MAX_TOKENS),
@@ -106,7 +109,9 @@ impl AnthropicModel {
         }
     }
 
-    fn decode_response(payload: &Value) -> ModelResponse {
+    /// Decode an Anthropic Messages response body into a [`ModelResponse`].
+    /// Public so hosts can parse a captured payload without a live call.
+    pub fn decode_response(payload: &Value) -> ModelResponse {
         let content = payload["content"]
             .as_array()
             .map(|blocks| blocks.iter().filter_map(Self::decode_block).collect())
@@ -140,7 +145,7 @@ impl LanguageModel for AnthropicModel {
     }
 
     async fn generate(&self, request: ModelRequest) -> Result<ModelResponse> {
-        let body = self.request_body(&request);
+        let body = self.encode_request(&request);
 
         let response = self
             .client

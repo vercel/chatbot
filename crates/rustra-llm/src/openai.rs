@@ -169,7 +169,10 @@ impl OpenAiModel {
         out
     }
 
-    fn request_body(&self, request: &ModelRequest) -> Value {
+    /// Encode a [`ModelRequest`] into the OpenAI Chat Completions request
+    /// body. Public so hosts can log or inspect the exact wire payload
+    /// without issuing a call.
+    pub fn encode_request(&self, request: &ModelRequest) -> Value {
         let mut body = json!({
             "model": self.model,
             "messages": Self::encode_messages(request.system.as_deref(), &request.messages),
@@ -222,7 +225,10 @@ impl OpenAiModel {
         }
     }
 
-    fn decode_response(payload: &Value) -> ModelResponse {
+    /// Decode an OpenAI Chat Completions response body into a
+    /// [`ModelResponse`]. Public so hosts can parse a captured payload
+    /// (e.g. from a proxy log) without a live call.
+    pub fn decode_response(payload: &Value) -> ModelResponse {
         let message = &payload["choices"][0]["message"];
         let mut content = Vec::new();
         if let Some(text) = message["content"].as_str() {
@@ -281,7 +287,7 @@ impl LanguageModel for OpenAiModel {
     }
 
     async fn generate(&self, request: ModelRequest) -> Result<ModelResponse> {
-        let body = self.request_body(&request);
+        let body = self.encode_request(&request);
 
         let response = self
             .client
@@ -405,7 +411,7 @@ mod tests {
             stop_sequences: vec!["END".into()],
             ..Default::default()
         };
-        let body = model.request_body(&request);
+        let body = model.encode_request(&request);
         assert!(body.get("max_tokens").is_none());
         assert_eq!(body["stop"], json!(["END"]));
         assert_eq!(
@@ -420,7 +426,7 @@ mod tests {
             }])
         );
 
-        let capped = model.request_body(&ModelRequest {
+        let capped = model.encode_request(&ModelRequest {
             max_tokens: Some(256),
             ..request
         });

@@ -22,3 +22,8 @@ tracing.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+criterion.workspace = true
+
+[[bench]]
+name = "context"
+harness = false

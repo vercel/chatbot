@@ -79,6 +79,7 @@ tower-http = { version = "0.6", features = ["cors", "trace"] }
 cron = "0.13"
 glob = "0.3"
 tempfile = "3"
+criterion = { version = "0.5", features = ["async_tokio"] }
 
 [profile.dev]
 debug = 1
