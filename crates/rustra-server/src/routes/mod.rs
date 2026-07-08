@@ -36,12 +36,21 @@ pub(crate) struct PageQuery {
 impl PageQuery {
     pub(crate) fn page(&self) -> Page {
         let default = Page::default();
-        Page::new(self.limit.unwrap_or(default.limit), self.offset.unwrap_or(default.offset))
+        Page::new(
+            self.limit.unwrap_or(default.limit),
+            self.offset.unwrap_or(default.offset),
+        )
     }
 }
 
+/// The standard `{"ok": true}` acknowledgment body shared by the verb-style
+/// endpoints (pause, resume, cancel, unsubscribe, …).
+pub(crate) fn ok() -> axum::Json<serde_json::Value> {
+    axum::Json(serde_json::json!({ "ok": true }))
+}
+
 /// Everything mounted under `/api` (auth is layered on by the caller).
-pub fn api_router() -> Router<Arc<Rustra>> {
+pub(crate) fn api_router() -> Router<Arc<Rustra>> {
     Router::new()
         // Agents.
         .route("/agents/main/generate", post(agents::generate_main))
@@ -56,8 +65,14 @@ pub fn api_router() -> Router<Arc<Rustra>> {
         .route("/runs/{id}/logs", get(runs::logs))
         // Workflows.
         .route("/workflows/{id}/start", post(workflows::start))
-        .route("/workflows/{id}/runs/{run_id}/resume", post(workflows::resume))
-        .route("/workflows/{id}/runs/{run_id}/cancel", post(workflows::cancel))
+        .route(
+            "/workflows/{id}/runs/{run_id}/resume",
+            post(workflows::resume),
+        )
+        .route(
+            "/workflows/{id}/runs/{run_id}/cancel",
+            post(workflows::cancel),
+        )
         // Tasks.
         .route("/tasks", post(tasks::create).get(tasks::list))
         .route("/tasks/{id}", get(tasks::get_one))
@@ -71,14 +86,23 @@ pub fn api_router() -> Router<Arc<Rustra>> {
         // Signals / webhooks / subscriptions.
         .route("/signals", post(signals::emit))
         .route("/webhooks/{hook}", post(signals::webhook))
-        .route("/subscriptions", post(signals::subscribe).get(signals::list_subscriptions))
+        .route(
+            "/subscriptions",
+            post(signals::subscribe).get(signals::list_subscriptions),
+        )
         .route("/subscriptions/{id}", delete(signals::unsubscribe))
         // HITL decisions.
         .route("/decisions/pending", get(decisions::pending))
         .route("/decisions/{id}/resolve", post(decisions::resolve))
         // User-created definitions.
-        .route("/definitions/agents", put(definitions::put_agent).get(definitions::list_agents))
-        .route("/definitions/flows", put(definitions::put_flow).get(definitions::list_flows))
+        .route(
+            "/definitions/agents",
+            put(definitions::put_agent).get(definitions::list_agents),
+        )
+        .route(
+            "/definitions/flows",
+            put(definitions::put_flow).get(definitions::list_flows),
+        )
         // MCP servers.
         .route("/mcp/servers", post(mcp::register).get(mcp::list))
         .route("/mcp/servers/{id}", delete(mcp::remove))
@@ -93,8 +117,17 @@ pub fn api_router() -> Router<Arc<Rustra>> {
         .route("/messages/stream", get(messages::stream))
         // Browser bridge (extension polling).
         .route("/browser/sessions", post(browser::create_session))
-        .route("/browser/sessions/{id}/commands", get(browser::next_command))
-        .route("/browser/sessions/{id}/results", post(browser::submit_result))
+        .route(
+            "/browser/sessions/{id}/commands",
+            get(browser::next_command),
+        )
+        .route(
+            "/browser/sessions/{id}/results",
+            post(browser::submit_result),
+        )
         // Workspace files (extension context attach).
-        .route("/workspace/files", get(workspace::read_file).put(workspace::write_file))
+        .route(
+            "/workspace/files",
+            get(workspace::read_file).put(workspace::write_file),
+        )
 }

@@ -11,7 +11,7 @@ use crate::runtime_context::RuntimeContext;
 /// The serializable description of a tool as presented to a language model
 /// (name + description + JSON Schema). Mirrors the shape used by Mastra's
 /// `createTool` and by MCP `tools/list`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ToolSpec {
     pub id: String,
     pub description: String,
@@ -34,8 +34,24 @@ pub struct ToolContext {
 }
 
 impl ToolContext {
+    /// A context with no agent/run attribution; agent loops fill those in
+    /// before dispatch.
     pub fn new(runtime: RuntimeContext) -> Self {
-        Self { runtime, agent_id: None, run_id: None }
+        Self {
+            runtime,
+            agent_id: None,
+            run_id: None,
+        }
+    }
+
+    pub fn with_agent_id(mut self, agent_id: impl Into<String>) -> Self {
+        self.agent_id = Some(agent_id.into());
+        self
+    }
+
+    pub fn with_run_id(mut self, run_id: impl Into<String>) -> Self {
+        self.run_id = Some(run_id.into());
+        self
     }
 }
 
@@ -57,6 +73,7 @@ pub trait Tool: Send + Sync {
 
     async fn execute(&self, input: Value, ctx: &ToolContext) -> Result<Value>;
 
+    /// The serializable spec advertised to models and MCP clients.
     fn spec(&self) -> ToolSpec {
         ToolSpec {
             id: self.id().to_string(),
@@ -67,9 +84,11 @@ pub trait Tool: Send + Sync {
     }
 }
 
-type ToolFn = dyn Fn(Value, ToolContext) -> Pin<Box<dyn Future<Output = Result<Value>> + Send>>
-    + Send
-    + Sync;
+/// Shared, thread-safe handle to a tool implementation.
+pub type SharedTool = Arc<dyn Tool>;
+
+type ToolFn =
+    dyn Fn(Value, ToolContext) -> Pin<Box<dyn Future<Output = Result<Value>> + Send>> + Send + Sync;
 
 /// A [`Tool`] built from a closure — the ergonomic path for library users,
 /// analogous to Mastra's `createTool({ id, description, inputSchema,
@@ -130,7 +149,9 @@ impl FunctionTool {
 
 impl std::fmt::Debug for FunctionTool {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FunctionTool").field("id", &self.id).finish_non_exhaustive()
+        f.debug_struct("FunctionTool")
+            .field("id", &self.id)
+            .finish_non_exhaustive()
     }
 }
 
@@ -150,10 +171,12 @@ impl Tool for FunctionTool {
     }
 
     async fn execute(&self, input: Value, ctx: &ToolContext) -> Result<Value> {
-        (self.handler)(input, ctx.clone()).await.map_err(|e| match e {
-            e @ Error::Tool { .. } => e,
-            other => Error::tool(&self.id, other.to_string()),
-        })
+        (self.handler)(input, ctx.clone())
+            .await
+            .map_err(|e| match e {
+                e @ Error::Tool { .. } => e,
+                other => Error::tool(&self.id, other.to_string()),
+            })
     }
 }
 
@@ -174,5 +197,32 @@ mod tests {
         let ctx = ToolContext::new(RuntimeContext::new(Principal::user("u1")));
         let out = tool.execute(json!({"hi": 1}), &ctx).await.unwrap();
         assert_eq!(out["echo"]["hi"], 1);
+    }
+
+    #[tokio::test]
+    async fn function_tool_error_wrapping() {
+        let ctx = ToolContext::new(RuntimeContext::new(Principal::user("u1")));
+
+        // A non-Tool error is rewrapped as Error::Tool carrying this tool's
+        // id — and thereby declassified from retryable to non-retryable.
+        let failing = FunctionTool::new(
+            "boom",
+            "Always fails",
+            json!({"type": "object"}),
+            |_input, _ctx| async move { Err::<Value, Error>(Error::Unavailable("backend down".into())) },
+        );
+        let err = failing.execute(json!({}), &ctx).await.unwrap_err();
+        assert!(matches!(&err, Error::Tool { tool, .. } if tool == "boom"));
+        assert!(!err.is_retryable());
+
+        // A pre-shaped Error::Tool passes through with its original tool id.
+        let passthrough = FunctionTool::new(
+            "outer",
+            "Returns a pre-shaped tool error",
+            json!({"type": "object"}),
+            |_input, _ctx| async move { Err::<Value, Error>(Error::tool("inner", "inner failed")) },
+        );
+        let err = passthrough.execute(json!({}), &ctx).await.unwrap_err();
+        assert!(matches!(&err, Error::Tool { tool, .. } if tool == "inner"));
     }
 }

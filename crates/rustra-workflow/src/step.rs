@@ -9,8 +9,16 @@ use std::time::Duration;
 
 use rustra_core::{Result, RuntimeContext};
 
+/// The `kind` values of a [`StepOutcome::Suspended`] payload that the
+/// engine understands — see the conventions documented on that variant.
+pub(crate) mod suspend_kind {
+    pub const APPROVAL: &str = "approval";
+    pub const INPUT: &str = "input";
+    pub const EVENT: &str = "event";
+}
+
 /// What a step produced.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StepOutcome {
     /// The step finished; `Value` flows to the next node.
     Done(Value),
@@ -37,6 +45,7 @@ pub struct StepContext {
     pub resume: Option<Value>,
     /// Results of previously completed steps (`getStepResult`).
     pub steps: Arc<std::collections::HashMap<String, Value>>,
+    /// Caller identity and request-scoped services.
     pub runtime: RuntimeContext,
 }
 
@@ -48,7 +57,7 @@ impl StepContext {
 }
 
 /// Per-step retry policy.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RetryPolicy {
     pub max_retries: u32,
     /// Base backoff; attempt `n` waits `base * 2^(n-1)`.
@@ -57,23 +66,30 @@ pub struct RetryPolicy {
 
 impl Default for RetryPolicy {
     fn default() -> Self {
-        Self { max_retries: 0, backoff: Duration::from_millis(200) }
+        Self {
+            max_retries: 0,
+            backoff: Duration::from_millis(200),
+        }
     }
 }
 
 /// A unit of flow work.
 #[async_trait]
 pub trait Step: Send + Sync {
+    /// Stable step id — the key under which the step's output is recorded
+    /// in [`StepContext::step_result`].
     fn id(&self) -> &str;
+    /// Run the step. Return [`StepOutcome::Suspended`] to pause the run
+    /// for HITL/resume.
     async fn execute(&self, ctx: StepContext) -> Result<StepOutcome>;
+    /// Retry policy consulted by the engine; the default retries nothing.
     fn retry_policy(&self) -> RetryPolicy {
         RetryPolicy::default()
     }
 }
 
-type StepFn = dyn Fn(StepContext) -> Pin<Box<dyn Future<Output = Result<StepOutcome>> + Send>>
-    + Send
-    + Sync;
+type StepFn =
+    dyn Fn(StepContext) -> Pin<Box<dyn Future<Output = Result<StepOutcome>> + Send>> + Send + Sync;
 
 /// A [`Step`] from a closure — the ergonomic path, like Mastra's
 /// `createStep({ id, execute })`.
@@ -94,6 +110,7 @@ pub struct FunctionStep {
 }
 
 impl FunctionStep {
+    /// Create a step from an async closure; see the type-level example.
     pub fn new<F, Fut>(id: impl Into<String>, handler: F) -> Self
     where
         F: Fn(StepContext) -> Fut + Send + Sync + 'static,
@@ -106,8 +123,13 @@ impl FunctionStep {
         }
     }
 
+    /// Allow up to `max_retries` retries with exponential backoff starting
+    /// at `backoff`.
     pub fn with_retries(mut self, max_retries: u32, backoff: Duration) -> Self {
-        self.retry = RetryPolicy { max_retries, backoff };
+        self.retry = RetryPolicy {
+            max_retries,
+            backoff,
+        };
         self
     }
 }
@@ -123,12 +145,14 @@ impl Step for FunctionStep {
     }
 
     fn retry_policy(&self) -> RetryPolicy {
-        self.retry.clone()
+        self.retry
     }
 }
 
 /// A human-approval step: suspends with an approval payload; resuming with
-/// `{ "approved": true }` lets the flow continue, anything else fails it.
+/// `{ "approved": true }` lets the flow continue. Resuming with anything
+/// else fails the run with [`Error::Cancelled`](rustra_core::Error::Cancelled),
+/// including the optional `"reason"` string in the message.
 pub fn approval_step(id: impl Into<String>, prompt: impl Into<String>) -> FunctionStep {
     let prompt = prompt.into();
     FunctionStep::new(id, move |ctx| {
@@ -136,7 +160,7 @@ pub fn approval_step(id: impl Into<String>, prompt: impl Into<String>) -> Functi
         async move {
             match &ctx.resume {
                 None => Ok(StepOutcome::Suspended(serde_json::json!({
-                    "kind": "approval",
+                    "kind": suspend_kind::APPROVAL,
                     "prompt": prompt,
                 }))),
                 Some(resume) => {

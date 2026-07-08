@@ -5,7 +5,7 @@ use std::sync::Arc;
 use axum::extract::{Path, Query, State};
 use axum::Json;
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use rustra::{Rustra, TaskOptions};
 use rustra_storage::types::TaskRecord;
@@ -37,9 +37,15 @@ pub(crate) async fn create(
         ..TaskOptions::default()
     };
     let record = if body.background {
-        rustra.tasks().submit(&principal, body.spec, options).await?
+        rustra
+            .tasks()
+            .submit(&principal, body.spec, options)
+            .await?
     } else {
-        rustra.tasks().run_now(&principal, body.spec, options).await?
+        rustra
+            .tasks()
+            .run_now(&principal, body.spec, options)
+            .await?
     };
     Ok(Json(record))
 }
@@ -47,8 +53,6 @@ pub(crate) async fn create(
 #[derive(Debug, Deserialize)]
 pub(crate) struct TasksQuery {
     status: Option<String>,
-    limit: Option<usize>,
-    offset: Option<usize>,
 }
 
 /// `GET /api/tasks`.
@@ -56,9 +60,12 @@ pub(crate) async fn list(
     State(rustra): State<Arc<Rustra>>,
     AuthedUser(principal): AuthedUser,
     Query(query): Query<TasksQuery>,
+    Query(page): Query<PageQuery>,
 ) -> ApiResult<Json<Vec<TaskRecord>>> {
-    let page = PageQuery { limit: query.limit, offset: query.offset }.page();
-    let tasks = rustra.tasks().list(&principal, query.status.as_deref(), page).await?;
+    let tasks = rustra
+        .tasks()
+        .list(&principal, query.status.as_deref(), page.page())
+        .await?;
     Ok(Json(tasks))
 }
 
@@ -78,5 +85,5 @@ pub(crate) async fn cancel(
     Path(task_id): Path<String>,
 ) -> ApiResult<Json<Value>> {
     rustra.tasks().cancel(&principal, &task_id).await?;
-    Ok(Json(json!({ "ok": true })))
+    Ok(super::ok())
 }

@@ -14,7 +14,7 @@ pub const MAX_TITLE_CHARS: usize = 200;
 
 /// Partial update applied by [`UiService::update`]; `None` fields keep their
 /// current value. Any accepted update bumps the version.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct UiArtifactUpdate {
     pub title: Option<String>,
     pub html: Option<String>,
@@ -79,13 +79,18 @@ impl UiService {
         Ok(record)
     }
 
-    /// Fetch an artifact the owner can mutate.
-    async fn get_owned(&self, owner_id: &str, artifact_id: &str) -> Result<UiArtifactRecord> {
-        let record = self
-            .storage
+    /// Fetch by id or map the miss to `NotFound` — access checks are the
+    /// callers' job.
+    async fn fetch(&self, artifact_id: &str) -> Result<UiArtifactRecord> {
+        self.storage
             .get_ui_artifact(artifact_id)
             .await?
-            .ok_or_else(|| Error::not_found("ui_artifact", artifact_id))?;
+            .ok_or_else(|| Error::not_found("ui_artifact", artifact_id))
+    }
+
+    /// Fetch an artifact the owner can mutate.
+    async fn get_owned(&self, owner_id: &str, artifact_id: &str) -> Result<UiArtifactRecord> {
+        let record = self.fetch(artifact_id).await?;
         if record.owner_id != owner_id {
             return Err(Error::PermissionDenied(format!(
                 "ui artifact `{artifact_id}` is not owned by `{owner_id}`"
@@ -122,11 +127,7 @@ impl UiService {
     /// is `Public`. (`Shared` access goes through the RBAC layer, which uses
     /// the system principal after checking grants.)
     pub async fn get(&self, requester_id: &str, artifact_id: &str) -> Result<UiArtifactRecord> {
-        let record = self
-            .storage
-            .get_ui_artifact(artifact_id)
-            .await?
-            .ok_or_else(|| Error::not_found("ui_artifact", artifact_id))?;
+        let record = self.fetch(artifact_id).await?;
         if record.owner_id != requester_id && record.visibility != Visibility::Public {
             return Err(Error::PermissionDenied(format!(
                 "ui artifact `{artifact_id}` is not visible to `{requester_id}`"
@@ -176,8 +177,10 @@ mod tests {
     #[tokio::test]
     async fn create_then_update_bumps_version() {
         let svc = service();
-        let created =
-            svc.create("u1", "Dashboard", "<h1>v1</h1>", json!({ "n": 1 })).await.unwrap();
+        let created = svc
+            .create("u1", "Dashboard", "<h1>v1</h1>", json!({ "n": 1 }))
+            .await
+            .unwrap();
         assert!(created.id.starts_with("ui_"));
         assert_eq!(created.version, 1);
         assert_eq!(created.visibility, Visibility::Private);
@@ -187,7 +190,10 @@ mod tests {
             .update(
                 "u1",
                 &created.id,
-                UiArtifactUpdate { html: Some("<h1>v2</h1>".into()), ..Default::default() },
+                UiArtifactUpdate {
+                    html: Some("<h1>v2</h1>".into()),
+                    ..Default::default()
+                },
             )
             .await
             .unwrap();
@@ -212,16 +218,25 @@ mod tests {
         assert!(matches!(err, Error::Validation(_)));
 
         let long_title = "t".repeat(MAX_TITLE_CHARS + 1);
-        let err = svc.create("u1", &long_title, "<p>ok</p>", Value::Null).await.unwrap_err();
+        let err = svc
+            .create("u1", &long_title, "<p>ok</p>", Value::Null)
+            .await
+            .unwrap_err();
         assert!(matches!(err, Error::Validation(_)));
 
         // Updates are validated too.
-        let record = svc.create("u1", "t", "<p>ok</p>", Value::Null).await.unwrap();
+        let record = svc
+            .create("u1", "t", "<p>ok</p>", Value::Null)
+            .await
+            .unwrap();
         let err = svc
             .update(
                 "u1",
                 &record.id,
-                UiArtifactUpdate { html: Some(String::new()), ..Default::default() },
+                UiArtifactUpdate {
+                    html: Some(String::new()),
+                    ..Default::default()
+                },
             )
             .await
             .unwrap_err();
@@ -233,7 +248,10 @@ mod tests {
     #[tokio::test]
     async fn owner_scoping_and_visibility() {
         let svc = service();
-        let record = svc.create("u1", "mine", "<p>hi</p>", Value::Null).await.unwrap();
+        let record = svc
+            .create("u1", "mine", "<p>hi</p>", Value::Null)
+            .await
+            .unwrap();
 
         // Private: others cannot read, update, or delete.
         assert!(matches!(
@@ -241,7 +259,9 @@ mod tests {
             Error::PermissionDenied(_)
         ));
         assert!(matches!(
-            svc.update("u2", &record.id, UiArtifactUpdate::default()).await.unwrap_err(),
+            svc.update("u2", &record.id, UiArtifactUpdate::default())
+                .await
+                .unwrap_err(),
             Error::PermissionDenied(_)
         ));
         assert!(matches!(
@@ -250,11 +270,16 @@ mod tests {
         ));
 
         // Public: others can read but still not mutate.
-        let public = svc.set_visibility("u1", &record.id, Visibility::Public).await.unwrap();
+        let public = svc
+            .set_visibility("u1", &record.id, Visibility::Public)
+            .await
+            .unwrap();
         assert_eq!(public.version, 1, "visibility change does not bump version");
         assert_eq!(svc.get("u2", &record.id).await.unwrap().id, record.id);
         assert!(matches!(
-            svc.set_visibility("u2", &record.id, Visibility::Private).await.unwrap_err(),
+            svc.set_visibility("u2", &record.id, Visibility::Private)
+                .await
+                .unwrap_err(),
             Error::PermissionDenied(_)
         ));
 
@@ -265,7 +290,10 @@ mod tests {
         svc.delete("u1", &record.id).await.unwrap();
         assert!(matches!(
             svc.get("u1", &record.id).await.unwrap_err(),
-            Error::NotFound { kind: "ui_artifact", .. }
+            Error::NotFound {
+                kind: "ui_artifact",
+                ..
+            }
         ));
     }
 }

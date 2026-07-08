@@ -2,18 +2,24 @@
 
 use std::sync::Arc;
 
-use rustra::{AgentDefinition, Principal, Rustra, RuntimeContext, TaskOptions};
-use rustra_llm::{MockModel, ScriptedTurn};
+use rustra::{
+    AgentDefinition, MockModel, Principal, RuntimeContext, Rustra, ScriptedTurn, TaskOptions,
+};
 use serde_json::json;
 
-async fn runtime_with_model(model: Arc<MockModel>) -> Arc<Rustra> {
-    Rustra::builder()
+/// Returns the runtime plus the workspace-dir guard: bind the guard to a
+/// named `_ws`-style variable (never a bare `_`, which drops the directory
+/// immediately) so it lives until the test ends.
+async fn runtime_with_model(model: Arc<MockModel>) -> (Arc<Rustra>, tempfile::TempDir) {
+    let dir = tempfile::tempdir().unwrap();
+    let rustra = Rustra::builder()
         .model("mock/mock-1", model)
         .default_model("mock/mock-1")
-        .workspace_dir(tempfile::tempdir().unwrap().keep())
+        .workspace_dir(dir.path())
         .build()
         .await
-        .unwrap()
+        .unwrap();
+    (rustra, dir)
 }
 
 #[tokio::test]
@@ -29,7 +35,7 @@ async fn main_agent_discovers_user_skill_and_writes_workspace_file() {
         },
         ScriptedTurn::Text("done".into()),
     ]));
-    let rustra = runtime_with_model(model).await;
+    let (rustra, _ws) = runtime_with_model(model).await;
 
     // Author a skill in ada's workspace.
     let workspace = rustra.workspaces().workspace_for_user("ada").await.unwrap();
@@ -42,7 +48,10 @@ async fn main_agent_discovers_user_skill_and_writes_workspace_file() {
 
     let agent = rustra.main_agent_for("ada").await.unwrap();
     let reply = agent
-        .generate("greeting please", RuntimeContext::new(Principal::user("ada")))
+        .generate(
+            "greeting please",
+            RuntimeContext::new(Principal::user("ada")),
+        )
         .await
         .unwrap();
     assert_eq!(reply.text, "done");
@@ -62,7 +71,8 @@ async fn main_agent_discovers_user_skill_and_writes_workspace_file() {
 
 #[tokio::test]
 async fn user_defined_agents_hydrate_and_are_access_controlled() {
-    let rustra = runtime_with_model(Arc::new(MockModel::text("from the custom agent"))).await;
+    let (rustra, _ws) =
+        runtime_with_model(Arc::new(MockModel::text("from the custom agent"))).await;
     let ada = Principal::user("ada");
 
     let definition: AgentDefinition = serde_json::from_value(json!({
@@ -72,16 +82,24 @@ async fn user_defined_agents_hydrate_and_are_access_controlled() {
         "model": "mock/mock-1",
     }))
     .unwrap();
-    rustra.save_agent_definition(&ada, definition).await.unwrap();
+    rustra
+        .save_agent_definition(&ada, definition)
+        .await
+        .unwrap();
 
     // The owner can instantiate and run it.
     let agent = rustra.instantiate_agent(&ada, "my-helper").await.unwrap();
-    let reply =
-        agent.generate("hello", RuntimeContext::new(ada.clone())).await.unwrap();
+    let reply = agent
+        .generate("hello", RuntimeContext::new(ada.clone()))
+        .await
+        .unwrap();
     assert_eq!(reply.text, "from the custom agent");
 
     // Another user cannot (private by default).
-    match rustra.instantiate_agent(&Principal::user("mallory"), "my-helper").await {
+    match rustra
+        .instantiate_agent(&Principal::user("mallory"), "my-helper")
+        .await
+    {
         Err(rustra::Error::PermissionDenied(_)) => {}
         Err(other) => panic!("expected PermissionDenied, got: {other}"),
         Ok(_) => panic!("expected PermissionDenied, got an agent"),
@@ -90,7 +108,7 @@ async fn user_defined_agents_hydrate_and_are_access_controlled() {
 
 #[tokio::test]
 async fn flow_definitions_run_with_approval_gates() {
-    let rustra = runtime_with_model(Arc::new(MockModel::text("drafted"))).await;
+    let (rustra, _ws) = runtime_with_model(Arc::new(MockModel::text("drafted"))).await;
     let ada = Principal::user("ada");
 
     let flow: rustra::FlowDefinition = serde_json::from_value(json!({
@@ -104,9 +122,15 @@ async fn flow_definitions_run_with_approval_gates() {
     .unwrap();
     rustra.save_flow_definition(&ada, flow).await.unwrap();
 
-    let workflow = rustra.instantiate_flow(&ada, "draft-and-ship").await.unwrap();
+    let workflow = rustra
+        .instantiate_flow(&ada, "draft-and-ship")
+        .await
+        .unwrap();
     let run = workflow
-        .start(json!({"topic": "release notes"}), RuntimeContext::new(ada.clone()))
+        .start(
+            json!({"topic": "release notes"}),
+            RuntimeContext::new(ada.clone()),
+        )
         .await
         .unwrap();
     let rustra::FlowOutcome::Suspended { step_id, .. } = run.outcome else {
@@ -117,7 +141,11 @@ async fn flow_definitions_run_with_approval_gates() {
     // Pending decision is visible, resume completes.
     assert_eq!(rustra.interrupts().pending(&ada).await.unwrap().len(), 1);
     let resumed = workflow
-        .resume(&run.run_id, json!({"approved": true}), RuntimeContext::new(ada.clone()))
+        .resume(
+            &run.run_id,
+            json!({"approved": true}),
+            RuntimeContext::new(ada.clone()),
+        )
         .await
         .unwrap();
     let rustra::FlowOutcome::Success(output) = resumed.outcome else {
@@ -133,7 +161,7 @@ async fn tasks_schedules_and_signals_drive_the_agent() {
         ScriptedTurn::EchoLast,
         ScriptedTurn::EchoLast,
     ]));
-    let rustra = runtime_with_model(model).await;
+    let (rustra, _ws) = runtime_with_model(model).await;
     let ada = Principal::user("ada");
 
     // Direct task.
@@ -147,12 +175,19 @@ async fn tasks_schedules_and_signals_drive_the_agent() {
         .await
         .unwrap();
     assert_eq!(record.status, "completed");
-    assert!(record.output["text"].as_str().unwrap().contains("background hello"));
+    assert!(record.output["text"]
+        .as_str()
+        .unwrap()
+        .contains("background hello"));
 
     // Signal subscription → emitted event launches a task for ada.
     rustra
         .signals()
-        .subscribe(&ada, "webhook.github.*", json!({"target": "agent", "id": "main"}))
+        .subscribe(
+            &ada,
+            "webhook.github.*",
+            json!({"target": "agent", "id": "main"}),
+        )
         .await
         .unwrap();
     let launched = rustra
@@ -167,9 +202,91 @@ async fn tasks_schedules_and_signals_drive_the_agent() {
     // Schedule: created, listed, fires through the same executor.
     let schedule = rustra
         .scheduler()
-        .create(&ada, "hourly", "0 * * * *", None, json!({"target": "agent", "id": "main"}))
+        .create(
+            &ada,
+            "hourly",
+            "0 * * * *",
+            None,
+            json!({"target": "agent", "id": "main"}),
+        )
         .await
         .unwrap();
     assert!(schedule.next_run_at.is_some());
-    assert_eq!(rustra.scheduler().list(&ada, rustra::Page::default()).await.unwrap().len(), 1);
+    assert_eq!(
+        rustra
+            .scheduler()
+            .list(&ada, rustra::Page::default())
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+/// Pins the executor's lenient task-spec wire contract: `target` defaults
+/// to `agent` and `id` to `main`, the agent message falls back from
+/// `input.message` to the event payload to the raw input, and unknown
+/// targets fail with a validation error.
+#[tokio::test]
+async fn task_spec_leniency_contract() {
+    let model = Arc::new(MockModel::new(vec![
+        ScriptedTurn::EchoLast,
+        ScriptedTurn::EchoLast,
+        ScriptedTurn::EchoLast,
+    ]));
+    let (rustra, _ws) = runtime_with_model(model).await;
+    let ada = Principal::user("ada");
+
+    // Empty spec: target defaults to `agent`, id to `main`; with no input
+    // and no event the message is the raw input as JSON — literally "null".
+    let record = rustra
+        .tasks()
+        .run_now(&ada, json!({}), TaskOptions::default())
+        .await
+        .unwrap();
+    assert_eq!(record.status, "completed");
+    assert!(record.output["text"].as_str().unwrap().contains("null"));
+
+    // No input.message but an event present: the event fallback message.
+    let record = rustra
+        .tasks()
+        .run_now(
+            &ada,
+            json!({"target": "agent", "id": "main", "event": {"ref": "main"}}),
+            TaskOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(record.status, "completed");
+    assert!(record.output["text"]
+        .as_str()
+        .unwrap()
+        .contains("Handle this event:"));
+
+    // Explicit message and thread id pass straight through to the agent.
+    let thread = rustra.memory().create_thread("ada", None).await.unwrap();
+    let record = rustra
+        .tasks()
+        .run_now(
+            &ada,
+            json!({"target": "agent", "input": {"message": "hi", "thread_id": thread.id}}),
+            TaskOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(record.status, "completed");
+    assert!(record.output["text"].as_str().unwrap().contains("hi"));
+    assert_eq!(record.output["thread_id"], json!(thread.id));
+
+    // Unknown target: the task fails with the validation error (no retry).
+    let record = rustra
+        .tasks()
+        .run_now(&ada, json!({"target": "cron"}), TaskOptions::default())
+        .await
+        .unwrap();
+    assert_eq!(record.status, "failed");
+    assert!(record
+        .last_error
+        .unwrap()
+        .contains("unknown task target `cron`"));
 }

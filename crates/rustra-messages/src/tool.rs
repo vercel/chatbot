@@ -42,16 +42,22 @@ pub fn send_message_tool(registry: Arc<ChannelRegistry>) -> FunctionTool {
             async move {
                 let channel = require_str(&input, "channel")?;
                 let body = require_str(&input, "body")?;
-                let subject = input.get("subject").and_then(Value::as_str).map(str::to_owned);
-                let sender = ctx.agent_id.clone().unwrap_or_else(|| "system".to_string());
+                let subject = input
+                    .get("subject")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned);
+                let sender = ctx
+                    .agent_id
+                    .clone()
+                    .unwrap_or_else(|| OutboundMessage::DEFAULT_SENDER.to_string());
 
                 let msg = OutboundMessage {
                     user_id: ctx.runtime.user_id().to_string(),
                     subject,
-                    body,
+                    body: body.to_owned(),
                     metadata: json!({ "sender": sender }),
                 };
-                let receipt = registry.send(&channel, &msg).await?;
+                let receipt = registry.send(channel, &msg).await?;
                 Ok(serde_json::to_value(receipt)?)
             }
         },
@@ -67,12 +73,11 @@ pub fn send_message_tool(registry: Arc<ChannelRegistry>) -> FunctionTool {
     }))
 }
 
-fn require_str(input: &Value, key: &str) -> Result<String> {
+fn require_str<'a>(input: &'a Value, key: &str) -> Result<&'a str> {
     input
         .get(key)
         .and_then(Value::as_str)
         .filter(|s| !s.is_empty())
-        .map(str::to_owned)
         .ok_or_else(|| Error::Validation(format!("`{key}` must be a non-empty string")))
 }
 
@@ -103,21 +108,32 @@ mod tests {
         assert_eq!(tool.id(), "send_message");
 
         let out = tool
-            .execute(json!({ "channel": "in_app", "body": "ping", "subject": "s" }), &ctx("u1"))
+            .execute(
+                json!({ "channel": "in_app", "body": "ping", "subject": "s" }),
+                &ctx("u1"),
+            )
             .await
             .unwrap();
         assert_eq!(out["channel"], "in_app");
         assert_eq!(out["delivered"], true);
 
         // One delivered in-app record + one registry audit record, all for u1.
-        let records = storage.list_channel_messages("u1", None, Page::default()).await.unwrap();
+        let records = storage
+            .list_channel_messages("u1", None, Page::default())
+            .await
+            .unwrap();
         assert_eq!(records.len(), 2);
-        assert!(records.iter().all(|r| r.user_id == "u1" && r.content == "ping"));
+        assert!(records
+            .iter()
+            .all(|r| r.user_id == "u1" && r.content == "ping"));
         assert!(records.iter().any(|r| r.metadata["audit"] == true));
         assert!(records.iter().all(|r| r.sender == "agt_test"));
 
         // Nothing leaked to another user's inbox.
-        let other = storage.list_channel_messages("u2", None, Page::default()).await.unwrap();
+        let other = storage
+            .list_channel_messages("u2", None, Page::default())
+            .await
+            .unwrap();
         assert!(other.is_empty());
     }
 
@@ -126,10 +142,16 @@ mod tests {
         let (_storage, registry) = setup();
         let tool = send_message_tool(registry);
 
-        let err = tool.execute(json!({ "body": "no channel" }), &ctx("u1")).await.unwrap_err();
+        let err = tool
+            .execute(json!({ "body": "no channel" }), &ctx("u1"))
+            .await
+            .unwrap_err();
         assert!(err.to_string().contains("channel"));
 
-        let err = tool.execute(json!({ "channel": "in_app" }), &ctx("u1")).await.unwrap_err();
+        let err = tool
+            .execute(json!({ "channel": "in_app" }), &ctx("u1"))
+            .await
+            .unwrap_err();
         assert!(err.to_string().contains("body"));
     }
 }

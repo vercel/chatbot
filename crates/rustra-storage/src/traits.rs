@@ -3,8 +3,14 @@
 //! Conventions:
 //!
 //! * `upsert_*` inserts or replaces by primary key.
+//! * `update_*` on a missing primary key upserts (insert-or-replace) unless
+//!   documented otherwise.
+//! * `delete_*` and other by-id mutations are idempotent: missing ids succeed
+//!   silently.
 //! * `list_*` returns newest-first unless documented otherwise and always
 //!   takes a [`Page`].
+//! * The reference backend breaks timestamp ties by id so pagination is a
+//!   total order.
 //! * Backends never enforce access control — that is the RBAC layer's job.
 //!   They *do* enforce scoping parameters they are given (a `resource_id`
 //!   filter must be applied, not advisory).
@@ -23,6 +29,8 @@ use crate::Page;
 pub trait MemoryStore: Send + Sync {
     async fn create_thread(&self, thread: Thread) -> Result<()>;
     async fn get_thread(&self, thread_id: &str) -> Result<Option<Thread>>;
+    /// Errors with not-found if the thread does not exist (the one
+    /// non-upserting update).
     async fn update_thread(&self, thread: Thread) -> Result<()>;
     /// Deletes the thread and all of its messages.
     async fn delete_thread(&self, thread_id: &str) -> Result<()>;
@@ -45,6 +53,7 @@ pub trait WorkflowStore: Send + Sync {
     async fn save_snapshot(&self, snapshot: WorkflowSnapshot) -> Result<()>;
     async fn load_snapshot(&self, run_id: &str) -> Result<Option<WorkflowSnapshot>>;
     /// Snapshots for a user, optionally filtered by workflow id and status.
+    /// Most recently updated first.
     async fn list_snapshots(
         &self,
         resource_id: &str,
@@ -59,8 +68,10 @@ pub trait WorkflowStore: Send + Sync {
 #[async_trait]
 pub trait ObservabilityStore: Send + Sync {
     async fn insert_run(&self, run: RunRecord) -> Result<()>;
+    /// Upserts if the record does not exist.
     async fn update_run(&self, run: RunRecord) -> Result<()>;
     async fn get_run(&self, run_id: &str) -> Result<Option<RunRecord>>;
+    /// Most recently started first.
     async fn list_runs(
         &self,
         user_id: &str,
@@ -86,6 +97,7 @@ pub trait ObservabilityStore: Send + Sync {
 #[async_trait]
 pub trait TaskStore: Send + Sync {
     async fn insert_task(&self, task: TaskRecord) -> Result<()>;
+    /// Upserts if the record does not exist.
     async fn update_task(&self, task: TaskRecord) -> Result<()>;
     async fn get_task(&self, task_id: &str) -> Result<Option<TaskRecord>>;
     async fn list_tasks(
@@ -99,9 +111,13 @@ pub trait TaskStore: Send + Sync {
     async fn get_schedule(&self, schedule_id: &str) -> Result<Option<ScheduleRecord>>;
     async fn delete_schedule(&self, schedule_id: &str) -> Result<()>;
     /// `user_id = None` lists all users' schedules (scheduler loop only).
-    async fn list_schedules(&self, user_id: Option<&str>, page: Page)
-        -> Result<Vec<ScheduleRecord>>;
-    /// Enabled schedules with `next_run_at <= now`.
+    async fn list_schedules(
+        &self,
+        user_id: Option<&str>,
+        page: Page,
+    ) -> Result<Vec<ScheduleRecord>>;
+    /// Enabled schedules with `next_run_at <= now`, ordered by `next_run_at`
+    /// ascending.
     async fn due_schedules(&self, now: DateTime<Utc>) -> Result<Vec<ScheduleRecord>>;
 
     async fn upsert_subscription(&self, sub: SubscriptionRecord) -> Result<()>;
@@ -114,6 +130,7 @@ pub trait TaskStore: Send + Sync {
     ) -> Result<Vec<SubscriptionRecord>>;
 
     async fn insert_decision(&self, decision: DecisionRecord) -> Result<()>;
+    /// Upserts if the record does not exist.
     async fn update_decision(&self, decision: DecisionRecord) -> Result<()>;
     async fn get_decision(&self, decision_id: &str) -> Result<Option<DecisionRecord>>;
     async fn list_decisions(
@@ -161,15 +178,19 @@ pub trait AclStore: Send + Sync {
     async fn upsert_user(&self, user: UserRecord) -> Result<()>;
     async fn get_user(&self, user_id: &str) -> Result<Option<UserRecord>>;
     async fn find_user_by_token_hash(&self, token_hash: &str) -> Result<Option<UserRecord>>;
+    /// Ordered oldest-first by creation time (exception to the newest-first
+    /// convention).
     async fn list_users(&self, page: Page) -> Result<Vec<UserRecord>>;
 
     async fn insert_grant(&self, grant: GrantRecord) -> Result<()>;
     async fn delete_grant(&self, grant_id: &str) -> Result<()>;
+    /// Ordered by creation time ascending.
     async fn list_grants_for_resource(
         &self,
         kind: ResourceKind,
         resource_id: &str,
     ) -> Result<Vec<GrantRecord>>;
+    /// Ordered by creation time ascending.
     async fn list_grants_for_grantee(&self, grantee: &str) -> Result<Vec<GrantRecord>>;
 }
 
@@ -178,13 +199,16 @@ pub trait AclStore: Send + Sync {
 pub trait InfraStore: Send + Sync {
     async fn upsert_workspace(&self, ws: WorkspaceRecord) -> Result<()>;
     async fn get_workspace(&self, ws_id: &str) -> Result<Option<WorkspaceRecord>>;
+    /// Ordered oldest-first by creation time (exception to the newest-first
+    /// convention).
     async fn list_workspaces(&self, user_id: &str, page: Page) -> Result<Vec<WorkspaceRecord>>;
     async fn delete_workspace(&self, ws_id: &str) -> Result<()>;
 
     async fn upsert_mcp_server(&self, server: McpServerRecord) -> Result<()>;
     async fn get_mcp_server(&self, server_id: &str) -> Result<Option<McpServerRecord>>;
     /// Servers owned by `user_id` plus, with `include_shared`, shared/global
-    /// servers.
+    /// servers. Ordered oldest-first by creation time (exception to the
+    /// newest-first convention).
     async fn list_mcp_servers(
         &self,
         user_id: &str,
@@ -195,8 +219,8 @@ pub trait InfraStore: Send + Sync {
 
     async fn upsert_ui_artifact(&self, artifact: UiArtifactRecord) -> Result<()>;
     async fn get_ui_artifact(&self, artifact_id: &str) -> Result<Option<UiArtifactRecord>>;
-    async fn list_ui_artifacts(&self, owner_id: &str, page: Page)
-        -> Result<Vec<UiArtifactRecord>>;
+    /// Most recently updated first.
+    async fn list_ui_artifacts(&self, owner_id: &str, page: Page) -> Result<Vec<UiArtifactRecord>>;
     async fn delete_ui_artifact(&self, artifact_id: &str) -> Result<()>;
 
     async fn insert_channel_message(&self, message: ChannelMessageRecord) -> Result<()>;
@@ -206,6 +230,7 @@ pub trait InfraStore: Send + Sync {
         channel: Option<&str>,
         page: Page,
     ) -> Result<Vec<ChannelMessageRecord>>;
+    /// No-op if the message does not exist.
     async fn mark_message_read(&self, message_id: &str) -> Result<()>;
 }
 

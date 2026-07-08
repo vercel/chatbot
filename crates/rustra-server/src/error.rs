@@ -22,40 +22,39 @@ impl From<Error> for ApiError {
     }
 }
 
-fn kind_name(error: &Error) -> &'static str {
+/// The single source of truth pairing each domain [`Error`] variant with its
+/// HTTP status and stable wire `kind`. New variants get one arm here rather
+/// than two matches that must be kept in lockstep.
+fn status_and_kind(error: &Error) -> (StatusCode, &'static str) {
     match error {
-        Error::NotFound { .. } => "not_found",
-        Error::PermissionDenied(_) => "permission_denied",
-        Error::Validation(_) => "validation",
-        Error::Storage(_) => "storage",
-        Error::Model(_) => "model",
-        Error::Tool { .. } => "tool",
-        Error::Mcp(_) => "mcp",
-        Error::Workflow(_) => "workflow",
-        Error::Cancelled(_) => "cancelled",
-        Error::Timeout(_) => "timeout",
-        Error::Unavailable(_) => "unavailable",
-        Error::Config(_) => "config",
-        Error::Serde(_) => "serde",
-        Error::Io(_) => "io",
-        Error::Other(_) => "other",
+        Error::NotFound { .. } => (StatusCode::NOT_FOUND, "not_found"),
+        Error::PermissionDenied(_) => (StatusCode::FORBIDDEN, "permission_denied"),
+        Error::Validation(_) => (StatusCode::BAD_REQUEST, "validation"),
+        Error::Config(_) => (StatusCode::BAD_REQUEST, "config"),
+        Error::Timeout(_) => (StatusCode::GATEWAY_TIMEOUT, "timeout"),
+        Error::Unavailable(_) => (StatusCode::SERVICE_UNAVAILABLE, "unavailable"),
+        Error::Cancelled(_) => (StatusCode::CONFLICT, "cancelled"),
+        Error::Storage(_) => (StatusCode::INTERNAL_SERVER_ERROR, "storage"),
+        Error::Model(_) => (StatusCode::INTERNAL_SERVER_ERROR, "model"),
+        Error::Tool { .. } => (StatusCode::INTERNAL_SERVER_ERROR, "tool"),
+        Error::Mcp(_) => (StatusCode::INTERNAL_SERVER_ERROR, "mcp"),
+        Error::Workflow(_) => (StatusCode::INTERNAL_SERVER_ERROR, "workflow"),
+        Error::Serde(_) => (StatusCode::INTERNAL_SERVER_ERROR, "serde"),
+        Error::Io(_) => (StatusCode::INTERNAL_SERVER_ERROR, "io"),
+        Error::Other(_) => (StatusCode::INTERNAL_SERVER_ERROR, "other"),
     }
+}
+
+/// Build the standard error envelope `{"error": {"kind": ..., "message": ...}}`
+/// with the given status. The one constructor for the server's error wire body.
+pub(crate) fn error_response(status: StatusCode, kind: &str, message: &str) -> Response {
+    let body = Json(json!({ "error": { "kind": kind, "message": message } }));
+    (status, body).into_response()
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let status = match &self.0 {
-            Error::NotFound { .. } => StatusCode::NOT_FOUND,
-            Error::PermissionDenied(_) => StatusCode::FORBIDDEN,
-            Error::Validation(_) | Error::Config(_) => StatusCode::BAD_REQUEST,
-            Error::Timeout(_) => StatusCode::GATEWAY_TIMEOUT,
-            Error::Unavailable(_) => StatusCode::SERVICE_UNAVAILABLE,
-            Error::Cancelled(_) => StatusCode::CONFLICT,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-        let body = Json(json!({
-            "error": { "kind": kind_name(&self.0), "message": self.0.to_string() }
-        }));
-        (status, body).into_response()
+        let (status, kind) = status_and_kind(&self.0);
+        error_response(status, kind, &self.0.to_string())
     }
 }

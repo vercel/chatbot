@@ -26,53 +26,53 @@ const SELECT_CHANNEL_MESSAGE: &str = "SELECT id, user_id, channel, sender, conte
 
 fn workspace_from_row(row: &Row<'_>) -> Result<WorkspaceRecord> {
     Ok(WorkspaceRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        name: col(row, 2)?,
-        root_path: col(row, 3)?,
-        settings: col_json(row, 4)?,
-        created_at: col_ts(row, 5)?,
+        id: col(row, "id")?,
+        user_id: col(row, "user_id")?,
+        name: col(row, "name")?,
+        root_path: col(row, "root_path")?,
+        settings: col_json(row, "settings")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
 fn mcp_server_from_row(row: &Row<'_>) -> Result<McpServerRecord> {
     Ok(McpServerRecord {
-        id: col(row, 0)?,
-        owner_id: col(row, 1)?,
-        name: col(row, 2)?,
-        config: col_json(row, 3)?,
-        enabled: col(row, 4)?,
-        visibility: vis_from_sql(&col::<String>(row, 5)?)?,
-        created_at: col_ts(row, 6)?,
-        updated_at: col_ts(row, 7)?,
+        id: col(row, "id")?,
+        owner_id: col(row, "owner_id")?,
+        name: col(row, "name")?,
+        config: col_json(row, "config")?,
+        enabled: col(row, "enabled")?,
+        visibility: col_vis(row, "visibility")?,
+        created_at: col_ts(row, "created_at")?,
+        updated_at: col_ts(row, "updated_at")?,
     })
 }
 
 fn ui_artifact_from_row(row: &Row<'_>) -> Result<UiArtifactRecord> {
     Ok(UiArtifactRecord {
-        id: col(row, 0)?,
-        owner_id: col(row, 1)?,
-        title: col(row, 2)?,
-        kind: col(row, 3)?,
-        html: col(row, 4)?,
-        data: col_json(row, 5)?,
-        version: col(row, 6)?,
-        visibility: vis_from_sql(&col::<String>(row, 7)?)?,
-        created_at: col_ts(row, 8)?,
-        updated_at: col_ts(row, 9)?,
+        id: col(row, "id")?,
+        owner_id: col(row, "owner_id")?,
+        title: col(row, "title")?,
+        kind: col(row, "kind")?,
+        html: col(row, "html")?,
+        data: col_json(row, "data")?,
+        version: col(row, "version")?,
+        visibility: col_vis(row, "visibility")?,
+        created_at: col_ts(row, "created_at")?,
+        updated_at: col_ts(row, "updated_at")?,
     })
 }
 
 fn channel_message_from_row(row: &Row<'_>) -> Result<ChannelMessageRecord> {
     Ok(ChannelMessageRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        channel: col(row, 2)?,
-        sender: col(row, 3)?,
-        content: col(row, 4)?,
-        metadata: col_json(row, 5)?,
-        read: col(row, 6)?,
-        created_at: col_ts(row, 7)?,
+        id: col(row, "id")?,
+        user_id: col(row, "user_id")?,
+        channel: col(row, "channel")?,
+        sender: col(row, "sender")?,
+        content: col(row, "content")?,
+        metadata: col_json(row, "metadata")?,
+        read: col(row, "read")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
@@ -123,7 +123,7 @@ impl InfraStore for SqliteStorage {
                     conn,
                     &format!(
                         "{SELECT_WORKSPACE} WHERE user_id = ?1 \
-                         ORDER BY created_at ASC LIMIT ?2 OFFSET ?3"
+                         ORDER BY created_at ASC, rowid ASC LIMIT ?2 OFFSET ?3"
                     ),
                     params![user_id, limit, offset],
                     workspace_from_row,
@@ -199,7 +199,7 @@ impl InfraStore for SqliteStorage {
                     &format!(
                         "{SELECT_MCP_SERVER} WHERE owner_id = ?1 \
                          OR (?2 AND (owner_id IS NULL OR visibility <> 'private')) \
-                         ORDER BY created_at ASC LIMIT ?3 OFFSET ?4"
+                         ORDER BY created_at ASC, rowid ASC LIMIT ?3 OFFSET ?4"
                     ),
                     params![user_id, include_shared, limit, offset],
                     mcp_server_from_row,
@@ -271,7 +271,7 @@ impl InfraStore for SqliteStorage {
                     conn,
                     &format!(
                         "{SELECT_UI_ARTIFACT} WHERE owner_id = ?1 \
-                         ORDER BY updated_at DESC LIMIT ?2 OFFSET ?3"
+                         ORDER BY updated_at DESC, rowid DESC LIMIT ?2 OFFSET ?3"
                     ),
                     params![owner_id, limit, offset],
                     ui_artifact_from_row,
@@ -334,7 +334,7 @@ impl InfraStore for SqliteStorage {
                     &format!(
                         "{SELECT_CHANNEL_MESSAGE} WHERE user_id = ?1 \
                          AND (?2 IS NULL OR channel = ?2) \
-                         ORDER BY created_at DESC LIMIT ?3 OFFSET ?4"
+                         ORDER BY created_at DESC, rowid DESC LIMIT ?3 OFFSET ?4"
                     ),
                     params![user_id, channel, limit, offset],
                     channel_message_from_row,

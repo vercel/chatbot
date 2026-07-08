@@ -10,12 +10,16 @@ use serde_json::Value;
 use rustra_core::{Error, Result};
 
 /// One declarative step.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum FlowStepDef {
     /// Run an agent with a prompt template. `{{input}}` interpolates the
     /// JSON of the step input.
-    Agent { id: String, agent: String, prompt: String },
+    Agent {
+        id: String,
+        agent: String,
+        prompt: String,
+    },
     /// Invoke a tool; the step input is passed as the tool input.
     Tool { id: String, tool: String },
     /// Human approval gate.
@@ -36,7 +40,7 @@ impl FlowStepDef {
 }
 
 /// A user-created flow, as data.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FlowDefinition {
     /// Stable id, kebab-case.
     pub id: String,
@@ -53,7 +57,10 @@ pub struct FlowDefinition {
 impl FlowDefinition {
     pub fn validate(&self) -> Result<()> {
         if self.id.is_empty()
-            || !self.id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+            || !self
+                .id
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
         {
             return Err(Error::Validation(format!(
                 "flow id `{}` must be non-empty kebab-case ([a-z0-9-])",
@@ -69,7 +76,10 @@ impl FlowDefinition {
                 return Err(Error::Validation("step ids must not be empty".into()));
             }
             if !seen.insert(step.id()) {
-                return Err(Error::Validation(format!("duplicate step id `{}`", step.id())));
+                return Err(Error::Validation(format!(
+                    "duplicate step id `{}`",
+                    step.id()
+                )));
             }
         }
         Ok(())
@@ -97,8 +107,14 @@ mod tests {
 
         let dup = FlowDefinition {
             steps: vec![
-                FlowStepDef::Approval { id: "a".into(), prompt: "p".into() },
-                FlowStepDef::Approval { id: "a".into(), prompt: "p".into() },
+                FlowStepDef::Approval {
+                    id: "a".into(),
+                    prompt: "p".into(),
+                },
+                FlowStepDef::Approval {
+                    id: "a".into(),
+                    prompt: "p".into(),
+                },
             ],
             ..def
         };

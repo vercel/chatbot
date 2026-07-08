@@ -11,10 +11,6 @@ use serde_json::Value;
 
 use rustra_core::{new_id, ResourceKind, Visibility};
 
-fn default_json() -> Value {
-    Value::Null
-}
-
 // ---------------------------------------------------------------------------
 // Memory domain (threads / messages / resources)
 // ---------------------------------------------------------------------------
@@ -26,7 +22,7 @@ pub struct Thread {
     /// Owner scope — the user id. Immutable for the thread's lifetime.
     pub resource_id: String,
     pub title: Option<String>,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub metadata: Value,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -69,7 +65,7 @@ pub struct ResourceRecord {
     pub id: String,
     /// Markdown/structured working memory maintained by the agent.
     pub working_memory: Option<String>,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub metadata: Value,
     pub updated_at: DateTime<Utc>,
 }
@@ -110,15 +106,15 @@ pub struct RunRecord {
     pub user_id: String,
     /// `running` | `suspended` | `success` | `failed` | `cancelled`.
     pub status: String,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub input: Value,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub output: Value,
     pub error: Option<String>,
     pub trace_id: String,
     pub started_at: DateTime<Utc>,
     pub ended_at: Option<DateTime<Utc>>,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub metadata: Value,
 }
 
@@ -134,14 +130,14 @@ pub struct TraceSpan {
     /// `flow_step` | `context_attach` | `interrupt` | `retry` | `other`.
     pub kind: String,
     pub user_id: String,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub input: Value,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub output: Value,
     pub error: Option<String>,
     pub started_at: DateTime<Utc>,
     pub ended_at: Option<DateTime<Utc>>,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub metadata: Value,
 }
 
@@ -152,7 +148,7 @@ pub struct LogRecord {
     /// `trace` | `debug` | `info` | `warn` | `error`.
     pub level: String,
     pub message: String,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub fields: Value,
     pub user_id: Option<String>,
     pub run_id: Option<String>,
@@ -179,7 +175,7 @@ pub struct TaskRecord {
     pub attempts: u32,
     pub max_retries: u32,
     pub last_error: Option<String>,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub output: Value,
     /// Run id in observability, once started.
     pub run_id: Option<String>,
@@ -231,12 +227,12 @@ pub struct DecisionRecord {
     pub kind: String,
     pub prompt: String,
     /// For approvals: option labels; for input: an input schema.
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub payload: Value,
     /// `pending` | `approved` | `rejected` | `answered` | `cancelled`.
     pub status: String,
     /// The human's answer, once resolved.
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub resolution: Value,
     pub created_at: DateTime<Utc>,
     pub resolved_at: Option<DateTime<Utc>>,
@@ -279,7 +275,7 @@ pub struct UserRecord {
     /// SHA-256 hex digest of the user's API token. Plaintext is never stored.
     pub token_hash: Option<String>,
     /// Profile/settings JSON; also exposed to agents as a context source.
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub profile: Value,
     pub created_at: DateTime<Utc>,
 }
@@ -312,7 +308,7 @@ pub struct WorkspaceRecord {
     pub name: String,
     /// Root directory of the workspace on the host.
     pub root_path: String,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub settings: Value,
     pub created_at: DateTime<Utc>,
 }
@@ -342,7 +338,7 @@ pub struct UiArtifactRecord {
     pub kind: String,
     pub html: String,
     /// Optional structured data the artifact renders.
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub data: Value,
     pub version: u32,
     pub visibility: Visibility,
@@ -361,7 +357,7 @@ pub struct ChannelMessageRecord {
     /// Sending agent id or `system`.
     pub sender: String,
     pub content: String,
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub metadata: Value,
     pub read: bool,
     pub created_at: DateTime<Utc>,

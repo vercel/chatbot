@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// maps roles to permission sets.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct Role(pub String);
+pub struct Role(String);
 
 impl Role {
     pub const BUILDER: &'static str = "builder";
@@ -23,6 +23,8 @@ impl Role {
     pub fn admin() -> Self {
         Self(Self::ADMIN.into())
     }
+    /// A role beyond the three built-ins; the RBAC policy decides what it
+    /// grants.
     pub fn custom(name: impl Into<String>) -> Self {
         Self(name.into())
     }
@@ -34,6 +36,24 @@ impl Role {
 impl From<&str> for Role {
     fn from(s: &str) -> Self {
         Self(s.to_string())
+    }
+}
+
+impl From<String> for Role {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl AsRef<str> for Role {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::fmt::Display for Role {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
     }
 }
 
@@ -59,24 +79,43 @@ pub struct Principal {
 }
 
 impl Principal {
+    /// A standard user principal holding the default `builder` role.
     pub fn user(user_id: impl Into<String>) -> Self {
-        Self { user_id: user_id.into(), roles: vec![Role::builder()], system: false }
+        Self {
+            user_id: user_id.into(),
+            roles: vec![Role::builder()],
+            system: false,
+        }
     }
 
+    /// A user principal with an explicit role set. An empty set means
+    /// owner-only access to resources the user created.
     pub fn with_roles(user_id: impl Into<String>, roles: Vec<Role>) -> Self {
-        Self { user_id: user_id.into(), roles, system: false }
+        Self {
+            user_id: user_id.into(),
+            roles,
+            system: false,
+        }
     }
 
     /// The internal system principal. Bypasses RBAC checks; use only for
     /// framework-internal maintenance (schedulers, migrations, supervisors).
     pub fn system() -> Self {
-        Self { user_id: "system".into(), roles: vec![Role::admin()], system: true }
+        Self {
+            user_id: "system".into(),
+            roles: vec![Role::admin()],
+            system: true,
+        }
     }
 
+    /// Whether this principal holds `role` (exact, case-sensitive
+    /// comparison).
     pub fn has_role(&self, role: &str) -> bool {
         self.roles.iter().any(|r| r.as_str() == role)
     }
 
+    /// True for the system principal and for any principal holding the
+    /// `admin` role.
     pub fn is_admin(&self) -> bool {
         self.system || self.has_role(Role::ADMIN)
     }

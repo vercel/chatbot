@@ -15,6 +15,10 @@ const MIGRATIONS: &[(i64, &str)] = &[(1, V1)];
 
 /// Bring `conn` up to the latest schema version.
 pub(crate) fn run(conn: &mut Connection) -> Result<()> {
+    debug_assert!(
+        MIGRATIONS.windows(2).all(|w| w[0].0 < w[1].0),
+        "MIGRATIONS must be sorted by strictly increasing version"
+    );
     let current: i64 = conn
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(storage_err)?;

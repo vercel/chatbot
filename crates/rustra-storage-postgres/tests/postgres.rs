@@ -20,7 +20,9 @@ use rustra_storage::{
 use rustra_storage_postgres::{PostgresStorage, PostgresVectorStore};
 
 fn pg_url() -> Option<String> {
-    std::env::var("RUSTRA_PG_URL").ok().filter(|url| !url.is_empty())
+    std::env::var("RUSTRA_PG_URL")
+        .ok()
+        .filter(|url| !url.is_empty())
 }
 
 /// Postgres `TIMESTAMPTZ` stores microsecond precision, so equality
@@ -58,7 +60,14 @@ async fn thread_and_message_roundtrip() {
     assert_eq!(recent[0].id, format!("{thread_id}_m2"));
     assert_eq!(recent[2].id, format!("{thread_id}_m4"));
 
-    assert_eq!(store.list_threads(&user, Page::default()).await.unwrap().len(), 1);
+    assert_eq!(
+        store
+            .list_threads(&user, Page::default())
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
     assert!(store
         .list_threads(&new_id("user"), Page::default())
         .await
@@ -68,7 +77,11 @@ async fn thread_and_message_roundtrip() {
     // Cascade: deleting the thread removes its messages.
     store.delete_thread(&thread_id).await.unwrap();
     assert!(store.get_thread(&thread_id).await.unwrap().is_none());
-    assert!(store.recent_messages(&thread_id, 10).await.unwrap().is_empty());
+    assert!(store
+        .recent_messages(&thread_id, 10)
+        .await
+        .unwrap()
+        .is_empty());
 }
 
 #[tokio::test]
@@ -90,7 +103,10 @@ async fn definitions_version_monotonically() {
     };
     let v1 = store.put_definition(def.clone()).await.unwrap();
     let v2 = store
-        .put_definition(DefinitionRecord { spec: json!({"a": 2}), ..def })
+        .put_definition(DefinitionRecord {
+            spec: json!({"a": 2}),
+            ..def
+        })
         .await
         .unwrap();
     assert_eq!((v1.version, v2.version), (1, 2));
@@ -112,7 +128,10 @@ async fn definitions_version_monotonically() {
     assert_eq!(old.spec["a"], 1);
     assert!(!old.latest);
 
-    store.delete_definition(ResourceKind::Skill, &def_id).await.unwrap();
+    store
+        .delete_definition(ResourceKind::Skill, &def_id)
+        .await
+        .unwrap();
     assert!(store
         .get_definition(ResourceKind::Skill, &def_id)
         .await
@@ -140,8 +159,14 @@ async fn shared_definitions_visible_to_others() {
     };
     let private_id = new_id("def");
     let shared_id = new_id("def");
-    store.put_definition(mk(&private_id, Visibility::Private)).await.unwrap();
-    store.put_definition(mk(&shared_id, Visibility::Shared)).await.unwrap();
+    store
+        .put_definition(mk(&private_id, Visibility::Private))
+        .await
+        .unwrap();
+    store
+        .put_definition(mk(&shared_id, Visibility::Shared))
+        .await
+        .unwrap();
 
     // Bob owns nothing, so only shared/public definitions are visible; other
     // tests may have populated the shared table, so filter to this run's ids.
@@ -152,8 +177,14 @@ async fn shared_definitions_visible_to_others() {
     assert!(bob_sees.iter().any(|d| d.id == shared_id));
     assert!(!bob_sees.iter().any(|d| d.id == private_id));
 
-    store.delete_definition(ResourceKind::Knowledge, &private_id).await.unwrap();
-    store.delete_definition(ResourceKind::Knowledge, &shared_id).await.unwrap();
+    store
+        .delete_definition(ResourceKind::Knowledge, &private_id)
+        .await
+        .unwrap();
+    store
+        .delete_definition(ResourceKind::Knowledge, &shared_id)
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -175,10 +206,22 @@ async fn due_schedules_filters_on_enabled_and_next_run() {
         last_run_at: None,
         created_at: now,
     };
-    store.upsert_schedule(mk("due", true, Some(-60))).await.unwrap();
-    store.upsert_schedule(mk("future", true, Some(60))).await.unwrap();
-    store.upsert_schedule(mk("disabled", false, Some(-60))).await.unwrap();
-    store.upsert_schedule(mk("unscheduled", true, None)).await.unwrap();
+    store
+        .upsert_schedule(mk("due", true, Some(-60)))
+        .await
+        .unwrap();
+    store
+        .upsert_schedule(mk("future", true, Some(60)))
+        .await
+        .unwrap();
+    store
+        .upsert_schedule(mk("disabled", false, Some(-60)))
+        .await
+        .unwrap();
+    store
+        .upsert_schedule(mk("unscheduled", true, None))
+        .await
+        .unwrap();
 
     // `due_schedules` is global (scheduler loop), so restrict assertions to
     // this run's schedules.
@@ -193,7 +236,10 @@ async fn due_schedules_filters_on_enabled_and_next_run() {
     assert_eq!(due[0].name, "due");
 
     for name in ["due", "future", "disabled", "unscheduled"] {
-        store.delete_schedule(&format!("{user}_{name}")).await.unwrap();
+        store
+            .delete_schedule(&format!("{user}_{name}"))
+            .await
+            .unwrap();
     }
 }
 
@@ -242,7 +288,10 @@ async fn similar_text_ranks_higher() {
     let embedder = MockEmbedder::default();
 
     let index = new_id("idx");
-    store.create_index(&index, embedder.dimension()).await.unwrap();
+    store
+        .create_index(&index, embedder.dimension())
+        .await
+        .unwrap();
 
     let texts = vec![
         "the deployment pipeline failed on kubernetes".to_string(),

@@ -1,15 +1,10 @@
-//! Hydration of declarative definitions into live objects, plus the
-//! facade-level context sources (user profile, prior runs).
+//! Hydration of declarative definitions into live objects.
 
-use async_trait::async_trait;
 use serde_json::json;
 use std::sync::Arc;
 
 use rustra_agent::{Agent, AgentDefinition};
-use rustra_core::{
-    ContextCandidate, ContextFragment, ContextKind, ContextRequest, ContextSource, Error, Result,
-};
-use rustra_storage::{Page, SharedStorage};
+use rustra_core::{Error, Result};
 use rustra_workflow::{
     approval_step, FlowDefinition, FlowStepDef, FunctionStep, StepOutcome, Workflow,
 };
@@ -18,7 +13,10 @@ use crate::Rustra;
 
 /// Build a live [`Agent`] from a stored definition, resolving the model,
 /// tools, and sub-agents from the registry.
-pub fn agent_from_definition(rustra: &Rustra, definition: &AgentDefinition) -> Result<Agent> {
+pub(crate) fn agent_from_definition(
+    rustra: &Rustra,
+    definition: &AgentDefinition,
+) -> Result<Agent> {
     let mut builder = Agent::builder(definition.id.clone())
         .name(definition.name.clone())
         .description(definition.description.clone())
@@ -40,13 +38,16 @@ pub fn agent_from_definition(rustra: &Rustra, definition: &AgentDefinition) -> R
 /// Compile a declarative flow into a runnable [`Workflow`]. Steps resolve
 /// their agents/tools lazily at execution time so definitions can reference
 /// artifacts registered after the flow was saved.
-pub fn flow_from_definition(rustra: &Rustra, definition: &FlowDefinition) -> Result<Workflow> {
+pub(crate) fn flow_from_definition(
+    rustra: &Rustra,
+    definition: &FlowDefinition,
+) -> Result<Workflow> {
     definition.validate()?;
     let mut builder = Workflow::builder(definition.id.clone())
         .storage(rustra.storage().clone())
         .observability(rustra.observability().clone());
     // Weak reference: flows must not keep the runtime alive.
-    let weak = ArcRustra::downgrade(rustra);
+    let weak = WeakRustra::downgrade(rustra);
 
     for step in &definition.steps {
         match step.clone() {
@@ -95,146 +96,22 @@ pub fn flow_from_definition(rustra: &Rustra, definition: &FlowDefinition) -> Res
     Ok(builder.commit())
 }
 
-/// A `Weak<Rustra>` with an ergonomic upgrade-or-error. `Rustra` is always
-/// constructed inside an `Arc` (via `Arc::new_cyclic` in the builder) and
-/// keeps a weak self-reference, so flows never keep the runtime alive.
+/// A `Weak<Rustra>` with an ergonomic upgrade-or-error: the single home of
+/// the "runtime is shutting down" policy shared by hydrated flows and the
+/// task executor. `Rustra` is always constructed inside an `Arc` (via
+/// `Arc::new_cyclic` in the builder) and keeps a weak self-reference, so
+/// these handles never keep the runtime alive.
 #[derive(Clone)]
-struct ArcRustra(std::sync::Weak<Rustra>);
+pub(crate) struct WeakRustra(std::sync::Weak<Rustra>);
 
-impl ArcRustra {
-    fn downgrade(rustra: &Rustra) -> Self {
+impl WeakRustra {
+    pub(crate) fn downgrade(rustra: &Rustra) -> Self {
         Self(rustra.weak_self())
     }
 
-    fn upgrade(&self) -> Result<std::sync::Arc<Rustra>> {
-        self.0.upgrade().ok_or_else(|| Error::Cancelled("runtime is shutting down".into()))
-    }
-}
-
-// -- Context sources owned by the facade -------------------------------------
-
-/// User profile/settings as attachable context (always relevant, small).
-pub struct UserProfileContextSource {
-    storage: SharedStorage,
-}
-
-impl UserProfileContextSource {
-    pub fn new(storage: SharedStorage) -> Self {
-        Self { storage }
-    }
-}
-
-#[async_trait]
-impl ContextSource for UserProfileContextSource {
-    fn id(&self) -> &str {
-        "user_profile"
-    }
-
-    fn kind(&self) -> ContextKind {
-        ContextKind::UserProfile
-    }
-
-    async fn candidates(&self, _req: &ContextRequest) -> Result<Vec<ContextCandidate>> {
-        Ok(vec![ContextCandidate {
-            id: "profile".into(),
-            kind: ContextKind::UserProfile,
-            title: "User profile".into(),
-            description: "The user's profile and settings".into(),
-            score: 0.8,
-            estimated_chars: 512,
-        }])
-    }
-
-    async fn load(&self, _candidate_id: &str, req: &ContextRequest) -> Result<ContextFragment> {
-        let user = self.storage.get_user(req.runtime.user_id()).await?;
-        let content = match user {
-            Some(u) => format!(
-                "Name: {}\nRoles: {}\nProfile: {}",
-                u.display_name,
-                u.roles.join(", "),
-                serde_json::to_string_pretty(&u.profile).unwrap_or_default()
-            ),
-            None => "(no profile on record)".to_string(),
-        };
-        Ok(ContextFragment {
-            id: "profile".into(),
-            kind: ContextKind::UserProfile,
-            title: "User profile".into(),
-            content,
-            metadata: json!({}),
-        })
-    }
-}
-
-/// Recent runs as attachable context — lets the agent see what it recently
-/// did for this user (and whether it failed).
-pub struct PriorRunsContextSource {
-    storage: SharedStorage,
-}
-
-impl PriorRunsContextSource {
-    pub fn new(storage: SharedStorage) -> Self {
-        Self { storage }
-    }
-}
-
-#[async_trait]
-impl ContextSource for PriorRunsContextSource {
-    fn id(&self) -> &str {
-        "prior_runs"
-    }
-
-    fn kind(&self) -> ContextKind {
-        ContextKind::PriorRun
-    }
-
-    async fn candidates(&self, req: &ContextRequest) -> Result<Vec<ContextCandidate>> {
-        // Only relevant when the user refers to previous work.
-        let lowered = req.query.to_lowercase();
-        let referring = ["last time", "again", "previous", "earlier", "retry", "before"]
-            .iter()
-            .any(|kw| lowered.contains(kw));
-        if !referring {
-            return Ok(Vec::new());
-        }
-        Ok(vec![ContextCandidate {
-            id: "recent".into(),
-            kind: ContextKind::PriorRun,
-            title: "Recent runs".into(),
-            description: "Summaries of this user's recent agent/workflow runs".into(),
-            score: 0.7,
-            estimated_chars: 1024,
-        }])
-    }
-
-    async fn load(&self, _candidate_id: &str, req: &ContextRequest) -> Result<ContextFragment> {
-        let runs = self
-            .storage
-            .list_runs(req.runtime.user_id(), None, None, Page::first(5))
-            .await?;
-        let content = if runs.is_empty() {
-            "(no prior runs)".to_string()
-        } else {
-            runs.iter()
-                .map(|r| {
-                    format!(
-                        "- [{}] {} `{}` at {}: {}",
-                        r.status,
-                        r.kind,
-                        r.subject_id,
-                        r.started_at,
-                        r.error.clone().unwrap_or_else(|| "ok".into())
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("\n")
-        };
-        Ok(ContextFragment {
-            id: "recent".into(),
-            kind: ContextKind::PriorRun,
-            title: "Recent runs".into(),
-            content,
-            metadata: json!({ "count": runs.len() }),
-        })
+    pub(crate) fn upgrade(&self) -> Result<Arc<Rustra>> {
+        self.0
+            .upgrade()
+            .ok_or_else(|| Error::Cancelled("runtime is shutting down".into()))
     }
 }

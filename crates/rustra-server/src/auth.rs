@@ -12,21 +12,15 @@ use axum::http::request::Parts;
 use axum::http::{header, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
-use serde_json::json;
 
 use rustra::Rustra;
 use rustra_core::Principal;
 use rustra_rbac::AuthProvider;
 
-use crate::error::ApiError;
+use crate::error::{error_response, ApiError};
 
 fn unauthorized(message: &str) -> Response {
-    (
-        StatusCode::UNAUTHORIZED,
-        Json(json!({ "error": { "kind": "unauthorized", "message": message } })),
-    )
-        .into_response()
+    error_response(StatusCode::UNAUTHORIZED, "unauthorized", message)
 }
 
 /// Middleware: authenticate the bearer token and inject the [`Principal`].
@@ -54,7 +48,7 @@ pub async fn require_auth(
 }
 
 /// Extractor for the authenticated [`Principal`] placed in the request
-/// extensions by [`require_auth`].
+/// extensions by the private `require_auth` middleware.
 #[derive(Debug, Clone)]
 pub struct AuthedUser(pub Principal);
 

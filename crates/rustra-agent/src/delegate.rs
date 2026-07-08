@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::sync::Arc;
 
-use rustra_core::{Error, Result, Tool, ToolContext};
+use rustra_core::{Error, Result, RuntimeContext, Tool, ToolContext};
 
 use crate::Agent;
 
@@ -15,6 +15,19 @@ use crate::Agent;
 /// mutual-delegation loops).
 const MAX_DELEGATION_DEPTH: u64 = 3;
 const DEPTH_KEY: &str = "rustra.delegation_depth";
+
+/// Restores the delegation depth on drop, so the depth is rolled back even
+/// when the delegated `generate` future is cancelled mid-flight.
+struct DepthGuard {
+    runtime: RuntimeContext,
+    prior: u64,
+}
+
+impl Drop for DepthGuard {
+    fn drop(&mut self) {
+        self.runtime.set(DEPTH_KEY, json!(self.prior));
+    }
+}
 
 /// A sub-agent as a [`Tool`].
 pub struct AgentTool {
@@ -24,14 +37,23 @@ pub struct AgentTool {
 }
 
 impl AgentTool {
+    /// Wrap `agent` as an `ask_<agent-id>` tool.
     pub fn new(agent: Arc<Agent>) -> Self {
         let tool_id = format!("ask_{}", agent.id());
         let description = if agent.description().is_empty() {
             format!("Delegate a task to the `{}` agent.", agent.name())
         } else {
-            format!("Delegate to the `{}` agent: {}", agent.name(), agent.description())
+            format!(
+                "Delegate to the `{}` agent: {}",
+                agent.name(),
+                agent.description()
+            )
         };
-        Self { agent, tool_id, description }
+        Self {
+            agent,
+            tool_id,
+            description,
+        }
     }
 }
 
@@ -63,7 +85,11 @@ impl Tool for AgentTool {
             .as_str()
             .ok_or_else(|| Error::Validation("`message` must be a string".into()))?;
 
-        let depth = ctx.runtime.get(DEPTH_KEY).and_then(|v| v.as_u64()).unwrap_or(0);
+        let depth = ctx
+            .runtime
+            .get(DEPTH_KEY)
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
         if depth >= MAX_DELEGATION_DEPTH {
             return Err(Error::tool(
                 &self.tool_id,
@@ -71,10 +97,11 @@ impl Tool for AgentTool {
             ));
         }
         ctx.runtime.set(DEPTH_KEY, json!(depth + 1));
-        let result = self.agent.generate(message, ctx.runtime.clone()).await;
-        ctx.runtime.set(DEPTH_KEY, json!(depth));
-
-        let response = result?;
+        let _depth_guard = DepthGuard {
+            runtime: ctx.runtime.clone(),
+            prior: depth,
+        };
+        let response = self.agent.generate(message, ctx.runtime.clone()).await?;
         Ok(json!({
             "text": response.text,
             "agent": self.agent.id(),

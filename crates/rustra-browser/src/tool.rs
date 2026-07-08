@@ -36,10 +36,7 @@ pub fn browser_tool(manager: Arc<BrowserSessionManager>) -> FunctionTool {
                     "properties": {
                         "type": {
                             "type": "string",
-                            "enum": [
-                                "navigate", "click", "type", "press", "scroll",
-                                "wait_for", "read_dom", "screenshot", "evaluate"
-                            ]
+                            "enum": BrowserAction::KINDS
                         }
                     },
                     "required": ["type"]
@@ -54,11 +51,13 @@ pub fn browser_tool(manager: Arc<BrowserSessionManager>) -> FunctionTool {
                     .get("session_id")
                     .and_then(Value::as_str)
                     .ok_or_else(|| Error::Validation("`session_id` must be a string".into()))?;
-                let action: BrowserAction =
-                    serde_json::from_value(input.get("action").cloned().ok_or_else(|| {
-                        Error::Validation("`action` is required".into())
-                    })?)
-                    .map_err(|e| Error::Validation(format!("invalid browser action: {e}")))?;
+                let action: BrowserAction = serde_json::from_value(
+                    input
+                        .get("action")
+                        .cloned()
+                        .ok_or_else(|| Error::Validation("`action` is required".into()))?,
+                )
+                .map_err(|e| Error::Validation(format!("invalid browser action: {e}")))?;
 
                 let session = manager.get(ctx.runtime.user_id(), session_id)?;
                 let result = session.perform(action).await?;
@@ -160,7 +159,9 @@ mod tests {
             .unwrap_err();
         assert!(err.to_string().contains("invalid browser action"));
 
-        let err = tool.execute(json!({ "action": { "type": "screenshot" } }), &ctx("u1")).await;
+        let err = tool
+            .execute(json!({ "action": { "type": "screenshot" } }), &ctx("u1"))
+            .await;
         assert!(err.unwrap_err().to_string().contains("session_id"));
     }
 }

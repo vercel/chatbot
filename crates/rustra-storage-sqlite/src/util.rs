@@ -2,7 +2,7 @@
 //! conversions, and thin query wrappers over `rusqlite`.
 
 use chrono::{DateTime, SecondsFormat, Utc};
-use rusqlite::{Connection, Params, Row};
+use rusqlite::{Connection, Params, Row, RowIndex, Transaction};
 use rustra_core::{Error, ResourceKind, Result, Visibility};
 use serde_json::Value;
 
@@ -52,11 +52,7 @@ pub(crate) fn kind_from_sql(s: &str) -> Result<ResourceKind> {
 }
 
 pub(crate) fn vis_to_sql(v: Visibility) -> &'static str {
-    match v {
-        Visibility::Private => "private",
-        Visibility::Shared => "shared",
-        Visibility::Public => "public",
-    }
+    v.as_str()
 }
 
 pub(crate) fn vis_from_sql(s: &str) -> Result<Visibility> {
@@ -115,14 +111,16 @@ pub(crate) fn query_all<T>(
     Ok(out)
 }
 
-/// Run a SELECT expected to return at most one row.
+/// Run a SELECT expected to return at most one row, reading only the first.
 pub(crate) fn query_opt<T>(
     conn: &Connection,
     sql: &str,
     params: impl Params,
     map: impl Fn(&Row<'_>) -> Result<T>,
 ) -> Result<Option<T>> {
-    Ok(query_all(conn, sql, params, map)?.into_iter().next())
+    let mut stmt = conn.prepare(sql).map_err(storage_err)?;
+    let mut rows = stmt.query(params).map_err(storage_err)?;
+    rows.next().map_err(storage_err)?.map(map).transpose()
 }
 
 /// Execute a statement, returning the affected row count.
@@ -130,24 +128,54 @@ pub(crate) fn exec(conn: &Connection, sql: &str, params: impl Params) -> Result<
     conn.execute(sql, params).map_err(storage_err)
 }
 
-/// Read column `idx` with rusqlite's `FromSql`, mapping failures to
-/// [`Error::Storage`].
-pub(crate) fn col<T: rusqlite::types::FromSql>(row: &Row<'_>, idx: usize) -> Result<T> {
+/// Run `f` inside a transaction, committing on `Ok`. An `Err` from `f` drops
+/// the transaction uncommitted, rolling back every statement it executed.
+pub(crate) fn with_tx<T>(
+    conn: &mut Connection,
+    f: impl FnOnce(&Transaction<'_>) -> Result<T>,
+) -> Result<T> {
+    let tx = conn.transaction().map_err(storage_err)?;
+    let out = f(&tx)?;
+    tx.commit().map_err(storage_err)?;
+    Ok(out)
+}
+
+/// Read column `idx` (position or name) with rusqlite's `FromSql`, mapping
+/// failures to [`Error::Storage`].
+pub(crate) fn col<T: rusqlite::types::FromSql, I: RowIndex>(row: &Row<'_>, idx: I) -> Result<T> {
     row.get(idx).map_err(storage_err)
 }
 
 /// Read column `idx` as TEXT and parse it as a JSON payload.
-pub(crate) fn col_json(row: &Row<'_>, idx: usize) -> Result<Value> {
+pub(crate) fn col_json<I: RowIndex + std::fmt::Display + Copy>(
+    row: &Row<'_>,
+    idx: I,
+) -> Result<Value> {
     let s: String = col(row, idx)?;
-    serde_json::from_str(&s).map_err(|e| Error::Storage(format!("invalid json column: {e}")))
+    serde_json::from_str(&s).map_err(|e| Error::Storage(format!("invalid json column {idx}: {e}")))
 }
 
 /// Read column `idx` as TEXT and parse it as a required timestamp.
-pub(crate) fn col_ts(row: &Row<'_>, idx: usize) -> Result<DateTime<Utc>> {
-    parse_ts(&row.get::<_, String>(idx).map_err(storage_err)?)
+pub(crate) fn col_ts<I: RowIndex>(row: &Row<'_>, idx: I) -> Result<DateTime<Utc>> {
+    parse_ts(&col::<String, _>(row, idx)?)
 }
 
 /// Read column `idx` as nullable TEXT and parse it as an optional timestamp.
-pub(crate) fn col_ts_opt(row: &Row<'_>, idx: usize) -> Result<Option<DateTime<Utc>>> {
-    parse_ts_opt(row.get::<_, Option<String>>(idx).map_err(storage_err)?)
+pub(crate) fn col_ts_opt<I: RowIndex>(row: &Row<'_>, idx: I) -> Result<Option<DateTime<Utc>>> {
+    parse_ts_opt(col(row, idx)?)
+}
+
+/// Read column `idx` as TEXT and parse it as a [`Visibility`].
+pub(crate) fn col_vis<I: RowIndex>(row: &Row<'_>, idx: I) -> Result<Visibility> {
+    vis_from_sql(&col::<String, _>(row, idx)?)
+}
+
+/// Read column `idx` as TEXT and parse it as a [`ResourceKind`].
+pub(crate) fn col_kind<I: RowIndex>(row: &Row<'_>, idx: I) -> Result<ResourceKind> {
+    kind_from_sql(&col::<String, _>(row, idx)?)
+}
+
+/// Read column `idx` as TEXT and parse it as a JSON string list.
+pub(crate) fn col_string_vec<I: RowIndex>(row: &Row<'_>, idx: I) -> Result<Vec<String>> {
+    string_vec_from_sql(&col::<String, _>(row, idx)?)
 }

@@ -3,14 +3,11 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use chrono::Utc;
 use serde_json::json;
 
-use rustra_core::{new_id, Error, Result};
-use rustra_storage::types::ChannelMessageRecord;
+use rustra_core::{Error, Result};
 use rustra_storage::SharedStorage;
 
-use crate::adapters::record_metadata;
 use crate::types::{ChannelAdapter, DeliveryReceipt, OutboundMessage};
 
 /// Routes an [`OutboundMessage`] to the adapter registered under a channel
@@ -19,6 +16,8 @@ use crate::types::{ChannelAdapter, DeliveryReceipt, OutboundMessage};
 ///
 /// Audit records carry `metadata.audit = true` plus the delivery outcome, so
 /// inbox views can filter them out while operators keep a complete history.
+///
+/// [`ChannelMessageRecord`]: rustra_storage::types::ChannelMessageRecord
 pub struct ChannelRegistry {
     storage: SharedStorage,
     adapters: HashMap<String, Arc<dyn ChannelAdapter>>,
@@ -26,7 +25,10 @@ pub struct ChannelRegistry {
 
 impl ChannelRegistry {
     pub fn new(storage: SharedStorage) -> Self {
-        Self { storage, adapters: HashMap::new() }
+        Self {
+            storage,
+            adapters: HashMap::new(),
+        }
     }
 
     /// Register an adapter under its [`ChannelAdapter::name`]. Re-registering
@@ -55,29 +57,24 @@ impl ChannelRegistry {
     /// Send `msg` over `channel`, then persist the audit record. Adapter
     /// errors are still audited (as `delivered: false`) before propagating.
     pub async fn send(&self, channel: &str, msg: &OutboundMessage) -> Result<DeliveryReceipt> {
-        let adapter =
-            self.get(channel).ok_or_else(|| Error::not_found("channel", channel.to_string()))?;
+        let adapter = self
+            .get(channel)
+            .ok_or_else(|| Error::not_found("channel", channel))?;
         let outcome = adapter.send(msg).await;
         let (delivered, detail) = match &outcome {
             Ok(receipt) => (receipt.delivered, receipt.detail.clone()),
             Err(err) => (false, Some(err.to_string())),
         };
 
-        let audit = ChannelMessageRecord {
-            id: new_id("chm"),
-            user_id: msg.user_id.clone(),
-            channel: channel.to_string(),
-            sender: msg.sender().to_string(),
-            content: msg.body.clone(),
-            metadata: json!({
+        let audit = msg.to_record(
+            channel,
+            json!({
                 "audit": true,
                 "delivered": delivered,
                 "detail": detail,
-                "message_metadata": record_metadata(msg),
+                "message_metadata": msg.record_metadata(),
             }),
-            read: false,
-            created_at: Utc::now(),
-        };
+        );
         self.storage.insert_channel_message(audit).await?;
 
         outcome
@@ -98,7 +95,10 @@ mod tests {
 
     impl FakeAdapter {
         fn new(fail: bool) -> Self {
-            Self { calls: Mutex::new(Vec::new()), fail }
+            Self {
+                calls: Mutex::new(Vec::new()),
+                fail,
+            }
         }
     }
 
@@ -135,8 +135,10 @@ mod tests {
         assert!(receipt.delivered);
         assert_eq!(adapter.calls.lock().unwrap().len(), 1);
 
-        let records =
-            storage.list_channel_messages("u1", Some("fake"), Page::default()).await.unwrap();
+        let records = storage
+            .list_channel_messages("u1", Some("fake"), Page::default())
+            .await
+            .unwrap();
         assert_eq!(records.len(), 1);
         let audit = &records[0];
         assert_eq!(audit.content, "audited body");
@@ -152,20 +154,38 @@ mod tests {
         let registry =
             ChannelRegistry::new(storage.clone()).with_adapter(Arc::new(FakeAdapter::new(true)));
 
-        let err = registry.send("fake", &OutboundMessage::new("u1", "boom")).await.unwrap_err();
+        let err = registry
+            .send("fake", &OutboundMessage::new("u1", "boom"))
+            .await
+            .unwrap_err();
         assert!(matches!(err, Error::Unavailable(_)));
 
-        let records = storage.list_channel_messages("u1", None, Page::default()).await.unwrap();
+        let records = storage
+            .list_channel_messages("u1", None, Page::default())
+            .await
+            .unwrap();
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].metadata["delivered"], false);
-        assert!(records[0].metadata["detail"].as_str().unwrap().contains("fake outage"));
+        assert!(records[0].metadata["detail"]
+            .as_str()
+            .unwrap()
+            .contains("fake outage"));
     }
 
     #[tokio::test]
     async fn unknown_channel_is_not_found() {
         let registry = ChannelRegistry::new(storage());
-        let err = registry.send("nope", &OutboundMessage::new("u1", "x")).await.unwrap_err();
-        assert!(matches!(err, Error::NotFound { kind: "channel", .. }));
+        let err = registry
+            .send("nope", &OutboundMessage::new("u1", "x"))
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            err,
+            Error::NotFound {
+                kind: "channel",
+                ..
+            }
+        ));
     }
 
     #[tokio::test]

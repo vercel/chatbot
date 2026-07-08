@@ -9,7 +9,7 @@
 
 use chrono::Utc;
 
-use rustra_core::{new_id, Error, Principal, ResourceKind, Result, Role, Visibility};
+use rustra_core::{new_id, Error, Principal, Result, Role, Visibility};
 use rustra_rbac::Governed;
 use rustra_storage::types::McpServerRecord;
 use rustra_storage::{Page, SharedStorage};
@@ -20,12 +20,7 @@ use crate::config::{McpScope, McpServerDefinition, McpSide};
 /// The [`Governed`] view of an MCP server record, for hosts that route
 /// access decisions through [`rustra_rbac::AccessControl`].
 pub fn governed(record: &McpServerRecord) -> Governed {
-    Governed::new(
-        ResourceKind::McpServer,
-        record.id.clone(),
-        record.owner_id.clone(),
-        record.visibility,
-    )
+    record.into()
 }
 
 /// Stores, lists, and connects configured MCP servers.
@@ -34,6 +29,7 @@ pub struct McpRegistry {
 }
 
 impl McpRegistry {
+    /// A registry persisting through `storage`; construction performs no I/O.
     pub fn new(storage: SharedStorage) -> Self {
         Self { storage }
     }
@@ -93,7 +89,9 @@ impl McpRegistry {
         user_id: &str,
         include_shared: bool,
     ) -> Result<Vec<McpServerRecord>> {
-        self.storage.list_mcp_servers(user_id, include_shared, Page::default()).await
+        self.storage
+            .list_mcp_servers(user_id, include_shared, Page::default())
+            .await
     }
 
     /// Enable or disable a server. Owner-or-admin only.
@@ -103,12 +101,25 @@ impl McpRegistry {
         id: &str,
         enabled: bool,
     ) -> Result<McpServerRecord> {
-        let mut record = self.load(id).await?;
+        let record = self.load(id).await?;
         self.require_owner_or_admin(principal, &record)?;
-        record.enabled = enabled;
-        // Keep the embedded definition consistent with the record flag.
+        self.persist_definition_change(record, |def| def.enabled = enabled)
+            .await
+    }
+
+    /// Apply `mutate` to the record's embedded definition and persist,
+    /// keeping the denormalized record columns (`name`, `enabled`) consistent
+    /// with the embedded config JSON. Every definition update must go through
+    /// here so the two representations never desynchronize.
+    async fn persist_definition_change(
+        &self,
+        mut record: McpServerRecord,
+        mutate: impl FnOnce(&mut McpServerDefinition),
+    ) -> Result<McpServerRecord> {
         let mut definition = McpServerDefinition::from_record(&record)?;
-        definition.enabled = enabled;
+        mutate(&mut definition);
+        record.enabled = definition.enabled;
+        record.name = definition.name.clone();
         record.config = serde_json::to_value(&definition)?;
         record.updated_at = Utc::now();
         self.storage.upsert_mcp_server(record.clone()).await?;
@@ -132,7 +143,10 @@ impl McpRegistry {
     /// servers are also rejected.
     pub async fn connect(&self, record: &McpServerRecord) -> Result<McpClient> {
         if !record.enabled {
-            return Err(Error::Config(format!("mcp server `{}` is disabled", record.name)));
+            return Err(Error::Config(format!(
+                "mcp server `{}` is disabled",
+                record.name
+            )));
         }
         let definition = McpServerDefinition::from_record(record)?;
         if definition.side == McpSide::ClientSide {
@@ -156,8 +170,8 @@ impl McpRegistry {
         principal: &Principal,
         record: &McpServerRecord,
     ) -> Result<()> {
-        let allowed = principal.is_admin()
-            || record.owner_id.as_deref() == Some(principal.user_id.as_str());
+        let allowed =
+            principal.is_admin() || record.owner_id.as_deref() == Some(principal.user_id.as_str());
         if allowed {
             Ok(())
         } else {
@@ -172,6 +186,7 @@ impl McpRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rustra_core::ResourceKind;
     use rustra_storage::InMemoryStorage;
     use std::sync::Arc;
 
@@ -253,7 +268,10 @@ mod tests {
         assert!(!McpServerDefinition::from_record(&updated).unwrap().enabled);
 
         reg.remove(&admin, &record.id).await.unwrap();
-        assert!(matches!(reg.get(&alice, &record.id).await, Err(Error::NotFound { .. })));
+        assert!(matches!(
+            reg.get(&alice, &record.id).await,
+            Err(Error::NotFound { .. })
+        ));
     }
 
     #[tokio::test]
@@ -262,7 +280,10 @@ mod tests {
         let builder = Principal::user("alice"); // default builder role
         let dev = Principal::with_roles("dev", vec![Role::developer()]);
 
-        let err = reg.register(&builder, shared_def("team-x")).await.unwrap_err();
+        let err = reg
+            .register(&builder, shared_def("team-x"))
+            .await
+            .unwrap_err();
         assert!(matches!(err, Error::PermissionDenied(_)));
         reg.register(&dev, shared_def("team-x")).await.unwrap();
     }
@@ -271,7 +292,10 @@ mod tests {
     async fn invalid_definition_rejected() {
         let reg = registry();
         let alice = Principal::user("alice");
-        let err = reg.register(&alice, private_def("Bad Name")).await.unwrap_err();
+        let err = reg
+            .register(&alice, private_def("Bad Name"))
+            .await
+            .unwrap_err();
         assert!(matches!(err, Error::Validation(_)));
     }
 

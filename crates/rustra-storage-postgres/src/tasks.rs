@@ -42,64 +42,72 @@ const UPSERT_DECISION: &str = "INSERT INTO rustra_decisions \
      status = EXCLUDED.status, resolution = EXCLUDED.resolution, \
      created_at = EXCLUDED.created_at, resolved_at = EXCLUDED.resolved_at";
 
-fn task_from_row(row: &Row) -> Result<TaskRecord> {
-    Ok(TaskRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        trigger: col(row, 2)?,
-        spec: col(row, 3)?,
-        status: col(row, 4)?,
-        attempts: col_u32(row, 5)?,
-        max_retries: col_u32(row, 6)?,
-        last_error: col(row, 7)?,
-        output: col(row, 8)?,
-        run_id: col(row, 9)?,
-        schedule_id: col(row, 10)?,
-        created_at: col(row, 11)?,
-        started_at: col(row, 12)?,
-        ended_at: col(row, 13)?,
-    })
+impl FromRow for TaskRecord {
+    fn from_row(row: &Row) -> Result<TaskRecord> {
+        Ok(TaskRecord {
+            id: col(row, 0)?,
+            user_id: col(row, 1)?,
+            trigger: col(row, 2)?,
+            spec: col(row, 3)?,
+            status: col(row, 4)?,
+            attempts: col_u32(row, 5)?,
+            max_retries: col_u32(row, 6)?,
+            last_error: col(row, 7)?,
+            output: col(row, 8)?,
+            run_id: col(row, 9)?,
+            schedule_id: col(row, 10)?,
+            created_at: col(row, 11)?,
+            started_at: col(row, 12)?,
+            ended_at: col(row, 13)?,
+        })
+    }
 }
 
-fn schedule_from_row(row: &Row) -> Result<ScheduleRecord> {
-    Ok(ScheduleRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        name: col(row, 2)?,
-        cron: col(row, 3)?,
-        timezone: col(row, 4)?,
-        spec: col(row, 5)?,
-        enabled: col(row, 6)?,
-        next_run_at: col(row, 7)?,
-        last_run_at: col(row, 8)?,
-        created_at: col(row, 9)?,
-    })
+impl FromRow for ScheduleRecord {
+    fn from_row(row: &Row) -> Result<ScheduleRecord> {
+        Ok(ScheduleRecord {
+            id: col(row, 0)?,
+            user_id: col(row, 1)?,
+            name: col(row, 2)?,
+            cron: col(row, 3)?,
+            timezone: col(row, 4)?,
+            spec: col(row, 5)?,
+            enabled: col(row, 6)?,
+            next_run_at: col(row, 7)?,
+            last_run_at: col(row, 8)?,
+            created_at: col(row, 9)?,
+        })
+    }
 }
 
-fn subscription_from_row(row: &Row) -> Result<SubscriptionRecord> {
-    Ok(SubscriptionRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        event_name: col(row, 2)?,
-        spec: col(row, 3)?,
-        enabled: col(row, 4)?,
-        created_at: col(row, 5)?,
-    })
+impl FromRow for SubscriptionRecord {
+    fn from_row(row: &Row) -> Result<SubscriptionRecord> {
+        Ok(SubscriptionRecord {
+            id: col(row, 0)?,
+            user_id: col(row, 1)?,
+            event_name: col(row, 2)?,
+            spec: col(row, 3)?,
+            enabled: col(row, 4)?,
+            created_at: col(row, 5)?,
+        })
+    }
 }
 
-fn decision_from_row(row: &Row) -> Result<DecisionRecord> {
-    Ok(DecisionRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        run_id: col(row, 2)?,
-        kind: col(row, 3)?,
-        prompt: col(row, 4)?,
-        payload: col(row, 5)?,
-        status: col(row, 6)?,
-        resolution: col(row, 7)?,
-        created_at: col(row, 8)?,
-        resolved_at: col(row, 9)?,
-    })
+impl FromRow for DecisionRecord {
+    fn from_row(row: &Row) -> Result<DecisionRecord> {
+        Ok(DecisionRecord {
+            id: col(row, 0)?,
+            user_id: col(row, 1)?,
+            run_id: col(row, 2)?,
+            kind: col(row, 3)?,
+            prompt: col(row, 4)?,
+            payload: col(row, 5)?,
+            status: col(row, 6)?,
+            resolution: col(row, 7)?,
+            created_at: col(row, 8)?,
+            resolved_at: col(row, 9)?,
+        })
+    }
 }
 
 impl PostgresStorage {
@@ -163,11 +171,9 @@ impl TaskStore for PostgresStorage {
     }
 
     async fn get_task(&self, task_id: &str) -> Result<Option<TaskRecord>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_TASK} WHERE id = $1"), &[&task_id])
-            .await?;
-        row_opt(row, task_from_row)
+        self.db
+            .query_opt_as::<TaskRecord>(&format!("{SELECT_TASK} WHERE id = $1"), &[&task_id])
+            .await
     }
 
     async fn list_tasks(
@@ -177,17 +183,15 @@ impl TaskStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<TaskRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<TaskRecord>(
                 &format!(
                     "{SELECT_TASK} WHERE user_id = $1 AND ($2::TEXT IS NULL OR status = $2) \
                      ORDER BY created_at DESC LIMIT $3 OFFSET $4"
                 ),
                 &[&user_id, &status, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, task_from_row)
+            .await
     }
 
     async fn upsert_schedule(&self, schedule: ScheduleRecord) -> Result<()> {
@@ -219,16 +223,20 @@ impl TaskStore for PostgresStorage {
     }
 
     async fn get_schedule(&self, schedule_id: &str) -> Result<Option<ScheduleRecord>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_SCHEDULE} WHERE id = $1"), &[&schedule_id])
-            .await?;
-        row_opt(row, schedule_from_row)
+        self.db
+            .query_opt_as::<ScheduleRecord>(
+                &format!("{SELECT_SCHEDULE} WHERE id = $1"),
+                &[&schedule_id],
+            )
+            .await
     }
 
     async fn delete_schedule(&self, schedule_id: &str) -> Result<()> {
         self.db
-            .execute("DELETE FROM rustra_schedules WHERE id = $1", &[&schedule_id])
+            .execute(
+                "DELETE FROM rustra_schedules WHERE id = $1",
+                &[&schedule_id],
+            )
             .await?;
         Ok(())
     }
@@ -239,31 +247,27 @@ impl TaskStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<ScheduleRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<ScheduleRecord>(
                 &format!(
                     "{SELECT_SCHEDULE} WHERE ($1::TEXT IS NULL OR user_id = $1) \
                      ORDER BY created_at DESC LIMIT $2 OFFSET $3"
                 ),
                 &[&user_id, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, schedule_from_row)
+            .await
     }
 
     async fn due_schedules(&self, now: DateTime<Utc>) -> Result<Vec<ScheduleRecord>> {
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<ScheduleRecord>(
                 &format!(
                     "{SELECT_SCHEDULE} WHERE enabled AND next_run_at IS NOT NULL \
                      AND next_run_at <= $1 ORDER BY next_run_at ASC"
                 ),
                 &[&now],
             )
-            .await?;
-        rows_map(rows, schedule_from_row)
+            .await
     }
 
     async fn upsert_subscription(&self, sub: SubscriptionRecord) -> Result<()> {
@@ -301,17 +305,15 @@ impl TaskStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<SubscriptionRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<SubscriptionRecord>(
                 &format!(
                     "{SELECT_SUBSCRIPTION} WHERE ($1::TEXT IS NULL OR user_id = $1) \
                      ORDER BY created_at DESC LIMIT $2 OFFSET $3"
                 ),
                 &[&user_id, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, subscription_from_row)
+            .await
     }
 
     async fn insert_decision(&self, decision: DecisionRecord) -> Result<()> {
@@ -323,11 +325,12 @@ impl TaskStore for PostgresStorage {
     }
 
     async fn get_decision(&self, decision_id: &str) -> Result<Option<DecisionRecord>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_DECISION} WHERE id = $1"), &[&decision_id])
-            .await?;
-        row_opt(row, decision_from_row)
+        self.db
+            .query_opt_as::<DecisionRecord>(
+                &format!("{SELECT_DECISION} WHERE id = $1"),
+                &[&decision_id],
+            )
+            .await
     }
 
     async fn list_decisions(
@@ -337,9 +340,8 @@ impl TaskStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<DecisionRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<DecisionRecord>(
                 &format!(
                     "{SELECT_DECISION} WHERE user_id = $1 \
                      AND (NOT $2 OR status = 'pending') \
@@ -347,7 +349,6 @@ impl TaskStore for PostgresStorage {
                 ),
                 &[&user_id, &pending_only, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, decision_from_row)
+            .await
     }
 }

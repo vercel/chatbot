@@ -96,7 +96,7 @@ pub enum McpSide {
 /// ```json
 /// { "name": "weather", "url": "https://example.com/mcp", "headers": { "Authorization": "${WEATHER_KEY}" } }
 /// ```
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct McpServerDefinition {
     /// Unique kebab-case name; also the namespace prefix for bridged tools
     /// (`{name}_{tool}`).
@@ -117,8 +117,10 @@ pub struct McpServerDefinition {
     /// Allow-list of remote tool names to expose. `None` exposes all.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub allowed_tools: Option<Vec<String>>,
+    /// Who can discover and use the server; see [`McpScope`].
     #[serde(default)]
     pub scope: McpScope,
+    /// Where the server process runs; see [`McpSide`].
     #[serde(default)]
     pub side: McpSide,
 }
@@ -128,19 +130,12 @@ fn default_true() -> bool {
 }
 
 impl McpServerDefinition {
-    /// A server-side stdio definition with defaults for everything else.
-    pub fn stdio(
-        name: impl Into<String>,
-        command: impl Into<String>,
-        args: Vec<String>,
-    ) -> Self {
+    /// A server-side definition for `transport` with defaults for everything
+    /// else — the single home of the constructor defaults.
+    fn server_side(name: String, transport: McpTransport) -> Self {
         Self {
-            name: name.into(),
-            transport: McpTransport::Stdio {
-                command: command.into(),
-                args,
-                env: BTreeMap::new(),
-            },
+            name,
+            transport,
             timeout_ms: None,
             enabled: true,
             require_tool_approval: false,
@@ -150,18 +145,57 @@ impl McpServerDefinition {
         }
     }
 
+    /// A server-side stdio definition with defaults for everything else.
+    pub fn stdio(name: impl Into<String>, command: impl Into<String>, args: Vec<String>) -> Self {
+        Self::server_side(
+            name.into(),
+            McpTransport::Stdio {
+                command: command.into(),
+                args,
+                env: BTreeMap::new(),
+            },
+        )
+    }
+
     /// A server-side HTTP definition with defaults for everything else.
     pub fn http(name: impl Into<String>, url: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            transport: McpTransport::Http { url: url.into(), headers: BTreeMap::new() },
-            timeout_ms: None,
-            enabled: true,
-            require_tool_approval: false,
-            allowed_tools: None,
-            scope: McpScope::User,
-            side: McpSide::ServerSide,
-        }
+        Self::server_side(
+            name.into(),
+            McpTransport::Http {
+                url: url.into(),
+                headers: BTreeMap::new(),
+            },
+        )
+    }
+
+    /// Set the per-request timeout in milliseconds.
+    pub fn with_timeout_ms(mut self, ms: u64) -> Self {
+        self.timeout_ms = Some(ms);
+        self
+    }
+
+    /// Set who can discover and use the server.
+    pub fn with_scope(mut self, scope: McpScope) -> Self {
+        self.scope = scope;
+        self
+    }
+
+    /// Set where the server process runs.
+    pub fn with_side(mut self, side: McpSide) -> Self {
+        self.side = side;
+        self
+    }
+
+    /// Restrict the exposed tools to `tools`.
+    pub fn with_allowed_tools(mut self, tools: Vec<String>) -> Self {
+        self.allowed_tools = Some(tools);
+        self
+    }
+
+    /// Set whether each tool call needs human approval first.
+    pub fn with_tool_approval(mut self, required: bool) -> Self {
+        self.require_tool_approval = required;
+        self
     }
 
     /// The effective per-request timeout.
@@ -172,9 +206,15 @@ impl McpServerDefinition {
     /// Validate the definition. Called on registration and on connect.
     pub fn validate(&self) -> Result<()> {
         if self.name.is_empty() {
-            return Err(Error::Validation("mcp server name must not be empty".into()));
+            return Err(Error::Validation(
+                "mcp server name must not be empty".into(),
+            ));
         }
-        let name_ok = self.name.chars().next().is_some_and(|c| c.is_ascii_alphanumeric())
+        let name_ok = self
+            .name
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphanumeric())
             && self
                 .name
                 .chars()
@@ -219,11 +259,14 @@ impl McpServerDefinition {
         let McpTransport::Stdio { env, .. } = &self.transport else {
             return Ok(BTreeMap::new());
         };
-        let mut resolved = BTreeMap::new();
-        for (key, value) in env {
-            resolved.insert(key.clone(), resolve_placeholders(&self.name, value, lookup)?);
-        }
-        Ok(resolved)
+        env.iter()
+            .map(|(key, value)| {
+                Ok((
+                    key.clone(),
+                    resolve_placeholders(&self.name, value, lookup)?,
+                ))
+            })
+            .collect()
     }
 
     /// The record owner for a definition registered by `user_id`:
@@ -262,7 +305,10 @@ impl McpServerDefinition {
     /// Parse the definition back out of a storage record.
     pub fn from_record(record: &McpServerRecord) -> Result<Self> {
         serde_json::from_value(record.config.clone()).map_err(|e| {
-            Error::Config(format!("invalid mcp server config for `{}`: {e}", record.id))
+            Error::Config(format!(
+                "invalid mcp server config for `{}`: {e}",
+                record.id
+            ))
         })
     }
 }
@@ -310,8 +356,10 @@ mod tests {
             "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
         }))
         .unwrap();
-        assert!(matches!(&def.transport, McpTransport::Stdio { command, args, .. }
-            if command == "npx" && args.len() == 2));
+        assert!(
+            matches!(&def.transport, McpTransport::Stdio { command, args, .. }
+            if command == "npx" && args.len() == 2)
+        );
         // Defaults.
         assert!(def.enabled);
         assert!(!def.require_tool_approval);
@@ -369,7 +417,9 @@ mod tests {
         let def = McpServerDefinition::http("ok-name", "ftp://example.com");
         assert!(matches!(def.validate(), Err(Error::Validation(_))));
 
-        McpServerDefinition::http("ok-name", "http://example.com").validate().unwrap();
+        McpServerDefinition::http("ok-name", "http://example.com")
+            .validate()
+            .unwrap();
     }
 
     #[test]

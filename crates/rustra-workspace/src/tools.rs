@@ -12,17 +12,23 @@ use rustra_core::{Error, FunctionTool, Result, ToolContext};
 use crate::fs::Workspace;
 use crate::shell::ShellPolicy;
 
+/// The full standard agent-facing workspace toolset, in registration order.
+pub fn workspace_tools(workspace: Arc<Workspace>, shell_policy: ShellPolicy) -> Vec<FunctionTool> {
+    vec![
+        read_file_tool(Arc::clone(&workspace)),
+        write_file_tool(Arc::clone(&workspace)),
+        list_files_tool(Arc::clone(&workspace)),
+        search_files_tool(Arc::clone(&workspace)),
+        grep_tool(Arc::clone(&workspace)),
+        shell_tool(workspace, shell_policy),
+    ]
+}
+
 /// Deny the call unless the invoking principal owns the workspace.
 fn ensure_owner(workspace: &Workspace, ctx: &ToolContext, tool: &str) -> Result<()> {
-    if ctx.runtime.user_id() == workspace.user_id() {
-        Ok(())
-    } else {
-        Err(Error::PermissionDenied(format!(
-            "tool `{tool}`: workspace belongs to `{}` but the caller is `{}`",
-            workspace.user_id(),
-            ctx.runtime.user_id()
-        )))
-    }
+    workspace
+        .check_owner(ctx.runtime.user_id())
+        .map_err(|e| Error::PermissionDenied(format!("tool `{tool}`: {e}")))
 }
 
 fn require_str(input: &Value, key: &str) -> Result<String> {
@@ -104,8 +110,11 @@ pub fn list_files_tool(workspace: Arc<Workspace>) -> FunctionTool {
             let workspace = Arc::clone(&workspace);
             async move {
                 ensure_owner(&workspace, &ctx, "workspace_list_files")?;
-                let path =
-                    input.get("path").and_then(Value::as_str).unwrap_or_default().to_string();
+                let path = input
+                    .get("path")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string();
                 let entries = workspace.list_dir(&path).await?;
                 Ok(json!({ "path": path, "entries": entries }))
             }
@@ -166,8 +175,10 @@ pub fn grep_tool(workspace: Arc<Workspace>) -> FunctionTool {
             async move {
                 ensure_owner(&workspace, &ctx, "workspace_grep")?;
                 let query = require_str(&input, "query")?;
-                let max_results =
-                    input.get("max_results").and_then(Value::as_u64).unwrap_or(50) as usize;
+                let max_results = input
+                    .get("max_results")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(50) as usize;
                 let matches = workspace.grep(&query, max_results).await?;
                 Ok(json!({ "query": query, "matches": matches }))
             }
@@ -177,6 +188,7 @@ pub fn grep_tool(workspace: Arc<Workspace>) -> FunctionTool {
 
 /// Run a shell command inside the workspace, guarded by `policy`.
 pub fn shell_tool(workspace: Arc<Workspace>, policy: ShellPolicy) -> FunctionTool {
+    let policy = Arc::new(policy);
     FunctionTool::new(
         "workspace_shell",
         "Run a shell command (`sh -c`) inside the user's workspace. The working \
@@ -191,7 +203,7 @@ pub fn shell_tool(workspace: Arc<Workspace>, policy: ShellPolicy) -> FunctionToo
         }),
         move |input, ctx| {
             let workspace = Arc::clone(&workspace);
-            let policy = policy.clone();
+            let policy = Arc::clone(&policy);
             async move {
                 ensure_owner(&workspace, &ctx, "workspace_shell")?;
                 let command = require_str(&input, "command")?;
@@ -229,12 +241,18 @@ mod tests {
 
         let write = write_file_tool(Arc::clone(&ws));
         write
-            .execute(json!({"path": "files/hello.txt", "content": "hi needle"}), &ctx)
+            .execute(
+                json!({"path": "files/hello.txt", "content": "hi needle"}),
+                &ctx,
+            )
             .await
             .unwrap();
 
         let read = read_file_tool(Arc::clone(&ws));
-        let out = read.execute(json!({"path": "files/hello.txt"}), &ctx).await.unwrap();
+        let out = read
+            .execute(json!({"path": "files/hello.txt"}), &ctx)
+            .await
+            .unwrap();
         assert_eq!(out["content"], "hi needle");
 
         let list = list_files_tool(Arc::clone(&ws));
@@ -242,15 +260,24 @@ mod tests {
         assert_eq!(out["entries"][0]["name"], "hello.txt");
 
         let search = search_files_tool(Arc::clone(&ws));
-        let out = search.execute(json!({"pattern": "hello"}), &ctx).await.unwrap();
+        let out = search
+            .execute(json!({"pattern": "hello"}), &ctx)
+            .await
+            .unwrap();
         assert_eq!(out["paths"][0], "files/hello.txt");
 
         let grep = grep_tool(Arc::clone(&ws));
-        let out = grep.execute(json!({"query": "needle"}), &ctx).await.unwrap();
+        let out = grep
+            .execute(json!({"query": "needle"}), &ctx)
+            .await
+            .unwrap();
         assert_eq!(out["matches"][0]["path"], "files/hello.txt");
 
         let shell = shell_tool(Arc::clone(&ws), ShellPolicy::default());
-        let out = shell.execute(json!({"command": "echo ok"}), &ctx).await.unwrap();
+        let out = shell
+            .execute(json!({"command": "echo ok"}), &ctx)
+            .await
+            .unwrap();
         assert_eq!(out["stdout"], "ok\n");
         assert_eq!(out["exit_code"], 0);
     }

@@ -12,16 +12,18 @@ use crate::PostgresStorage;
 const SELECT_SNAPSHOT: &str = "SELECT run_id, workflow_id, resource_id, status, snapshot, \
                                created_at, updated_at FROM rustra_workflow_snapshots";
 
-fn snapshot_from_row(row: &Row) -> Result<WorkflowSnapshot> {
-    Ok(WorkflowSnapshot {
-        run_id: col(row, 0)?,
-        workflow_id: col(row, 1)?,
-        resource_id: col(row, 2)?,
-        status: col(row, 3)?,
-        snapshot: col(row, 4)?,
-        created_at: col(row, 5)?,
-        updated_at: col(row, 6)?,
-    })
+impl FromRow for WorkflowSnapshot {
+    fn from_row(row: &Row) -> Result<WorkflowSnapshot> {
+        Ok(WorkflowSnapshot {
+            run_id: col(row, 0)?,
+            workflow_id: col(row, 1)?,
+            resource_id: col(row, 2)?,
+            status: col(row, 3)?,
+            snapshot: col(row, 4)?,
+            created_at: col(row, 5)?,
+            updated_at: col(row, 6)?,
+        })
+    }
 }
 
 #[async_trait]
@@ -51,11 +53,12 @@ impl WorkflowStore for PostgresStorage {
     }
 
     async fn load_snapshot(&self, run_id: &str) -> Result<Option<WorkflowSnapshot>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_SNAPSHOT} WHERE run_id = $1"), &[&run_id])
-            .await?;
-        row_opt(row, snapshot_from_row)
+        self.db
+            .query_opt_as::<WorkflowSnapshot>(
+                &format!("{SELECT_SNAPSHOT} WHERE run_id = $1"),
+                &[&run_id],
+            )
+            .await
     }
 
     async fn list_snapshots(
@@ -66,9 +69,8 @@ impl WorkflowStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<WorkflowSnapshot>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<WorkflowSnapshot>(
                 &format!(
                     "{SELECT_SNAPSHOT} WHERE resource_id = $1 \
                      AND ($2::TEXT IS NULL OR workflow_id = $2) \
@@ -77,13 +79,15 @@ impl WorkflowStore for PostgresStorage {
                 ),
                 &[&resource_id, &workflow_id, &status, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, snapshot_from_row)
+            .await
     }
 
     async fn delete_snapshot(&self, run_id: &str) -> Result<()> {
         self.db
-            .execute("DELETE FROM rustra_workflow_snapshots WHERE run_id = $1", &[&run_id])
+            .execute(
+                "DELETE FROM rustra_workflow_snapshots WHERE run_id = $1",
+                &[&run_id],
+            )
             .await?;
         Ok(())
     }

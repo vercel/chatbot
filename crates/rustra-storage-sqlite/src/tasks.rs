@@ -25,61 +25,61 @@ const SELECT_DECISION: &str = "SELECT id, user_id, run_id, kind, prompt, payload
 
 fn task_from_row(row: &Row<'_>) -> Result<TaskRecord> {
     Ok(TaskRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        trigger: col(row, 2)?,
-        spec: col_json(row, 3)?,
-        status: col(row, 4)?,
-        attempts: col(row, 5)?,
-        max_retries: col(row, 6)?,
-        last_error: col(row, 7)?,
-        output: col_json(row, 8)?,
-        run_id: col(row, 9)?,
-        schedule_id: col(row, 10)?,
-        created_at: col_ts(row, 11)?,
-        started_at: col_ts_opt(row, 12)?,
-        ended_at: col_ts_opt(row, 13)?,
+        id: col(row, "id")?,
+        user_id: col(row, "user_id")?,
+        trigger: col(row, "trigger")?,
+        spec: col_json(row, "spec")?,
+        status: col(row, "status")?,
+        attempts: col(row, "attempts")?,
+        max_retries: col(row, "max_retries")?,
+        last_error: col(row, "last_error")?,
+        output: col_json(row, "output")?,
+        run_id: col(row, "run_id")?,
+        schedule_id: col(row, "schedule_id")?,
+        created_at: col_ts(row, "created_at")?,
+        started_at: col_ts_opt(row, "started_at")?,
+        ended_at: col_ts_opt(row, "ended_at")?,
     })
 }
 
 fn schedule_from_row(row: &Row<'_>) -> Result<ScheduleRecord> {
     Ok(ScheduleRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        name: col(row, 2)?,
-        cron: col(row, 3)?,
-        timezone: col(row, 4)?,
-        spec: col_json(row, 5)?,
-        enabled: col(row, 6)?,
-        next_run_at: col_ts_opt(row, 7)?,
-        last_run_at: col_ts_opt(row, 8)?,
-        created_at: col_ts(row, 9)?,
+        id: col(row, "id")?,
+        user_id: col(row, "user_id")?,
+        name: col(row, "name")?,
+        cron: col(row, "cron")?,
+        timezone: col(row, "timezone")?,
+        spec: col_json(row, "spec")?,
+        enabled: col(row, "enabled")?,
+        next_run_at: col_ts_opt(row, "next_run_at")?,
+        last_run_at: col_ts_opt(row, "last_run_at")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
 fn subscription_from_row(row: &Row<'_>) -> Result<SubscriptionRecord> {
     Ok(SubscriptionRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        event_name: col(row, 2)?,
-        spec: col_json(row, 3)?,
-        enabled: col(row, 4)?,
-        created_at: col_ts(row, 5)?,
+        id: col(row, "id")?,
+        user_id: col(row, "user_id")?,
+        event_name: col(row, "event_name")?,
+        spec: col_json(row, "spec")?,
+        enabled: col(row, "enabled")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
 fn decision_from_row(row: &Row<'_>) -> Result<DecisionRecord> {
     Ok(DecisionRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        run_id: col(row, 2)?,
-        kind: col(row, 3)?,
-        prompt: col(row, 4)?,
-        payload: col_json(row, 5)?,
-        status: col(row, 6)?,
-        resolution: col_json(row, 7)?,
-        created_at: col_ts(row, 8)?,
-        resolved_at: col_ts_opt(row, 9)?,
+        id: col(row, "id")?,
+        user_id: col(row, "user_id")?,
+        run_id: col(row, "run_id")?,
+        kind: col(row, "kind")?,
+        prompt: col(row, "prompt")?,
+        payload: col_json(row, "payload")?,
+        status: col(row, "status")?,
+        resolution: col_json(row, "resolution")?,
+        created_at: col_ts(row, "created_at")?,
+        resolved_at: col_ts_opt(row, "resolved_at")?,
     })
 }
 
@@ -171,7 +171,7 @@ impl TaskStore for SqliteStorage {
                     conn,
                     &format!(
                         "{SELECT_TASK} WHERE user_id = ?1 AND (?2 IS NULL OR status = ?2) \
-                         ORDER BY created_at DESC LIMIT ?3 OFFSET ?4"
+                         ORDER BY created_at DESC, rowid DESC LIMIT ?3 OFFSET ?4"
                     ),
                     params![user_id, status, limit, offset],
                     task_from_row,
@@ -247,7 +247,7 @@ impl TaskStore for SqliteStorage {
                     conn,
                     &format!(
                         "{SELECT_SCHEDULE} WHERE (?1 IS NULL OR user_id = ?1) \
-                         ORDER BY created_at DESC LIMIT ?2 OFFSET ?3"
+                         ORDER BY created_at DESC, rowid DESC LIMIT ?2 OFFSET ?3"
                     ),
                     params![user_id, limit, offset],
                     schedule_from_row,
@@ -323,7 +323,7 @@ impl TaskStore for SqliteStorage {
                     conn,
                     &format!(
                         "{SELECT_SUBSCRIPTION} WHERE (?1 IS NULL OR user_id = ?1) \
-                         ORDER BY created_at DESC LIMIT ?2 OFFSET ?3"
+                         ORDER BY created_at DESC, rowid DESC LIMIT ?2 OFFSET ?3"
                     ),
                     params![user_id, limit, offset],
                     subscription_from_row,
@@ -373,7 +373,7 @@ impl TaskStore for SqliteStorage {
                     &format!(
                         "{SELECT_DECISION} WHERE user_id = ?1 \
                          AND (?2 = 0 OR status = 'pending') \
-                         ORDER BY created_at DESC LIMIT ?3 OFFSET ?4"
+                         ORDER BY created_at DESC, rowid DESC LIMIT ?3 OFFSET ?4"
                     ),
                     params![user_id, pending_only, limit, offset],
                     decision_from_row,

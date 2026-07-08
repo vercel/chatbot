@@ -22,12 +22,19 @@ const SENTINEL_ID: &str = "";
 
 /// Brute-force cosine-similarity vector store on its own SQLite connection
 /// (may point at the same file as [`crate::SqliteStorage`] or a separate one).
+/// Cloning is cheap and yields another handle to the same database connection.
+#[derive(Clone, Debug)]
 pub struct SqliteVectorStore {
     db: Db,
 }
 
 impl SqliteVectorStore {
     /// Open (creating if necessary) the database file at `path`.
+    ///
+    /// Runs the same schema migrations as [`crate::SqliteStorage`], so the
+    /// file carries the full `rustra_` schema and may be (or become) a
+    /// storage database — only the `rustra_vectors` table is used by this
+    /// store.
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         Ok(Self {
             db: Db::open(path.as_ref())?,
@@ -35,10 +42,16 @@ impl SqliteVectorStore {
     }
 
     /// A private in-memory vector store — hermetic, gone on drop.
+    /// The full schema is provisioned, but only `rustra_vectors` is used.
     pub fn in_memory() -> Result<Self> {
         Ok(Self {
             db: Db::open_in_memory()?,
         })
+    }
+
+    /// A vector store over an existing shared database handle.
+    pub(crate) fn from_db(db: Db) -> Self {
+        Self { db }
     }
 }
 
@@ -80,7 +93,7 @@ fn index_dimension(conn: &rusqlite::Connection, index: &str) -> Result<Option<us
         conn,
         "SELECT dimension FROM rustra_vectors WHERE index_name = ?1 AND id = ?2",
         params![index, SENTINEL_ID],
-        |row| col::<i64>(row, 0),
+        |row| col::<i64, _>(row, 0),
     )?;
     Ok(dim.map(|d| d.max(0) as usize))
 }
@@ -109,10 +122,9 @@ impl VectorStore for SqliteVectorStore {
         let index = index.to_owned();
         self.db
             .call(move |conn| {
-                let tx = conn.transaction().map_err(storage_err)?;
-                let dimension = index_dimension(&tx, &index)?
-                    .ok_or_else(|| Error::not_found("vector_index", &index))?;
-                {
+                with_tx(conn, |tx| {
+                    let dimension = index_dimension(tx, &index)?
+                        .ok_or_else(|| Error::not_found("vector_index", &index))?;
                     let mut stmt = tx
                         .prepare(
                             "INSERT OR REPLACE INTO rustra_vectors \
@@ -140,9 +152,8 @@ impl VectorStore for SqliteVectorStore {
                         ])
                         .map_err(storage_err)?;
                     }
-                }
-                tx.commit().map_err(storage_err)?;
-                Ok(())
+                    Ok(())
+                })
             })
             .await
     }
@@ -161,9 +172,9 @@ impl VectorStore for SqliteVectorStore {
                      WHERE index_name = ?1 AND id <> ?2",
                     params![index, SENTINEL_ID],
                     |row| {
-                        let id: String = col(row, 0)?;
-                        let blob: Vec<u8> = col(row, 1)?;
-                        let metadata = col_json(row, 2)?;
+                        let id: String = col(row, "id")?;
+                        let blob: Vec<u8> = col(row, "vector")?;
+                        let metadata = col_json(row, "metadata")?;
                         let stored = blob_to_vec(&blob)?;
                         Ok(VectorHit {
                             id,

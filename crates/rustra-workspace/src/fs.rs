@@ -3,9 +3,10 @@
 //! A workspace is a rooted directory tree. Every operation takes a
 //! *workspace-relative* path and goes through [`Workspace::resolve`], which
 //! rejects absolute paths and `..` components and verifies (after resolving
-//! symlinks on the nearest existing ancestor) that the target stays under the
-//! workspace root. Nothing outside the root is ever readable or writable
-//! through a `Workspace`.
+//! symlinks on the nearest existing ancestor, where a symlink counts as
+//! existing even when its target does not, so a dangling link is never
+//! skipped over) that the target stays under the workspace root. Nothing
+//! outside the root is ever readable or writable through a `Workspace`.
 
 use serde::{Deserialize, Serialize};
 use std::path::{Component, Path, PathBuf};
@@ -38,6 +39,7 @@ const BINARY_SNIFF_BYTES: usize = 8 * 1024;
 pub struct DirEntryInfo {
     /// File or directory name (not a path).
     pub name: String,
+    /// True for directories; false for files and symlinks.
     pub is_dir: bool,
     /// File size in bytes; `0` for directories.
     pub size: u64,
@@ -87,6 +89,18 @@ impl Workspace {
         &self.user_id
     }
 
+    /// Deny unless `caller_user_id` owns this workspace.
+    pub fn check_owner(&self, caller_user_id: &str) -> Result<()> {
+        if caller_user_id == self.user_id {
+            Ok(())
+        } else {
+            Err(Error::PermissionDenied(format!(
+                "workspace belongs to `{}` but the caller is `{caller_user_id}`",
+                self.user_id
+            )))
+        }
+    }
+
     /// The canonical workspace root directory.
     pub fn root(&self) -> &Path {
         &self.root
@@ -124,7 +138,9 @@ impl Workspace {
     /// * `..` (and any non-normal) components are rejected,
     /// * the canonicalized nearest existing ancestor of the joined path must
     ///   still be under the workspace root (defends against symlinks placed
-    ///   inside the workspace pointing outside it).
+    ///   inside the workspace pointing outside it; a symlink counts as
+    ///   existing even when its target does not, so a dangling link is never
+    ///   skipped over).
     pub fn resolve(&self, rel: &str) -> Result<PathBuf> {
         let path = Path::new(rel);
         if path.is_absolute() {
@@ -147,7 +163,7 @@ impl Workspace {
         // Canonicalize the nearest existing ancestor (the file itself may not
         // exist yet, e.g. for writes) and verify containment.
         let mut ancestor: &Path = &joined;
-        while !ancestor.exists() {
+        while ancestor.symlink_metadata().is_err() {
             ancestor = ancestor.parent().ok_or_else(|| {
                 Error::PermissionDenied(format!("path escapes the workspace: `{rel}`"))
             })?;
@@ -183,8 +199,11 @@ impl Workspace {
         if let Some(parent) = path.parent() {
             tokio::fs::create_dir_all(parent).await?;
         }
-        let mut file =
-            tokio::fs::OpenOptions::new().create(true).append(true).open(&path).await?;
+        let mut file = tokio::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
+            .await?;
         file.write_all(contents.as_bytes()).await?;
         file.flush().await?;
         Ok(())
@@ -220,7 +239,11 @@ impl Workspace {
             entries.push(DirEntryInfo {
                 name: entry.file_name().to_string_lossy().into_owned(),
                 is_dir: metadata.is_dir(),
-                size: if metadata.is_file() { metadata.len() } else { 0 },
+                size: if metadata.is_file() {
+                    metadata.len()
+                } else {
+                    0
+                },
             });
         }
         entries.sort_by(|a, b| a.name.cmp(&b.name));
@@ -352,7 +375,13 @@ mod tests {
     #[tokio::test]
     async fn resolve_rejects_escapes() {
         let (_dir, ws) = workspace().await;
-        for bad in ["../escape", "/etc/passwd", "a/../../x", "..", "files/../../y"] {
+        for bad in [
+            "../escape",
+            "/etc/passwd",
+            "a/../../x",
+            "..",
+            "files/../../y",
+        ] {
             let err = ws.resolve(bad).unwrap_err();
             assert!(
                 matches!(err, Error::PermissionDenied(_)),
@@ -372,13 +401,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn resolve_rejects_dangling_symlink_escape() {
+        let (dir, ws) = workspace().await;
+        let target = dir.path().join("outside-target.txt");
+        std::os::unix::fs::symlink(&target, ws.root().join("files/sneaky.txt")).unwrap();
+        assert!(ws.write_file("files/sneaky.txt", "boom").await.is_err());
+        assert!(
+            !target.exists(),
+            "write must not pass through the dangling symlink"
+        );
+    }
+
+    #[tokio::test]
     async fn file_ops_roundtrip() {
         let (_dir, ws) = workspace().await;
-        ws.write_file("files/notes.txt", "line one\n").await.unwrap();
-        ws.append_file("files/notes.txt", "line two\n").await.unwrap();
-        assert_eq!(ws.read_file("files/notes.txt").await.unwrap(), "line one\nline two\n");
+        ws.write_file("files/notes.txt", "line one\n")
+            .await
+            .unwrap();
+        ws.append_file("files/notes.txt", "line two\n")
+            .await
+            .unwrap();
+        assert_eq!(
+            ws.read_file("files/notes.txt").await.unwrap(),
+            "line one\nline two\n"
+        );
 
-        ws.move_file("files/notes.txt", "files/sub/notes.txt").await.unwrap();
+        ws.move_file("files/notes.txt", "files/sub/notes.txt")
+            .await
+            .unwrap();
         assert!(ws.read_file("files/notes.txt").await.is_err());
 
         let entries = ws.list_dir("files/sub").await.unwrap();
@@ -394,9 +444,15 @@ mod tests {
     #[tokio::test]
     async fn search_and_grep() {
         let (_dir, ws) = workspace().await;
-        ws.write_file("files/report.md", "alpha\nneedle here\n").await.unwrap();
-        ws.write_file("files/deep/other.txt", "no match\n").await.unwrap();
-        ws.write_file("skills/demo/SKILL.md", "needle in a skill\n").await.unwrap();
+        ws.write_file("files/report.md", "alpha\nneedle here\n")
+            .await
+            .unwrap();
+        ws.write_file("files/deep/other.txt", "no match\n")
+            .await
+            .unwrap();
+        ws.write_file("skills/demo/SKILL.md", "needle in a skill\n")
+            .await
+            .unwrap();
 
         let by_substring = ws.search_files("report").await.unwrap();
         assert_eq!(by_substring, vec!["files/report.md".to_string()]);
@@ -406,8 +462,12 @@ mod tests {
 
         let hits = ws.grep("needle", 10).await.unwrap();
         assert_eq!(hits.len(), 2);
-        assert!(hits.iter().any(|h| h.path == "files/report.md" && h.line == 2));
-        assert!(hits.iter().any(|h| h.path == "skills/demo/SKILL.md" && h.line == 1));
+        assert!(hits
+            .iter()
+            .any(|h| h.path == "files/report.md" && h.line == 2));
+        assert!(hits
+            .iter()
+            .any(|h| h.path == "skills/demo/SKILL.md" && h.line == 1));
 
         let capped = ws.grep("needle", 1).await.unwrap();
         assert_eq!(capped.len(), 1);

@@ -8,7 +8,7 @@
 //!
 //! * `GET /health` — liveness, no auth.
 //! * Everything under `/api` requires `Authorization: Bearer <token>`,
-//!   authenticated through `rustra.auth()` (see [`auth`]).
+//!   authenticated through `rustra.auth()` (see the private `auth` module).
 //!
 //! ```no_run
 //! # async fn demo(rustra: std::sync::Arc<rustra::Rustra>) -> rustra_core::Result<()> {
@@ -34,7 +34,13 @@ use tower_http::cors::CorsLayer;
 use rustra::Rustra;
 
 /// Server configuration.
+///
+/// Constructed via [`ServerConfig::default`] or [`ServerConfig::new`] and
+/// refined with the chainable setters. Marked `#[non_exhaustive]` so future
+/// knobs (rate limiting, request-size limits) can be added without breaking
+/// callers.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct ServerConfig {
     /// Bind address. Defaults to `127.0.0.1:4111` (Mastra's default port).
     pub addr: SocketAddr,
@@ -44,7 +50,29 @@ pub struct ServerConfig {
 
 impl Default for ServerConfig {
     fn default() -> Self {
-        Self { addr: SocketAddr::from(([127, 0, 0, 1], 4111)), cors_permissive: false }
+        Self {
+            addr: SocketAddr::from(([127, 0, 0, 1], 4111)),
+            cors_permissive: false,
+        }
+    }
+}
+
+impl ServerConfig {
+    /// A configuration with default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the bind address.
+    pub fn addr(mut self, addr: SocketAddr) -> Self {
+        self.addr = addr;
+        self
+    }
+
+    /// Toggle the permissive CORS layer.
+    pub fn cors_permissive(mut self, on: bool) -> Self {
+        self.cors_permissive = on;
+        self
     }
 }
 

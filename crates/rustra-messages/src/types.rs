@@ -1,14 +1,12 @@
 //! Core message types and the [`ChannelAdapter`] contract.
 
 use async_trait::async_trait;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 
-use rustra_core::Result;
-
-fn default_json() -> Value {
-    Value::Null
-}
+use rustra_core::{new_id, Result};
+use rustra_storage::types::ChannelMessageRecord;
 
 /// A message addressed to a user, independent of the channel that will carry
 /// it. Adapters map this onto their wire format (Slack text, email body,
@@ -25,13 +23,21 @@ pub struct OutboundMessage {
     pub body: String,
     /// Free-form metadata. The well-known key `sender` names the sending
     /// agent (defaults to `system` when absent).
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub metadata: Value,
 }
 
 impl OutboundMessage {
+    /// Sender name reported when `metadata.sender` is absent.
+    pub const DEFAULT_SENDER: &'static str = "system";
+
     pub fn new(user_id: impl Into<String>, body: impl Into<String>) -> Self {
-        Self { user_id: user_id.into(), subject: None, body: body.into(), metadata: Value::Null }
+        Self {
+            user_id: user_id.into(),
+            subject: None,
+            body: body.into(),
+            metadata: Value::Null,
+        }
     }
 
     pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
@@ -46,7 +52,39 @@ impl OutboundMessage {
 
     /// The sending agent named in `metadata.sender`, or `system`.
     pub fn sender(&self) -> &str {
-        self.metadata.get("sender").and_then(Value::as_str).unwrap_or("system")
+        self.metadata
+            .get("sender")
+            .and_then(Value::as_str)
+            .unwrap_or(Self::DEFAULT_SENDER)
+    }
+
+    /// Build the persisted metadata for a message: the caller-supplied
+    /// metadata object with the subject folded in (when present).
+    pub(crate) fn record_metadata(&self) -> Value {
+        let mut metadata = match &self.metadata {
+            Value::Object(map) => Value::Object(map.clone()),
+            Value::Null => json!({}),
+            other => json!({ "extra": other }),
+        };
+        if let (Some(subject), Some(map)) = (&self.subject, metadata.as_object_mut()) {
+            map.insert("subject".into(), json!(subject));
+        }
+        metadata
+    }
+
+    /// Map this message onto a storage record for `channel` with the given
+    /// already-built `metadata`.
+    pub(crate) fn to_record(&self, channel: &str, metadata: Value) -> ChannelMessageRecord {
+        ChannelMessageRecord {
+            id: new_id("chm"),
+            user_id: self.user_id.clone(),
+            channel: channel.to_string(),
+            sender: self.sender().to_string(),
+            content: self.body.clone(),
+            metadata,
+            read: false,
+            created_at: Utc::now(),
+        }
     }
 }
 
@@ -66,11 +104,19 @@ pub struct DeliveryReceipt {
 
 impl DeliveryReceipt {
     pub fn delivered(channel: impl Into<String>) -> Self {
-        Self { channel: channel.into(), delivered: true, detail: None }
+        Self {
+            channel: channel.into(),
+            delivered: true,
+            detail: None,
+        }
     }
 
     pub fn failed(channel: impl Into<String>, detail: impl Into<String>) -> Self {
-        Self { channel: channel.into(), delivered: false, detail: Some(detail.into()) }
+        Self {
+            channel: channel.into(),
+            delivered: false,
+            detail: Some(detail.into()),
+        }
     }
 
     pub fn with_detail(mut self, detail: impl Into<String>) -> Self {

@@ -21,9 +21,13 @@ fn main() {
         if line.trim().is_empty() {
             continue;
         }
-        let Ok(message) = serde_json::from_str::<Value>(&line) else { continue };
+        let Ok(message) = serde_json::from_str::<Value>(&line) else {
+            continue;
+        };
         // Notifications (no id) get no response.
-        let Some(id) = message.get("id").cloned() else { continue };
+        let Some(id) = message.get("id").cloned() else {
+            continue;
+        };
         let method = message.get("method").and_then(Value::as_str).unwrap_or("");
         let response = match method {
             "initialize" => result(
@@ -58,7 +62,10 @@ fn main() {
             ),
             "tools/call" => {
                 let name = message["params"]["name"].as_str().unwrap_or("");
-                let arguments = message["params"].get("arguments").cloned().unwrap_or(Value::Null);
+                let arguments = message["params"]
+                    .get("arguments")
+                    .cloned()
+                    .unwrap_or(Value::Null);
                 match name {
                     "echo" => result(
                         id,
@@ -87,7 +94,10 @@ fn main() {
             other => error(id, -32601, &format!("method `{other}` not found")),
         };
         let mut out = stdout.lock();
-        if writeln!(out, "{response}").and_then(|()| out.flush()).is_err() {
+        if writeln!(out, "{response}")
+            .and_then(|()| out.flush())
+            .is_err()
+        {
             break;
         }
     }

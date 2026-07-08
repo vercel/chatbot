@@ -8,7 +8,7 @@
 //! boundary.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use rustra_core::Result;
 
@@ -34,19 +34,29 @@ impl LibraryScope {
 }
 
 /// A directory whose immediate subdirectories are knowledge collections.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KnowledgeRoot {
+    /// Directory whose immediate subdirectories are candidate collections.
     pub path: PathBuf,
+    /// Who may see the collections under this root.
     pub scope: LibraryScope,
 }
 
 impl KnowledgeRoot {
+    /// A root owned by, and visible only to, `user_id`.
     pub fn user(path: impl Into<PathBuf>, user_id: impl Into<String>) -> Self {
-        Self { path: path.into(), scope: LibraryScope::User(user_id.into()) }
+        Self {
+            path: path.into(),
+            scope: LibraryScope::User(user_id.into()),
+        }
     }
 
+    /// A root visible to every user.
     pub fn shared(path: impl Into<PathBuf>) -> Self {
-        Self { path: path.into(), scope: LibraryScope::Shared }
+        Self {
+            path: path.into(),
+            scope: LibraryScope::Shared,
+        }
     }
 }
 
@@ -59,6 +69,7 @@ pub struct KnowledgeLibrary {
 }
 
 impl KnowledgeLibrary {
+    /// Create a library over the given roots.
     pub fn new(roots: Vec<KnowledgeRoot>) -> Self {
         Self { roots }
     }
@@ -69,6 +80,7 @@ impl KnowledgeLibrary {
         self
     }
 
+    /// The configured roots, in discovery order.
     pub fn roots(&self) -> &[KnowledgeRoot] {
         &self.roots
     }
@@ -85,7 +97,13 @@ impl KnowledgeLibrary {
             }
             let mut subdirs: Vec<PathBuf> = match fs::read_dir(&root.path) {
                 Ok(entries) => entries
-                    .filter_map(|e| e.ok())
+                    .filter_map(|e| match e {
+                        Ok(e) => Some(e),
+                        Err(err) => {
+                            tracing::warn!(root = %root.path.display(), error = %err, "skipping unreadable entry in knowledge root");
+                            None
+                        }
+                    })
                     .map(|e| e.path())
                     .filter(|p| p.is_dir())
                     .collect(),
@@ -95,25 +113,7 @@ impl KnowledgeLibrary {
                 }
             };
             subdirs.sort();
-            for dir in subdirs {
-                let manifest = dir.join(KNOWLEDGE_FILE);
-                if !manifest.is_file() {
-                    continue;
-                }
-                let content = match fs::read_to_string(&manifest) {
-                    Ok(content) => content,
-                    Err(err) => {
-                        tracing::warn!(collection_dir = %dir.display(), error = %err, "cannot read KNOWLEDGE.md; skipping");
-                        continue;
-                    }
-                };
-                match parse_knowledge_md(&content, &dir) {
-                    Ok(collection) => collections.push(collection),
-                    Err(err) => {
-                        tracing::warn!(collection_dir = %dir.display(), error = %err, "invalid knowledge collection; skipping");
-                    }
-                }
-            }
+            collections.extend(subdirs.iter().filter_map(|dir| load_collection_dir(dir)));
         }
         Ok(collections)
     }
@@ -147,12 +147,32 @@ impl KnowledgeLibrary {
                 (score > 0.0).then_some((collection, score))
             })
             .collect();
-        results.sort_by(|a, b| {
-            b.1.partial_cmp(&a.1)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.0.name.cmp(&b.0.name))
-        });
+        results.sort_by(|a, b| b.1.total_cmp(&a.1).then_with(|| a.0.name.cmp(&b.0.name)));
         Ok(results)
+    }
+}
+
+/// Load a single collection directory into a [`KnowledgeCollection`], or
+/// `None` (with a warning) when the directory has no readable, valid
+/// `KNOWLEDGE.md`. This is the seam a future mtime cache slots into.
+fn load_collection_dir(dir: &Path) -> Option<KnowledgeCollection> {
+    let manifest = dir.join(KNOWLEDGE_FILE);
+    if !manifest.is_file() {
+        return None;
+    }
+    let content = match fs::read_to_string(&manifest) {
+        Ok(content) => content,
+        Err(err) => {
+            tracing::warn!(collection_dir = %dir.display(), error = %err, "cannot read KNOWLEDGE.md; skipping");
+            return None;
+        }
+    };
+    match parse_knowledge_md(&content, dir) {
+        Ok(collection) => Some(collection),
+        Err(err) => {
+            tracing::warn!(collection_dir = %dir.display(), error = %err, "invalid knowledge collection; skipping");
+            None
+        }
     }
 }
 
@@ -161,7 +181,7 @@ mod tests {
     use super::*;
     use std::path::Path;
 
-    pub(crate) fn write_collection(
+    fn write_collection(
         root: &Path,
         name: &str,
         description: &str,
@@ -219,12 +239,20 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let lib = library(tmp.path());
 
-        let alice: Vec<String> =
-            lib.discover("alice").expect("discover").into_iter().map(|c| c.name).collect();
+        let alice: Vec<String> = lib
+            .discover("alice")
+            .expect("discover")
+            .into_iter()
+            .map(|c| c.name)
+            .collect();
         assert_eq!(alice, vec!["alice-notes", "billing-faq", "product-specs"]);
 
-        let bob: Vec<String> =
-            lib.discover("bob").expect("discover").into_iter().map(|c| c.name).collect();
+        let bob: Vec<String> = lib
+            .discover("bob")
+            .expect("discover")
+            .into_iter()
+            .map(|c| c.name)
+            .collect();
         assert_eq!(bob, vec!["billing-faq", "product-specs"]);
 
         assert!(lib.find("alice", "alice-notes").expect("find").is_some());
@@ -241,8 +269,12 @@ mod tests {
         std::fs::write(broken.join(KNOWLEDGE_FILE), "not valid frontmatter").expect("write");
 
         let lib = KnowledgeLibrary::new(vec![KnowledgeRoot::shared(root)]);
-        let names: Vec<String> =
-            lib.discover("anyone").expect("discover").into_iter().map(|c| c.name).collect();
+        let names: Vec<String> = lib
+            .discover("anyone")
+            .expect("discover")
+            .into_iter()
+            .map(|c| c.name)
+            .collect();
         assert_eq!(names, vec!["good-one"]);
     }
 
@@ -251,7 +283,9 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let lib = library(tmp.path());
 
-        let results = lib.search("bob", "where is my invoice for billing?").expect("search");
+        let results = lib
+            .search("bob", "where is my invoice for billing?")
+            .expect("search");
         assert!(!results.is_empty());
         assert_eq!(results[0].0.name, "billing-faq");
         assert!(results[0].1 > 0.5);
@@ -261,6 +295,9 @@ mod tests {
         assert_eq!(by_name[0].0.name, "product-specs");
 
         assert!(lib.search("bob", "research").expect("search").is_empty());
-        assert_eq!(lib.search("alice", "research").expect("search")[0].0.name, "alice-notes");
+        assert_eq!(
+            lib.search("alice", "research").expect("search")[0].0.name,
+            "alice-notes"
+        );
     }
 }

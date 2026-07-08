@@ -11,17 +11,12 @@ use serde_json::Value;
 
 use rustra::Rustra;
 use rustra_storage::types::UiArtifactRecord;
-use rustra_ui::render_document;
+// The response-header CSP is the same policy rustra_ui embeds as a <meta> tag.
+use rustra_ui::{render_document, ARTIFACT_CSP};
 
 use crate::auth::AuthedUser;
 use crate::error::ApiResult;
 use crate::routes::PageQuery;
-
-/// The CSP served with rendered artifacts — the same policy
-/// `rustra_ui::render` embeds as a `<meta>` tag, enforced here as a real
-/// response header (defense in depth).
-const ARTIFACT_CSP: &str =
-    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:";
 
 /// `GET /api/ui` — the caller's artifacts, newest first.
 pub(crate) async fn list(
@@ -29,7 +24,9 @@ pub(crate) async fn list(
     AuthedUser(principal): AuthedUser,
     Query(page): Query<PageQuery>,
 ) -> ApiResult<Json<Vec<UiArtifactRecord>>> {
-    Ok(Json(rustra.ui().list(&principal.user_id, page.page()).await?))
+    Ok(Json(
+        rustra.ui().list(&principal.user_id, page.page()).await?,
+    ))
 }
 
 #[derive(Debug, Deserialize)]
@@ -46,8 +43,10 @@ pub(crate) async fn create(
     AuthedUser(principal): AuthedUser,
     Json(body): Json<CreateUiRequest>,
 ) -> ApiResult<Json<UiArtifactRecord>> {
-    let record =
-        rustra.ui().create(&principal.user_id, &body.title, &body.html, body.data).await?;
+    let record = rustra
+        .ui()
+        .create(&principal.user_id, &body.title, &body.html, body.data)
+        .await?;
     Ok(Json(record))
 }
 

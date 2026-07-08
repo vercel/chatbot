@@ -15,7 +15,8 @@ Milestones at a glance:
 |---|---|---|
 | v0.2 | Credibility | Pillar 1 (types) + Pillar 3a (CI/security) — kills every "first-hour review comment" |
 | v0.3 | Liveness | Pillar 2 (streaming) + real providers |
-| v0.5 | Scale-out | Pillar 3b (multi-replica, pooling, retention, OTel) + Pillar 4 (DX/CLI) |
+| v0.4 | Reliability | Pillar 3c (durable dispatch) + OIDC/SSO (Google-first) — the enterprise floor |
+| v0.5 | Scale-out | Pillar 3b (remaining: pooling, retention, OTel, pgvector) + Pillar 4 (DX/CLI) |
 | v1.0 | Trust | Pillar 5 (flagship app, evals, fuzzing) + semver/stability promise |
 
 ---
@@ -172,10 +173,9 @@ whole community rather than Anthropic users only.
 
 ### 3b. Scale-out (v0.5)
 
-- **Startup reconciliation** (S): sweep stale `running` tasks on boot
-  (process-instance id column).
-- **Multi-replica coordination** (M–L): schedule leases + signal dispatch
-  claims via storage compare-and-swap; documented single-writer fallback.
+- **Startup reconciliation** — *moved to 3c (P1)*.
+- **Multi-replica coordination** — *moved to 3c (P0, the dispatch
+  primitive)*.
 - **Pooling** (M): `deadpool` for Postgres; SQLite reader pool + single
   writer.
 - **Retention** (S–M): TTL config per domain (logs/spans/messages) + a
@@ -186,11 +186,80 @@ whole community rather than Anthropic users only.
   real ANN on Postgres.
 - **Token budgets** (S–M): tokenizer trait + a default BPE estimate; memory
   processors and context assembler switch from chars to tokens.
-- **Timezone-correct cron** (S): `chrono-tz`, evaluate schedules in their
-  stored IANA zone.
+- **Timezone-correct cron** — *moved to 3c (P1)*.
 - **MCP via `rmcp`** (M–L): adopt the official SDK behind the existing
   `McpClient` surface → full spec (SSE, resources, prompts, elicitation,
   sampling, reconnect). **DECISION NEEDED:** rmcp now, or after v0.3?
+
+### 3c. Reliable dispatch (v0.4) — the enterprise floor
+
+Origin: the July 2026 reliability audit of Signals, Channels, and the
+Scheduler. Verdict for all three: *needs a hardening milestone*. The shared
+root cause is architectural, so one primitive fixes most of it: **dispatch
+today is fire-and-forget from process memory — storage is a passive record,
+never a queue.** No outbox, no lease/claim, no dead-letter, no idempotency
+key. Everything works on one healthy process; a crash, restart, slow
+consumer, or second replica silently breaks delivery in each subsystem.
+
+(S-sized correctness bugs from the same audit — the running-map leak, the
+cron day-of-week translation, the webhook relabel race, missing HTTP
+timeouts, dead `backoff` option, fan-out truncation — are quick wins being
+fixed in the current polish round and are deliberately not listed here.)
+
+**P0 — the durable dispatch primitive** (M–L, one design, three consumers):
+a claimed-outbox table with compare-and-swap semantics.
+- *Scheduler leases*: `UPDATE … SET next_run_at = :next WHERE id = :id AND
+  next_run_at = :old`, fire only on rows-affected = 1. Kills multi-replica
+  double-fires and the crash-refire window; gives coherent once-semantics
+  keyed on `(schedule_id, scheduled_at)`.
+- *Event journal*: persist every signal on ingress with an idempotency key
+  (webhook providers all redeliver); dispatch via claimed outbox rows with
+  per-subscription completion; replay becomes possible, partial dispatch
+  becomes visible.
+- *Channel outbox*: pending/delivered/failed-permanent status, attempt
+  count, `next_attempt_at`; background drainer with backoff honoring
+  `Retry-After`; dead-letter instead of silent loss.
+
+**P0 — delivery observability** (S–M): first-class delivery-status columns
+(not JSON metadata blobs), a "list failed deliveries" API, and counter
+metrics. An operator must be able to answer "which notifications failed
+this week" without scanning JSON.
+
+**P1 — scheduler correctness policies**:
+- *Timezone-correct cron* (M, pulled from 3b): `chrono-tz`, evaluate in the
+  stored IANA zone, with an **explicit DST gap/fold policy** (skip vs
+  double-fire at 2:30am must be a documented choice, not an accident).
+- *Catch-up policy* (S): per-schedule `catchup: all | one | none` for
+  missed windows after downtime (today: implicit coalescing, unbounded
+  staleness).
+- *Fire-history journal* (S–M): a failed fire currently advances
+  `next_run_at` and vanishes into a warn log; persist fire outcomes so a
+  skipped occurrence is alertable.
+
+**P1 — startup reconciliation** (S, pulled from 3b): sweep stale `running`
+tasks on boot via a process-instance id column.
+
+**P1 — a real mailer** (M): SMTP or provider-API `Mailer`. Until it ships,
+`LogMailer` must stop returning a success receipt for mail that went to a
+log line.
+
+**P2 — multi-replica in-app fan-out** (M): SSE clients on replica A never
+see messages sent through replica B; storage-backed poll/notify or external
+pub/sub.
+
+**P2 — bounded task concurrency** (S–M): a semaphore/queue in front of
+`TaskManager::submit`; a hot signal or due-schedule burst currently fans
+out unbounded.
+
+**P2 — outbound idempotency** (S): idempotency key on `OutboundMessage`;
+an audit-write failure must not invert a successful delivery into an `Err`
+that provokes a double-send retry.
+
+v0.4 also carries **OIDC/SSO, Google-first** (scoped separately: pluggable
+`Arc<dyn AuthProvider>` in the facade, provider chain with `rsk_`/JWT
+dispatch, JWKS-verified ID tokens, first-login provisioning, and the
+auth-path low fruit — `sha2` swap, constant-time compares, no role
+rewrites on token re-issue).
 
 ---
 
@@ -233,6 +302,29 @@ What converts "nice codebase" into "I'd bet my product on it".
   storage hot paths, published in CI.
 - **Stability promise** (v1.0): semver discipline, `#[non_exhaustive]`
   audit, MSRV window, CHANGELOG, release automation (`release-plz`).
+
+---
+
+## Pillar 6 — Experience & RL (design pinned, see RL_DESIGN.md)
+
+The main agent gets an RL system. The July 2026 research verdict
+(RL_DESIGN.md): **collection-first** — trajectory schema + experience
+pipeline now, training loop deferred while the credit-assignment frontier
+churns quarterly.
+
+- **E1 — `ExperienceStore` domain + serve-time capture** (M): per-turn
+  trajectories (exact ModelRequest snapshots, full tool calls incl.
+  failures, canonical observation hashes, optional token logprobs),
+  HITL decisions joined as reward events, sampling/retention config.
+  Separate from observability: spans are best-effort, training data is
+  complete-or-absent.
+- **E2 — labels + export** (S–M): success/expert marking, human-label
+  API, JSONL export as the training-side contract; TokenStats via the
+  OpenAI-compatible adapter (2.4).
+- **E3 — training pilot** (L, deferred): open-weights + then-current
+  method (GiGPO/ARPO/G2PO-class); InversePRM from approved trajectories
+  first. **DECISION DEFERRED on purpose** — method table rewrites
+  quarterly.
 
 ---
 

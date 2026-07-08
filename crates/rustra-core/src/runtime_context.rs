@@ -35,7 +35,12 @@ struct Inner {
 
 impl RuntimeContext {
     pub fn new(principal: Principal) -> Self {
-        Self { inner: Arc::new(Inner { principal, values: RwLock::new(HashMap::new()) }) }
+        Self {
+            inner: Arc::new(Inner {
+                principal,
+                values: RwLock::new(HashMap::new()),
+            }),
+        }
     }
 
     /// A context for the internal system principal (schedulers, supervisors).
@@ -53,16 +58,36 @@ impl RuntimeContext {
         &self.inner.principal.user_id
     }
 
+    fn values(&self) -> std::sync::RwLockReadGuard<'_, HashMap<String, Value>> {
+        self.inner.values.read().expect("runtime context poisoned")
+    }
+
+    fn values_mut(&self) -> std::sync::RwLockWriteGuard<'_, HashMap<String, Value>> {
+        self.inner.values.write().expect("runtime context poisoned")
+    }
+
+    /// Store a request-scoped variable, overwriting any existing value for
+    /// `key`.
     pub fn set(&self, key: impl Into<String>, value: Value) {
-        self.inner.values.write().expect("runtime context poisoned").insert(key.into(), value);
+        self.values_mut().insert(key.into(), value);
     }
 
+    /// Fetch a request-scoped variable as an owned clone of its JSON value.
     pub fn get(&self, key: &str) -> Option<Value> {
-        self.inner.values.read().expect("runtime context poisoned").get(key).cloned()
+        self.values().get(key).cloned()
     }
 
+    /// Fetch a request-scoped variable deserialized into `T`; `None` if the
+    /// key is absent or the value does not deserialize. The preferred way to
+    /// read structured request variables.
+    pub fn get_as<T: serde::de::DeserializeOwned>(&self, key: &str) -> Option<T> {
+        self.get(key).and_then(|v| serde_json::from_value(v).ok())
+    }
+
+    /// Like [`get`](Self::get), narrowed to JSON strings; non-string values
+    /// yield `None`.
     pub fn get_str(&self, key: &str) -> Option<String> {
-        self.get(key).and_then(|v| v.as_str().map(str::to_owned))
+        self.get_as::<String>(key)
     }
 
     /// Derive a new context for a different principal while keeping the
@@ -70,8 +95,13 @@ impl RuntimeContext {
     /// user boundary (e.g. executing an explicitly shared flow); never done
     /// implicitly.
     pub fn with_principal(&self, principal: Principal) -> Self {
-        let values = self.inner.values.read().expect("runtime context poisoned").clone();
-        Self { inner: Arc::new(Inner { principal, values: RwLock::new(values) }) }
+        let values = self.values().clone();
+        Self {
+            inner: Arc::new(Inner {
+                principal,
+                values: RwLock::new(values),
+            }),
+        }
     }
 
     /// Well-known key: current observability run id.

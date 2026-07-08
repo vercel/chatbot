@@ -126,7 +126,9 @@ mod tests {
             "---\nname: tax-helper\ndescription: Helps with taxes\nkeywords: [taxes]\n---\n\nDo the taxes.\n",
         )
         .expect("write");
-        Arc::new(SkillLibrary::new(vec![SkillRoot::user(alice_root, "alice")]))
+        Arc::new(SkillLibrary::new(vec![SkillRoot::user(
+            alice_root, "alice",
+        )]))
     }
 
     fn ctx(user: &str) -> ToolContext {
@@ -139,20 +141,32 @@ mod tests {
         let library = setup(tmp.path());
 
         let search = search_skills_tool(library.clone());
-        let out = search.execute(json!({ "query": "taxes" }), &ctx("alice")).await.expect("search");
+        let out = search
+            .execute(json!({ "query": "taxes" }), &ctx("alice"))
+            .await
+            .expect("search");
         assert_eq!(out["skills"][0]["name"], "tax-helper");
 
         // Invisible to another user.
-        let out = search.execute(json!({ "query": "taxes" }), &ctx("bob")).await.expect("search");
+        let out = search
+            .execute(json!({ "query": "taxes" }), &ctx("bob"))
+            .await
+            .expect("search");
         assert_eq!(out["skills"].as_array().map(Vec::len), Some(0));
 
         let read = read_skill_tool(library);
-        let out = read.execute(json!({ "name": "tax-helper" }), &ctx("alice")).await.expect("read");
+        let out = read
+            .execute(json!({ "name": "tax-helper" }), &ctx("alice"))
+            .await
+            .expect("read");
         assert_eq!(out["instructions"], "Do the taxes.");
         assert_eq!(out["assets"].as_array().map(Vec::len), Some(0));
 
         // Missing input and missing skill both surface as tool errors.
         assert!(search.execute(json!({}), &ctx("alice")).await.is_err());
-        assert!(read.execute(json!({ "name": "tax-helper" }), &ctx("bob")).await.is_err());
+        assert!(read
+            .execute(json!({ "name": "tax-helper" }), &ctx("bob"))
+            .await
+            .is_err());
     }
 }

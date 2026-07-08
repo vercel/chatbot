@@ -20,16 +20,33 @@ pub enum ContextKind {
     Other,
 }
 
+impl ContextKind {
+    /// Stable snake_case label, identical to the serde representation.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Skill => "skill",
+            Self::Knowledge => "knowledge",
+            Self::Memory => "memory",
+            Self::WorkspaceFile => "workspace_file",
+            Self::UserProfile => "user_profile",
+            Self::ToolConfig => "tool_config",
+            Self::PriorRun => "prior_run",
+            Self::Other => "other",
+        }
+    }
+}
+
 /// Declarative trigger conditions describing *when* a context source is
 /// relevant. Mirrors the trigger/description metadata of the Agent Skills
 /// convention: sources are matched against the request before anything is
 /// loaded into the prompt (progressive disclosure).
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TriggerCondition {
     /// Case-insensitive keywords; any match makes the candidate relevant.
     #[serde(default)]
     pub keywords: Vec<String>,
-    /// Regex patterns matched against the request text.
+    /// Glob-style patterns (`*` wildcard only) matched case-insensitively
+    /// against the request text.
     #[serde(default)]
     pub patterns: Vec<String>,
     /// If true the source is always offered as a candidate (e.g. working
@@ -39,8 +56,13 @@ pub struct TriggerCondition {
 }
 
 impl TriggerCondition {
+    /// A condition that is always relevant: `score` returns `1.0` for any
+    /// text.
     pub fn always() -> Self {
-        Self { always: true, ..Default::default() }
+        Self {
+            always: true,
+            ..Default::default()
+        }
     }
 
     /// Cheap lexical relevance score in `[0, 1]`. Sources can use this as a
@@ -50,20 +72,12 @@ impl TriggerCondition {
             return 1.0;
         }
         let text = request_text.to_lowercase();
-        let mut hits = 0usize;
-        let mut total = 0usize;
-        for kw in &self.keywords {
-            total += 1;
-            if text.contains(&kw.to_lowercase()) {
-                hits += 1;
-            }
-        }
-        for pat in &self.patterns {
-            total += 1;
-            if regex_lite_match(pat, &text) {
-                hits += 1;
-            }
-        }
+        let checks = self
+            .keywords
+            .iter()
+            .map(|kw| text.contains(&kw.to_lowercase()))
+            .chain(self.patterns.iter().map(|pat| wildcard_match(pat, &text)));
+        let (hits, total) = checks.fold((0usize, 0usize), |(h, t), hit| (h + hit as usize, t + 1));
         if total == 0 {
             0.0
         } else {
@@ -72,21 +86,23 @@ impl TriggerCondition {
     }
 }
 
-/// Minimal glob-ish pattern match (`*` wildcard only) so core stays
-/// dependency-free. Sources needing real regexes implement their own scoring.
-fn regex_lite_match(pattern: &str, text: &str) -> bool {
-    let parts: Vec<&str> = pattern.split('*').collect();
+/// Minimal `*`-wildcard match so core stays dependency-free. Sources needing
+/// real pattern matching implement their own scoring.
+fn wildcard_match(pattern: &str, text: &str) -> bool {
     let mut pos = 0usize;
-    for (i, part) in parts.iter().enumerate() {
+    for (i, part) in pattern.split('*').enumerate() {
         if part.is_empty() {
             continue;
         }
-        match text[pos..].find(&part.to_lowercase()) {
+        let needle = part.to_lowercase();
+        match text[pos..].find(&needle) {
             Some(found) => {
-                if i == 0 && found != 0 && !pattern.starts_with('*') {
+                // When `i == 0` the part is non-empty, so the pattern does not
+                // start with `*` and the first part must match at the start.
+                if i == 0 && found != 0 {
                     return false;
                 }
-                pos += found + part.len();
+                pos += found + needle.len();
             }
             None => return false,
         }
@@ -111,9 +127,31 @@ pub struct ContextRequest {
     pub char_budget: usize,
 }
 
+impl ContextRequest {
+    pub fn new(
+        query: impl Into<String>,
+        agent_id: impl Into<String>,
+        runtime: RuntimeContext,
+        char_budget: usize,
+    ) -> Self {
+        Self {
+            query: query.into(),
+            agent_id: agent_id.into(),
+            thread_id: None,
+            runtime,
+            char_budget,
+        }
+    }
+
+    pub fn with_thread_id(mut self, thread_id: impl Into<String>) -> Self {
+        self.thread_id = Some(thread_id.into());
+        self
+    }
+}
+
 /// A lightweight advertisement of available context — name + description +
 /// relevance — cheap to produce. Only selected candidates get `load`ed.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ContextCandidate {
     /// Source-scoped identifier (e.g. skill name, document id, memory key).
     pub id: String,
@@ -127,7 +165,7 @@ pub struct ContextCandidate {
 }
 
 /// A fully loaded piece of context ready to be placed into the prompt.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ContextFragment {
     pub id: String,
     pub kind: ContextKind,
@@ -157,6 +195,8 @@ pub trait ContextSource: Send + Sync {
     /// `memory`, `workspace`).
     fn id(&self) -> &str;
 
+    /// The category used for budgeting/ordering; recorded by observability
+    /// for each attachment.
     fn kind(&self) -> ContextKind;
 
     /// Advertise candidates relevant to the request. Must be cheap; no large
@@ -168,9 +208,31 @@ pub trait ContextSource: Send + Sync {
     async fn load(&self, candidate_id: &str, req: &ContextRequest) -> Result<ContextFragment>;
 }
 
+/// Shared, thread-safe handle to a context source.
+pub type SharedContextSource = std::sync::Arc<dyn ContextSource>;
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn context_kind_as_str_matches_serde_representation() {
+        for kind in [
+            ContextKind::Skill,
+            ContextKind::Knowledge,
+            ContextKind::Memory,
+            ContextKind::WorkspaceFile,
+            ContextKind::UserProfile,
+            ContextKind::ToolConfig,
+            ContextKind::PriorRun,
+            ContextKind::Other,
+        ] {
+            assert_eq!(
+                serde_json::to_value(kind).unwrap().as_str().unwrap(),
+                kind.as_str()
+            );
+        }
+    }
 
     #[test]
     fn trigger_scores_keywords() {
@@ -185,7 +247,29 @@ mod tests {
 
     #[test]
     fn wildcard_patterns_match() {
-        let t = TriggerCondition { patterns: vec!["*.py".into()], ..Default::default() };
+        let t = TriggerCondition {
+            patterns: vec!["*.py".into()],
+            ..Default::default()
+        };
         assert!(t.score("please lint main.py") > 0.0);
+    }
+
+    #[test]
+    fn wildcard_survives_multibyte_case_folding() {
+        let t = TriggerCondition {
+            patterns: vec!["İ*é".into()],
+            ..Default::default()
+        };
+        assert!(t.score("İé") > 0.0);
+    }
+
+    #[test]
+    fn wildcard_start_anchor_without_leading_star() {
+        let t = TriggerCondition {
+            patterns: vec!["deploy*".into()],
+            ..Default::default()
+        };
+        assert!(t.score("deploy the app") > 0.0);
+        assert_eq!(t.score("please deploy"), 0.0);
     }
 }

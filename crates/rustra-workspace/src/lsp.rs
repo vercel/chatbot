@@ -8,9 +8,9 @@
 //! to their awaiting request by id, notifications are pushed into a channel
 //! consumed by [`LspClient::diagnostics_for`].
 //!
-//! The framing codec ([`encode_message`] / [`read_message`]) is exposed so it
-//! can be tested with in-memory buffers — no language server needs to be
-//! installed to test this module.
+//! The framing codec (`encode_message` / `read_message`) is kept as free
+//! functions (not methods) so it can be tested with in-memory buffers — no
+//! language server needs to be installed to test this module.
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -30,14 +30,18 @@ use rustra_core::{Error, Result};
 const INITIALIZE_TIMEOUT: Duration = Duration::from_secs(15);
 /// How long `shutdown` waits for the request/exit before killing the process.
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
+/// Upper bound on a single framed LSP message body; anything larger is treated
+/// as a framing error rather than allocated.
+const MAX_LSP_MESSAGE_BYTES: usize = 64 * 1024 * 1024;
 
 /// How to launch a language server.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LspServerConfig {
     /// Language id sent in `textDocument/didOpen` (e.g. `typescript`).
     pub language: String,
     /// Executable name or path.
     pub command: String,
+    /// Arguments passed to `command` (e.g. `--stdio`).
     pub args: Vec<String>,
 }
 
@@ -70,6 +74,7 @@ pub struct Diagnostic {
     pub character: u32,
     /// LSP severity (1 = error … 4 = hint) when reported.
     pub severity: Option<u8>,
+    /// Human-readable message as reported by the server.
     pub message: String,
 }
 
@@ -78,7 +83,7 @@ pub struct Diagnostic {
 // ---------------------------------------------------------------------------
 
 /// Encode a JSON-RPC message with LSP `Content-Length` framing.
-pub fn encode_message(message: &Value) -> Vec<u8> {
+pub(crate) fn encode_message(message: &Value) -> Vec<u8> {
     let body = message.to_string();
     let mut framed = format!("Content-Length: {}\r\n\r\n", body.len()).into_bytes();
     framed.extend_from_slice(body.as_bytes());
@@ -87,7 +92,7 @@ pub fn encode_message(message: &Value) -> Vec<u8> {
 
 /// Read one `Content-Length`-framed JSON-RPC message. Returns `Ok(None)` on
 /// a clean EOF (stream closed between messages).
-pub async fn read_message<R>(reader: &mut R) -> Result<Option<Value>>
+pub(crate) async fn read_message<R>(reader: &mut R) -> Result<Option<Value>>
 where
     R: AsyncBufRead + Unpin,
 {
@@ -123,6 +128,11 @@ where
     }
     let length = content_length
         .ok_or_else(|| Error::Validation("LSP message missing Content-Length".into()))?;
+    if length > MAX_LSP_MESSAGE_BYTES {
+        return Err(Error::Validation(format!(
+            "LSP Content-Length {length} exceeds the {MAX_LSP_MESSAGE_BYTES}-byte limit"
+        )));
+    }
     let mut body = vec![0u8; length];
     reader.read_exact(&mut body).await?;
     Ok(Some(serde_json::from_slice(&body)?))
@@ -147,7 +157,9 @@ pub struct LspClient {
 
 impl std::fmt::Debug for LspClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LspClient").field("config", &self.config).finish_non_exhaustive()
+        f.debug_struct("LspClient")
+            .field("config", &self.config)
+            .finish_non_exhaustive()
     }
 }
 
@@ -184,7 +196,11 @@ impl LspClient {
 
         let pending: PendingMap = Arc::default();
         let (notification_tx, notification_rx) = mpsc::unbounded_channel();
-        tokio::spawn(reader_loop(BufReader::new(stdout), Arc::clone(&pending), notification_tx));
+        tokio::spawn(reader_loop(
+            BufReader::new(stdout),
+            Arc::clone(&pending),
+            notification_tx,
+        ));
 
         let client = Self {
             config,
@@ -244,11 +260,15 @@ impl LspClient {
         timeout: Duration,
     ) -> Result<Vec<Diagnostic>> {
         let uri = path_to_uri(path);
-        let language_id = self.config.language.clone();
-        self.did_open(path, &language_id, text).await?;
+        let mut notifications = self.notifications.lock().await;
+        // Discard notifications queued before this didOpen: servers publish
+        // diagnostics more than once per open (syntactic then semantic pass),
+        // and a leftover publish for the same uri would be returned as this
+        // call's — stale — answer.
+        while notifications.try_recv().is_ok() {}
+        self.did_open(path, &self.config.language, text).await?;
 
         let deadline = tokio::time::Instant::now() + timeout;
-        let mut notifications = self.notifications.lock().await;
         loop {
             let message = tokio::time::timeout_at(deadline, notifications.recv())
                 .await
@@ -281,10 +301,15 @@ impl LspClient {
     /// Politely shut the server down (`shutdown` request + `exit`
     /// notification), killing the process if it does not exit promptly.
     pub async fn shutdown(&self) -> Result<()> {
-        let _ = self.request("shutdown", Value::Null, SHUTDOWN_TIMEOUT).await;
+        let _ = self
+            .request("shutdown", Value::Null, SHUTDOWN_TIMEOUT)
+            .await;
         let _ = self.notify("exit", Value::Null).await;
         let mut child = self.child.lock().await;
-        if tokio::time::timeout(SHUTDOWN_TIMEOUT, child.wait()).await.is_err() {
+        if tokio::time::timeout(SHUTDOWN_TIMEOUT, child.wait())
+            .await
+            .is_err()
+        {
             child.kill().await?;
         }
         Ok(())
@@ -322,7 +347,8 @@ impl LspClient {
 
     /// Send a notification (no response expected).
     async fn notify(&self, method: &str, params: Value) -> Result<()> {
-        self.send(&json!({ "jsonrpc": "2.0", "method": method, "params": params })).await
+        self.send(&json!({ "jsonrpc": "2.0", "method": method, "params": params }))
+            .await
     }
 
     async fn send(&self, message: &Value) -> Result<()> {
@@ -333,22 +359,28 @@ impl LspClient {
         Ok(())
     }
 
-    fn lock_pending(&self) -> Result<std::sync::MutexGuard<'_, HashMap<i64, oneshot::Sender<Value>>>> {
-        self.pending.lock().map_err(|_| Error::Other("LSP pending-request map poisoned".into()))
+    fn lock_pending(
+        &self,
+    ) -> Result<std::sync::MutexGuard<'_, HashMap<i64, oneshot::Sender<Value>>>> {
+        self.pending
+            .lock()
+            .map_err(|_| Error::Other("LSP pending-request map poisoned".into()))
     }
 }
 
 /// Background task: read framed messages, route responses to their pending
 /// request, forward everything else (notifications) to the channel.
-async fn reader_loop<R>(mut reader: R, pending: PendingMap, notifications: mpsc::UnboundedSender<Value>)
-where
+async fn reader_loop<R>(
+    mut reader: R,
+    pending: PendingMap,
+    notifications: mpsc::UnboundedSender<Value>,
+) where
     R: AsyncBufRead + Unpin,
 {
     loop {
         match read_message(&mut reader).await {
             Ok(Some(message)) => {
-                let is_response =
-                    message.get("id").is_some() && message.get("method").is_none();
+                let is_response = message.get("id").is_some() && message.get("method").is_none();
                 if is_response {
                     let waiter = message
                         .get("id")
@@ -368,15 +400,33 @@ where
             }
         }
     }
+    // The stream is gone: no pending request will ever get a response. Dropping
+    // the senders wakes each waiter with a recv error, which request() maps to
+    // Unavailable instead of sitting out its full timeout.
+    if let Ok(mut map) = pending.lock() {
+        map.clear();
+    }
 }
 
 fn parse_diagnostic(value: &Value) -> Diagnostic {
     Diagnostic {
-        line: value.pointer("/range/start/line").and_then(Value::as_u64).unwrap_or(0) as u32,
-        character: value.pointer("/range/start/character").and_then(Value::as_u64).unwrap_or(0)
-            as u32,
-        severity: value.get("severity").and_then(Value::as_u64).map(|s| s as u8),
-        message: value.get("message").and_then(Value::as_str).unwrap_or_default().to_string(),
+        line: value
+            .pointer("/range/start/line")
+            .and_then(Value::as_u64)
+            .unwrap_or(0) as u32,
+        character: value
+            .pointer("/range/start/character")
+            .and_then(Value::as_u64)
+            .unwrap_or(0) as u32,
+        severity: value
+            .get("severity")
+            .and_then(Value::as_u64)
+            .map(|s| s as u8),
+        message: value
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
     }
 }
 
@@ -390,7 +440,8 @@ mod tests {
 
     #[tokio::test]
     async fn framing_roundtrip() {
-        let message = json!({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"a": 1}});
+        let message =
+            json!({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"a": 1}});
         let bytes = encode_message(&message);
         let text = String::from_utf8(bytes.clone()).unwrap();
         assert!(text.starts_with("Content-Length: "));
@@ -435,6 +486,13 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn oversized_content_length_is_an_error() {
+        let bytes = b"Content-Length: 999999999999\r\n\r\n".to_vec();
+        let mut reader = BufReader::new(bytes.as_slice());
+        assert!(read_message(&mut reader).await.is_err());
+    }
+
+    #[tokio::test]
     async fn missing_content_length_is_an_error() {
         let bytes = b"Content-Type: application/json\r\n".to_vec();
         let mut reader = BufReader::new(bytes.as_slice());
@@ -473,7 +531,12 @@ mod tests {
         let diag = parse_diagnostic(&raw);
         assert_eq!(
             diag,
-            Diagnostic { line: 3, character: 9, severity: Some(1), message: "Cannot find name 'foo'.".into() }
+            Diagnostic {
+                line: 3,
+                character: 9,
+                severity: Some(1),
+                message: "Cannot find name 'foo'.".into()
+            }
         );
     }
 }

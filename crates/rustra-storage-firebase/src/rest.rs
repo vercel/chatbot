@@ -29,13 +29,33 @@ impl RestClient {
             .unwrap_or_else(|| DEFAULT_BASE_URL.to_owned())
             .trim_end_matches('/')
             .to_owned();
-        let documents_path =
-            format!("projects/{}/databases/(default)/documents", config.project_id);
-        Self { http: reqwest::Client::new(), auth: config.auth, base_url, documents_path }
+        let documents_path = format!(
+            "projects/{}/databases/(default)/documents",
+            config.project_id
+        );
+        Self {
+            http: reqwest::Client::new(),
+            auth: config.auth,
+            base_url,
+            documents_path,
+        }
     }
 
-    fn doc_url(&self, collection: &str, id: &str) -> String {
-        format!("{}/{}/{}/{}", self.base_url, self.documents_path, collection, id)
+    /// Build a document URL, enforcing the crate contract that record ids
+    /// contain no `/` (Firestore path separator). `?` and `#` are also
+    /// rejected: they would be parsed as URL query/fragment delimiters, and
+    /// `..` path segments containing `/` are normalized away by the URL
+    /// parser, retargeting the request at a different collection.
+    fn doc_url(&self, collection: &str, id: &str) -> Result<String> {
+        if id.is_empty() || id.contains(['/', '?', '#']) {
+            return Err(Error::Storage(format!(
+                "firestore document id `{id}` is invalid: ids must be non-empty and must not contain `/`, `?`, or `#`"
+            )));
+        }
+        Ok(format!(
+            "{}/{}/{}/{}",
+            self.base_url, self.documents_path, collection, id
+        ))
     }
 
     fn with_auth(&self, req: RequestBuilder) -> RequestBuilder {
@@ -55,7 +75,9 @@ impl RestClient {
             return Ok(resp);
         }
         let body = resp.text().await.unwrap_or_default();
-        Err(Error::Storage(format!("firestore {context} returned {status}: {body}")))
+        Err(Error::Storage(format!(
+            "firestore {context} returned {status}: {body}"
+        )))
     }
 
     async fn json_body(resp: Response, context: &str) -> Result<Value> {
@@ -65,13 +87,9 @@ impl RestClient {
     }
 
     /// GET one document; `Ok(None)` when it does not exist.
-    pub(crate) async fn get_document(
-        &self,
-        collection: &str,
-        id: &str,
-    ) -> Result<Option<Value>> {
+    pub(crate) async fn get_document(&self, collection: &str, id: &str) -> Result<Option<Value>> {
         let resp = self
-            .with_auth(self.http.get(self.doc_url(collection, id)))
+            .with_auth(self.http.get(self.doc_url(collection, id)?))
             .send()
             .await
             .map_err(Self::transport_err)?;
@@ -90,7 +108,7 @@ impl RestClient {
         doc: Value,
     ) -> Result<()> {
         let resp = self
-            .with_auth(self.http.patch(self.doc_url(collection, id)))
+            .with_auth(self.http.patch(self.doc_url(collection, id)?))
             .json(&doc)
             .send()
             .await
@@ -111,7 +129,7 @@ impl RestClient {
         let resp = self
             .with_auth(
                 self.http
-                    .patch(self.doc_url(collection, id))
+                    .patch(self.doc_url(collection, id)?)
                     .query(&[("currentDocument.exists", "true")]),
             )
             .json(&doc)
@@ -132,7 +150,7 @@ impl RestClient {
     /// matching the reference backends).
     pub(crate) async fn delete_document(&self, collection: &str, id: &str) -> Result<()> {
         let resp = self
-            .with_auth(self.http.delete(self.doc_url(collection, id)))
+            .with_auth(self.http.delete(self.doc_url(collection, id)?))
             .send()
             .await
             .map_err(Self::transport_err)?;
@@ -170,15 +188,17 @@ impl RestClient {
             .await
             .map_err(Self::transport_err)?;
         let resp = Self::check(resp, "runQuery").await?;
-        let results = Self::json_body(resp, "runQuery").await?;
-        let entries = results
-            .as_array()
-            .ok_or_else(|| {
-                Error::Storage(format!("firestore runQuery: expected array, got {results}"))
-            })?
-            .iter()
-            .filter_map(|entry| entry.get("document").cloned())
-            .collect();
-        Ok(entries)
+        let entries = match Self::json_body(resp, "runQuery").await? {
+            Value::Array(entries) => entries,
+            other => {
+                return Err(Error::Storage(format!(
+                    "firestore runQuery: expected array, got {other}"
+                )))
+            }
+        };
+        Ok(entries
+            .into_iter()
+            .filter_map(|mut entry| entry.get_mut("document").map(Value::take))
+            .collect())
     }
 }

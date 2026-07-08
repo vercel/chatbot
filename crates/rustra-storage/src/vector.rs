@@ -3,6 +3,7 @@
 //! takes from the AI SDK.
 
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -10,7 +11,7 @@ use std::sync::RwLock;
 use rustra_core::{Error, Result};
 
 /// A similarity search hit.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VectorHit {
     pub id: String,
     pub score: f32,
@@ -21,15 +22,15 @@ pub struct VectorHit {
 /// over a table), and external stores behind the same trait.
 #[async_trait]
 pub trait VectorStore: Send + Sync {
+    /// Idempotent: re-creating an existing index is a no-op and keeps the
+    /// original dimension.
     async fn create_index(&self, index: &str, dimension: usize) -> Result<()>;
-    /// Insert or replace vectors by id.
-    async fn upsert(
-        &self,
-        index: &str,
-        entries: Vec<(String, Vec<f32>, Value)>,
-    ) -> Result<()>;
+    /// Insert or replace vectors by id. Ids must be non-empty. The batch is
+    /// atomic: if any entry fails validation, no entries are written.
+    async fn upsert(&self, index: &str, entries: Vec<(String, Vec<f32>, Value)>) -> Result<()>;
     /// Top-`k` cosine-similarity results.
     async fn query(&self, index: &str, vector: &[f32], top_k: usize) -> Result<Vec<VectorHit>>;
+    /// Idempotent: deleting a missing index succeeds silently.
     async fn delete_index(&self, index: &str) -> Result<()>;
 }
 
@@ -38,13 +39,17 @@ pub trait VectorStore: Send + Sync {
 /// that have not configured an embedder yet.
 #[async_trait]
 pub trait Embedder: Send + Sync {
+    /// Length of the vectors produced by [`Embedder::embed`].
     fn dimension(&self) -> usize;
+    /// Returns one vector per input text, in input order, each of
+    /// [`Embedder::dimension`] length.
     async fn embed(&self, texts: &[String]) -> Result<Vec<Vec<f32>>>;
 }
 
 /// Deterministic hashing embedder (bag-of-character-trigrams). Not
 /// semantically meaningful, but stable, fast, dependency-free, and good
 /// enough to exercise recall plumbing end-to-end.
+#[derive(Debug, Clone)]
 pub struct MockEmbedder {
     dimension: usize,
 }
@@ -133,7 +138,10 @@ impl VectorStore for InMemoryVectorStore {
             .write()
             .expect("vector store poisoned")
             .entry(index.to_string())
-            .or_insert_with(|| Index { dimension, entries: HashMap::new() });
+            .or_insert_with(|| Index {
+                dimension,
+                entries: HashMap::new(),
+            });
         Ok(())
     }
 
@@ -142,7 +150,13 @@ impl VectorStore for InMemoryVectorStore {
         let idx = indexes
             .get_mut(index)
             .ok_or_else(|| Error::not_found("vector_index", index))?;
-        for (id, vector, metadata) in entries {
+        // Validate the whole batch before writing anything so a failed upsert
+        // never commits a prefix (matching the SQL backends' transactional
+        // behavior).
+        for (id, vector, _) in &entries {
+            if id.is_empty() {
+                return Err(Error::Validation("vector id must not be empty".into()));
+            }
             if vector.len() != idx.dimension {
                 return Err(Error::Validation(format!(
                     "vector dimension {} != index dimension {}",
@@ -150,6 +164,8 @@ impl VectorStore for InMemoryVectorStore {
                     idx.dimension
                 )));
             }
+        }
+        for (id, vector, metadata) in entries {
             idx.entries.insert(id, (vector, metadata));
         }
         Ok(())
@@ -175,7 +191,10 @@ impl VectorStore for InMemoryVectorStore {
     }
 
     async fn delete_index(&self, index: &str) -> Result<()> {
-        self.indexes.write().expect("vector store poisoned").remove(index);
+        self.indexes
+            .write()
+            .expect("vector store poisoned")
+            .remove(index);
         Ok(())
     }
 }
@@ -189,7 +208,10 @@ mod tests {
     async fn similar_text_ranks_higher() {
         let store = InMemoryVectorStore::new();
         let embedder = MockEmbedder::default();
-        store.create_index("msgs", embedder.dimension()).await.unwrap();
+        store
+            .create_index("msgs", embedder.dimension())
+            .await
+            .unwrap();
 
         let texts = vec![
             "the deployment pipeline failed on kubernetes".to_string(),
@@ -208,7 +230,10 @@ mod tests {
             .await
             .unwrap();
 
-        let q = embedder.embed(&["kubernetes deployment failure".to_string()]).await.unwrap();
+        let q = embedder
+            .embed(&["kubernetes deployment failure".to_string()])
+            .await
+            .unwrap();
         let hits = store.query("msgs", &q[0], 1).await.unwrap();
         assert_eq!(hits[0].id, "m0");
     }

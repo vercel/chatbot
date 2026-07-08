@@ -19,7 +19,9 @@ pub(crate) async fn put_agent(
     AuthedUser(principal): AuthedUser,
     Json(definition): Json<AgentDefinition>,
 ) -> ApiResult<Json<DefinitionRecord>> {
-    Ok(Json(rustra.save_agent_definition(&principal, definition).await?))
+    Ok(Json(
+        rustra.save_agent_definition(&principal, definition).await?,
+    ))
 }
 
 /// `PUT /api/definitions/flows`.
@@ -28,7 +30,9 @@ pub(crate) async fn put_flow(
     AuthedUser(principal): AuthedUser,
     Json(definition): Json<FlowDefinition>,
 ) -> ApiResult<Json<DefinitionRecord>> {
-    Ok(Json(rustra.save_flow_definition(&principal, definition).await?))
+    Ok(Json(
+        rustra.save_flow_definition(&principal, definition).await?,
+    ))
 }
 
 async fn list(
@@ -37,7 +41,10 @@ async fn list(
     kind: ResourceKind,
     page: PageQuery,
 ) -> ApiResult<Json<Vec<DefinitionRecord>>> {
-    let records = rustra.storage().list_definitions(kind, user_id, true, page.page()).await?;
+    let records = rustra
+        .storage()
+        .list_definitions(kind, user_id, true, page.page())
+        .await?;
     Ok(Json(records))
 }
 

@@ -14,6 +14,23 @@ use crate::util::storage_err;
 /// Ordered list of `(target_version, batch_sql)` migrations.
 const MIGRATIONS: &[(i64, &str)] = &[(1, V1)];
 
+// Compile-time guard: run_locked() applies migrations in slice order and
+// skips any version <= the stored schema_version, so the list must be
+// strictly increasing (and versions must be positive) or migrations would
+// be silently skipped. Appending out of order fails the build.
+const _: () = {
+    assert!(!MIGRATIONS.is_empty(), "MIGRATIONS must not be empty");
+    assert!(MIGRATIONS[0].0 >= 1, "migration versions start at 1");
+    let mut i = 1;
+    while i < MIGRATIONS.len() {
+        assert!(
+            MIGRATIONS[i - 1].0 < MIGRATIONS[i].0,
+            "MIGRATIONS must be strictly increasing by version"
+        );
+        i += 1;
+    }
+};
+
 /// Advisory-lock key serializing concurrent migration runs (ASCII "rustra").
 const MIGRATION_LOCK_KEY: i64 = 0x7275_7374_7261;
 
@@ -46,7 +63,10 @@ async fn run_locked(client: &mut Client) -> Result<()> {
         .await
         .map_err(storage_err)?;
     let current: i64 = client
-        .query_opt("SELECT value FROM rustra_meta WHERE key = 'schema_version'", &[])
+        .query_opt(
+            "SELECT value FROM rustra_meta WHERE key = 'schema_version'",
+            &[],
+        )
         .await
         .map_err(storage_err)?
         .map(|row| row.get(0))

@@ -12,7 +12,7 @@ pub const ARTIFACT_CSP: &str =
 /// Wrap an artifact's HTML fragment in a full document:
 ///
 /// * a `<meta http-equiv="Content-Security-Policy">` tag carrying
-///   [`ARTIFACT_CSP`],
+///   `ARTIFACT_CSP`,
 /// * a `<script>` injecting the artifact's structured data as
 ///   `window.__RUSTRA_DATA__` *before* the body content, so artifact code
 ///   can read it synchronously.
@@ -24,9 +24,15 @@ pub fn render_document(artifact: &UiArtifactRecord) -> String {
     // `Value` serialization cannot realistically fail; fall back to `null`
     // rather than panicking if it ever does. Escape `</` so a string like
     // "</script>" inside the data cannot break out of the script element.
+    // Also escape `<!--`: per the HTML spec's script-content restrictions,
+    // `<!--` switches the parser into script-data-escaped state, where a
+    // following `<script` in the same data prevents the real `</script>` from
+    // closing this element. `!` is the valid JSON escape for `!`, so the
+    // parsed value is unchanged.
     let data_json = serde_json::to_string(&artifact.data)
         .unwrap_or_else(|_| "null".to_string())
-        .replace("</", "<\\/");
+        .replace("</", "<\\/")
+        .replace("<!--", "<\\u0021--");
     let title = escape_html(&artifact.title);
     format!(
         "<!DOCTYPE html>\n\
@@ -113,10 +119,27 @@ mod tests {
         ));
         assert!(doc.contains("<title>&lt;script&gt;alert(1)&lt;/script&gt;</title>"));
         // The injected data never contains a literal `</script>`.
-        let injection_line =
-            doc.lines().find(|l| l.contains("__RUSTRA_DATA__")).expect("injection line");
+        let injection_line = doc
+            .lines()
+            .find(|l| l.contains("__RUSTRA_DATA__"))
+            .expect("injection line");
         assert!(!injection_line.contains("</script><script>"));
         assert!(injection_line.contains("<\\/script>"));
+    }
+
+    #[test]
+    fn data_cannot_open_a_script_comment() {
+        let doc = render_document(&artifact(
+            "t",
+            "<p>ok</p>",
+            json!({ "evil": "<!--<script>alert(1)</script>" }),
+        ));
+        let injection_line = doc
+            .lines()
+            .find(|l| l.contains("__RUSTRA_DATA__"))
+            .expect("injection line");
+        assert!(!injection_line.contains("<!--"));
+        assert!(injection_line.contains("<\\u0021--"));
     }
 
     #[test]

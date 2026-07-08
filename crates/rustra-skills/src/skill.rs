@@ -37,7 +37,7 @@ pub const MAX_DESCRIPTION_LEN: usize = 1024;
 
 /// A parsed skill: the frontmatter metadata, the markdown instruction body,
 /// and the supporting files found next to `SKILL.md`.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Skill {
     /// Kebab-case identifier (`[a-z0-9-]{1,64}`).
     pub name: String,
@@ -73,7 +73,24 @@ impl Skill {
                 keywords.push(word.to_string());
             }
         }
-        TriggerCondition { keywords, ..Default::default() }
+        TriggerCondition {
+            keywords,
+            ..Default::default()
+        }
+    }
+
+    /// The instructions followed by a listing of the skill's assets (when
+    /// any), the canonical materialized form of a skill.
+    pub fn full_text(&self) -> String {
+        use std::fmt::Write as _;
+        let mut content = self.instructions.clone();
+        if !self.assets.is_empty() {
+            content.push_str("\n\nAvailable skill assets (paths relative to the skill directory):");
+            for asset in &self.assets {
+                let _ = write!(content, "\n- {}", asset.display());
+            }
+        }
+        content
     }
 }
 
@@ -122,8 +139,8 @@ fn split_frontmatter(content: &str) -> Result<(&str, &str)> {
 
 /// Recursively collect the relative paths of every file under `dir` except
 /// the top-level `SKILL.md`. Unreadable entries are skipped with a warning.
-pub(crate) fn collect_extra_files(dir: &Path, manifest_name: &str) -> Vec<PathBuf> {
-    fn walk(base: &Path, current: &Path, manifest_name: &str, out: &mut Vec<PathBuf>) {
+fn collect_assets(dir: &Path) -> Vec<PathBuf> {
+    fn walk(base: &Path, current: &Path, out: &mut Vec<PathBuf>) {
         let entries = match fs::read_dir(current) {
             Ok(entries) => entries,
             Err(err) => {
@@ -141,9 +158,9 @@ pub(crate) fn collect_extra_files(dir: &Path, manifest_name: &str) -> Vec<PathBu
             };
             let path = entry.path();
             if path.is_dir() {
-                walk(base, &path, manifest_name, out);
+                walk(base, &path, out);
             } else if let Ok(rel) = path.strip_prefix(base) {
-                if rel == Path::new(manifest_name) {
+                if rel == Path::new(SKILL_FILE) {
                     continue;
                 }
                 out.push(rel.to_path_buf());
@@ -153,7 +170,7 @@ pub(crate) fn collect_extra_files(dir: &Path, manifest_name: &str) -> Vec<PathBu
 
     let mut out = Vec::new();
     if dir.is_dir() {
-        walk(dir, dir, manifest_name, &mut out);
+        walk(dir, dir, &mut out);
     }
     out.sort();
     out
@@ -175,7 +192,7 @@ pub fn parse_skill_md(content: &str, dir: &Path) -> Result<Skill> {
         allowed_tools: fm.allowed_tools,
         validate: fm.validate,
         dir: dir.to_path_buf(),
-        assets: collect_extra_files(dir, SKILL_FILE),
+        assets: collect_assets(dir),
         instructions: body.trim().to_string(),
     };
     validate_skill(&skill)?;
@@ -184,34 +201,47 @@ pub fn parse_skill_md(content: &str, dir: &Path) -> Result<Skill> {
 
 /// Check that `name` is valid kebab-case per the convention:
 /// `[a-z0-9-]{1,64}`.
-pub(crate) fn is_valid_name(name: &str) -> bool {
+fn is_valid_name(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= MAX_NAME_LEN
-        && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+}
+
+/// Validate a skill name against the kebab-case convention. Single source of
+/// truth shared by [`validate_skill`] and [`scaffold_skill`].
+fn validate_name(name: &str) -> Result<()> {
+    if !is_valid_name(name) {
+        return Err(Error::Validation(format!(
+            "skill name `{name}` is invalid: must match [a-z0-9-]{{1,{MAX_NAME_LEN}}} (lowercase kebab-case)"
+        )));
+    }
+    Ok(())
+}
+
+/// Validate a skill description (non-empty, bounded length). Single source of
+/// truth shared by [`validate_skill`] and [`scaffold_skill`].
+fn validate_description(name: &str, description: &str) -> Result<()> {
+    if description.trim().is_empty() {
+        return Err(Error::Validation(format!(
+            "skill `{name}` has an empty description; describe what it does and when to use it"
+        )));
+    }
+    if description.len() > MAX_DESCRIPTION_LEN {
+        return Err(Error::Validation(format!(
+            "skill `{name}` description is {} chars; maximum is {MAX_DESCRIPTION_LEN}",
+            description.len()
+        )));
+    }
+    Ok(())
 }
 
 /// Validate a parsed skill against the Agent Skills convention: kebab-case
 /// name, bounded description, non-empty instructions.
 pub fn validate_skill(skill: &Skill) -> Result<()> {
-    if !is_valid_name(&skill.name) {
-        return Err(Error::Validation(format!(
-            "skill name `{}` is invalid: must match [a-z0-9-]{{1,{MAX_NAME_LEN}}} (lowercase kebab-case)",
-            skill.name
-        )));
-    }
-    if skill.description.trim().is_empty() {
-        return Err(Error::Validation(format!(
-            "skill `{}` has an empty description; describe what it does and when to use it",
-            skill.name
-        )));
-    }
-    if skill.description.len() > MAX_DESCRIPTION_LEN {
-        return Err(Error::Validation(format!(
-            "skill `{}` description is {} chars; maximum is {MAX_DESCRIPTION_LEN}",
-            skill.name,
-            skill.description.len()
-        )));
-    }
+    validate_name(&skill.name)?;
+    validate_description(&skill.name, &skill.description)?;
     if skill.instructions.trim().is_empty() {
         return Err(Error::Validation(format!(
             "skill `{}` has no instructions: the {SKILL_FILE} body must not be empty",
@@ -225,24 +255,10 @@ pub fn validate_skill(skill: &Skill) -> Result<()> {
 /// Fails if the directory already contains a `SKILL.md`, or if `name` /
 /// `description` would not validate.
 pub fn scaffold_skill(dir: &Path, name: &str, description: &str) -> Result<()> {
-    if !is_valid_name(name) {
-        return Err(Error::Validation(format!(
-            "skill name `{name}` is invalid: must match [a-z0-9-]{{1,{MAX_NAME_LEN}}} (lowercase kebab-case)"
-        )));
-    }
-    if description.trim().is_empty() || description.len() > MAX_DESCRIPTION_LEN {
-        return Err(Error::Validation(format!(
-            "skill description must be non-empty and at most {MAX_DESCRIPTION_LEN} chars"
-        )));
-    }
-    let manifest = dir.join(SKILL_FILE);
-    if manifest.exists() {
-        return Err(Error::Validation(format!(
-            "refusing to scaffold: {} already exists",
-            manifest.display()
-        )));
-    }
+    validate_name(name)?;
+    validate_description(name, description)?;
     fs::create_dir_all(dir)?;
+    let manifest = dir.join(SKILL_FILE);
 
     // Serialize the description through serde_yaml so special characters
     // (colons, quotes) stay valid YAML.
@@ -263,7 +279,21 @@ pub fn scaffold_skill(dir: &Path, name: &str, description: &str) -> Result<()> {
          - Reference supporting files in this directory by relative path.\n",
         description_yaml.trim_end(),
     );
-    fs::write(&manifest, content)?;
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&manifest)
+        .map_err(|err| {
+            if err.kind() == std::io::ErrorKind::AlreadyExists {
+                Error::Validation(format!(
+                    "refusing to scaffold: {} already exists",
+                    manifest.display()
+                ))
+            } else {
+                Error::from(err)
+            }
+        })?;
+    std::io::Write::write_all(&mut file, content.as_bytes())?;
     Ok(())
 }
 
@@ -295,7 +325,10 @@ validate:\n  - shellcheck scripts/deploy.sh\n\
         assert_eq!(skill.keywords, vec!["deploy", "release"]);
         assert_eq!(skill.allowed_tools, vec!["bash"]);
         assert_eq!(skill.validate, vec!["shellcheck scripts/deploy.sh"]);
-        assert_eq!(skill.metadata.get("author").and_then(|v| v.as_str()), Some("platform"));
+        assert_eq!(
+            skill.metadata.get("author").and_then(|v| v.as_str()),
+            Some("platform")
+        );
         assert_eq!(skill.assets, vec![PathBuf::from("scripts/deploy.sh")]);
         assert!(skill.instructions.starts_with("# Deploy helper"));
         validate_skill(&skill).expect("valid");
@@ -319,9 +352,15 @@ validate:\n  - shellcheck scripts/deploy.sh\n\
             Err(Error::Validation(_))
         ));
         let bad_name = SAMPLE.replace("name: deploy-helper", "name: Deploy Helper");
-        assert!(matches!(parse_skill_md(&bad_name, dir), Err(Error::Validation(_))));
+        assert!(matches!(
+            parse_skill_md(&bad_name, dir),
+            Err(Error::Validation(_))
+        ));
         let empty_body = "---\nname: a\ndescription: b\n---\n\n";
-        assert!(matches!(parse_skill_md(empty_body, dir), Err(Error::Validation(_))));
+        assert!(matches!(
+            parse_skill_md(empty_body, dir),
+            Err(Error::Validation(_))
+        ));
     }
 
     #[test]

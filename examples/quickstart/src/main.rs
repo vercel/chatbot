@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use rustra::{FlowOutcome, Principal, Rustra, RuntimeContext};
+use rustra::{FlowOutcome, Principal, RuntimeContext, Rustra};
 use rustra_llm::{MockModel, ScriptedTurn};
 use rustra_workflow::{approval_step, FunctionStep, StepOutcome, Workflow};
 use serde_json::json;
@@ -41,7 +41,9 @@ async fn main() -> rustra::Result<()> {
             name: "update_working_memory".into(),
             input: json!({"content": "# User Profile\n- Prefers Python projects with pyproject.toml\n"}),
         },
-        ScriptedTurn::Text("Done — created pyproject.toml following the python-project-setup skill.".into()),
+        ScriptedTurn::Text(
+            "Done — created pyproject.toml following the python-project-setup skill.".into(),
+        ),
     ]));
 
     let rustra = Rustra::builder()
@@ -63,31 +65,46 @@ async fn main() -> rustra::Result<()> {
     // 3. Run the main agent.
     let ada = Principal::user("ada");
     let agent = rustra.main_agent_for("ada").await?;
-    let reply = agent.generate("set up a python project", RuntimeContext::new(ada.clone())).await?;
-    println!("\n=== agent ===\n{}\n(steps: {}, run: {})", reply.text, reply.steps, reply.run_id);
+    let reply = agent
+        .generate("set up a python project", RuntimeContext::new(ada.clone()))
+        .await?;
+    println!(
+        "\n=== agent ===\n{}\n(steps: {}, run: {})",
+        reply.text, reply.steps, reply.run_id
+    );
 
     // The skill's effect is real: the file exists in the jailed workspace.
     let created = workspace.read_file("files/pyproject.toml").await?;
     println!("\n=== workspace/files/pyproject.toml ===\n{created}");
 
     // And the agent's memory persisted.
-    let wm = rustra.memory().get_working_memory("ada").await?.unwrap_or_default();
+    let wm = rustra
+        .memory()
+        .get_working_memory("ada")
+        .await?
+        .unwrap_or_default();
     println!("=== working memory ===\n{wm}");
 
     // 4. A harness flow with human approval: build → gate → ship.
     let deploy = Workflow::builder("deploy")
         .then(FunctionStep::new("build", |ctx| async move {
-            Ok(StepOutcome::Done(json!({ "artifact": format!("build-of-{}", ctx.input["ref"]) })))
+            Ok(StepOutcome::Done(
+                json!({ "artifact": format!("build-of-{}", ctx.input["ref"]) }),
+            ))
         }))
         .then(approval_step("gate", "Ship to production?"))
         .then(FunctionStep::new("ship", |ctx| async move {
-            Ok(StepOutcome::Done(json!({ "shipped": ctx.input["artifact"] })))
+            Ok(StepOutcome::Done(
+                json!({ "shipped": ctx.input["artifact"] }),
+            ))
         }))
         .storage(rustra.storage().clone())
         .observability(rustra.observability().clone())
         .commit();
 
-    let run = deploy.start(json!({"ref": "main"}), RuntimeContext::new(ada.clone())).await?;
+    let run = deploy
+        .start(json!({"ref": "main"}), RuntimeContext::new(ada.clone()))
+        .await?;
     let FlowOutcome::Suspended { step_id, .. } = &run.outcome else {
         panic!("expected the flow to wait for approval");
     };
@@ -99,7 +116,11 @@ async fn main() -> rustra::Result<()> {
 
     // … and resuming with approval completes the flow.
     let resumed = deploy
-        .resume(&run.run_id, json!({"approved": true}), RuntimeContext::new(ada.clone()))
+        .resume(
+            &run.run_id,
+            json!({"approved": true}),
+            RuntimeContext::new(ada.clone()),
+        )
         .await?;
     if let FlowOutcome::Success(output) = resumed.outcome {
         println!("shipped: {output}");

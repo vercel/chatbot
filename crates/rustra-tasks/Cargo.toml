@@ -10,12 +10,10 @@ rust-version.workspace = true
 [dependencies]
 rustra-core.workspace = true
 rustra-storage.workspace = true
-rustra-observability.workspace = true
 rustra-agent.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
 cron.workspace = true
-serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true

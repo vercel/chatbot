@@ -30,6 +30,7 @@
 mod action;
 mod manager;
 mod session;
+mod sync;
 mod tool;
 
 pub use action::{BrowserAction, BrowserActionResult};

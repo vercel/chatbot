@@ -17,24 +17,24 @@ const SELECT_GRANT: &str = "SELECT id, resource_kind, resource_id, grantee, acti
 
 fn user_from_row(row: &Row<'_>) -> Result<UserRecord> {
     Ok(UserRecord {
-        id: col(row, 0)?,
-        display_name: col(row, 1)?,
-        roles: string_vec_from_sql(&col::<String>(row, 2)?)?,
-        token_hash: col(row, 3)?,
-        profile: col_json(row, 4)?,
-        created_at: col_ts(row, 5)?,
+        id: col(row, "id")?,
+        display_name: col(row, "display_name")?,
+        roles: col_string_vec(row, "roles")?,
+        token_hash: col(row, "token_hash")?,
+        profile: col_json(row, "profile")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
 fn grant_from_row(row: &Row<'_>) -> Result<GrantRecord> {
     Ok(GrantRecord {
-        id: col(row, 0)?,
-        resource_kind: kind_from_sql(&col::<String>(row, 1)?)?,
-        resource_id: col(row, 2)?,
-        grantee: col(row, 3)?,
-        actions: string_vec_from_sql(&col::<String>(row, 4)?)?,
-        granted_by: col(row, 5)?,
-        created_at: col_ts(row, 6)?,
+        id: col(row, "id")?,
+        resource_kind: col_kind(row, "resource_kind")?,
+        resource_id: col(row, "resource_id")?,
+        grantee: col(row, "grantee")?,
+        actions: col_string_vec(row, "actions")?,
+        granted_by: col(row, "granted_by")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
@@ -97,7 +97,7 @@ impl AclStore for SqliteStorage {
             .call(move |conn| {
                 query_all(
                     conn,
-                    &format!("{SELECT_USER} ORDER BY created_at ASC LIMIT ?1 OFFSET ?2"),
+                    &format!("{SELECT_USER} ORDER BY created_at ASC, rowid ASC LIMIT ?1 OFFSET ?2"),
                     params![limit, offset],
                     user_from_row,
                 )

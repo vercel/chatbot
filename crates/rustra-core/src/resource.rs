@@ -27,6 +27,29 @@ pub enum ResourceKind {
 }
 
 impl ResourceKind {
+    /// Every variant; keep in sync when adding variants (RBAC matrices iterate this).
+    pub const ALL: [ResourceKind; 16] = [
+        Self::Agent,
+        Self::Skill,
+        Self::Knowledge,
+        Self::Memory,
+        Self::Workspace,
+        Self::Tool,
+        Self::McpServer,
+        Self::Run,
+        Self::Log,
+        Self::Trace,
+        Self::Flow,
+        Self::Task,
+        Self::Schedule,
+        Self::Signal,
+        Self::Ui,
+        Self::Channel,
+    ];
+
+    /// Stable snake_case name. Guaranteed to match the serde (snake_case)
+    /// representation — storage backends write via `as_str` and read back via
+    /// serde.
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Agent => "agent",
@@ -69,6 +92,20 @@ pub enum Action {
 }
 
 impl Action {
+    /// Every variant; keep in sync when adding variants (RBAC matrices iterate this).
+    pub const ALL: [Action; 7] = [
+        Self::Create,
+        Self::Read,
+        Self::Update,
+        Self::Delete,
+        Self::Execute,
+        Self::Share,
+        Self::Manage,
+    ];
+
+    /// Stable snake_case name. Guaranteed to match the serde (snake_case)
+    /// representation — storage backends write via `as_str` and read back via
+    /// serde.
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Create => "create",
@@ -89,7 +126,7 @@ impl fmt::Display for Action {
 }
 
 /// A concrete resource instance: kind + id + owner.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ResourceRef {
     pub kind: ResourceKind,
     pub id: String,
@@ -99,7 +136,11 @@ pub struct ResourceRef {
 
 impl ResourceRef {
     pub fn new(kind: ResourceKind, id: impl Into<String>, owner_id: Option<String>) -> Self {
-        Self { kind, id: id.into(), owner_id }
+        Self {
+            kind,
+            id: id.into(),
+            owner_id,
+        }
     }
 
     pub fn owned_by(&self, user_id: &str) -> bool {
@@ -109,14 +150,97 @@ impl ResourceRef {
 
 /// Who can see a user-created artifact. Everything defaults to `Private`;
 /// sharing is always an explicit act.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Visibility {
     /// Owner only (default).
     #[default]
     Private,
-    /// Owner plus principals with explicit ACL grants.
+    /// Readable by any authenticated principal whose role matrix permits
+    /// reading this resource kind; other actions still require ownership or an
+    /// explicit grant. (Explicit grants also work on `Private` resources —
+    /// `Shared` widens reads only.)
     Shared,
-    /// Every authenticated user in the deployment.
+    /// Readable and executable by every authenticated principal whose role
+    /// matrix permits it.
     Public,
+}
+
+impl Visibility {
+    /// Stable snake_case name, identical to the serde representation.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Private => "private",
+            Self::Shared => "shared",
+            Self::Public => "public",
+        }
+    }
+}
+
+impl fmt::Display for Visibility {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resource_kind_as_str_agrees_with_serde() {
+        use ResourceKind::*;
+        // Keep exhaustive: when adding a variant, add it here (kind_from_sql
+        // in the storage crates depends on as_str/serde agreement).
+        let all = [
+            Agent, Skill, Knowledge, Memory, Workspace, Tool, McpServer, Run, Log, Trace, Flow,
+            Task, Schedule, Signal, Ui, Channel,
+        ];
+        for kind in all {
+            let via_serde = serde_json::to_value(kind).unwrap();
+            assert_eq!(
+                via_serde,
+                serde_json::Value::String(kind.as_str().to_owned())
+            );
+            assert_eq!(
+                serde_json::from_value::<ResourceKind>(via_serde).unwrap(),
+                kind
+            );
+        }
+    }
+
+    #[test]
+    fn action_as_str_agrees_with_serde() {
+        use Action::*;
+        // Keep exhaustive: when adding a variant, add it here (the storage
+        // crates depend on as_str/serde agreement).
+        let all = [Create, Read, Update, Delete, Execute, Share, Manage];
+        for action in all {
+            let via_serde = serde_json::to_value(action).unwrap();
+            assert_eq!(
+                via_serde,
+                serde_json::Value::String(action.as_str().to_owned())
+            );
+            assert_eq!(serde_json::from_value::<Action>(via_serde).unwrap(), action);
+        }
+    }
+
+    #[test]
+    fn visibility_as_str_agrees_with_serde() {
+        use Visibility::*;
+        // Keep exhaustive: when adding a variant, add it here (the storage
+        // crates depend on as_str/serde agreement).
+        let all = [Private, Shared, Public];
+        for vis in all {
+            let via_serde = serde_json::to_value(vis).unwrap();
+            assert_eq!(
+                via_serde,
+                serde_json::Value::String(vis.as_str().to_owned())
+            );
+            assert_eq!(
+                serde_json::from_value::<Visibility>(via_serde).unwrap(),
+                vis
+            );
+        }
+    }
 }

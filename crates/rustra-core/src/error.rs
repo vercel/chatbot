@@ -8,8 +8,9 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 /// Domain crates map their internal failures into these variants so that
 /// callers at the runtime boundary (server handlers, task supervisors, the
 /// agent loop) can react uniformly: retry on `Unavailable`, surface
-/// `PermissionDenied` as HTTP 403, treat `Suspended` as a control-flow signal,
-/// and so on.
+/// `PermissionDenied` as HTTP 403, and so on. (Workflow suspension is
+/// deliberately *not* an error: it is `StepOutcome::Suspended` in
+/// `rustra-workflow`.)
 #[derive(Debug, Error)]
 pub enum Error {
     /// The requested entity does not exist.
@@ -75,17 +76,86 @@ pub enum Error {
     Other(String),
 }
 
+/// Constructors below are the preferred construction path: when the variants
+/// gain structured payloads (ROADMAP 1.5), only this file has to change.
 impl Error {
     pub fn not_found(kind: &'static str, id: impl Into<String>) -> Self {
-        Self::NotFound { kind, id: id.into() }
+        Self::NotFound {
+            kind,
+            id: id.into(),
+        }
     }
 
     pub fn tool(tool: impl Into<String>, message: impl Into<String>) -> Self {
-        Self::Tool { tool: tool.into(), message: message.into() }
+        Self::Tool {
+            tool: tool.into(),
+            message: message.into(),
+        }
+    }
+
+    pub fn permission_denied(msg: impl Into<String>) -> Self {
+        Self::PermissionDenied(msg.into())
+    }
+
+    pub fn validation(msg: impl Into<String>) -> Self {
+        Self::Validation(msg.into())
+    }
+
+    pub fn storage(msg: impl Into<String>) -> Self {
+        Self::Storage(msg.into())
+    }
+
+    pub fn model(msg: impl Into<String>) -> Self {
+        Self::Model(msg.into())
+    }
+
+    pub fn mcp(msg: impl Into<String>) -> Self {
+        Self::Mcp(msg.into())
+    }
+
+    pub fn workflow(msg: impl Into<String>) -> Self {
+        Self::Workflow(msg.into())
+    }
+
+    pub fn cancelled(msg: impl Into<String>) -> Self {
+        Self::Cancelled(msg.into())
+    }
+
+    pub fn timeout(msg: impl Into<String>) -> Self {
+        Self::Timeout(msg.into())
+    }
+
+    pub fn unavailable(msg: impl Into<String>) -> Self {
+        Self::Unavailable(msg.into())
+    }
+
+    pub fn config(msg: impl Into<String>) -> Self {
+        Self::Config(msg.into())
+    }
+
+    pub fn other(msg: impl Into<String>) -> Self {
+        Self::Other(msg.into())
     }
 
     /// Whether a retry policy should consider this failure transient.
+    ///
+    /// Exhaustive by design: adding a variant is a compile error here until
+    /// its retryability is decided explicitly.
     pub fn is_retryable(&self) -> bool {
-        matches!(self, Self::Unavailable(_) | Self::Timeout(_) | Self::Storage(_))
+        match self {
+            Self::Unavailable(_) | Self::Timeout(_) | Self::Storage(_) => true,
+            Self::NotFound { .. }
+            | Self::PermissionDenied(_)
+            | Self::Validation(_)
+            | Self::Model(_)
+            | Self::Tool { .. }
+            | Self::Mcp(_)
+            | Self::Workflow(_)
+            | Self::Cancelled(_)
+            | Self::Config(_)
+            | Self::Serde(_)
+            | Self::Io(_)
+            | Self::Other(_) => false,
+        }
     }
 }

@@ -51,7 +51,9 @@ pub(crate) async fn resolve(
         ))
         .into());
     }
-    let record =
-        rustra.interrupts().resolve(&principal, &id, &body.status, body.resolution).await?;
+    let record = rustra
+        .interrupts()
+        .resolve(&principal, &id, &body.status, body.resolution)
+        .await?;
     Ok(Json(record))
 }

@@ -34,7 +34,7 @@
 //! * `rustra_messages` and `rustra_spans` carry a `BIGSERIAL seq` column as
 //!   the insertion-order tiebreaker (the equivalent of SQLite's `rowid`).
 //! * The schema is versioned through the `rustra_meta` table
-//!   (`schema_version` key); see [`migrations`].
+//!   (`schema_version` key); see the private `migrations` module.
 //!
 //! ## Tech debt
 //!
@@ -52,6 +52,8 @@
 //! [`AclStore`]: rustra_storage::AclStore
 //! [`InfraStore`]: rustra_storage::InfraStore
 //! [`Storage`]: rustra_storage::Storage
+
+#![warn(missing_docs)]
 
 mod acl;
 mod definitions;
@@ -72,7 +74,7 @@ use rustra_core::{Error, Result};
 use tokio_postgres::types::ToSql;
 use tokio_postgres::{Client, NoTls, Row};
 
-use crate::util::storage_err;
+use crate::util::{storage_err, FromRow};
 
 /// A shared handle to one `tokio_postgres` connection. Internal building
 /// block for [`PostgresStorage`] and [`PostgresVectorStore`].
@@ -93,14 +95,12 @@ impl Db {
             }
         });
         migrations::run(&mut client).await?;
-        Ok(Self { client: Arc::new(client) })
+        Ok(Self {
+            client: Arc::new(client),
+        })
     }
 
-    pub(crate) async fn execute(
-        &self,
-        sql: &str,
-        params: &[&(dyn ToSql + Sync)],
-    ) -> Result<u64> {
+    pub(crate) async fn execute(&self, sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<u64> {
         self.client.execute(sql, params).await.map_err(storage_err)
     }
 
@@ -117,28 +117,60 @@ impl Db {
         sql: &str,
         params: &[&(dyn ToSql + Sync)],
     ) -> Result<Option<Row>> {
-        self.client.query_opt(sql, params).await.map_err(storage_err)
+        self.client
+            .query_opt(sql, params)
+            .await
+            .map_err(storage_err)
     }
 
-    pub(crate) async fn query_one(
+    pub(crate) async fn query_one(&self, sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<Row> {
+        self.client
+            .query_one(sql, params)
+            .await
+            .map_err(storage_err)
+    }
+
+    /// Run a query and decode every row into `T` via [`FromRow`].
+    pub(crate) async fn query_as<T: FromRow>(
         &self,
         sql: &str,
         params: &[&(dyn ToSql + Sync)],
-    ) -> Result<Row> {
-        self.client.query_one(sql, params).await.map_err(storage_err)
+    ) -> Result<Vec<T>> {
+        let rows = self.query(sql, params).await?;
+        rows.iter().map(T::from_row).collect()
+    }
+
+    /// Run a query expecting at most one row, decoded into `T` via
+    /// [`FromRow`].
+    pub(crate) async fn query_opt_as<T: FromRow>(
+        &self,
+        sql: &str,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Result<Option<T>> {
+        let row = self.query_opt(sql, params).await?;
+        row.as_ref().map(T::from_row).transpose()
     }
 }
 
 /// The PostgreSQL Rustra storage backend: every domain store on one Postgres
 /// database. See the crate docs for conventions.
+#[derive(Clone)]
 pub struct PostgresStorage {
     pub(crate) db: Db,
+}
+
+impl std::fmt::Debug for PostgresStorage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PostgresStorage").finish_non_exhaustive()
+    }
 }
 
 impl PostgresStorage {
     /// Connect to Postgres (e.g. `postgres://user:pass@localhost/rustra`),
     /// spawn the connection driver task, and run any pending migrations.
     pub async fn connect(conn_str: &str) -> Result<Self> {
-        Ok(Self { db: Db::connect(conn_str).await? })
+        Ok(Self {
+            db: Db::connect(conn_str).await?,
+        })
     }
 }

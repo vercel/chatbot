@@ -95,10 +95,18 @@ pub fn read_knowledge_tool(library: Arc<KnowledgeLibrary>) -> FunctionTool {
                 let collection = library
                     .find(ctx.runtime.user_id(), &name)?
                     .ok_or_else(|| Error::not_found("knowledge collection", &name))?;
-                let documents: Vec<String> =
-                    collection.documents.iter().map(|d| d.display().to_string()).collect();
 
-                if let Some(document) = input.get("document").and_then(|v| v.as_str()) {
+                let document = match input.get("document") {
+                    None | Some(serde_json::Value::Null) => None,
+                    Some(serde_json::Value::String(s)) => Some(s.as_str()),
+                    Some(_) => {
+                        return Err(Error::Validation(
+                            "`document` must be a string (relative document path)".into(),
+                        ))
+                    }
+                };
+
+                if let Some(document) = document {
                     let content = collection.read_document(Path::new(document))?;
                     return Ok(json!({
                         "name": collection.name,
@@ -107,6 +115,11 @@ pub fn read_knowledge_tool(library: Arc<KnowledgeLibrary>) -> FunctionTool {
                     }));
                 }
 
+                let documents: Vec<String> = collection
+                    .documents
+                    .iter()
+                    .map(|d| d.display().to_string())
+                    .collect();
                 Ok(json!({
                     "name": collection.name,
                     "overview": collection.overview,
@@ -145,7 +158,9 @@ mod tests {
         )
         .expect("write");
         std::fs::write(dir.join("findings.md"), "Key finding: it works.\n").expect("write doc");
-        Arc::new(KnowledgeLibrary::new(vec![KnowledgeRoot::user(alice_root, "alice")]))
+        Arc::new(KnowledgeLibrary::new(vec![KnowledgeRoot::user(
+            alice_root, "alice",
+        )]))
     }
 
     fn ctx(user: &str) -> ToolContext {
@@ -158,35 +173,51 @@ mod tests {
         let library = setup(tmp.path());
 
         let search = search_knowledge_tool(library.clone());
-        let out =
-            search.execute(json!({ "query": "research" }), &ctx("alice")).await.expect("search");
+        let out = search
+            .execute(json!({ "query": "research" }), &ctx("alice"))
+            .await
+            .expect("search");
         assert_eq!(out["collections"][0]["name"], "research-notes");
 
-        let out = search.execute(json!({ "query": "research" }), &ctx("bob")).await.expect("search");
+        let out = search
+            .execute(json!({ "query": "research" }), &ctx("bob"))
+            .await
+            .expect("search");
         assert_eq!(out["collections"].as_array().map(Vec::len), Some(0));
 
         let read = read_knowledge_tool(library);
 
         // Whole collection.
-        let out =
-            read.execute(json!({ "name": "research-notes" }), &ctx("alice")).await.expect("read");
+        let out = read
+            .execute(json!({ "name": "research-notes" }), &ctx("alice"))
+            .await
+            .expect("read");
         assert_eq!(out["overview"], "Overview text.");
         assert_eq!(out["documents"][0], "findings.md");
         assert!(out["content"].as_str().unwrap().contains("Key finding"));
 
         // Single document.
         let out = read
-            .execute(json!({ "name": "research-notes", "document": "findings.md" }), &ctx("alice"))
+            .execute(
+                json!({ "name": "research-notes", "document": "findings.md" }),
+                &ctx("alice"),
+            )
             .await
             .expect("read doc");
         assert_eq!(out["content"], "Key finding: it works.\n");
 
         // Unknown document, wrong user, missing input all error.
         assert!(read
-            .execute(json!({ "name": "research-notes", "document": "nope.md" }), &ctx("alice"))
+            .execute(
+                json!({ "name": "research-notes", "document": "nope.md" }),
+                &ctx("alice")
+            )
             .await
             .is_err());
-        assert!(read.execute(json!({ "name": "research-notes" }), &ctx("bob")).await.is_err());
+        assert!(read
+            .execute(json!({ "name": "research-notes" }), &ctx("bob"))
+            .await
+            .is_err());
         assert!(search.execute(json!({}), &ctx("alice")).await.is_err());
     }
 }

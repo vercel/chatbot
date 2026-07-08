@@ -7,14 +7,16 @@
 //! whole attachment as a trace span.
 
 use serde_json::json;
+use std::fmt::Write as _;
 use std::sync::Arc;
 
 use rustra_core::{ContextCandidate, ContextFragment, ContextRequest, ContextSource};
 use rustra_observability::{span_kind, RunHandle};
 
 /// The fragments chosen for one turn.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct AssembledContext {
+    /// The selected fragments, highest score first.
     pub fragments: Vec<ContextFragment>,
 }
 
@@ -31,35 +33,45 @@ impl AssembledContext {
             "The following context was attached because it is relevant to the current request.\n",
         );
         for fragment in &self.fragments {
-            prompt.push_str(&format!(
+            // fmt::Write to a String is infallible.
+            let _ = write!(
+                prompt,
                 "\n## {} ({})\n{}\n",
                 fragment.title,
-                fragment_kind_label(fragment),
+                fragment.kind.as_str(),
                 fragment.content.trim()
-            ));
+            );
         }
         prompt
     }
 }
 
-fn fragment_kind_label(fragment: &ContextFragment) -> String {
-    serde_json::to_value(fragment.kind)
-        .ok()
-        .and_then(|v| v.as_str().map(str::to_owned))
-        .unwrap_or_else(|| "other".into())
-}
-
 /// Ranks and loads context candidates. See module docs.
+#[derive(Debug, Clone, PartialEq)]
 pub struct ContextAssembler {
     max_fragments: usize,
     min_score: f32,
 }
 
+/// How many ranked candidates the packer considers, as a multiple of
+/// `max_fragments` — bounds total `load` attempts when candidates are over
+/// budget or fail to load.
+const CANDIDATE_OVERSCAN: usize = 2;
+
 impl ContextAssembler {
+    /// An assembler that attaches at most `max_fragments` fragments, each
+    /// with score >= `min_score`.
     pub fn new(max_fragments: usize, min_score: f32) -> Self {
-        Self { max_fragments, min_score }
+        Self {
+            max_fragments,
+            min_score,
+        }
     }
 
+    /// Run the pipeline for one turn: gather candidates from every source,
+    /// rank them, pack greedily within `request.char_budget`, load the
+    /// winners, and record the attachment as a trace span. Source failures
+    /// are logged and skipped, never fatal.
     pub async fn assemble(
         &self,
         sources: &[Arc<dyn ContextSource>],
@@ -98,22 +110,26 @@ impl ContextAssembler {
         let mut fragments = Vec::new();
         let mut attached_meta = Vec::new();
         let mut remaining = request.char_budget;
-        for (source_index, candidate) in ranked.into_iter().take(self.max_fragments * 2) {
+        for (source_index, candidate) in ranked
+            .into_iter()
+            .take(self.max_fragments * CANDIDATE_OVERSCAN)
+        {
             if fragments.len() >= self.max_fragments {
                 break;
             }
             if candidate.estimated_chars > remaining {
                 continue;
             }
-            match sources[source_index].load(&candidate.id, request).await {
+            let source = &sources[source_index];
+            match source.load(&candidate.id, request).await {
                 Ok(mut fragment) => {
                     // Enforce the budget on actual content, not the estimate.
                     if fragment.content.len() > remaining {
-                        fragment.content = truncate_chars(&fragment.content, remaining);
+                        fragment.content = truncate_to_bytes(&fragment.content, remaining);
                     }
                     remaining = remaining.saturating_sub(fragment.content.len());
                     attached_meta.push(json!({
-                        "source": sources[source_index].id(),
+                        "source": source.id(),
                         "id": fragment.id,
                         "kind": fragment.kind,
                         "score": candidate.score,
@@ -123,7 +139,7 @@ impl ContextAssembler {
                 }
                 Err(e) => {
                     tracing::warn!(
-                        source = sources[source_index].id(),
+                        source = source.id(),
                         candidate = candidate.id,
                         error = %e,
                         "context load failed"
@@ -137,16 +153,25 @@ impl ContextAssembler {
     }
 }
 
-/// Truncate on a char boundary at most `max` bytes.
-fn truncate_chars(s: &str, max: usize) -> String {
-    if s.len() <= max {
+const TRUNCATION_SUFFIX: &str = "\n…(truncated)";
+
+/// Truncate so the result is at most `max_bytes` bytes, cutting on a char
+/// boundary and appending a marker when it fits.
+fn truncate_to_bytes(s: &str, max_bytes: usize) -> String {
+    if s.len() <= max_bytes {
         return s.to_string();
     }
-    let mut end = max.min(s.len());
+    // Reserve room for the marker only when it fits within the budget.
+    let suffix = if max_bytes >= TRUNCATION_SUFFIX.len() {
+        TRUNCATION_SUFFIX
+    } else {
+        ""
+    };
+    let mut end = max_bytes - suffix.len();
     while end > 0 && !s.is_char_boundary(end) {
         end -= 1;
     }
-    format!("{}\n…(truncated)", &s[..end])
+    format!("{}{suffix}", &s[..end])
 }
 
 #[cfg(test)]
@@ -217,8 +242,12 @@ mod tests {
             runtime: RuntimeContext::new(Principal::user("u")),
             char_budget: 100,
         };
-        let run = ObservabilityHub::noop().start_run("agent", "a", "u", json!({})).await;
-        let assembled = ContextAssembler::new(10, 0.15).assemble(&sources, &request, &run).await;
+        let run = ObservabilityHub::noop()
+            .start_run("agent", "a", "u", json!({}))
+            .await;
+        let assembled = ContextAssembler::new(10, 0.15)
+            .assemble(&sources, &request, &run)
+            .await;
 
         let ids: Vec<&str> = assembled.fragments.iter().map(|f| f.id.as_str()).collect();
         // Ranked by score across sources; "too-big" skipped (over budget),
@@ -229,5 +258,29 @@ mod tests {
         let prompt = assembled.render_system_prompt("Base instructions.");
         assert!(prompt.starts_with("Base instructions."));
         assert!(prompt.contains("content of high"));
+    }
+
+    #[test]
+    fn truncate_to_bytes_never_exceeds_budget() {
+        let s = "x".repeat(100);
+        for max in [0usize, 5, 20, 50, 99] {
+            let out = truncate_to_bytes(&s, max);
+            assert!(out.len() <= max, "max = {max}, got {} bytes", out.len());
+        }
+    }
+
+    #[test]
+    fn truncate_to_bytes_cuts_multibyte_input_on_char_boundaries() {
+        let s = "日本語".repeat(20);
+        for max in 0..=s.len() {
+            let out = truncate_to_bytes(&s, max);
+            assert!(out.len() <= max, "max = {max}, got {} bytes", out.len());
+        }
+    }
+
+    #[test]
+    fn truncate_to_bytes_returns_input_unchanged_when_it_fits() {
+        let s = "fits exactly";
+        assert_eq!(truncate_to_bytes(s, s.len()), s);
     }
 }

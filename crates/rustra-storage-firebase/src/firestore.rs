@@ -96,7 +96,12 @@ pub fn from_firestore_value(v: &Value) -> Result<Value> {
             .map(Value::Number)
             .ok_or_else(|| codec_err(format!("non-finite doubleValue: {f}")));
     }
-    for key in ["stringValue", "timestampValue", "referenceValue", "bytesValue"] {
+    for key in [
+        "stringValue",
+        "timestampValue",
+        "referenceValue",
+        "bytesValue",
+    ] {
         if let Some(s) = obj.get(key) {
             return s
                 .as_str()
@@ -116,7 +121,11 @@ pub fn from_firestore_value(v: &Value) -> Result<Value> {
     if let Some(a) = obj.get("arrayValue") {
         let empty = Vec::new();
         let values = a.get("values").and_then(Value::as_array).unwrap_or(&empty);
-        return values.iter().map(from_firestore_value).collect::<Result<Vec<_>>>().map(Value::Array);
+        return values
+            .iter()
+            .map(from_firestore_value)
+            .collect::<Result<Vec<_>>>()
+            .map(Value::Array);
     }
     Err(codec_err(format!("unsupported firestore value: {v}")))
 }
@@ -173,7 +182,8 @@ impl Fields {
     }
 
     pub fn set_u32(&mut self, key: &str, v: u32) {
-        self.0.insert(key.to_owned(), json!({"integerValue": v.to_string()}));
+        self.0
+            .insert(key.to_owned(), json!({"integerValue": v.to_string()}));
     }
 
     pub fn set_ts(&mut self, key: &str, v: DateTime<Utc>) {
@@ -198,7 +208,8 @@ impl Fields {
     /// `stringValue`s.
     pub fn set_string_list(&mut self, key: &str, v: &[String]) {
         let values: Vec<Value> = v.iter().map(|s| json!({"stringValue": s})).collect();
-        self.0.insert(key.to_owned(), json!({"arrayValue": {"values": values}}));
+        self.0
+            .insert(key.to_owned(), json!({"arrayValue": {"values": values}}));
     }
 
     /// Wrap the fields into a document body: `{"fields": {...}}`.
@@ -223,7 +234,9 @@ impl<'a> FieldsReader<'a> {
         match doc.get("fields") {
             Some(Value::Object(map)) => Ok(Self { fields: map }),
             // A document whose fields were all deleted has no `fields` key.
-            None => Ok(Self { fields: empty_fields() }),
+            None => Ok(Self {
+                fields: empty_fields(),
+            }),
             Some(other) => Err(codec_err(format!("invalid document fields: {other}"))),
         }
     }
@@ -268,7 +281,9 @@ impl<'a> FieldsReader<'a> {
                 .as_u64()
                 .and_then(|n| u32::try_from(n).ok())
                 .ok_or_else(|| codec_err(format!("field `{key}` out of range for u32: {n}"))),
-            other => Err(codec_err(format!("field `{key}` is not an integerValue: {other}"))),
+            other => Err(codec_err(format!(
+                "field `{key}` is not an integerValue: {other}"
+            ))),
         }
     }
 
@@ -438,11 +453,23 @@ mod tests {
     #[test]
     fn scalar_values_encode_to_documented_shapes() {
         assert_eq!(to_firestore_value(&json!(null)), json!({"nullValue": null}));
-        assert_eq!(to_firestore_value(&json!(true)), json!({"booleanValue": true}));
-        assert_eq!(to_firestore_value(&json!(42)), json!({"integerValue": "42"}));
-        assert_eq!(to_firestore_value(&json!(-7)), json!({"integerValue": "-7"}));
+        assert_eq!(
+            to_firestore_value(&json!(true)),
+            json!({"booleanValue": true})
+        );
+        assert_eq!(
+            to_firestore_value(&json!(42)),
+            json!({"integerValue": "42"})
+        );
+        assert_eq!(
+            to_firestore_value(&json!(-7)),
+            json!({"integerValue": "-7"})
+        );
         assert_eq!(to_firestore_value(&json!(2.5)), json!({"doubleValue": 2.5}));
-        assert_eq!(to_firestore_value(&json!("hi")), json!({"stringValue": "hi"}));
+        assert_eq!(
+            to_firestore_value(&json!("hi")),
+            json!({"stringValue": "hi"})
+        );
     }
 
     #[test]
@@ -502,8 +529,14 @@ mod tests {
     #[test]
     fn empty_map_and_array_values_decode() {
         // The REST API may omit `fields` / `values` for empty containers.
-        assert_eq!(from_firestore_value(&json!({"mapValue": {}})).unwrap(), json!({}));
-        assert_eq!(from_firestore_value(&json!({"arrayValue": {}})).unwrap(), json!([]));
+        assert_eq!(
+            from_firestore_value(&json!({"mapValue": {}})).unwrap(),
+            json!({})
+        );
+        assert_eq!(
+            from_firestore_value(&json!({"arrayValue": {}})).unwrap(),
+            json!([])
+        );
     }
 
     #[test]
@@ -517,7 +550,10 @@ mod tests {
         let t = Utc.with_ymd_and_hms(2026, 1, 2, 3, 4, 5).unwrap()
             + chrono::Duration::nanoseconds(123_456_789);
         let v = timestamp_value(t);
-        assert_eq!(v, json!({"timestampValue": "2026-01-02T03:04:05.123456789Z"}));
+        assert_eq!(
+            v,
+            json!({"timestampValue": "2026-01-02T03:04:05.123456789Z"})
+        );
         let parsed = parse_timestamp(v["timestampValue"].as_str().unwrap()).unwrap();
         assert_eq!(parsed, t);
     }
@@ -550,7 +586,10 @@ mod tests {
         assert_eq!(r.get_opt_ts("t_some").unwrap(), Some(t));
         assert_eq!(r.get_json("j").unwrap(), json!({"k": [1, 2]}));
         assert_eq!(r.get_json("absent").unwrap(), Value::Null);
-        assert_eq!(r.get_string_list("l").unwrap(), vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(
+            r.get_string_list("l").unwrap(),
+            vec!["a".to_string(), "b".to_string()]
+        );
         assert!(r.get_str("absent").is_err());
     }
 
@@ -586,7 +625,10 @@ mod tests {
         assert_eq!(and(vec![single.clone()]), Some(single.clone()));
         let both = and(vec![single.clone(), field_eq("b", bool_value(true))]).unwrap();
         assert_eq!(both["compositeFilter"]["op"], "AND");
-        assert_eq!(both["compositeFilter"]["filters"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            both["compositeFilter"]["filters"].as_array().unwrap().len(),
+            2
+        );
         let either = or(vec![single.clone(), single]).unwrap();
         assert_eq!(either["compositeFilter"]["op"], "OR");
     }

@@ -10,9 +10,8 @@ use chrono::{DateTime, Utc};
 use rustra_core::{Error, ResourceKind, Result};
 use rustra_storage::types::{
     ChannelMessageRecord, DecisionRecord, DefinitionRecord, GrantRecord, LogRecord,
-    McpServerRecord, ResourceRecord, RunRecord, ScheduleRecord, StoredMessage,
-    SubscriptionRecord, TaskRecord, Thread, TraceSpan, UiArtifactRecord, UserRecord,
-    WorkflowSnapshot, WorkspaceRecord,
+    McpServerRecord, ResourceRecord, RunRecord, ScheduleRecord, StoredMessage, SubscriptionRecord,
+    TaskRecord, Thread, TraceSpan, UiArtifactRecord, UserRecord, WorkflowSnapshot, WorkspaceRecord,
 };
 use rustra_storage::{
     AclStore, DefinitionStore, InfraStore, MemoryStore, ObservabilityStore, Page, TaskStore,
@@ -73,23 +72,34 @@ impl MemoryStore for FirebaseStorage {
     }
 
     async fn delete_thread(&self, thread_id: &str) -> Result<()> {
-        self.delete_matched(queries::messages_in_thread(thread_id)).await?;
+        self.delete_matched(queries::messages_in_thread(thread_id))
+            .await?;
         self.rest.delete_document(coll::THREADS, thread_id).await
     }
 
     async fn list_threads(&self, resource_id: &str, page: Page) -> Result<Vec<Thread>> {
-        let docs = self.rest.run_query(queries::list_threads(resource_id, page)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::list_threads(resource_id, page))
+            .await?;
         decode_all(&docs, codecs::thread_from_doc)
     }
 
     async fn append_message(&self, message: StoredMessage) -> Result<()> {
         self.rest
-            .patch_document(coll::MESSAGES, &message.id, codecs::message_to_doc(&message))
+            .patch_document(
+                coll::MESSAGES,
+                &message.id,
+                codecs::message_to_doc(&message),
+            )
             .await
     }
 
     async fn recent_messages(&self, thread_id: &str, limit: usize) -> Result<Vec<StoredMessage>> {
-        let docs = self.rest.run_query(queries::recent_messages(thread_id, limit)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::recent_messages(thread_id, limit))
+            .await?;
         let mut messages = decode_all(&docs, codecs::message_from_doc)?;
         messages.reverse();
         Ok(messages)
@@ -104,7 +114,7 @@ impl MemoryStore for FirebaseStorage {
                 messages.push(codecs::message_from_doc(&doc)?);
             }
         }
-        messages.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+        messages.sort_by_key(|m| m.created_at);
         Ok(messages)
     }
 
@@ -119,7 +129,11 @@ impl MemoryStore for FirebaseStorage {
 
     async fn save_resource(&self, resource: ResourceRecord) -> Result<()> {
         self.rest
-            .patch_document(coll::RESOURCES, &resource.id, codecs::resource_to_doc(&resource))
+            .patch_document(
+                coll::RESOURCES,
+                &resource.id,
+                codecs::resource_to_doc(&resource),
+            )
             .await
     }
 }
@@ -158,13 +172,20 @@ impl WorkflowStore for FirebaseStorage {
     ) -> Result<Vec<WorkflowSnapshot>> {
         let docs = self
             .rest
-            .run_query(queries::list_snapshots(resource_id, workflow_id, status, page))
+            .run_query(queries::list_snapshots(
+                resource_id,
+                workflow_id,
+                status,
+                page,
+            ))
             .await?;
         decode_all(&docs, codecs::snapshot_from_doc)
     }
 
     async fn delete_snapshot(&self, run_id: &str) -> Result<()> {
-        self.rest.delete_document(coll::WORKFLOW_SNAPSHOTS, run_id).await
+        self.rest
+            .delete_document(coll::WORKFLOW_SNAPSHOTS, run_id)
+            .await
     }
 }
 
@@ -175,11 +196,15 @@ impl WorkflowStore for FirebaseStorage {
 #[async_trait]
 impl TaskStore for FirebaseStorage {
     async fn insert_task(&self, task: TaskRecord) -> Result<()> {
-        self.rest.patch_document(coll::TASKS, &task.id, codecs::task_to_doc(&task)).await
+        self.rest
+            .patch_document(coll::TASKS, &task.id, codecs::task_to_doc(&task))
+            .await
     }
 
     async fn update_task(&self, task: TaskRecord) -> Result<()> {
-        self.rest.patch_document(coll::TASKS, &task.id, codecs::task_to_doc(&task)).await
+        self.rest
+            .patch_document(coll::TASKS, &task.id, codecs::task_to_doc(&task))
+            .await
     }
 
     async fn get_task(&self, task_id: &str) -> Result<Option<TaskRecord>> {
@@ -197,13 +222,20 @@ impl TaskStore for FirebaseStorage {
         status: Option<&str>,
         page: Page,
     ) -> Result<Vec<TaskRecord>> {
-        let docs = self.rest.run_query(queries::list_tasks(user_id, status, page)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::list_tasks(user_id, status, page))
+            .await?;
         decode_all(&docs, codecs::task_from_doc)
     }
 
     async fn upsert_schedule(&self, schedule: ScheduleRecord) -> Result<()> {
         self.rest
-            .patch_document(coll::SCHEDULES, &schedule.id, codecs::schedule_to_doc(&schedule))
+            .patch_document(
+                coll::SCHEDULES,
+                &schedule.id,
+                codecs::schedule_to_doc(&schedule),
+            )
             .await
     }
 
@@ -217,7 +249,9 @@ impl TaskStore for FirebaseStorage {
     }
 
     async fn delete_schedule(&self, schedule_id: &str) -> Result<()> {
-        self.rest.delete_document(coll::SCHEDULES, schedule_id).await
+        self.rest
+            .delete_document(coll::SCHEDULES, schedule_id)
+            .await
     }
 
     async fn list_schedules(
@@ -225,7 +259,10 @@ impl TaskStore for FirebaseStorage {
         user_id: Option<&str>,
         page: Page,
     ) -> Result<Vec<ScheduleRecord>> {
-        let docs = self.rest.run_query(queries::list_schedules(user_id, page)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::list_schedules(user_id, page))
+            .await?;
         decode_all(&docs, codecs::schedule_from_doc)
     }
 
@@ -236,7 +273,11 @@ impl TaskStore for FirebaseStorage {
 
     async fn upsert_subscription(&self, sub: SubscriptionRecord) -> Result<()> {
         self.rest
-            .patch_document(coll::SUBSCRIPTIONS, &sub.id, codecs::subscription_to_doc(&sub))
+            .patch_document(
+                coll::SUBSCRIPTIONS,
+                &sub.id,
+                codecs::subscription_to_doc(&sub),
+            )
             .await
     }
 
@@ -249,19 +290,30 @@ impl TaskStore for FirebaseStorage {
         user_id: Option<&str>,
         page: Page,
     ) -> Result<Vec<SubscriptionRecord>> {
-        let docs = self.rest.run_query(queries::list_subscriptions(user_id, page)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::list_subscriptions(user_id, page))
+            .await?;
         decode_all(&docs, codecs::subscription_from_doc)
     }
 
     async fn insert_decision(&self, decision: DecisionRecord) -> Result<()> {
         self.rest
-            .patch_document(coll::DECISIONS, &decision.id, codecs::decision_to_doc(&decision))
+            .patch_document(
+                coll::DECISIONS,
+                &decision.id,
+                codecs::decision_to_doc(&decision),
+            )
             .await
     }
 
     async fn update_decision(&self, decision: DecisionRecord) -> Result<()> {
         self.rest
-            .patch_document(coll::DECISIONS, &decision.id, codecs::decision_to_doc(&decision))
+            .patch_document(
+                coll::DECISIONS,
+                &decision.id,
+                codecs::decision_to_doc(&decision),
+            )
             .await
     }
 
@@ -303,7 +355,16 @@ impl DefinitionStore for FirebaseStorage {
             .run_query(queries::max_definition_version(record.kind, &record.id))
             .await?;
         let next_version = match max_docs.first() {
-            Some(doc) => codecs::definition_from_doc(doc)?.version + 1,
+            Some(doc) => {
+                let prev = codecs::definition_from_doc(doc)?;
+                prev.version.checked_add(1).ok_or_else(|| {
+                    Error::Storage(format!(
+                        "definition {}/{}: version overflow (already at u32::MAX)",
+                        prev.kind.as_str(),
+                        prev.id
+                    ))
+                })?
+            }
             None => 1,
         };
 
@@ -325,7 +386,11 @@ impl DefinitionStore for FirebaseStorage {
         record.latest = true;
         let doc_id = codecs::definition_doc_id(record.kind, &record.id, record.version);
         self.rest
-            .patch_document(coll::DEFINITIONS, &doc_id, codecs::definition_to_doc(&record))
+            .patch_document(
+                coll::DEFINITIONS,
+                &doc_id,
+                codecs::definition_to_doc(&record),
+            )
             .await?;
         Ok(record)
     }
@@ -335,7 +400,10 @@ impl DefinitionStore for FirebaseStorage {
         kind: ResourceKind,
         id: &str,
     ) -> Result<Option<DefinitionRecord>> {
-        let docs = self.rest.run_query(queries::latest_definition(kind, id)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::latest_definition(kind, id))
+            .await?;
         docs.first().map(codecs::definition_from_doc).transpose()
     }
 
@@ -363,13 +431,19 @@ impl DefinitionStore for FirebaseStorage {
     ) -> Result<Vec<DefinitionRecord>> {
         let docs = self
             .rest
-            .run_query(queries::list_definitions(kind, owner_id, include_shared, page))
+            .run_query(queries::list_definitions(
+                kind,
+                owner_id,
+                include_shared,
+                page,
+            ))
             .await?;
         decode_all(&docs, codecs::definition_from_doc)
     }
 
     async fn delete_definition(&self, kind: ResourceKind, id: &str) -> Result<()> {
-        self.delete_matched(queries::definition_versions(kind, id)).await
+        self.delete_matched(queries::definition_versions(kind, id))
+            .await
     }
 }
 
@@ -380,7 +454,9 @@ impl DefinitionStore for FirebaseStorage {
 #[async_trait]
 impl AclStore for FirebaseStorage {
     async fn upsert_user(&self, user: UserRecord) -> Result<()> {
-        self.rest.patch_document(coll::USERS, &user.id, codecs::user_to_doc(&user)).await
+        self.rest
+            .patch_document(coll::USERS, &user.id, codecs::user_to_doc(&user))
+            .await
     }
 
     async fn get_user(&self, user_id: &str) -> Result<Option<UserRecord>> {
@@ -393,7 +469,10 @@ impl AclStore for FirebaseStorage {
     }
 
     async fn find_user_by_token_hash(&self, token_hash: &str) -> Result<Option<UserRecord>> {
-        let docs = self.rest.run_query(queries::find_user_by_token_hash(token_hash)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::find_user_by_token_hash(token_hash))
+            .await?;
         docs.first().map(codecs::user_from_doc).transpose()
     }
 
@@ -403,7 +482,9 @@ impl AclStore for FirebaseStorage {
     }
 
     async fn insert_grant(&self, grant: GrantRecord) -> Result<()> {
-        self.rest.patch_document(coll::GRANTS, &grant.id, codecs::grant_to_doc(&grant)).await
+        self.rest
+            .patch_document(coll::GRANTS, &grant.id, codecs::grant_to_doc(&grant))
+            .await
     }
 
     async fn delete_grant(&self, grant_id: &str) -> Result<()> {
@@ -415,12 +496,18 @@ impl AclStore for FirebaseStorage {
         kind: ResourceKind,
         resource_id: &str,
     ) -> Result<Vec<GrantRecord>> {
-        let docs = self.rest.run_query(queries::grants_for_resource(kind, resource_id)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::grants_for_resource(kind, resource_id))
+            .await?;
         decode_all(&docs, codecs::grant_from_doc)
     }
 
     async fn list_grants_for_grantee(&self, grantee: &str) -> Result<Vec<GrantRecord>> {
-        let docs = self.rest.run_query(queries::grants_for_grantee(grantee)).await?;
+        let docs = self
+            .rest
+            .run_query(queries::grants_for_grantee(grantee))
+            .await?;
         decode_all(&docs, codecs::grant_from_doc)
     }
 }

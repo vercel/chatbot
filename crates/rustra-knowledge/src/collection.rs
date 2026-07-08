@@ -35,7 +35,7 @@ pub const MAX_DESCRIPTION_LEN: usize = 1024;
 
 /// A parsed knowledge collection: manifest metadata, overview text, and the
 /// document files found next to `KNOWLEDGE.md`.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct KnowledgeCollection {
     /// Kebab-case identifier (`[a-z0-9-]{1,64}`).
     pub name: String,
@@ -67,7 +67,10 @@ impl KnowledgeCollection {
                 keywords.push(word.to_string());
             }
         }
-        TriggerCondition { keywords, ..Default::default() }
+        TriggerCondition {
+            keywords,
+            ..Default::default()
+        }
     }
 
     /// Read one document by its relative path. The path must be one of
@@ -75,7 +78,10 @@ impl KnowledgeCollection {
     /// rejected so callers cannot escape the collection directory.
     pub fn read_document(&self, relative: &Path) -> Result<String> {
         if !self.documents.iter().any(|d| d == relative) {
-            return Err(Error::not_found("knowledge document", relative.display().to_string()));
+            return Err(Error::not_found(
+                "knowledge document",
+                relative.display().to_string(),
+            ));
         }
         Ok(fs::read_to_string(self.dir.join(relative))?)
     }
@@ -84,12 +90,17 @@ impl KnowledgeCollection {
     /// naming its relative path. Documents that fail to read are skipped
     /// with a warning rather than failing the whole collection.
     pub fn full_text(&self) -> String {
+        use std::fmt::Write as _;
         let mut content = self.overview.clone();
         for doc in &self.documents {
             match fs::read_to_string(self.dir.join(doc)) {
                 Ok(text) => {
-                    content.push_str(&format!("\n\n--- document: {} ---\n", doc.display()));
-                    content.push_str(text.trim_end());
+                    let _ = write!(
+                        content,
+                        "\n\n--- document: {} ---\n{}",
+                        doc.display(),
+                        text.trim_end()
+                    );
                 }
                 Err(err) => {
                     tracing::warn!(
@@ -102,6 +113,21 @@ impl KnowledgeCollection {
             }
         }
         content
+    }
+
+    /// Cheap size estimate: overview length plus on-disk document sizes. The
+    /// `fs::metadata`-based counterpart of [`full_text`](Self::full_text),
+    /// used to size candidates without materializing them.
+    pub fn estimated_chars(&self) -> usize {
+        let docs: u64 = self
+            .documents
+            .iter()
+            .filter_map(|doc| fs::metadata(self.dir.join(doc)).ok())
+            .map(|m| m.len())
+            .sum();
+        self.overview
+            .len()
+            .saturating_add(usize::try_from(docs).unwrap_or(usize::MAX))
     }
 }
 
@@ -142,10 +168,9 @@ fn split_frontmatter(content: &str) -> Result<(&str, &str)> {
 }
 
 fn is_document_file(path: &Path) -> bool {
-    matches!(
-        path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).as_deref(),
-        Some("md") | Some("txt")
-    )
+    path.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("md") || e.eq_ignore_ascii_case("txt"))
 }
 
 /// Recursively collect the relative paths of every `.md` / `.txt` file under
@@ -213,34 +238,49 @@ pub fn parse_knowledge_md(content: &str, dir: &Path) -> Result<KnowledgeCollecti
 }
 
 /// Check that `name` is valid kebab-case: `[a-z0-9-]{1,64}`.
-pub(crate) fn is_valid_name(name: &str) -> bool {
+fn is_valid_name(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= MAX_NAME_LEN
-        && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+}
+
+/// Validate a collection name against the kebab-case convention. Single
+/// source of truth shared by [`validate_collection`] and
+/// [`scaffold_collection`].
+fn validate_name(name: &str) -> Result<()> {
+    if !is_valid_name(name) {
+        return Err(Error::Validation(format!(
+            "collection name `{name}` is invalid: must match [a-z0-9-]{{1,{MAX_NAME_LEN}}} (lowercase kebab-case)"
+        )));
+    }
+    Ok(())
+}
+
+/// Validate a collection description (non-empty, bounded length). Single
+/// source of truth shared by [`validate_collection`] and
+/// [`scaffold_collection`].
+fn validate_description(name: &str, description: &str) -> Result<()> {
+    if description.trim().is_empty() {
+        return Err(Error::Validation(format!(
+            "collection `{name}` has an empty description; describe what it covers and when it is relevant"
+        )));
+    }
+    if description.len() > MAX_DESCRIPTION_LEN {
+        return Err(Error::Validation(format!(
+            "collection `{name}` description is {} chars; maximum is {MAX_DESCRIPTION_LEN}",
+            description.len()
+        )));
+    }
+    Ok(())
 }
 
 /// Validate a parsed collection: kebab-case name, bounded description, and
 /// some actual knowledge (a non-empty overview or at least one document).
 pub fn validate_collection(collection: &KnowledgeCollection) -> Result<()> {
-    if !is_valid_name(&collection.name) {
-        return Err(Error::Validation(format!(
-            "collection name `{}` is invalid: must match [a-z0-9-]{{1,{MAX_NAME_LEN}}} (lowercase kebab-case)",
-            collection.name
-        )));
-    }
-    if collection.description.trim().is_empty() {
-        return Err(Error::Validation(format!(
-            "collection `{}` has an empty description; describe what it covers and when it is relevant",
-            collection.name
-        )));
-    }
-    if collection.description.len() > MAX_DESCRIPTION_LEN {
-        return Err(Error::Validation(format!(
-            "collection `{}` description is {} chars; maximum is {MAX_DESCRIPTION_LEN}",
-            collection.name,
-            collection.description.len()
-        )));
-    }
+    validate_name(&collection.name)?;
+    validate_description(&collection.name, &collection.description)?;
     if collection.overview.trim().is_empty() && collection.documents.is_empty() {
         return Err(Error::Validation(format!(
             "collection `{}` is empty: provide an overview in {KNOWLEDGE_FILE} or at least one .md/.txt document",
@@ -254,24 +294,10 @@ pub fn validate_collection(collection: &KnowledgeCollection) -> Result<()> {
 /// needed). Fails if the directory already contains a `KNOWLEDGE.md`, or if
 /// `name` / `description` would not validate.
 pub fn scaffold_collection(dir: &Path, name: &str, description: &str) -> Result<()> {
-    if !is_valid_name(name) {
-        return Err(Error::Validation(format!(
-            "collection name `{name}` is invalid: must match [a-z0-9-]{{1,{MAX_NAME_LEN}}} (lowercase kebab-case)"
-        )));
-    }
-    if description.trim().is_empty() || description.len() > MAX_DESCRIPTION_LEN {
-        return Err(Error::Validation(format!(
-            "collection description must be non-empty and at most {MAX_DESCRIPTION_LEN} chars"
-        )));
-    }
-    let manifest = dir.join(KNOWLEDGE_FILE);
-    if manifest.exists() {
-        return Err(Error::Validation(format!(
-            "refusing to scaffold: {} already exists",
-            manifest.display()
-        )));
-    }
+    validate_name(name)?;
+    validate_description(name, description)?;
     fs::create_dir_all(dir)?;
+    let manifest = dir.join(KNOWLEDGE_FILE);
 
     let description_yaml = serde_yaml::to_string(description)
         .map_err(|e| Error::Validation(format!("description is not YAML-serializable: {e}")))?;
@@ -287,7 +313,21 @@ pub fn scaffold_collection(dir: &Path, name: &str, description: &str) -> Result<
          Add `.md` or `.txt` document files next to this manifest; they are the knowledge.\n",
         description_yaml.trim_end(),
     );
-    fs::write(&manifest, content)?;
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&manifest)
+        .map_err(|err| {
+            if err.kind() == std::io::ErrorKind::AlreadyExists {
+                Error::Validation(format!(
+                    "refusing to scaffold: {} already exists",
+                    manifest.display()
+                ))
+            } else {
+                Error::from(err)
+            }
+        })?;
+    std::io::Write::write_all(&mut file, content.as_bytes())?;
     Ok(())
 }
 
@@ -316,8 +356,14 @@ metadata:\n  owner: support\n\
         let collection = parse_knowledge_md(SAMPLE, &dir).expect("parse");
         assert_eq!(collection.name, "billing-faq");
         assert_eq!(collection.keywords, vec!["billing", "invoice"]);
-        assert_eq!(collection.metadata.get("owner").and_then(|v| v.as_str()), Some("support"));
-        assert_eq!(collection.overview, "Covers billing, invoices, and refunds.");
+        assert_eq!(
+            collection.metadata.get("owner").and_then(|v| v.as_str()),
+            Some("support")
+        );
+        assert_eq!(
+            collection.overview,
+            "Covers billing, invoices, and refunds."
+        );
         assert_eq!(
             collection.documents,
             vec![PathBuf::from("refunds.md"), PathBuf::from("sub/plans.txt")]
@@ -329,8 +375,13 @@ metadata:\n  owner: support\n\
         assert!(trigger.score("where is my invoice?") > 0.0);
 
         // Document access is confined to listed documents.
-        assert!(collection.read_document(Path::new("refunds.md")).expect("read").contains("30 days"));
-        assert!(collection.read_document(Path::new("../outside.md")).is_err());
+        assert!(collection
+            .read_document(Path::new("refunds.md"))
+            .expect("read")
+            .contains("30 days"));
+        assert!(collection
+            .read_document(Path::new("../outside.md"))
+            .is_err());
 
         let full = collection.full_text();
         assert!(full.starts_with("Covers billing"));
@@ -346,10 +397,16 @@ metadata:\n  owner: support\n\
             Err(Error::Validation(_))
         ));
         let bad_name = SAMPLE.replace("name: billing-faq", "name: Billing FAQ");
-        assert!(matches!(parse_knowledge_md(&bad_name, dir), Err(Error::Validation(_))));
+        assert!(matches!(
+            parse_knowledge_md(&bad_name, dir),
+            Err(Error::Validation(_))
+        ));
         // Empty overview with no documents is rejected.
         let empty = "---\nname: empty-one\ndescription: d\n---\n\n";
-        assert!(matches!(parse_knowledge_md(empty, dir), Err(Error::Validation(_))));
+        assert!(matches!(
+            parse_knowledge_md(empty, dir),
+            Err(Error::Validation(_))
+        ));
     }
 
     #[test]

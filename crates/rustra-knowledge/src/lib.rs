@@ -1,7 +1,7 @@
 //! # rustra-knowledge
 //!
 //! Knowledge collections for Rustra: the information-only sibling of
-//! [`rustra-skills`]. Where a skill carries *task instructions*, a knowledge
+//! \[`rustra-skills`\]. Where a skill carries *task instructions*, a knowledge
 //! collection carries *reference information* — domain facts, policies, API
 //! notes, product docs — that an agent may attach as context but is never
 //! asked to "follow".

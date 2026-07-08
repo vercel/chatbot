@@ -42,16 +42,14 @@ pub fn create_ui_tool(service: Arc<UiService>) -> FunctionTool {
                 let title = input
                     .get("title")
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Error::Validation("`title` must be a string".into()))?
-                    .to_string();
+                    .ok_or_else(|| Error::Validation("`title` must be a string".into()))?;
                 let html = input
                     .get("html")
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Error::Validation("`html` must be a string".into()))?
-                    .to_string();
+                    .ok_or_else(|| Error::Validation("`html` must be a string".into()))?;
                 let data = input.get("data").cloned().unwrap_or(Value::Null);
 
-                let record = service.create(ctx.runtime.user_id(), &title, &html, data).await?;
+                let record = service.create(ctx.runtime.user_id(), title, html, data).await?;
                 Ok(json!({ "id": record.id, "version": record.version }))
             }
         },
@@ -96,7 +94,11 @@ mod tests {
         let record = service.get("u1", id).await.unwrap();
         assert_eq!(record.owner_id, "u1");
         assert_eq!(record.data, json!({ "a": 1 }));
-        assert!(service.list("u2", Page::default()).await.unwrap().is_empty());
+        assert!(service
+            .list("u2", Page::default())
+            .await
+            .unwrap()
+            .is_empty());
     }
 
     #[tokio::test]
@@ -104,11 +106,16 @@ mod tests {
         let service = Arc::new(UiService::new(Arc::new(InMemoryStorage::new())));
         let tool = create_ui_tool(service);
 
-        let err = tool.execute(json!({ "title": "T" }), &ctx("u1")).await.unwrap_err();
+        let err = tool
+            .execute(json!({ "title": "T" }), &ctx("u1"))
+            .await
+            .unwrap_err();
         assert!(err.to_string().contains("html"));
 
-        let err =
-            tool.execute(json!({ "title": "T", "html": "" }), &ctx("u1")).await.unwrap_err();
+        let err = tool
+            .execute(json!({ "title": "T", "html": "" }), &ctx("u1"))
+            .await
+            .unwrap_err();
         assert!(err.to_string().contains("empty"));
     }
 }

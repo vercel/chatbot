@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::sync::Mutex;
 
 use async_trait::async_trait;
@@ -9,14 +10,14 @@ use crate::types::{ContentBlock, ModelRequest, ModelResponse, StopReason, TokenU
 use crate::LanguageModel;
 
 /// One scripted model turn for [`MockModel`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ScriptedTurn {
     /// Respond with plain text and stop.
     Text(String),
     /// Request a tool call (`name`, `input`); the loop will execute the tool
     /// and call the model again.
     ToolCall { name: String, input: Value },
-    /// Respond with text derived from the last message (`fn` of its text).
+    /// Respond with `echo: <text of the last message>`.
     EchoLast,
 }
 
@@ -25,24 +26,41 @@ pub enum ScriptedTurn {
 /// Turns are consumed in order; once the script is exhausted the model
 /// answers with a fixed fallback. This keeps agent-loop and workflow tests
 /// hermetic — no network, no keys.
+#[derive(Debug)]
 pub struct MockModel {
     id: String,
-    script: Mutex<std::collections::VecDeque<ScriptedTurn>>,
+    state: Mutex<MockState>,
+}
+
+#[derive(Debug)]
+struct MockState {
+    script: VecDeque<ScriptedTurn>,
     /// Every request the model has seen, for assertions.
-    pub requests: Mutex<Vec<ModelRequest>>,
+    requests: Vec<ModelRequest>,
 }
 
 impl MockModel {
+    /// Plays `turns` in order; once exhausted every further call returns the
+    /// fixed `(mock script exhausted)` text reply.
     pub fn new(turns: Vec<ScriptedTurn>) -> Self {
         Self {
             id: "mock/mock-1".into(),
-            script: Mutex::new(turns.into()),
-            requests: Mutex::new(Vec::new()),
+            state: Mutex::new(MockState {
+                script: turns.into(),
+                requests: Vec::new(),
+            }),
         }
     }
 
+    /// Single-turn script that replies `reply` once, then falls back to the
+    /// exhausted-script reply.
     pub fn text(reply: impl Into<String>) -> Self {
         Self::new(vec![ScriptedTurn::Text(reply.into())])
+    }
+
+    /// Every request the model has seen, for assertions.
+    pub fn requests(&self) -> Vec<ModelRequest> {
+        self.state.lock().expect("mock poisoned").requests.clone()
     }
 }
 
@@ -53,11 +71,25 @@ impl LanguageModel for MockModel {
     }
 
     async fn generate(&self, request: ModelRequest) -> Result<ModelResponse> {
-        let turn = self.script.lock().expect("mock poisoned").pop_front();
-        let last_text = request.messages.last().map(|m| m.text()).unwrap_or_default();
-        self.requests.lock().expect("mock poisoned").push(request);
+        let last_text = request
+            .messages
+            .last()
+            .map(|m| m.text())
+            .unwrap_or_default();
+        // Pop the turn and log the request under one lock so concurrent
+        // callers cannot interleave the two; the guard drops before any
+        // await point (there are none, but the scoping keeps that explicit).
+        let turn = {
+            let mut state = self.state.lock().expect("mock poisoned");
+            let turn = state.script.pop_front();
+            state.requests.push(request);
+            turn
+        };
 
-        let usage = TokenUsage { input_tokens: 10, output_tokens: 10 };
+        let usage = TokenUsage {
+            input_tokens: 10,
+            output_tokens: 10,
+        };
         let response = match turn {
             Some(ScriptedTurn::Text(text)) => ModelResponse {
                 content: vec![ContentBlock::text(text)],

@@ -1,7 +1,7 @@
 //! [`ObservabilityStore`]: runs, trace spans, logs.
 
 use async_trait::async_trait;
-use rusqlite::{params, Row};
+use rusqlite::{params, Connection, Row};
 use rustra_core::Result;
 use rustra_storage::types::{LogRecord, RunRecord, TraceSpan};
 use rustra_storage::{ObservabilityStore, Page};
@@ -24,51 +24,51 @@ const UPSERT_RUN: &str = "INSERT OR REPLACE INTO rustra_runs \
 
 fn run_from_row(row: &Row<'_>) -> Result<RunRecord> {
     Ok(RunRecord {
-        id: col(row, 0)?,
-        kind: col(row, 1)?,
-        subject_id: col(row, 2)?,
-        user_id: col(row, 3)?,
-        status: col(row, 4)?,
-        input: col_json(row, 5)?,
-        output: col_json(row, 6)?,
-        error: col(row, 7)?,
-        trace_id: col(row, 8)?,
-        started_at: col_ts(row, 9)?,
-        ended_at: col_ts_opt(row, 10)?,
-        metadata: col_json(row, 11)?,
+        id: col(row, "id")?,
+        kind: col(row, "kind")?,
+        subject_id: col(row, "subject_id")?,
+        user_id: col(row, "user_id")?,
+        status: col(row, "status")?,
+        input: col_json(row, "input")?,
+        output: col_json(row, "output")?,
+        error: col(row, "error")?,
+        trace_id: col(row, "trace_id")?,
+        started_at: col_ts(row, "started_at")?,
+        ended_at: col_ts_opt(row, "ended_at")?,
+        metadata: col_json(row, "metadata")?,
     })
 }
 
 fn span_from_row(row: &Row<'_>) -> Result<TraceSpan> {
     Ok(TraceSpan {
-        id: col(row, 0)?,
-        trace_id: col(row, 1)?,
-        parent_id: col(row, 2)?,
-        name: col(row, 3)?,
-        kind: col(row, 4)?,
-        user_id: col(row, 5)?,
-        input: col_json(row, 6)?,
-        output: col_json(row, 7)?,
-        error: col(row, 8)?,
-        started_at: col_ts(row, 9)?,
-        ended_at: col_ts_opt(row, 10)?,
-        metadata: col_json(row, 11)?,
+        id: col(row, "id")?,
+        trace_id: col(row, "trace_id")?,
+        parent_id: col(row, "parent_id")?,
+        name: col(row, "name")?,
+        kind: col(row, "kind")?,
+        user_id: col(row, "user_id")?,
+        input: col_json(row, "input")?,
+        output: col_json(row, "output")?,
+        error: col(row, "error")?,
+        started_at: col_ts(row, "started_at")?,
+        ended_at: col_ts_opt(row, "ended_at")?,
+        metadata: col_json(row, "metadata")?,
     })
 }
 
 fn log_from_row(row: &Row<'_>) -> Result<LogRecord> {
     Ok(LogRecord {
-        id: col(row, 0)?,
-        level: col(row, 1)?,
-        message: col(row, 2)?,
-        fields: col_json(row, 3)?,
-        user_id: col(row, 4)?,
-        run_id: col(row, 5)?,
-        created_at: col_ts(row, 6)?,
+        id: col(row, "id")?,
+        level: col(row, "level")?,
+        message: col(row, "message")?,
+        fields: col_json(row, "fields")?,
+        user_id: col(row, "user_id")?,
+        run_id: col(row, "run_id")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
-fn upsert_run(conn: &rusqlite::Connection, run: &RunRecord) -> Result<()> {
+fn upsert_run(conn: &Connection, run: &RunRecord) -> Result<()> {
     exec(
         conn,
         UPSERT_RUN,
@@ -133,7 +133,7 @@ impl ObservabilityStore for SqliteStorage {
                         "{SELECT_RUN} WHERE user_id = ?1 \
                          AND (?2 IS NULL OR kind = ?2) \
                          AND (?3 IS NULL OR status = ?3) \
-                         ORDER BY started_at DESC LIMIT ?4 OFFSET ?5"
+                         ORDER BY started_at DESC, rowid DESC LIMIT ?4 OFFSET ?5"
                     ),
                     params![user_id, kind, status, limit, offset],
                     run_from_row,
@@ -145,8 +145,7 @@ impl ObservabilityStore for SqliteStorage {
     async fn insert_spans(&self, spans: Vec<TraceSpan>) -> Result<()> {
         self.db
             .call(move |conn| {
-                let tx = conn.transaction().map_err(storage_err)?;
-                {
+                with_tx(conn, |tx| {
                     let mut stmt = tx
                         .prepare(
                             "INSERT OR REPLACE INTO rustra_spans \
@@ -172,9 +171,8 @@ impl ObservabilityStore for SqliteStorage {
                         ])
                         .map_err(storage_err)?;
                     }
-                }
-                tx.commit().map_err(storage_err)?;
-                Ok(())
+                    Ok(())
+                })
             })
             .await
     }
@@ -234,7 +232,7 @@ impl ObservabilityStore for SqliteStorage {
                     &format!(
                         "{SELECT_LOG} WHERE (?1 IS NULL OR user_id = ?1) \
                          AND (?2 IS NULL OR run_id = ?2) \
-                         ORDER BY created_at DESC LIMIT ?3 OFFSET ?4"
+                         ORDER BY created_at DESC, rowid DESC LIMIT ?3 OFFSET ?4"
                     ),
                     params![user_id, run_id, limit, offset],
                     log_from_row,

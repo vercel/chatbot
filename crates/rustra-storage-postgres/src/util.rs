@@ -42,11 +42,7 @@ pub(crate) fn kind_from_sql(s: &str) -> Result<ResourceKind> {
 }
 
 pub(crate) fn vis_to_sql(v: Visibility) -> &'static str {
-    match v {
-        Visibility::Private => "private",
-        Visibility::Shared => "shared",
-        Visibility::Public => "public",
-    }
+    v.as_str()
 }
 
 pub(crate) fn vis_from_sql(s: &str) -> Result<Visibility> {
@@ -87,12 +83,9 @@ pub(crate) fn col_u32(row: &Row, idx: usize) -> Result<u32> {
         .map_err(|_| Error::Storage(format!("column {idx} value {v} out of range for u32")))
 }
 
-/// Map every row through `map`.
-pub(crate) fn rows_map<T>(rows: Vec<Row>, map: impl Fn(&Row) -> Result<T>) -> Result<Vec<T>> {
-    rows.iter().map(map).collect()
-}
-
-/// Map an optional row through `map`.
-pub(crate) fn row_opt<T>(row: Option<Row>, map: impl Fn(&Row) -> Result<T>) -> Result<Option<T>> {
-    row.as_ref().map(map).transpose()
+/// Decode a record from one result row. Implemented by every domain record
+/// type; drives the typed [`crate::Db::query_as`] / [`crate::Db::query_opt_as`]
+/// helpers.
+pub(crate) trait FromRow: Sized {
+    fn from_row(row: &Row) -> Result<Self>;
 }

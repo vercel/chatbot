@@ -14,13 +14,13 @@ const SELECT_SNAPSHOT: &str = "SELECT run_id, workflow_id, resource_id, status, 
 
 fn snapshot_from_row(row: &Row<'_>) -> Result<WorkflowSnapshot> {
     Ok(WorkflowSnapshot {
-        run_id: col(row, 0)?,
-        workflow_id: col(row, 1)?,
-        resource_id: col(row, 2)?,
-        status: col(row, 3)?,
-        snapshot: col_json(row, 4)?,
-        created_at: col_ts(row, 5)?,
-        updated_at: col_ts(row, 6)?,
+        run_id: col(row, "run_id")?,
+        workflow_id: col(row, "workflow_id")?,
+        resource_id: col(row, "resource_id")?,
+        status: col(row, "status")?,
+        snapshot: col_json(row, "snapshot")?,
+        created_at: col_ts(row, "created_at")?,
+        updated_at: col_ts(row, "updated_at")?,
     })
 }
 
@@ -82,7 +82,7 @@ impl WorkflowStore for SqliteStorage {
                         "{SELECT_SNAPSHOT} WHERE resource_id = ?1 \
                          AND (?2 IS NULL OR workflow_id = ?2) \
                          AND (?3 IS NULL OR status = ?3) \
-                         ORDER BY updated_at DESC LIMIT ?4 OFFSET ?5"
+                         ORDER BY updated_at DESC, rowid DESC LIMIT ?4 OFFSET ?5"
                     ),
                     params![resource_id, workflow_id, status, limit, offset],
                     snapshot_from_row,

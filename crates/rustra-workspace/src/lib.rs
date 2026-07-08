@@ -24,15 +24,16 @@ pub use fs::{
     DirEntryInfo, GrepMatch, Workspace, AGENTS_DIR, FILES_DIR, FLOWS_DIR, KNOWLEDGE_DIR,
     SKILLS_DIR, STANDARD_SUBDIRS,
 };
-pub use lsp::{encode_message, read_message, Diagnostic, LspClient, LspServerConfig};
+pub use lsp::{Diagnostic, LspClient, LspServerConfig};
 pub use shell::{ShellOutput, ShellPolicy};
 pub use tools::{
-    grep_tool, list_files_tool, read_file_tool, search_files_tool, shell_tool, write_file_tool,
+    grep_tool, list_files_tool, read_file_tool, search_files_tool, shell_tool, workspace_tools,
+    write_file_tool,
 };
 
 use chrono::Utc;
 use serde_json::Value;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use rustra_core::{Error, Result};
 use rustra_storage::{types::WorkspaceRecord, SharedStorage};
@@ -44,13 +45,26 @@ pub struct WorkspaceManager {
     storage: SharedStorage,
 }
 
+impl std::fmt::Debug for WorkspaceManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WorkspaceManager")
+            .field("base_dir", &self.base_dir)
+            .finish_non_exhaustive()
+    }
+}
+
 impl WorkspaceManager {
+    /// Create a manager that roots each user's workspace at
+    /// `<base_dir>/<user_id>` and records workspaces in `storage`.
     pub fn new(base_dir: impl Into<PathBuf>, storage: SharedStorage) -> Self {
-        Self { base_dir: base_dir.into(), storage }
+        Self {
+            base_dir: base_dir.into(),
+            storage,
+        }
     }
 
     /// The directory under which all user workspaces live.
-    pub fn base_dir(&self) -> &std::path::Path {
+    pub fn base_dir(&self) -> &Path {
         &self.base_dir
     }
 
@@ -90,7 +104,10 @@ fn validate_user_id(user_id: &str) -> Result<()> {
     if user_id.is_empty() {
         return Err(Error::Validation("user id must not be empty".into()));
     }
-    if !user_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+    if !user_id
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
         return Err(Error::Validation(format!(
             "invalid user id for a workspace: `{user_id}` \
              (only ASCII letters, digits, `-`, and `_` are allowed)"
@@ -126,7 +143,11 @@ mod tests {
         assert_eq!(ws.agents_dir(), ws.root().join("agents"));
         assert_eq!(ws.flows_dir(), ws.root().join("flows"));
 
-        let record = storage.get_workspace("ws_alice").await.unwrap().expect("record persisted");
+        let record = storage
+            .get_workspace("ws_alice")
+            .await
+            .unwrap()
+            .expect("record persisted");
         assert_eq!(record.user_id, "alice");
         assert_eq!(record.root_path, ws.root().to_string_lossy());
         let created_at = record.created_at;
@@ -134,7 +155,11 @@ mod tests {
         // Idempotent: a second call reuses the record.
         let again = manager.workspace_for_user("alice").await.unwrap();
         assert_eq!(again.root(), ws.root());
-        let record = storage.get_workspace("ws_alice").await.unwrap().expect("record kept");
+        let record = storage
+            .get_workspace("ws_alice")
+            .await
+            .unwrap()
+            .expect("record kept");
         assert_eq!(record.created_at, created_at);
     }
 

@@ -15,35 +15,41 @@ const SELECT_THREAD: &str =
 const SELECT_MESSAGE: &str =
     "SELECT id, thread_id, resource_id, role, content, created_at FROM rustra_messages";
 
-fn thread_from_row(row: &Row) -> Result<Thread> {
-    Ok(Thread {
-        id: col(row, 0)?,
-        resource_id: col(row, 1)?,
-        title: col(row, 2)?,
-        metadata: col(row, 3)?,
-        created_at: col(row, 4)?,
-        updated_at: col(row, 5)?,
-    })
+impl FromRow for Thread {
+    fn from_row(row: &Row) -> Result<Thread> {
+        Ok(Thread {
+            id: col(row, 0)?,
+            resource_id: col(row, 1)?,
+            title: col(row, 2)?,
+            metadata: col(row, 3)?,
+            created_at: col(row, 4)?,
+            updated_at: col(row, 5)?,
+        })
+    }
 }
 
-fn message_from_row(row: &Row) -> Result<StoredMessage> {
-    Ok(StoredMessage {
-        id: col(row, 0)?,
-        thread_id: col(row, 1)?,
-        resource_id: col(row, 2)?,
-        role: col(row, 3)?,
-        content: col(row, 4)?,
-        created_at: col(row, 5)?,
-    })
+impl FromRow for StoredMessage {
+    fn from_row(row: &Row) -> Result<StoredMessage> {
+        Ok(StoredMessage {
+            id: col(row, 0)?,
+            thread_id: col(row, 1)?,
+            resource_id: col(row, 2)?,
+            role: col(row, 3)?,
+            content: col(row, 4)?,
+            created_at: col(row, 5)?,
+        })
+    }
 }
 
-fn resource_from_row(row: &Row) -> Result<ResourceRecord> {
-    Ok(ResourceRecord {
-        id: col(row, 0)?,
-        working_memory: col(row, 1)?,
-        metadata: col(row, 2)?,
-        updated_at: col(row, 3)?,
-    })
+impl FromRow for ResourceRecord {
+    fn from_row(row: &Row) -> Result<ResourceRecord> {
+        Ok(ResourceRecord {
+            id: col(row, 0)?,
+            working_memory: col(row, 1)?,
+            metadata: col(row, 2)?,
+            updated_at: col(row, 3)?,
+        })
+    }
 }
 
 #[async_trait]
@@ -71,11 +77,9 @@ impl MemoryStore for PostgresStorage {
     }
 
     async fn get_thread(&self, thread_id: &str) -> Result<Option<Thread>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_THREAD} WHERE id = $1"), &[&thread_id])
-            .await?;
-        row_opt(row, thread_from_row)
+        self.db
+            .query_opt_as::<Thread>(&format!("{SELECT_THREAD} WHERE id = $1"), &[&thread_id])
+            .await
     }
 
     async fn update_thread(&self, thread: Thread) -> Result<()> {
@@ -116,17 +120,15 @@ impl MemoryStore for PostgresStorage {
 
     async fn list_threads(&self, resource_id: &str, page: Page) -> Result<Vec<Thread>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<Thread>(
                 &format!(
                     "{SELECT_THREAD} WHERE resource_id = $1 \
                      ORDER BY updated_at DESC LIMIT $2 OFFSET $3"
                 ),
                 &[&resource_id, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, thread_from_row)
+            .await
     }
 
     async fn append_message(&self, message: StoredMessage) -> Result<()> {
@@ -151,9 +153,9 @@ impl MemoryStore for PostgresStorage {
     async fn recent_messages(&self, thread_id: &str, limit: usize) -> Result<Vec<StoredMessage>> {
         let limit = as_i64(limit);
         // Take the newest `limit` messages, then flip to chronological.
-        let rows = self
+        let mut messages = self
             .db
-            .query(
+            .query_as::<StoredMessage>(
                 &format!(
                     "{SELECT_MESSAGE} WHERE thread_id = $1 \
                      ORDER BY created_at DESC, seq DESC LIMIT $2"
@@ -161,7 +163,6 @@ impl MemoryStore for PostgresStorage {
                 &[&thread_id, &limit],
             )
             .await?;
-        let mut messages = rows_map(rows, message_from_row)?;
         messages.reverse();
         Ok(messages)
     }
@@ -170,29 +171,22 @@ impl MemoryStore for PostgresStorage {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
-        let ids = ids.to_vec();
-        let rows = self
-            .db
-            .query(
-                &format!(
-                    "{SELECT_MESSAGE} WHERE id = ANY($1) ORDER BY created_at ASC, seq ASC"
-                ),
+        self.db
+            .query_as::<StoredMessage>(
+                &format!("{SELECT_MESSAGE} WHERE id = ANY($1) ORDER BY created_at ASC, seq ASC"),
                 &[&ids],
             )
-            .await?;
-        rows_map(rows, message_from_row)
+            .await
     }
 
     async fn get_resource(&self, resource_id: &str) -> Result<Option<ResourceRecord>> {
-        let row = self
-            .db
-            .query_opt(
+        self.db
+            .query_opt_as::<ResourceRecord>(
                 "SELECT id, working_memory, metadata, updated_at \
                  FROM rustra_resources WHERE id = $1",
                 &[&resource_id],
             )
-            .await?;
-        row_opt(row, resource_from_row)
+            .await
     }
 
     async fn save_resource(&self, resource: ResourceRecord) -> Result<()> {

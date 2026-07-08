@@ -30,18 +30,20 @@ const PUT_DEFINITION: &str = "WITH demoted AS ( \
             $5, $6, TRUE, $7 \
      RETURNING version";
 
-fn definition_from_row(row: &Row) -> Result<DefinitionRecord> {
-    Ok(DefinitionRecord {
-        id: col(row, 0)?,
-        kind: kind_from_sql(&col::<String>(row, 1)?)?,
-        owner_id: col(row, 2)?,
-        name: col(row, 3)?,
-        version: col_u32(row, 4)?,
-        spec: col(row, 5)?,
-        visibility: vis_from_sql(&col::<String>(row, 6)?)?,
-        latest: col(row, 7)?,
-        created_at: col(row, 8)?,
-    })
+impl FromRow for DefinitionRecord {
+    fn from_row(row: &Row) -> Result<DefinitionRecord> {
+        Ok(DefinitionRecord {
+            id: col(row, 0)?,
+            kind: kind_from_sql(&col::<String>(row, 1)?)?,
+            owner_id: col(row, 2)?,
+            name: col(row, 3)?,
+            version: col_u32(row, 4)?,
+            spec: col(row, 5)?,
+            visibility: vis_from_sql(&col::<String>(row, 6)?)?,
+            latest: col(row, 7)?,
+            created_at: col(row, 8)?,
+        })
+    }
 }
 
 #[async_trait]
@@ -74,14 +76,12 @@ impl DefinitionStore for PostgresStorage {
         kind: ResourceKind,
         id: &str,
     ) -> Result<Option<DefinitionRecord>> {
-        let row = self
-            .db
-            .query_opt(
+        self.db
+            .query_opt_as::<DefinitionRecord>(
                 &format!("{SELECT_DEFINITION} WHERE kind = $1 AND id = $2 AND latest = TRUE"),
                 &[&kind_to_sql(kind), &id],
             )
-            .await?;
-        row_opt(row, definition_from_row)
+            .await
     }
 
     async fn get_definition_version(
@@ -91,14 +91,12 @@ impl DefinitionStore for PostgresStorage {
         version: u32,
     ) -> Result<Option<DefinitionRecord>> {
         let version = u32_to_db(version);
-        let row = self
-            .db
-            .query_opt(
+        self.db
+            .query_opt_as::<DefinitionRecord>(
                 &format!("{SELECT_DEFINITION} WHERE kind = $1 AND id = $2 AND version = $3"),
                 &[&kind_to_sql(kind), &id, &version],
             )
-            .await?;
-        row_opt(row, definition_from_row)
+            .await
     }
 
     async fn list_definitions(
@@ -109,18 +107,22 @@ impl DefinitionStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<DefinitionRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<DefinitionRecord>(
                 &format!(
                     "{SELECT_DEFINITION} WHERE kind = $1 AND latest = TRUE \
                      AND (owner_id = $2 OR ($3 AND visibility <> 'private')) \
                      ORDER BY created_at DESC LIMIT $4 OFFSET $5"
                 ),
-                &[&kind_to_sql(kind), &owner_id, &include_shared, &limit, &offset],
+                &[
+                    &kind_to_sql(kind),
+                    &owner_id,
+                    &include_shared,
+                    &limit,
+                    &offset,
+                ],
             )
-            .await?;
-        rows_map(rows, definition_from_row)
+            .await
     }
 
     async fn delete_definition(&self, kind: ResourceKind, id: &str) -> Result<()> {

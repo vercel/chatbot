@@ -17,32 +17,32 @@ const SELECT_MESSAGE: &str =
 
 fn thread_from_row(row: &Row<'_>) -> Result<Thread> {
     Ok(Thread {
-        id: col(row, 0)?,
-        resource_id: col(row, 1)?,
-        title: col(row, 2)?,
-        metadata: col_json(row, 3)?,
-        created_at: col_ts(row, 4)?,
-        updated_at: col_ts(row, 5)?,
+        id: col(row, "id")?,
+        resource_id: col(row, "resource_id")?,
+        title: col(row, "title")?,
+        metadata: col_json(row, "metadata")?,
+        created_at: col_ts(row, "created_at")?,
+        updated_at: col_ts(row, "updated_at")?,
     })
 }
 
 fn message_from_row(row: &Row<'_>) -> Result<StoredMessage> {
     Ok(StoredMessage {
-        id: col(row, 0)?,
-        thread_id: col(row, 1)?,
-        resource_id: col(row, 2)?,
-        role: col(row, 3)?,
-        content: col_json(row, 4)?,
-        created_at: col_ts(row, 5)?,
+        id: col(row, "id")?,
+        thread_id: col(row, "thread_id")?,
+        resource_id: col(row, "resource_id")?,
+        role: col(row, "role")?,
+        content: col_json(row, "content")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
 fn resource_from_row(row: &Row<'_>) -> Result<ResourceRecord> {
     Ok(ResourceRecord {
-        id: col(row, 0)?,
-        working_memory: col(row, 1)?,
-        metadata: col_json(row, 2)?,
-        updated_at: col_ts(row, 3)?,
+        id: col(row, "id")?,
+        working_memory: col(row, "working_memory")?,
+        metadata: col_json(row, "metadata")?,
+        updated_at: col_ts(row, "updated_at")?,
     })
 }
 
@@ -112,19 +112,19 @@ impl MemoryStore for SqliteStorage {
         let thread_id = thread_id.to_owned();
         self.db
             .call(move |conn| {
-                let tx = conn.transaction().map_err(storage_err)?;
-                tx.execute(
-                    "DELETE FROM rustra_messages WHERE thread_id = ?1",
-                    params![thread_id],
-                )
-                .map_err(storage_err)?;
-                tx.execute(
-                    "DELETE FROM rustra_threads WHERE id = ?1",
-                    params![thread_id],
-                )
-                .map_err(storage_err)?;
-                tx.commit().map_err(storage_err)?;
-                Ok(())
+                with_tx(conn, |tx| {
+                    exec(
+                        tx,
+                        "DELETE FROM rustra_messages WHERE thread_id = ?1",
+                        params![thread_id],
+                    )?;
+                    exec(
+                        tx,
+                        "DELETE FROM rustra_threads WHERE id = ?1",
+                        params![thread_id],
+                    )?;
+                    Ok(())
+                })
             })
             .await
     }
@@ -138,7 +138,7 @@ impl MemoryStore for SqliteStorage {
                     conn,
                     &format!(
                         "{SELECT_THREAD} WHERE resource_id = ?1 \
-                         ORDER BY updated_at DESC LIMIT ?2 OFFSET ?3"
+                         ORDER BY updated_at DESC, rowid DESC LIMIT ?2 OFFSET ?3"
                     ),
                     params![resource_id, limit, offset],
                     thread_from_row,
@@ -194,19 +194,29 @@ impl MemoryStore for SqliteStorage {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
-        let ids = ids.to_vec();
+        let mut ids = ids.to_vec();
+        ids.sort_unstable();
+        ids.dedup();
         self.db
             .call(move |conn| {
-                let placeholders = vec!["?"; ids.len()].join(", ");
-                query_all(
-                    conn,
-                    &format!(
-                        "{SELECT_MESSAGE} WHERE id IN ({placeholders}) \
-                         ORDER BY created_at ASC, rowid ASC"
-                    ),
-                    params_from_iter(ids.iter()),
-                    message_from_row,
-                )
+                // Chunk the IN-list to stay under SQLite's bound-parameter
+                // ceiling; the (created_at, rowid) sort below reproduces the
+                // single query's `ORDER BY created_at ASC, rowid ASC`.
+                let mut msgs: Vec<(i64, StoredMessage)> = Vec::new();
+                for chunk in ids.chunks(500) {
+                    let placeholders = vec!["?"; chunk.len()].join(", ");
+                    msgs.extend(query_all(
+                        conn,
+                        &format!(
+                            "SELECT id, thread_id, resource_id, role, content, created_at, \
+                             rowid FROM rustra_messages WHERE id IN ({placeholders})"
+                        ),
+                        params_from_iter(chunk.iter()),
+                        |row| Ok((col::<i64, _>(row, "rowid")?, message_from_row(row)?)),
+                    )?);
+                }
+                msgs.sort_by(|a, b| (a.1.created_at, a.0).cmp(&(b.1.created_at, b.0)));
+                Ok(msgs.into_iter().map(|(_, m)| m).collect())
             })
             .await
     }

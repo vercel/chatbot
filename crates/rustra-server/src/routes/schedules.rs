@@ -5,7 +5,7 @@ use std::sync::Arc;
 use axum::extract::{Path, Query, State};
 use axum::Json;
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use rustra::Rustra;
 use rustra_storage::types::ScheduleRecord;
@@ -43,7 +43,9 @@ pub(crate) async fn list(
     AuthedUser(principal): AuthedUser,
     Query(page): Query<PageQuery>,
 ) -> ApiResult<Json<Vec<ScheduleRecord>>> {
-    Ok(Json(rustra.scheduler().list(&principal, page.page()).await?))
+    Ok(Json(
+        rustra.scheduler().list(&principal, page.page()).await?,
+    ))
 }
 
 /// `POST /api/schedules/{id}/pause`.
@@ -53,7 +55,7 @@ pub(crate) async fn pause(
     Path(id): Path<String>,
 ) -> ApiResult<Json<Value>> {
     rustra.scheduler().pause(&principal, &id).await?;
-    Ok(Json(json!({ "ok": true })))
+    Ok(super::ok())
 }
 
 /// `POST /api/schedules/{id}/resume`.
@@ -63,7 +65,7 @@ pub(crate) async fn resume(
     Path(id): Path<String>,
 ) -> ApiResult<Json<Value>> {
     rustra.scheduler().resume(&principal, &id).await?;
-    Ok(Json(json!({ "ok": true })))
+    Ok(super::ok())
 }
 
 /// `POST /api/schedules/{id}/run` — fire immediately, outside the cadence.
@@ -73,7 +75,7 @@ pub(crate) async fn run_now(
     Path(id): Path<String>,
 ) -> ApiResult<Json<Value>> {
     rustra.scheduler().run_now(&principal, &id).await?;
-    Ok(Json(json!({ "ok": true })))
+    Ok(super::ok())
 }
 
 /// `DELETE /api/schedules/{id}`.
@@ -83,5 +85,5 @@ pub(crate) async fn remove(
     Path(id): Path<String>,
 ) -> ApiResult<Json<Value>> {
     rustra.scheduler().delete(&principal, &id).await?;
-    Ok(Json(json!({ "ok": true })))
+    Ok(super::ok())
 }

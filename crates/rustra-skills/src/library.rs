@@ -7,7 +7,7 @@
 //! crosses a user boundary.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use rustra_core::Result;
 
@@ -33,19 +33,29 @@ impl LibraryScope {
 }
 
 /// A directory whose immediate subdirectories are skills.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SkillRoot {
+    /// Directory whose immediate subdirectories are candidate skills.
     pub path: PathBuf,
+    /// Who may see the skills under this root.
     pub scope: LibraryScope,
 }
 
 impl SkillRoot {
+    /// A root owned by, and visible only to, `user_id`.
     pub fn user(path: impl Into<PathBuf>, user_id: impl Into<String>) -> Self {
-        Self { path: path.into(), scope: LibraryScope::User(user_id.into()) }
+        Self {
+            path: path.into(),
+            scope: LibraryScope::User(user_id.into()),
+        }
     }
 
+    /// A root visible to every user.
     pub fn shared(path: impl Into<PathBuf>) -> Self {
-        Self { path: path.into(), scope: LibraryScope::Shared }
+        Self {
+            path: path.into(),
+            scope: LibraryScope::Shared,
+        }
     }
 }
 
@@ -57,6 +67,7 @@ pub struct SkillLibrary {
 }
 
 impl SkillLibrary {
+    /// Create a library over the given roots.
     pub fn new(roots: Vec<SkillRoot>) -> Self {
         Self { roots }
     }
@@ -67,6 +78,7 @@ impl SkillLibrary {
         self
     }
 
+    /// The configured roots, in discovery order.
     pub fn roots(&self) -> &[SkillRoot] {
         &self.roots
     }
@@ -84,7 +96,13 @@ impl SkillLibrary {
             }
             let mut subdirs: Vec<PathBuf> = match fs::read_dir(&root.path) {
                 Ok(entries) => entries
-                    .filter_map(|e| e.ok())
+                    .filter_map(|e| match e {
+                        Ok(e) => Some(e),
+                        Err(err) => {
+                            tracing::warn!(root = %root.path.display(), error = %err, "skipping unreadable entry in skill root");
+                            None
+                        }
+                    })
                     .map(|e| e.path())
                     .filter(|p| p.is_dir())
                     .collect(),
@@ -94,25 +112,7 @@ impl SkillLibrary {
                 }
             };
             subdirs.sort();
-            for dir in subdirs {
-                let manifest = dir.join(SKILL_FILE);
-                if !manifest.is_file() {
-                    continue;
-                }
-                let content = match fs::read_to_string(&manifest) {
-                    Ok(content) => content,
-                    Err(err) => {
-                        tracing::warn!(skill_dir = %dir.display(), error = %err, "cannot read SKILL.md; skipping");
-                        continue;
-                    }
-                };
-                match parse_skill_md(&content, &dir) {
-                    Ok(skill) => skills.push(skill),
-                    Err(err) => {
-                        tracing::warn!(skill_dir = %dir.display(), error = %err, "invalid skill; skipping");
-                    }
-                }
-            }
+            skills.extend(subdirs.iter().filter_map(|dir| load_skill_dir(dir)));
         }
         Ok(skills)
     }
@@ -146,12 +146,32 @@ impl SkillLibrary {
                 (score > 0.0).then_some((skill, score))
             })
             .collect();
-        results.sort_by(|a, b| {
-            b.1.partial_cmp(&a.1)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.0.name.cmp(&b.0.name))
-        });
+        results.sort_by(|a, b| b.1.total_cmp(&a.1).then_with(|| a.0.name.cmp(&b.0.name)));
         Ok(results)
+    }
+}
+
+/// Load a single skill directory into a [`Skill`], or `None` (with a warning)
+/// when the directory has no readable, valid `SKILL.md`. This is the seam a
+/// future mtime cache slots into.
+fn load_skill_dir(dir: &Path) -> Option<Skill> {
+    let manifest = dir.join(SKILL_FILE);
+    if !manifest.is_file() {
+        return None;
+    }
+    let content = match fs::read_to_string(&manifest) {
+        Ok(content) => content,
+        Err(err) => {
+            tracing::warn!(skill_dir = %dir.display(), error = %err, "cannot read SKILL.md; skipping");
+            return None;
+        }
+    };
+    match parse_skill_md(&content, dir) {
+        Ok(skill) => Some(skill),
+        Err(err) => {
+            tracing::warn!(skill_dir = %dir.display(), error = %err, "invalid skill; skipping");
+            None
+        }
     }
 }
 
@@ -160,7 +180,7 @@ mod tests {
     use super::*;
     use std::path::Path;
 
-    pub(crate) fn write_skill(root: &Path, name: &str, description: &str, keywords: &[&str]) {
+    fn write_skill(root: &Path, name: &str, description: &str, keywords: &[&str]) {
         let dir = root.join(name);
         std::fs::create_dir_all(&dir).expect("mkdir");
         let keywords_yaml = if keywords.is_empty() {
@@ -177,9 +197,24 @@ mod tests {
     fn library(tmp: &Path) -> SkillLibrary {
         let alice_root = tmp.join("alice-skills");
         let shared_root = tmp.join("shared-skills");
-        write_skill(&alice_root, "alice-private", "Alice's private helper for taxes", &["taxes"]);
-        write_skill(&shared_root, "deploy-helper", "Deploys services. Use for deploy questions.", &["deploy", "release"]);
-        write_skill(&shared_root, "code-review", "Reviews code changes carefully", &["review"]);
+        write_skill(
+            &alice_root,
+            "alice-private",
+            "Alice's private helper for taxes",
+            &["taxes"],
+        );
+        write_skill(
+            &shared_root,
+            "deploy-helper",
+            "Deploys services. Use for deploy questions.",
+            &["deploy", "release"],
+        );
+        write_skill(
+            &shared_root,
+            "code-review",
+            "Reviews code changes carefully",
+            &["review"],
+        );
         SkillLibrary::new(vec![
             SkillRoot::user(alice_root, "alice"),
             SkillRoot::shared(shared_root),
@@ -191,12 +226,20 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let lib = library(tmp.path());
 
-        let alice: Vec<String> =
-            lib.discover("alice").expect("discover").into_iter().map(|s| s.name).collect();
+        let alice: Vec<String> = lib
+            .discover("alice")
+            .expect("discover")
+            .into_iter()
+            .map(|s| s.name)
+            .collect();
         assert_eq!(alice, vec!["alice-private", "code-review", "deploy-helper"]);
 
-        let bob: Vec<String> =
-            lib.discover("bob").expect("discover").into_iter().map(|s| s.name).collect();
+        let bob: Vec<String> = lib
+            .discover("bob")
+            .expect("discover")
+            .into_iter()
+            .map(|s| s.name)
+            .collect();
         assert_eq!(bob, vec!["code-review", "deploy-helper"]);
 
         assert!(lib.find("alice", "alice-private").expect("find").is_some());
@@ -213,8 +256,12 @@ mod tests {
         std::fs::write(broken.join(SKILL_FILE), "not valid frontmatter").expect("write");
 
         let lib = SkillLibrary::new(vec![SkillRoot::shared(root)]);
-        let names: Vec<String> =
-            lib.discover("anyone").expect("discover").into_iter().map(|s| s.name).collect();
+        let names: Vec<String> = lib
+            .discover("anyone")
+            .expect("discover")
+            .into_iter()
+            .map(|s| s.name)
+            .collect();
         assert_eq!(names, vec!["good-skill"]);
     }
 
@@ -223,7 +270,9 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let lib = library(tmp.path());
 
-        let results = lib.search("bob", "how do I deploy this release?").expect("search");
+        let results = lib
+            .search("bob", "how do I deploy this release?")
+            .expect("search");
         assert!(!results.is_empty());
         assert_eq!(results[0].0.name, "deploy-helper");
         assert!(results[0].1 > 0.5);
@@ -236,6 +285,9 @@ mod tests {
 
         // User-scoped results.
         assert!(lib.search("bob", "taxes").expect("search").is_empty());
-        assert_eq!(lib.search("alice", "taxes").expect("search")[0].0.name, "alice-private");
+        assert_eq!(
+            lib.search("alice", "taxes").expect("search")[0].0.name,
+            "alice-private"
+        );
     }
 }

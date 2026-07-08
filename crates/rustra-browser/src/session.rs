@@ -13,19 +13,16 @@ use tokio::sync::oneshot;
 use rustra_core::{new_id, Error, Result};
 
 use crate::action::{BrowserAction, BrowserActionResult};
+use crate::sync::lock;
 
 /// Default time to wait for the client-side executor to answer a command.
 pub const DEFAULT_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
 
-/// Lock helper that recovers from poisoning (a panicked holder cannot leave
-/// the queue in an invalid state — every mutation is a single push/pop).
-fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    mutex.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
-}
-
 /// An active browser being driven on behalf of one user.
 #[async_trait]
 pub trait BrowserSession: Send + Sync {
+    /// Stable session id (`brw_...`) — the handle agents pass to the
+    /// `browser` tool.
     fn id(&self) -> &str;
 
     /// Execute one action and wait for its result.
@@ -71,7 +68,12 @@ impl ActionLog {
     pub fn record(&self, action: BrowserAction, result: BrowserActionResult) -> u64 {
         let mut entries = lock(&self.entries);
         let seq = entries.len() as u64;
-        entries.push(LoggedAction { seq, action, result, at: Utc::now() });
+        entries.push(LoggedAction {
+            seq,
+            action,
+            result,
+            at: Utc::now(),
+        });
         seq
     }
 
@@ -83,7 +85,10 @@ impl ActionLog {
     /// The action sequence in execution order — feed it back through
     /// `perform` to replay the session.
     pub fn replay_script(&self) -> Vec<BrowserAction> {
-        lock(&self.entries).iter().map(|entry| entry.action.clone()).collect()
+        lock(&self.entries)
+            .iter()
+            .map(|entry| entry.action.clone())
+            .collect()
     }
 
     pub fn len(&self) -> usize {
@@ -153,9 +158,16 @@ impl RemoteBrowserSession {
     /// the server's polling endpoint). The command moves to the in-flight
     /// set until [`Self::submit_result`] answers it.
     pub fn next_command(&self) -> Option<IssuedCommand> {
+        // Hold the in-flight lock across the pop so a concurrent timeout
+        // cleanup (`forget`) cannot run between the pop and the insert and
+        // leak the responder into the in-flight map.
+        let mut inflight = lock(&self.inflight);
         let pending = lock(&self.queue).pop_front()?;
-        let issued = IssuedCommand { id: pending.id.clone(), action: pending.action };
-        lock(&self.inflight).insert(pending.id, pending.responder);
+        let issued = IssuedCommand {
+            id: pending.id.clone(),
+            action: pending.action,
+        };
+        inflight.insert(pending.id, pending.responder);
         Some(issued)
     }
 
@@ -165,7 +177,9 @@ impl RemoteBrowserSession {
             .remove(command_id)
             .ok_or_else(|| Error::not_found("browser_command", command_id))?;
         responder.send(result).map_err(|_| {
-            Error::Unavailable(format!("no caller is awaiting browser command `{command_id}`"))
+            Error::Unavailable(format!(
+                "no caller is awaiting browser command `{command_id}`"
+            ))
         })
     }
 
@@ -179,12 +193,17 @@ impl RemoteBrowserSession {
 
 impl std::fmt::Debug for RemoteBrowserSession {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Bind the lengths to locals first so we never hold the queue and
+        // inflight guards simultaneously in queue-then-inflight order, which
+        // would form a lock-order cycle with `next_command`.
+        let queued = lock(&self.queue).len();
+        let inflight = lock(&self.inflight).len();
         f.debug_struct("RemoteBrowserSession")
             .field("id", &self.id)
             .field("user_id", &self.user_id)
             .field("command_timeout", &self.command_timeout)
-            .field("queued", &lock(&self.queue).len())
-            .field("inflight", &lock(&self.inflight).len())
+            .field("queued", &queued)
+            .field("inflight", &inflight)
             .finish_non_exhaustive()
     }
 }
@@ -251,7 +270,9 @@ mod tests {
         while served < count {
             match session.next_command() {
                 Some(command) => {
-                    session.submit_result(&command.id, respond(&command)).unwrap();
+                    session
+                        .submit_result(&command.id, respond(&command))
+                        .unwrap();
                     served += 1;
                 }
                 None => tokio::task::yield_now().await,
@@ -268,13 +289,17 @@ mod tests {
             assert!(command.id.starts_with("cmd_"));
             assert_eq!(
                 command.action,
-                BrowserAction::Navigate { url: "https://example.com".into() }
+                BrowserAction::Navigate {
+                    url: "https://example.com".into()
+                }
             );
             BrowserActionResult::success(json!({ "loaded": true }))
         }));
 
         let result = session
-            .perform(BrowserAction::Navigate { url: "https://example.com".into() })
+            .perform(BrowserAction::Navigate {
+                url: "https://example.com".into(),
+            })
             .await
             .unwrap();
         assert!(result.ok);
@@ -288,7 +313,10 @@ mod tests {
     #[tokio::test]
     async fn unanswered_command_times_out_and_is_forgotten() {
         let session = RemoteBrowserSession::with_timeout("u1", Duration::from_millis(20));
-        let err = session.perform(BrowserAction::Screenshot).await.unwrap_err();
+        let err = session
+            .perform(BrowserAction::Screenshot)
+            .await
+            .unwrap_err();
         assert!(matches!(err, Error::Timeout(_)));
 
         // The command was dropped: the executor finds nothing to run and a
@@ -301,7 +329,10 @@ mod tests {
 
     #[tokio::test]
     async fn late_submit_after_timeout_is_not_found() {
-        let session = Arc::new(RemoteBrowserSession::with_timeout("u1", Duration::from_millis(20)));
+        let session = Arc::new(RemoteBrowserSession::with_timeout(
+            "u1",
+            Duration::from_millis(20),
+        ));
         let perform = tokio::spawn({
             let session = session.clone();
             async move { session.perform(BrowserAction::Screenshot).await }
@@ -313,20 +344,35 @@ mod tests {
                 None => tokio::task::yield_now().await,
             }
         };
-        assert!(matches!(perform.await.unwrap().unwrap_err(), Error::Timeout(_)));
+        assert!(matches!(
+            perform.await.unwrap().unwrap_err(),
+            Error::Timeout(_)
+        ));
         let err = session
             .submit_result(&command.id, BrowserActionResult::success(json!(null)))
             .unwrap_err();
-        assert!(matches!(err, Error::NotFound { kind: "browser_command", .. }));
+        assert!(matches!(
+            err,
+            Error::NotFound {
+                kind: "browser_command",
+                ..
+            }
+        ));
     }
 
     #[tokio::test]
     async fn action_log_replays_in_order() {
         let session = Arc::new(RemoteBrowserSession::new("u1"));
         let actions = vec![
-            BrowserAction::Navigate { url: "https://example.com".into() },
-            BrowserAction::Click { selector: "#go".into() },
-            BrowserAction::ReadDom { selector: Some("main".into()) },
+            BrowserAction::Navigate {
+                url: "https://example.com".into(),
+            },
+            BrowserAction::Click {
+                selector: "#go".into(),
+            },
+            BrowserAction::ReadDom {
+                selector: Some("main".into()),
+            },
         ];
 
         let server_side = tokio::spawn(serve_commands(session.clone(), actions.len(), |_| {
@@ -339,7 +385,10 @@ mod tests {
 
         assert_eq!(session.log().replay_script(), actions);
         let entries = session.log().entries();
-        assert_eq!(entries.iter().map(|e| e.seq).collect::<Vec<_>>(), vec![0, 1, 2]);
+        assert_eq!(
+            entries.iter().map(|e| e.seq).collect::<Vec<_>>(),
+            vec![0, 1, 2]
+        );
         assert!(entries.iter().all(|e| e.result.ok));
 
         // The log serializes (replay scripts are shippable artifacts).

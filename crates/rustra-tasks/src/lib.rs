@@ -27,6 +27,23 @@ pub use manager::{TaskExecutor, TaskManager, TaskOptions};
 pub use scheduler::Scheduler;
 pub use signals::SignalBus;
 
+/// Owner-or-admin scope check shared by every user-scoped record in this
+/// crate. `kind` names the record type in the error ("task", "schedule",
+/// "decision").
+pub(crate) fn ensure_owner(
+    principal: &rustra_core::Principal,
+    owner_id: &str,
+    kind: &str,
+    id: &str,
+) -> rustra_core::Result<()> {
+    if owner_id != principal.user_id && !principal.is_admin() {
+        return Err(rustra_core::Error::PermissionDenied(format!(
+            "{kind} `{id}` belongs to another user"
+        )));
+    }
+    Ok(())
+}
+
 /// Task trigger names persisted on [`rustra_storage::types::TaskRecord`].
 pub mod trigger {
     pub const DIRECT: &str = "direct";

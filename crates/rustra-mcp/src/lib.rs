@@ -53,7 +53,5 @@ pub mod registry;
 
 pub use bridge::{McpTool, McpToolset};
 pub use client::{McpClient, McpToolInfo, MCP_PROTOCOL_VERSION};
-pub use config::{
-    McpScope, McpServerDefinition, McpSide, McpTransport, DEFAULT_TIMEOUT_MS,
-};
+pub use config::{McpScope, McpServerDefinition, McpSide, McpTransport, DEFAULT_TIMEOUT_MS};
 pub use registry::{governed, McpRegistry};

@@ -7,14 +7,7 @@ use std::time::Duration;
 use rustra_core::{Error, Result};
 
 use crate::session::{RemoteBrowserSession, DEFAULT_COMMAND_TIMEOUT};
-
-fn read<T>(lock: &RwLock<T>) -> std::sync::RwLockReadGuard<'_, T> {
-    lock.read().unwrap_or_else(std::sync::PoisonError::into_inner)
-}
-
-fn write<T>(lock: &RwLock<T>) -> std::sync::RwLockWriteGuard<'_, T> {
-    lock.write().unwrap_or_else(std::sync::PoisonError::into_inner)
-}
+use crate::sync::{read, write};
 
 /// Creates and owns [`RemoteBrowserSession`]s. Every session is tagged with
 /// its owning user, and every lookup requires the caller's user id to match
@@ -41,7 +34,10 @@ impl Default for BrowserSessionManager {
 
 impl BrowserSessionManager {
     pub fn new() -> Self {
-        Self { sessions: RwLock::new(HashMap::new()), command_timeout: DEFAULT_COMMAND_TIMEOUT }
+        Self {
+            sessions: RwLock::new(HashMap::new()),
+            command_timeout: DEFAULT_COMMAND_TIMEOUT,
+        }
     }
 
     /// Override the per-command timeout applied to newly created sessions.
@@ -52,7 +48,10 @@ impl BrowserSessionManager {
 
     /// Create a session (`brw_...`) owned by `user_id`.
     pub fn create_session(&self, user_id: &str) -> Arc<RemoteBrowserSession> {
-        let session = Arc::new(RemoteBrowserSession::with_timeout(user_id, self.command_timeout));
+        let session = Arc::new(RemoteBrowserSession::with_timeout(
+            user_id,
+            self.command_timeout,
+        ));
         write(&self.sessions).insert(session.id().to_string(), session.clone());
         session
     }
@@ -108,22 +107,37 @@ mod tests {
         assert_eq!(manager.list("u1"), vec![id.clone()]);
 
         // Another user cannot get, remove, or see it.
-        assert!(matches!(manager.get("u2", &id).unwrap_err(), Error::PermissionDenied(_)));
-        assert!(matches!(manager.remove("u2", &id).unwrap_err(), Error::PermissionDenied(_)));
+        assert!(matches!(
+            manager.get("u2", &id).unwrap_err(),
+            Error::PermissionDenied(_)
+        ));
+        assert!(matches!(
+            manager.remove("u2", &id).unwrap_err(),
+            Error::PermissionDenied(_)
+        ));
         assert!(manager.list("u2").is_empty());
-        assert!(manager.get("u1", &id).is_ok(), "failed remove must not drop the session");
+        assert!(
+            manager.get("u1", &id).is_ok(),
+            "failed remove must not drop the session"
+        );
 
         // Owner removal works; the id is gone afterwards.
         manager.remove("u1", &id).unwrap();
         assert!(matches!(
             manager.get("u1", &id).unwrap_err(),
-            Error::NotFound { kind: "browser_session", .. }
+            Error::NotFound {
+                kind: "browser_session",
+                ..
+            }
         ));
     }
 
     #[test]
     fn unknown_session_is_not_found() {
         let manager = BrowserSessionManager::new();
-        assert!(matches!(manager.get("u1", "brw_nope").unwrap_err(), Error::NotFound { .. }));
+        assert!(matches!(
+            manager.get("u1", "brw_nope").unwrap_err(),
+            Error::NotFound { .. }
+        ));
     }
 }

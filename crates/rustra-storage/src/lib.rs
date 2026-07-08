@@ -29,6 +29,7 @@
 //! [`InMemoryStorage`] implements everything and is the hermetic test/dev
 //! backend.
 
+pub mod conformance;
 pub mod in_memory;
 pub mod types;
 pub mod vector;
@@ -51,7 +52,7 @@ pub type SharedStorage = Arc<dyn Storage>;
 pub type SharedVectorStore = Arc<dyn VectorStore>;
 
 /// Limit/offset pagination used by every list operation.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Page {
     pub limit: usize,
     pub offset: usize,
@@ -59,15 +60,20 @@ pub struct Page {
 
 impl Default for Page {
     fn default() -> Self {
-        Self { limit: 100, offset: 0 }
+        Self {
+            limit: 100,
+            offset: 0,
+        }
     }
 }
 
 impl Page {
+    /// A page of `limit` items starting at `offset`.
     pub fn new(limit: usize, offset: usize) -> Self {
         Self { limit, offset }
     }
 
+    /// The first page: `limit` items at offset 0.
     pub fn first(limit: usize) -> Self {
         Self { limit, offset: 0 }
     }

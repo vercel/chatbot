@@ -14,21 +14,13 @@ use serde_json::Value;
 
 use crate::firestore::{Fields, FieldsReader};
 
-pub(crate) fn kind_to_str(kind: ResourceKind) -> &'static str {
-    kind.as_str()
-}
-
 pub(crate) fn kind_from_str(s: &str) -> Result<ResourceKind> {
     serde_json::from_value(Value::String(s.to_owned()))
         .map_err(|e| Error::Storage(format!("invalid resource kind `{s}`: {e}")))
 }
 
 pub(crate) fn vis_to_str(v: Visibility) -> &'static str {
-    match v {
-        Visibility::Private => "private",
-        Visibility::Shared => "shared",
-        Visibility::Public => "public",
-    }
+    v.as_str()
 }
 
 pub(crate) fn vis_from_str(s: &str) -> Result<Visibility> {
@@ -280,7 +272,7 @@ pub(crate) fn decision_from_doc(doc: &Value) -> Result<DecisionRecord> {
 pub(crate) fn definition_to_doc(d: &DefinitionRecord) -> Value {
     let mut f = Fields::new();
     f.set_str("id", &d.id);
-    f.set_str("kind", kind_to_str(d.kind));
+    f.set_str("kind", d.kind.as_str());
     f.set_str("owner_id", &d.owner_id);
     f.set_str("name", &d.name);
     f.set_u32("version", d.version);
@@ -336,7 +328,7 @@ pub(crate) fn user_from_doc(doc: &Value) -> Result<UserRecord> {
 pub(crate) fn grant_to_doc(g: &GrantRecord) -> Value {
     let mut f = Fields::new();
     f.set_str("id", &g.id);
-    f.set_str("resource_kind", kind_to_str(g.resource_kind));
+    f.set_str("resource_kind", g.resource_kind.as_str());
     f.set_str("resource_id", &g.resource_id);
     f.set_str("grantee", &g.grantee);
     f.set_string_list("actions", &g.actions);
@@ -459,7 +451,10 @@ mod tests {
         let doc = definition_to_doc(&def);
         assert_eq!(definition_from_doc(&doc).unwrap(), def);
         assert_eq!(doc["fields"]["kind"], json!({"stringValue": "skill"}));
-        assert_eq!(doc["fields"]["visibility"], json!({"stringValue": "shared"}));
+        assert_eq!(
+            doc["fields"]["visibility"],
+            json!({"stringValue": "shared"})
+        );
         assert_eq!(doc["fields"]["version"], json!({"integerValue": "3"}));
     }
 
@@ -506,7 +501,10 @@ mod tests {
             created_at: ts(1),
             updated_at: ts(2),
         };
-        assert_eq!(snapshot_from_doc(&snapshot_to_doc(&snapshot)).unwrap(), snapshot);
+        assert_eq!(
+            snapshot_from_doc(&snapshot_to_doc(&snapshot)).unwrap(),
+            snapshot
+        );
 
         let decision = DecisionRecord {
             id: "dec_1".into(),
@@ -520,7 +518,10 @@ mod tests {
             created_at: ts(3),
             resolved_at: None,
         };
-        assert_eq!(decision_from_doc(&decision_to_doc(&decision)).unwrap(), decision);
+        assert_eq!(
+            decision_from_doc(&decision_to_doc(&decision)).unwrap(),
+            decision
+        );
 
         let sub = SubscriptionRecord {
             id: "sub_1".into(),
@@ -530,7 +531,10 @@ mod tests {
             enabled: false,
             created_at: ts(4),
         };
-        assert_eq!(subscription_from_doc(&subscription_to_doc(&sub)).unwrap(), sub);
+        assert_eq!(
+            subscription_from_doc(&subscription_to_doc(&sub)).unwrap(),
+            sub
+        );
 
         let resource = ResourceRecord {
             id: "user-1".into(),
@@ -538,6 +542,9 @@ mod tests {
             metadata: json!(null),
             updated_at: ts(5),
         };
-        assert_eq!(resource_from_doc(&resource_to_doc(&resource)).unwrap(), resource);
+        assert_eq!(
+            resource_from_doc(&resource_to_doc(&resource)).unwrap(),
+            resource
+        );
     }
 }

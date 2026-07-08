@@ -24,56 +24,64 @@ const SELECT_UI_ARTIFACT: &str = "SELECT id, owner_id, title, kind, html, data, 
 const SELECT_CHANNEL_MESSAGE: &str = "SELECT id, user_id, channel, sender, content, metadata, \
                                       \"read\", created_at FROM rustra_channel_messages";
 
-fn workspace_from_row(row: &Row) -> Result<WorkspaceRecord> {
-    Ok(WorkspaceRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        name: col(row, 2)?,
-        root_path: col(row, 3)?,
-        settings: col(row, 4)?,
-        created_at: col(row, 5)?,
-    })
+impl FromRow for WorkspaceRecord {
+    fn from_row(row: &Row) -> Result<WorkspaceRecord> {
+        Ok(WorkspaceRecord {
+            id: col(row, 0)?,
+            user_id: col(row, 1)?,
+            name: col(row, 2)?,
+            root_path: col(row, 3)?,
+            settings: col(row, 4)?,
+            created_at: col(row, 5)?,
+        })
+    }
 }
 
-fn mcp_server_from_row(row: &Row) -> Result<McpServerRecord> {
-    Ok(McpServerRecord {
-        id: col(row, 0)?,
-        owner_id: col(row, 1)?,
-        name: col(row, 2)?,
-        config: col(row, 3)?,
-        enabled: col(row, 4)?,
-        visibility: vis_from_sql(&col::<String>(row, 5)?)?,
-        created_at: col(row, 6)?,
-        updated_at: col(row, 7)?,
-    })
+impl FromRow for McpServerRecord {
+    fn from_row(row: &Row) -> Result<McpServerRecord> {
+        Ok(McpServerRecord {
+            id: col(row, 0)?,
+            owner_id: col(row, 1)?,
+            name: col(row, 2)?,
+            config: col(row, 3)?,
+            enabled: col(row, 4)?,
+            visibility: vis_from_sql(&col::<String>(row, 5)?)?,
+            created_at: col(row, 6)?,
+            updated_at: col(row, 7)?,
+        })
+    }
 }
 
-fn ui_artifact_from_row(row: &Row) -> Result<UiArtifactRecord> {
-    Ok(UiArtifactRecord {
-        id: col(row, 0)?,
-        owner_id: col(row, 1)?,
-        title: col(row, 2)?,
-        kind: col(row, 3)?,
-        html: col(row, 4)?,
-        data: col(row, 5)?,
-        version: col_u32(row, 6)?,
-        visibility: vis_from_sql(&col::<String>(row, 7)?)?,
-        created_at: col(row, 8)?,
-        updated_at: col(row, 9)?,
-    })
+impl FromRow for UiArtifactRecord {
+    fn from_row(row: &Row) -> Result<UiArtifactRecord> {
+        Ok(UiArtifactRecord {
+            id: col(row, 0)?,
+            owner_id: col(row, 1)?,
+            title: col(row, 2)?,
+            kind: col(row, 3)?,
+            html: col(row, 4)?,
+            data: col(row, 5)?,
+            version: col_u32(row, 6)?,
+            visibility: vis_from_sql(&col::<String>(row, 7)?)?,
+            created_at: col(row, 8)?,
+            updated_at: col(row, 9)?,
+        })
+    }
 }
 
-fn channel_message_from_row(row: &Row) -> Result<ChannelMessageRecord> {
-    Ok(ChannelMessageRecord {
-        id: col(row, 0)?,
-        user_id: col(row, 1)?,
-        channel: col(row, 2)?,
-        sender: col(row, 3)?,
-        content: col(row, 4)?,
-        metadata: col(row, 5)?,
-        read: col(row, 6)?,
-        created_at: col(row, 7)?,
-    })
+impl FromRow for ChannelMessageRecord {
+    fn from_row(row: &Row) -> Result<ChannelMessageRecord> {
+        Ok(ChannelMessageRecord {
+            id: col(row, 0)?,
+            user_id: col(row, 1)?,
+            channel: col(row, 2)?,
+            sender: col(row, 3)?,
+            content: col(row, 4)?,
+            metadata: col(row, 5)?,
+            read: col(row, 6)?,
+            created_at: col(row, 7)?,
+        })
+    }
 }
 
 #[async_trait]
@@ -87,33 +95,39 @@ impl InfraStore for PostgresStorage {
                  ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id, \
                  name = EXCLUDED.name, root_path = EXCLUDED.root_path, \
                  settings = EXCLUDED.settings, created_at = EXCLUDED.created_at",
-                &[&ws.id, &ws.user_id, &ws.name, &ws.root_path, &ws.settings, &ws.created_at],
+                &[
+                    &ws.id,
+                    &ws.user_id,
+                    &ws.name,
+                    &ws.root_path,
+                    &ws.settings,
+                    &ws.created_at,
+                ],
             )
             .await?;
         Ok(())
     }
 
     async fn get_workspace(&self, ws_id: &str) -> Result<Option<WorkspaceRecord>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_WORKSPACE} WHERE id = $1"), &[&ws_id])
-            .await?;
-        row_opt(row, workspace_from_row)
+        self.db
+            .query_opt_as::<WorkspaceRecord>(
+                &format!("{SELECT_WORKSPACE} WHERE id = $1"),
+                &[&ws_id],
+            )
+            .await
     }
 
     async fn list_workspaces(&self, user_id: &str, page: Page) -> Result<Vec<WorkspaceRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<WorkspaceRecord>(
                 &format!(
                     "{SELECT_WORKSPACE} WHERE user_id = $1 \
                      ORDER BY created_at ASC LIMIT $2 OFFSET $3"
                 ),
                 &[&user_id, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, workspace_from_row)
+            .await
     }
 
     async fn delete_workspace(&self, ws_id: &str) -> Result<()> {
@@ -150,11 +164,12 @@ impl InfraStore for PostgresStorage {
     }
 
     async fn get_mcp_server(&self, server_id: &str) -> Result<Option<McpServerRecord>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_MCP_SERVER} WHERE id = $1"), &[&server_id])
-            .await?;
-        row_opt(row, mcp_server_from_row)
+        self.db
+            .query_opt_as::<McpServerRecord>(
+                &format!("{SELECT_MCP_SERVER} WHERE id = $1"),
+                &[&server_id],
+            )
+            .await
     }
 
     async fn list_mcp_servers(
@@ -164,9 +179,8 @@ impl InfraStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<McpServerRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<McpServerRecord>(
                 &format!(
                     "{SELECT_MCP_SERVER} WHERE owner_id = $1 \
                      OR ($2 AND (owner_id IS NULL OR visibility <> 'private')) \
@@ -174,13 +188,15 @@ impl InfraStore for PostgresStorage {
                 ),
                 &[&user_id, &include_shared, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, mcp_server_from_row)
+            .await
     }
 
     async fn delete_mcp_server(&self, server_id: &str) -> Result<()> {
         self.db
-            .execute("DELETE FROM rustra_mcp_servers WHERE id = $1", &[&server_id])
+            .execute(
+                "DELETE FROM rustra_mcp_servers WHERE id = $1",
+                &[&server_id],
+            )
             .await?;
         Ok(())
     }
@@ -216,31 +232,33 @@ impl InfraStore for PostgresStorage {
     }
 
     async fn get_ui_artifact(&self, artifact_id: &str) -> Result<Option<UiArtifactRecord>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_UI_ARTIFACT} WHERE id = $1"), &[&artifact_id])
-            .await?;
-        row_opt(row, ui_artifact_from_row)
+        self.db
+            .query_opt_as::<UiArtifactRecord>(
+                &format!("{SELECT_UI_ARTIFACT} WHERE id = $1"),
+                &[&artifact_id],
+            )
+            .await
     }
 
     async fn list_ui_artifacts(&self, owner_id: &str, page: Page) -> Result<Vec<UiArtifactRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<UiArtifactRecord>(
                 &format!(
                     "{SELECT_UI_ARTIFACT} WHERE owner_id = $1 \
                      ORDER BY updated_at DESC LIMIT $2 OFFSET $3"
                 ),
                 &[&owner_id, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, ui_artifact_from_row)
+            .await
     }
 
     async fn delete_ui_artifact(&self, artifact_id: &str) -> Result<()> {
         self.db
-            .execute("DELETE FROM rustra_ui_artifacts WHERE id = $1", &[&artifact_id])
+            .execute(
+                "DELETE FROM rustra_ui_artifacts WHERE id = $1",
+                &[&artifact_id],
+            )
             .await?;
         Ok(())
     }
@@ -273,9 +291,8 @@ impl InfraStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<ChannelMessageRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<ChannelMessageRecord>(
                 &format!(
                     "{SELECT_CHANNEL_MESSAGE} WHERE user_id = $1 \
                      AND ($2::TEXT IS NULL OR channel = $2) \
@@ -283,8 +300,7 @@ impl InfraStore for PostgresStorage {
                 ),
                 &[&user_id, &channel, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, channel_message_from_row)
+            .await
     }
 
     async fn mark_message_read(&self, message_id: &str) -> Result<()> {

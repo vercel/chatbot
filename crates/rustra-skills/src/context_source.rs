@@ -14,11 +14,13 @@ use crate::library::SkillLibrary;
 
 /// Offers every skill visible to the requesting user whose trigger matches
 /// the request query.
+#[derive(Debug, Clone)]
 pub struct SkillContextSource {
     library: Arc<SkillLibrary>,
 }
 
 impl SkillContextSource {
+    /// Create a context source over the given skill library.
     pub fn new(library: Arc<SkillLibrary>) -> Self {
         Self { library }
     }
@@ -50,12 +52,7 @@ impl ContextSource for SkillContextSource {
                 })
             })
             .collect();
-        candidates.sort_by(|a, b| {
-            b.score
-                .partial_cmp(&a.score)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.id.cmp(&b.id))
-        });
+        candidates.sort_by(|a, b| b.score.total_cmp(&a.score).then_with(|| a.id.cmp(&b.id)));
         Ok(candidates)
     }
 
@@ -65,19 +62,11 @@ impl ContextSource for SkillContextSource {
             .find(req.runtime.user_id(), candidate_id)?
             .ok_or_else(|| Error::not_found("skill", candidate_id))?;
 
-        let mut content = skill.instructions.clone();
-        if !skill.assets.is_empty() {
-            content.push_str("\n\nAvailable skill assets (paths relative to the skill directory):");
-            for asset in &skill.assets {
-                content.push_str(&format!("\n- {}", asset.display()));
-            }
-        }
-
         Ok(ContextFragment {
             id: skill.name.clone(),
             kind: ContextKind::Skill,
             title: skill.name.clone(),
-            content,
+            content: skill.full_text(),
             metadata: json!({
                 "dir": skill.dir.display().to_string(),
                 "assets": skill.assets.len(),
@@ -122,8 +111,7 @@ mod tests {
         )
         .expect("write");
 
-        let library =
-            SkillLibrary::new(vec![crate::library::SkillRoot::shared(root)]);
+        let library = SkillLibrary::new(vec![crate::library::SkillRoot::shared(root)]);
         SkillContextSource::new(Arc::new(library))
     }
 
@@ -132,15 +120,23 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let source = source(tmp.path());
 
-        let candidates =
-            source.candidates(&request("u1", "please deploy the api")).await.expect("candidates");
+        let candidates = source
+            .candidates(&request("u1", "please deploy the api"))
+            .await
+            .expect("candidates");
         assert_eq!(candidates.len(), 1);
         assert_eq!(candidates[0].id, "deploy-helper");
         assert_eq!(candidates[0].kind, ContextKind::Skill);
         assert!(candidates[0].score > 0.0);
-        assert_eq!(candidates[0].estimated_chars, "Run scripts/deploy.sh.".len());
+        assert_eq!(
+            candidates[0].estimated_chars,
+            "Run scripts/deploy.sh.".len()
+        );
 
-        let none = source.candidates(&request("u1", "nothing relevant here")).await.expect("candidates");
+        let none = source
+            .candidates(&request("u1", "nothing relevant here"))
+            .await
+            .expect("candidates");
         assert!(none.is_empty());
     }
 

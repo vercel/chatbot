@@ -14,7 +14,7 @@
 //!
 //! * [`MemoryStore`], [`WorkflowStore`], [`DefinitionStore`], [`AclStore`],
 //!   and [`TaskStore`] are fully implemented over the REST API.
-//! * The [`firestore`] module: precise `serde_json::Value` ⇄ Firestore
+//! * The `firestore` module: precise `serde_json::Value` ⇄ Firestore
 //!   document-value JSON encoding (`stringValue` / `integerValue` /
 //!   `doubleValue` / `booleanValue` / `timestampValue` / `mapValue` /
 //!   `arrayValue` / `nullValue`), document field builders/readers, and
@@ -75,7 +75,7 @@
 //! [`InfraStore`]: rustra_storage::InfraStore
 
 mod codecs;
-pub mod firestore;
+pub(crate) mod firestore;
 mod queries;
 mod rest;
 mod stores;
@@ -96,7 +96,7 @@ pub(crate) mod coll {
 }
 
 /// How requests authenticate against the Firestore REST API.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum AuthMode {
     /// Web API key appended as the `key` query parameter. Only useful with
     /// open security rules or the emulator.
@@ -104,6 +104,15 @@ pub enum AuthMode {
     /// OAuth2 / service-account access token sent as a `Bearer`
     /// authorization header. Token refresh is the caller's responsibility.
     BearerToken(String),
+}
+
+impl std::fmt::Debug for AuthMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ApiKey(_) => f.write_str("ApiKey(<redacted>)"),
+            Self::BearerToken(_) => f.write_str("BearerToken(<redacted>)"),
+        }
+    }
 }
 
 /// Configuration for [`FirebaseStorage`].
@@ -128,6 +137,8 @@ impl FirebaseStorage {
     /// Build a storage handle from `config`. Cheap; no network I/O happens
     /// until the first store call.
     pub fn new(config: FirebaseConfig) -> Self {
-        Self { rest: rest::RestClient::new(config) }
+        Self {
+            rest: rest::RestClient::new(config),
+        }
     }
 }

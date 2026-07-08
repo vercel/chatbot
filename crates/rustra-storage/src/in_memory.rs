@@ -4,7 +4,7 @@
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 
 use rustra_core::{Error, ResourceKind, Result, Visibility};
@@ -55,13 +55,39 @@ impl InMemoryStorage {
     }
 }
 
-fn paginate<T>(mut items: Vec<T>, page: Page) -> Vec<T> {
-    if page.offset >= items.len() {
-        return Vec::new();
-    }
-    items.drain(..page.offset);
-    items.truncate(page.limit);
+fn paginate<T>(items: Vec<T>, page: Page) -> Vec<T> {
     items
+        .into_iter()
+        .skip(page.offset)
+        .take(page.limit)
+        .collect()
+}
+
+/// Sort newest-first by `key` (ties broken by ascending id so pagination is a
+/// total order), then paginate.
+fn page_newest_first<T, K: Ord>(
+    items: impl Iterator<Item = T>,
+    key: impl Fn(&T) -> (K, String),
+    page: Page,
+) -> Vec<T> {
+    let mut items: Vec<T> = items.collect();
+    items.sort_by_cached_key(|t| {
+        let (k, id) = key(t);
+        (std::cmp::Reverse(k), id)
+    });
+    paginate(items, page)
+}
+
+/// Sort oldest-first by `key` (ties broken by ascending id so pagination is a
+/// total order), then paginate.
+fn page_oldest_first<T, K: Ord>(
+    items: impl Iterator<Item = T>,
+    key: impl Fn(&T) -> (K, String),
+    page: Page,
+) -> Vec<T> {
+    let mut items: Vec<T> = items.collect();
+    items.sort_by_cached_key(key);
+    paginate(items, page)
 }
 
 #[async_trait]
@@ -92,15 +118,17 @@ impl MemoryStore for InMemoryStorage {
     }
 
     async fn list_threads(&self, resource_id: &str, page: Page) -> Result<Vec<Thread>> {
-        let mut threads: Vec<Thread> = self
-            .read()
+        let state = self.read();
+        let threads = state
             .threads
             .values()
             .filter(|t| t.resource_id == resource_id)
-            .cloned()
-            .collect();
-        threads.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
-        Ok(paginate(threads, page))
+            .cloned();
+        Ok(page_newest_first(
+            threads,
+            |t| (t.updated_at, t.id.clone()),
+            page,
+        ))
     }
 
     async fn append_message(&self, message: StoredMessage) -> Result<()> {
@@ -110,17 +138,26 @@ impl MemoryStore for InMemoryStorage {
 
     async fn recent_messages(&self, thread_id: &str, limit: usize) -> Result<Vec<StoredMessage>> {
         let state = self.read();
-        let mut msgs: Vec<StoredMessage> =
-            state.messages.iter().filter(|m| m.thread_id == thread_id).cloned().collect();
+        let mut msgs: Vec<StoredMessage> = state
+            .messages
+            .iter()
+            .filter(|m| m.thread_id == thread_id)
+            .cloned()
+            .collect();
         msgs.sort_by(|a, b| a.created_at.cmp(&b.created_at));
         let skip = msgs.len().saturating_sub(limit);
         Ok(msgs.split_off(skip))
     }
 
     async fn get_messages(&self, ids: &[String]) -> Result<Vec<StoredMessage>> {
+        let ids: HashSet<&str> = ids.iter().map(String::as_str).collect();
         let state = self.read();
-        let mut msgs: Vec<StoredMessage> =
-            state.messages.iter().filter(|m| ids.contains(&m.id)).cloned().collect();
+        let mut msgs: Vec<StoredMessage> = state
+            .messages
+            .iter()
+            .filter(|m| ids.contains(m.id.as_str()))
+            .cloned()
+            .collect();
         msgs.sort_by(|a, b| a.created_at.cmp(&b.created_at));
         Ok(msgs)
     }
@@ -138,7 +175,9 @@ impl MemoryStore for InMemoryStorage {
 #[async_trait]
 impl WorkflowStore for InMemoryStorage {
     async fn save_snapshot(&self, snapshot: WorkflowSnapshot) -> Result<()> {
-        self.write().snapshots.insert(snapshot.run_id.clone(), snapshot);
+        self.write()
+            .snapshots
+            .insert(snapshot.run_id.clone(), snapshot);
         Ok(())
     }
 
@@ -153,17 +192,19 @@ impl WorkflowStore for InMemoryStorage {
         status: Option<&str>,
         page: Page,
     ) -> Result<Vec<WorkflowSnapshot>> {
-        let mut snaps: Vec<WorkflowSnapshot> = self
-            .read()
+        let state = self.read();
+        let snaps = state
             .snapshots
             .values()
             .filter(|s| s.resource_id == resource_id)
             .filter(|s| workflow_id.is_none_or(|w| s.workflow_id == w))
             .filter(|s| status.is_none_or(|st| s.status == st))
-            .cloned()
-            .collect();
-        snaps.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
-        Ok(paginate(snaps, page))
+            .cloned();
+        Ok(page_newest_first(
+            snaps,
+            |s| (s.updated_at, s.run_id.clone()),
+            page,
+        ))
     }
 
     async fn delete_snapshot(&self, run_id: &str) -> Result<()> {
@@ -195,17 +236,19 @@ impl ObservabilityStore for InMemoryStorage {
         status: Option<&str>,
         page: Page,
     ) -> Result<Vec<RunRecord>> {
-        let mut runs: Vec<RunRecord> = self
-            .read()
+        let state = self.read();
+        let runs = state
             .runs
             .values()
             .filter(|r| r.user_id == user_id)
             .filter(|r| kind.is_none_or(|k| r.kind == k))
             .filter(|r| status.is_none_or(|s| r.status == s))
-            .cloned()
-            .collect();
-        runs.sort_by(|a, b| b.started_at.cmp(&a.started_at));
-        Ok(paginate(runs, page))
+            .cloned();
+        Ok(page_newest_first(
+            runs,
+            |r| (r.started_at, r.id.clone()),
+            page,
+        ))
     }
 
     async fn insert_spans(&self, spans: Vec<TraceSpan>) -> Result<()> {
@@ -214,8 +257,13 @@ impl ObservabilityStore for InMemoryStorage {
     }
 
     async fn list_spans(&self, trace_id: &str) -> Result<Vec<TraceSpan>> {
-        let mut spans: Vec<TraceSpan> =
-            self.read().spans.iter().filter(|s| s.trace_id == trace_id).cloned().collect();
+        let mut spans: Vec<TraceSpan> = self
+            .read()
+            .spans
+            .iter()
+            .filter(|s| s.trace_id == trace_id)
+            .cloned()
+            .collect();
         spans.sort_by(|a, b| a.started_at.cmp(&b.started_at));
         Ok(spans)
     }
@@ -231,16 +279,18 @@ impl ObservabilityStore for InMemoryStorage {
         run_id: Option<&str>,
         page: Page,
     ) -> Result<Vec<LogRecord>> {
-        let mut logs: Vec<LogRecord> = self
-            .read()
+        let state = self.read();
+        let logs = state
             .logs
             .iter()
             .filter(|l| user_id.is_none_or(|u| l.user_id.as_deref() == Some(u)))
             .filter(|l| run_id.is_none_or(|r| l.run_id.as_deref() == Some(r)))
-            .cloned()
-            .collect();
-        logs.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        Ok(paginate(logs, page))
+            .cloned();
+        Ok(page_newest_first(
+            logs,
+            |l| (l.created_at, l.id.clone()),
+            page,
+        ))
     }
 }
 
@@ -266,16 +316,18 @@ impl TaskStore for InMemoryStorage {
         status: Option<&str>,
         page: Page,
     ) -> Result<Vec<TaskRecord>> {
-        let mut tasks: Vec<TaskRecord> = self
-            .read()
+        let state = self.read();
+        let tasks = state
             .tasks
             .values()
             .filter(|t| t.user_id == user_id)
             .filter(|t| status.is_none_or(|s| t.status == s))
-            .cloned()
-            .collect();
-        tasks.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        Ok(paginate(tasks, page))
+            .cloned();
+        Ok(page_newest_first(
+            tasks,
+            |t| (t.created_at, t.id.clone()),
+            page,
+        ))
     }
 
     async fn upsert_schedule(&self, schedule: ScheduleRecord) -> Result<()> {
@@ -297,25 +349,33 @@ impl TaskStore for InMemoryStorage {
         user_id: Option<&str>,
         page: Page,
     ) -> Result<Vec<ScheduleRecord>> {
-        let mut schedules: Vec<ScheduleRecord> = self
-            .read()
+        let state = self.read();
+        let schedules = state
             .schedules
             .values()
             .filter(|s| user_id.is_none_or(|u| s.user_id == u))
-            .cloned()
-            .collect();
-        schedules.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        Ok(paginate(schedules, page))
+            .cloned();
+        Ok(page_newest_first(
+            schedules,
+            |s| (s.created_at, s.id.clone()),
+            page,
+        ))
     }
 
     async fn due_schedules(&self, now: DateTime<Utc>) -> Result<Vec<ScheduleRecord>> {
-        Ok(self
+        let mut due: Vec<ScheduleRecord> = self
             .read()
             .schedules
             .values()
             .filter(|s| s.enabled && s.next_run_at.is_some_and(|t| t <= now))
             .cloned()
-            .collect())
+            .collect();
+        due.sort_by(|a, b| {
+            a.next_run_at
+                .cmp(&b.next_run_at)
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        Ok(due)
     }
 
     async fn upsert_subscription(&self, sub: SubscriptionRecord) -> Result<()> {
@@ -333,15 +393,17 @@ impl TaskStore for InMemoryStorage {
         user_id: Option<&str>,
         page: Page,
     ) -> Result<Vec<SubscriptionRecord>> {
-        let mut subs: Vec<SubscriptionRecord> = self
-            .read()
+        let state = self.read();
+        let subs = state
             .subscriptions
             .values()
             .filter(|s| user_id.is_none_or(|u| s.user_id == u))
-            .cloned()
-            .collect();
-        subs.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        Ok(paginate(subs, page))
+            .cloned();
+        Ok(page_newest_first(
+            subs,
+            |s| (s.created_at, s.id.clone()),
+            page,
+        ))
     }
 
     async fn insert_decision(&self, decision: DecisionRecord) -> Result<()> {
@@ -364,16 +426,18 @@ impl TaskStore for InMemoryStorage {
         pending_only: bool,
         page: Page,
     ) -> Result<Vec<DecisionRecord>> {
-        let mut decisions: Vec<DecisionRecord> = self
-            .read()
+        let state = self.read();
+        let decisions = state
             .decisions
             .values()
             .filter(|d| d.user_id == user_id)
             .filter(|d| !pending_only || d.status == "pending")
-            .cloned()
-            .collect();
-        decisions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        Ok(paginate(decisions, page))
+            .cloned();
+        Ok(page_newest_first(
+            decisions,
+            |d| (d.created_at, d.id.clone()),
+            page,
+        ))
     }
 }
 
@@ -433,23 +497,26 @@ impl DefinitionStore for InMemoryStorage {
         include_shared: bool,
         page: Page,
     ) -> Result<Vec<DefinitionRecord>> {
-        let mut defs: Vec<DefinitionRecord> = self
-            .read()
+        let state = self.read();
+        let defs = state
             .definitions
             .iter()
             .filter(|d| d.kind == kind && d.latest)
             .filter(|d| {
-                d.owner_id == owner_id
-                    || (include_shared && d.visibility != Visibility::Private)
+                d.owner_id == owner_id || (include_shared && d.visibility != Visibility::Private)
             })
-            .cloned()
-            .collect();
-        defs.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        Ok(paginate(defs, page))
+            .cloned();
+        Ok(page_newest_first(
+            defs,
+            |d| (d.created_at, d.id.clone()),
+            page,
+        ))
     }
 
     async fn delete_definition(&self, kind: ResourceKind, id: &str) -> Result<()> {
-        self.write().definitions.retain(|d| !(d.kind == kind && d.id == id));
+        self.write()
+            .definitions
+            .retain(|d| !(d.kind == kind && d.id == id));
         Ok(())
     }
 }
@@ -475,9 +542,12 @@ impl AclStore for InMemoryStorage {
     }
 
     async fn list_users(&self, page: Page) -> Result<Vec<UserRecord>> {
-        let mut users: Vec<UserRecord> = self.read().users.values().cloned().collect();
-        users.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-        Ok(paginate(users, page))
+        let state = self.read();
+        Ok(page_oldest_first(
+            state.users.values().cloned(),
+            |u| (u.created_at, u.id.clone()),
+            page,
+        ))
     }
 
     async fn insert_grant(&self, grant: GrantRecord) -> Result<()> {
@@ -495,17 +565,35 @@ impl AclStore for InMemoryStorage {
         kind: ResourceKind,
         resource_id: &str,
     ) -> Result<Vec<GrantRecord>> {
-        Ok(self
+        let mut grants: Vec<GrantRecord> = self
             .read()
             .grants
             .values()
             .filter(|g| g.resource_kind == kind && g.resource_id == resource_id)
             .cloned()
-            .collect())
+            .collect();
+        grants.sort_by(|a, b| {
+            a.created_at
+                .cmp(&b.created_at)
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        Ok(grants)
     }
 
     async fn list_grants_for_grantee(&self, grantee: &str) -> Result<Vec<GrantRecord>> {
-        Ok(self.read().grants.values().filter(|g| g.grantee == grantee).cloned().collect())
+        let mut grants: Vec<GrantRecord> = self
+            .read()
+            .grants
+            .values()
+            .filter(|g| g.grantee == grantee)
+            .cloned()
+            .collect();
+        grants.sort_by(|a, b| {
+            a.created_at
+                .cmp(&b.created_at)
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        Ok(grants)
     }
 }
 
@@ -521,15 +609,17 @@ impl InfraStore for InMemoryStorage {
     }
 
     async fn list_workspaces(&self, user_id: &str, page: Page) -> Result<Vec<WorkspaceRecord>> {
-        let mut wss: Vec<WorkspaceRecord> = self
-            .read()
+        let state = self.read();
+        let workspaces = state
             .workspaces
             .values()
             .filter(|w| w.user_id == user_id)
-            .cloned()
-            .collect();
-        wss.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-        Ok(paginate(wss, page))
+            .cloned();
+        Ok(page_oldest_first(
+            workspaces,
+            |w| (w.created_at, w.id.clone()),
+            page,
+        ))
     }
 
     async fn delete_workspace(&self, ws_id: &str) -> Result<()> {
@@ -552,8 +642,8 @@ impl InfraStore for InMemoryStorage {
         include_shared: bool,
         page: Page,
     ) -> Result<Vec<McpServerRecord>> {
-        let mut servers: Vec<McpServerRecord> = self
-            .read()
+        let state = self.read();
+        let servers = state
             .mcp_servers
             .values()
             .filter(|s| {
@@ -561,10 +651,12 @@ impl InfraStore for InMemoryStorage {
                     || (include_shared
                         && (s.owner_id.is_none() || s.visibility != Visibility::Private))
             })
-            .cloned()
-            .collect();
-        servers.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-        Ok(paginate(servers, page))
+            .cloned();
+        Ok(page_oldest_first(
+            servers,
+            |s| (s.created_at, s.id.clone()),
+            page,
+        ))
     }
 
     async fn delete_mcp_server(&self, server_id: &str) -> Result<()> {
@@ -573,7 +665,9 @@ impl InfraStore for InMemoryStorage {
     }
 
     async fn upsert_ui_artifact(&self, artifact: UiArtifactRecord) -> Result<()> {
-        self.write().ui_artifacts.insert(artifact.id.clone(), artifact);
+        self.write()
+            .ui_artifacts
+            .insert(artifact.id.clone(), artifact);
         Ok(())
     }
 
@@ -581,20 +675,18 @@ impl InfraStore for InMemoryStorage {
         Ok(self.read().ui_artifacts.get(artifact_id).cloned())
     }
 
-    async fn list_ui_artifacts(
-        &self,
-        owner_id: &str,
-        page: Page,
-    ) -> Result<Vec<UiArtifactRecord>> {
-        let mut artifacts: Vec<UiArtifactRecord> = self
-            .read()
+    async fn list_ui_artifacts(&self, owner_id: &str, page: Page) -> Result<Vec<UiArtifactRecord>> {
+        let state = self.read();
+        let artifacts = state
             .ui_artifacts
             .values()
             .filter(|a| a.owner_id == owner_id)
-            .cloned()
-            .collect();
-        artifacts.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
-        Ok(paginate(artifacts, page))
+            .cloned();
+        Ok(page_newest_first(
+            artifacts,
+            |a| (a.updated_at, a.id.clone()),
+            page,
+        ))
     }
 
     async fn delete_ui_artifact(&self, artifact_id: &str) -> Result<()> {
@@ -613,21 +705,27 @@ impl InfraStore for InMemoryStorage {
         channel: Option<&str>,
         page: Page,
     ) -> Result<Vec<ChannelMessageRecord>> {
-        let mut msgs: Vec<ChannelMessageRecord> = self
-            .read()
+        let state = self.read();
+        let msgs = state
             .channel_messages
             .iter()
             .filter(|m| m.user_id == user_id)
             .filter(|m| channel.is_none_or(|c| m.channel == c))
-            .cloned()
-            .collect();
-        msgs.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        Ok(paginate(msgs, page))
+            .cloned();
+        Ok(page_newest_first(
+            msgs,
+            |m| (m.created_at, m.id.clone()),
+            page,
+        ))
     }
 
     async fn mark_message_read(&self, message_id: &str) -> Result<()> {
         let mut state = self.write();
-        if let Some(m) = state.channel_messages.iter_mut().find(|m| m.id == message_id) {
+        if let Some(m) = state
+            .channel_messages
+            .iter_mut()
+            .find(|m| m.id == message_id)
+        {
             m.read = true;
         }
         Ok(())
@@ -636,90 +734,21 @@ impl InfraStore for InMemoryStorage {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use serde_json::json;
+    use super::InMemoryStorage;
+    use crate::conformance;
 
     #[tokio::test]
     async fn thread_and_message_roundtrip() {
-        let store = InMemoryStorage::new();
-        let thread = Thread::new("user-1");
-        let thread_id = thread.id.clone();
-        store.create_thread(thread).await.unwrap();
-
-        for i in 0..5 {
-            store
-                .append_message(StoredMessage {
-                    id: format!("m{i}"),
-                    thread_id: thread_id.clone(),
-                    resource_id: "user-1".into(),
-                    role: "user".into(),
-                    content: json!([{"type": "text", "text": format!("msg {i}")}]),
-                    created_at: Utc::now() + chrono::Duration::seconds(i),
-                })
-                .await
-                .unwrap();
-        }
-
-        let recent = store.recent_messages(&thread_id, 3).await.unwrap();
-        assert_eq!(recent.len(), 3);
-        assert_eq!(recent[0].id, "m2");
-        assert_eq!(recent[2].id, "m4");
-
-        assert_eq!(store.list_threads("user-1", Page::default()).await.unwrap().len(), 1);
-        assert!(store.list_threads("user-2", Page::default()).await.unwrap().is_empty());
+        conformance::thread_and_message_roundtrip(&InMemoryStorage::new()).await;
     }
 
     #[tokio::test]
     async fn definitions_version_monotonically() {
-        let store = InMemoryStorage::new();
-        let def = DefinitionRecord {
-            id: "my-skill".into(),
-            kind: ResourceKind::Skill,
-            owner_id: "user-1".into(),
-            name: "My Skill".into(),
-            version: 0,
-            spec: json!({"a": 1}),
-            visibility: Visibility::Private,
-            latest: false,
-            created_at: Utc::now(),
-        };
-        let v1 = store.put_definition(def.clone()).await.unwrap();
-        let v2 = store.put_definition(DefinitionRecord { spec: json!({"a": 2}), ..def }).await.unwrap();
-        assert_eq!((v1.version, v2.version), (1, 2));
-
-        let latest = store.get_definition(ResourceKind::Skill, "my-skill").await.unwrap().unwrap();
-        assert_eq!(latest.version, 2);
-        assert_eq!(latest.spec["a"], 2);
-        let old = store
-            .get_definition_version(ResourceKind::Skill, "my-skill", 1)
-            .await
-            .unwrap()
-            .unwrap();
-        assert_eq!(old.spec["a"], 1);
+        conformance::definitions_version_monotonically(&InMemoryStorage::new()).await;
     }
 
     #[tokio::test]
     async fn shared_definitions_visible_to_others() {
-        let store = InMemoryStorage::new();
-        let mk = |id: &str, owner: &str, vis: Visibility| DefinitionRecord {
-            id: id.into(),
-            kind: ResourceKind::Knowledge,
-            owner_id: owner.into(),
-            name: id.into(),
-            version: 0,
-            spec: json!({}),
-            visibility: vis,
-            latest: false,
-            created_at: Utc::now(),
-        };
-        store.put_definition(mk("private", "alice", Visibility::Private)).await.unwrap();
-        store.put_definition(mk("shared", "alice", Visibility::Shared)).await.unwrap();
-
-        let bob_sees = store
-            .list_definitions(ResourceKind::Knowledge, "bob", true, Page::default())
-            .await
-            .unwrap();
-        assert_eq!(bob_sees.len(), 1);
-        assert_eq!(bob_sees[0].id, "shared");
+        conformance::shared_definitions_visible_to_others(&InMemoryStorage::new()).await;
     }
 }

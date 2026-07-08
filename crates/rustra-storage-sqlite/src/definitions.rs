@@ -14,15 +14,15 @@ const SELECT_DEFINITION: &str = "SELECT id, kind, owner_id, name, version, spec,
 
 fn definition_from_row(row: &Row<'_>) -> Result<DefinitionRecord> {
     Ok(DefinitionRecord {
-        id: col(row, 0)?,
-        kind: kind_from_sql(&col::<String>(row, 1)?)?,
-        owner_id: col(row, 2)?,
-        name: col(row, 3)?,
-        version: col(row, 4)?,
-        spec: col_json(row, 5)?,
-        visibility: vis_from_sql(&col::<String>(row, 6)?)?,
-        latest: col(row, 7)?,
-        created_at: col_ts(row, 8)?,
+        id: col(row, "id")?,
+        kind: col_kind(row, "kind")?,
+        owner_id: col(row, "owner_id")?,
+        name: col(row, "name")?,
+        version: col(row, "version")?,
+        spec: col_json(row, "spec")?,
+        visibility: col_vis(row, "visibility")?,
+        latest: col(row, "latest")?,
+        created_at: col_ts(row, "created_at")?,
     })
 }
 
@@ -31,42 +31,42 @@ impl DefinitionStore for SqliteStorage {
     async fn put_definition(&self, mut record: DefinitionRecord) -> Result<DefinitionRecord> {
         self.db
             .call(move |conn| {
-                let tx = conn.transaction().map_err(storage_err)?;
-                let kind = kind_to_sql(record.kind);
-                let next_version: u32 = tx
-                    .query_row(
-                        "SELECT COALESCE(MAX(version), 0) + 1 FROM rustra_definitions \
-                         WHERE kind = ?1 AND id = ?2",
+                with_tx(conn, |tx| {
+                    let kind = kind_to_sql(record.kind);
+                    let next_version: u32 = tx
+                        .query_row(
+                            "SELECT COALESCE(MAX(version), 0) + 1 FROM rustra_definitions \
+                             WHERE kind = ?1 AND id = ?2",
+                            params![kind, record.id],
+                            |row| row.get(0),
+                        )
+                        .map_err(storage_err)?;
+                    exec(
+                        tx,
+                        "UPDATE rustra_definitions SET latest = 0 WHERE kind = ?1 AND id = ?2",
                         params![kind, record.id],
-                        |row| row.get(0),
-                    )
-                    .map_err(storage_err)?;
-                tx.execute(
-                    "UPDATE rustra_definitions SET latest = 0 WHERE kind = ?1 AND id = ?2",
-                    params![kind, record.id],
-                )
-                .map_err(storage_err)?;
-                record.version = next_version;
-                record.latest = true;
-                tx.execute(
-                    "INSERT INTO rustra_definitions \
-                     (id, kind, owner_id, name, version, spec, visibility, latest, created_at) \
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                    params![
-                        record.id,
-                        kind,
-                        record.owner_id,
-                        record.name,
-                        record.version,
-                        json_to_sql(&record.spec)?,
-                        vis_to_sql(record.visibility),
-                        record.latest,
-                        to_ts(record.created_at),
-                    ],
-                )
-                .map_err(storage_err)?;
-                tx.commit().map_err(storage_err)?;
-                Ok(record)
+                    )?;
+                    record.version = next_version;
+                    record.latest = true;
+                    exec(
+                        tx,
+                        "INSERT INTO rustra_definitions \
+                         (id, kind, owner_id, name, version, spec, visibility, latest, \
+                          created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                        params![
+                            record.id,
+                            kind,
+                            record.owner_id,
+                            record.name,
+                            record.version,
+                            json_to_sql(&record.spec)?,
+                            vis_to_sql(record.visibility),
+                            record.latest,
+                            to_ts(record.created_at),
+                        ],
+                    )?;
+                    Ok(record)
+                })
             })
             .await
     }
@@ -124,7 +124,7 @@ impl DefinitionStore for SqliteStorage {
                     &format!(
                         "{SELECT_DEFINITION} WHERE kind = ?1 AND latest = 1 \
                          AND (owner_id = ?2 OR (?3 AND visibility <> 'private')) \
-                         ORDER BY created_at DESC LIMIT ?4 OFFSET ?5"
+                         ORDER BY created_at DESC, rowid DESC LIMIT ?4 OFFSET ?5"
                     ),
                     params![kind_to_sql(kind), owner_id, include_shared, limit, offset],
                     definition_from_row,

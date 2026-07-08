@@ -14,7 +14,7 @@ use rustra_core::{Error, Result};
 use crate::fs::Workspace;
 
 /// Guard rails for [`Workspace::exec`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShellPolicy {
     /// Master switch; when false every `exec` is denied.
     pub enabled: bool,
@@ -40,12 +40,36 @@ impl Default for ShellPolicy {
 /// The captured result of a shell command.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ShellOutput {
+    /// Captured stdout, lossily UTF-8 decoded, cut at `max_output_bytes`.
     pub stdout: String,
+    /// Captured stderr, decoded and capped like `stdout`.
     pub stderr: String,
     /// Process exit code; `-1` when terminated by a signal.
     pub exit_code: i32,
     /// True when stdout and/or stderr were cut at `max_output_bytes`.
     pub truncated: bool,
+}
+
+impl ShellPolicy {
+    /// Deny the command per this policy: disabled shell or a denylisted
+    /// substring.
+    pub fn check(&self, command: &str) -> Result<()> {
+        if !self.enabled {
+            return Err(Error::PermissionDenied(
+                "shell access is disabled for this workspace".into(),
+            ));
+        }
+        if let Some(denied) = self
+            .denied_commands
+            .iter()
+            .find(|denied| command.contains(denied.as_str()))
+        {
+            return Err(Error::PermissionDenied(format!(
+                "command contains denied term `{denied}`"
+            )));
+        }
+        Ok(())
+    }
 }
 
 impl Workspace {
@@ -55,18 +79,7 @@ impl Workspace {
     /// Returns [`Error::PermissionDenied`] for disabled/denied commands and
     /// [`Error::Timeout`] when the timeout expires (the process is killed).
     pub async fn exec(&self, command: &str, policy: &ShellPolicy) -> Result<ShellOutput> {
-        if !policy.enabled {
-            return Err(Error::PermissionDenied(
-                "shell access is disabled for this workspace".into(),
-            ));
-        }
-        if let Some(denied) =
-            policy.denied_commands.iter().find(|denied| command.contains(denied.as_str()))
-        {
-            return Err(Error::PermissionDenied(format!(
-                "command contains denied term `{denied}`"
-            )));
-        }
+        policy.check(command)?;
 
         let child = tokio::process::Command::new("sh")
             .arg("-c")
@@ -118,10 +131,32 @@ mod tests {
         (dir, ws)
     }
 
+    #[test]
+    fn policy_check_allows_denies_and_disables() {
+        let policy = ShellPolicy::default();
+        assert!(policy.check("echo hi").is_ok());
+        assert!(matches!(
+            policy.check("sudo rm -rf /"),
+            Err(Error::PermissionDenied(_))
+        ));
+
+        let disabled = ShellPolicy {
+            enabled: false,
+            ..Default::default()
+        };
+        assert!(matches!(
+            disabled.check("echo hi"),
+            Err(Error::PermissionDenied(_))
+        ));
+    }
+
     #[tokio::test]
     async fn exec_captures_output_and_exit_code() {
         let (_dir, ws) = workspace().await;
-        let out = ws.exec("echo hello && echo oops >&2", &ShellPolicy::default()).await.unwrap();
+        let out = ws
+            .exec("echo hello && echo oops >&2", &ShellPolicy::default())
+            .await
+            .unwrap();
         assert_eq!(out.stdout, "hello\n");
         assert_eq!(out.stderr, "oops\n");
         assert_eq!(out.exit_code, 0);
@@ -141,18 +176,30 @@ mod tests {
     #[tokio::test]
     async fn exec_times_out_and_kills() {
         let (_dir, ws) = workspace().await;
-        let policy = ShellPolicy { timeout: Duration::from_millis(100), ..Default::default() };
+        let policy = ShellPolicy {
+            timeout: Duration::from_millis(100),
+            ..Default::default()
+        };
         let err = ws.exec("sleep 5", &policy).await.unwrap_err();
-        assert!(matches!(err, Error::Timeout(_)), "expected timeout, got: {err}");
+        assert!(
+            matches!(err, Error::Timeout(_)),
+            "expected timeout, got: {err}"
+        );
     }
 
     #[tokio::test]
     async fn exec_denies_denylisted_and_disabled() {
         let (_dir, ws) = workspace().await;
-        let err = ws.exec("sudo rm -rf /", &ShellPolicy::default()).await.unwrap_err();
+        let err = ws
+            .exec("sudo rm -rf /", &ShellPolicy::default())
+            .await
+            .unwrap_err();
         assert!(matches!(err, Error::PermissionDenied(_)));
 
-        let disabled = ShellPolicy { enabled: false, ..Default::default() };
+        let disabled = ShellPolicy {
+            enabled: false,
+            ..Default::default()
+        };
         let err = ws.exec("echo hi", &disabled).await.unwrap_err();
         assert!(matches!(err, Error::PermissionDenied(_)));
     }
@@ -160,7 +207,10 @@ mod tests {
     #[tokio::test]
     async fn exec_truncates_output() {
         let (_dir, ws) = workspace().await;
-        let policy = ShellPolicy { max_output_bytes: 4, ..Default::default() };
+        let policy = ShellPolicy {
+            max_output_bytes: 4,
+            ..Default::default()
+        };
         let out = ws.exec("echo hello world", &policy).await.unwrap();
         assert_eq!(out.stdout, "hell");
         assert!(out.truncated);

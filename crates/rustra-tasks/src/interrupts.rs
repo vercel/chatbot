@@ -10,12 +10,12 @@ use async_trait::async_trait;
 use chrono::Utc;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::Notify;
 
-use rustra_core::{new_id, Error, Principal, Result, RuntimeContext};
 use rustra_agent::{ApprovalDecision, ToolApprover};
+use rustra_core::{new_id, Error, Principal, Result, RuntimeContext};
 use rustra_storage::types::DecisionRecord;
 use rustra_storage::{Page, SharedStorage};
 
@@ -33,13 +33,41 @@ pub struct InterruptController {
     storage: SharedStorage,
     /// In-process wakeups so waiters resolve immediately; storage remains
     /// the source of truth (waiters also poll, so cross-process resolution
-    /// still works — see TECH_DEBT.md for the polling interval).
-    notifiers: tokio::sync::Mutex<HashMap<String, Arc<Notify>>>,
+    /// still works — see TECH_DEBT.md for the polling interval). Never held
+    /// across an await, so a plain mutex suffices.
+    notifiers: Mutex<HashMap<String, Arc<Notify>>>,
+}
+
+/// Removes a waiter's notifier entry when its wait ends for any reason —
+/// resolution, timeout, error, or the future being dropped — unless other
+/// waiters still share the entry.
+struct WaiterGuard<'a> {
+    notifiers: &'a Mutex<HashMap<String, Arc<Notify>>>,
+    id: String,
+    notify: Arc<Notify>,
+}
+
+impl Drop for WaiterGuard<'_> {
+    fn drop(&mut self) {
+        let mut map = self.notifiers.lock().unwrap();
+        // strong_count == 2 means the map's clone plus this guard's clone:
+        // no other concurrent waiter, so the entry can go. ptr_eq protects
+        // against a re-inserted entry under the same id.
+        if map
+            .get(&self.id)
+            .is_some_and(|n| Arc::ptr_eq(n, &self.notify) && Arc::strong_count(n) == 2)
+        {
+            map.remove(&self.id);
+        }
+    }
 }
 
 impl InterruptController {
     pub fn new(storage: SharedStorage) -> Arc<Self> {
-        Arc::new(Self { storage, notifiers: tokio::sync::Mutex::new(HashMap::new()) })
+        Arc::new(Self {
+            storage,
+            notifiers: Mutex::new(HashMap::new()),
+        })
     }
 
     /// Create a pending decision (`kind`: `approval` | `input`).
@@ -69,7 +97,9 @@ impl InterruptController {
 
     /// Pending decisions awaiting this user.
     pub async fn pending(&self, principal: &Principal) -> Result<Vec<DecisionRecord>> {
-        self.storage.list_decisions(&principal.user_id, true, Page::default()).await
+        self.storage
+            .list_decisions(&principal.user_id, true, Page::default())
+            .await
     }
 
     /// Resolve a decision. `status` is one of the non-pending
@@ -86,11 +116,7 @@ impl InterruptController {
             .get_decision(decision_id)
             .await?
             .ok_or_else(|| Error::not_found("decision", decision_id))?;
-        if record.user_id != principal.user_id && !principal.is_admin() {
-            return Err(Error::PermissionDenied(format!(
-                "decision `{decision_id}` belongs to another user"
-            )));
-        }
+        crate::ensure_owner(principal, &record.user_id, "decision", decision_id)?;
         if record.status != decision_status::PENDING {
             return Err(Error::Validation(format!(
                 "decision `{decision_id}` is already `{}`",
@@ -102,7 +128,8 @@ impl InterruptController {
         record.resolved_at = Some(Utc::now());
         self.storage.update_decision(record.clone()).await?;
 
-        if let Some(notify) = self.notifiers.lock().await.remove(decision_id) {
+        let notify = self.notifiers.lock().unwrap().remove(decision_id);
+        if let Some(notify) = notify {
             notify.notify_waiters();
         }
         Ok(record)
@@ -111,9 +138,14 @@ impl InterruptController {
     /// Await a decision's resolution (in-process wakeup + storage polling as
     /// the cross-process fallback). Times out with `Error::Timeout`.
     pub async fn wait(&self, decision_id: &str, timeout: Duration) -> Result<DecisionRecord> {
-        let notify = {
-            let mut notifiers = self.notifiers.lock().await;
-            Arc::clone(notifiers.entry(decision_id.to_string()).or_default())
+        let guard = {
+            let mut notifiers = self.notifiers.lock().unwrap();
+            let notify = Arc::clone(notifiers.entry(decision_id.to_string()).or_default());
+            WaiterGuard {
+                notifiers: &self.notifiers,
+                id: decision_id.to_string(),
+                notify,
+            }
         };
         let deadline = tokio::time::Instant::now() + timeout;
         loop {
@@ -127,7 +159,7 @@ impl InterruptController {
             }
             let poll = tokio::time::sleep(Duration::from_millis(500));
             tokio::select! {
-                _ = notify.notified() => {}
+                _ = guard.notify.notified() => {}
                 _ = poll => {}
                 _ = tokio::time::sleep_until(deadline) => {
                     return Err(Error::Timeout(format!(
@@ -159,6 +191,13 @@ impl HitlToolApprover {
             tools_requiring_approval: tools_requiring_approval.into_iter().collect(),
             timeout: Duration::from_secs(600),
         }
+    }
+
+    /// Set how long to wait for the human before failing the tool call.
+    #[must_use]
+    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = timeout;
+        self
     }
 }
 
@@ -214,8 +253,10 @@ mod tests {
     async fn request_resolve_wait_roundtrip() {
         let ctl = controller();
         let alice = Principal::user("alice");
-        let decision =
-            ctl.request(&alice, "run_1", "approval", "Deploy?", json!({})).await.unwrap();
+        let decision = ctl
+            .request(&alice, "run_1", "approval", "Deploy?", json!({}))
+            .await
+            .unwrap();
         assert_eq!(ctl.pending(&alice).await.unwrap().len(), 1);
 
         let ctl2 = Arc::clone(&ctl);
@@ -223,9 +264,14 @@ mod tests {
         let waiter = tokio::spawn(async move { ctl2.wait(&id, Duration::from_secs(5)).await });
         tokio::time::sleep(Duration::from_millis(20)).await;
 
-        ctl.resolve(&alice, &decision.id, decision_status::APPROVED, json!({"ok": true}))
-            .await
-            .unwrap();
+        ctl.resolve(
+            &alice,
+            &decision.id,
+            decision_status::APPROVED,
+            json!({"ok": true}),
+        )
+        .await
+        .unwrap();
         let resolved = waiter.await.unwrap().unwrap();
         assert_eq!(resolved.status, "approved");
         assert!(ctl.pending(&alice).await.unwrap().is_empty());
@@ -235,29 +281,43 @@ mod tests {
     async fn resolution_is_user_scoped_and_single_shot() {
         let ctl = controller();
         let alice = Principal::user("alice");
-        let decision = ctl.request(&alice, "r", "approval", "ok?", json!({})).await.unwrap();
+        let decision = ctl
+            .request(&alice, "r", "approval", "ok?", json!({}))
+            .await
+            .unwrap();
 
         let err = ctl
-            .resolve(&Principal::user("mallory"), &decision.id, "approved", json!({}))
+            .resolve(
+                &Principal::user("mallory"),
+                &decision.id,
+                "approved",
+                json!({}),
+            )
             .await
             .unwrap_err();
         assert!(matches!(err, Error::PermissionDenied(_)));
 
-        ctl.resolve(&alice, &decision.id, "rejected", json!({})).await.unwrap();
-        let err =
-            ctl.resolve(&alice, &decision.id, "approved", json!({})).await.unwrap_err();
+        ctl.resolve(&alice, &decision.id, "rejected", json!({}))
+            .await
+            .unwrap();
+        let err = ctl
+            .resolve(&alice, &decision.id, "approved", json!({}))
+            .await
+            .unwrap_err();
         assert!(matches!(err, Error::Validation(_)));
     }
 
     #[tokio::test]
     async fn hitl_approver_gates_configured_tools() {
         let ctl = controller();
-        let approver =
-            HitlToolApprover::new(Arc::clone(&ctl), vec!["dangerous_tool".to_string()]);
+        let approver = HitlToolApprover::new(Arc::clone(&ctl), vec!["dangerous_tool".to_string()]);
         let runtime = RuntimeContext::new(Principal::user("alice"));
 
         // Unlisted tools pass straight through.
-        let decision = approver.review("safe_tool", &json!({}), &runtime).await.unwrap();
+        let decision = approver
+            .review("safe_tool", &json!({}), &runtime)
+            .await
+            .unwrap();
         assert!(matches!(decision, ApprovalDecision::Approved));
 
         // Listed tools park on a decision; resolve it concurrently.
@@ -275,8 +335,10 @@ mod tests {
                 }
             }
         });
-        let decision =
-            approver.review("dangerous_tool", &json!({"x": 1}), &runtime).await.unwrap();
+        let decision = approver
+            .review("dangerous_tool", &json!({"x": 1}), &runtime)
+            .await
+            .unwrap();
         assert!(matches!(decision, ApprovalDecision::Approved));
     }
 }

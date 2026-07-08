@@ -24,7 +24,7 @@ pub trait TaskExecutor: Send + Sync {
 }
 
 /// Options for one submission.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TaskOptions {
     pub trigger: String,
     pub max_retries: u32,
@@ -47,7 +47,9 @@ impl Default for TaskOptions {
 
 struct RunningTask {
     cancel: CancellationToken,
-    handle: tokio::task::JoinHandle<()>,
+    /// Fires when the supervisor exits (after the final persist), so any
+    /// number of waiters can observe completion without consuming anything.
+    done: CancellationToken,
 }
 
 /// Launches, supervises, cancels, and inspects tasks. Every state
@@ -62,7 +64,11 @@ pub struct TaskManager {
 
 impl TaskManager {
     pub fn new(storage: SharedStorage, executor: Arc<dyn TaskExecutor>) -> Arc<Self> {
-        Arc::new(Self { storage, executor, running: RwLock::new(HashMap::new()) })
+        Arc::new(Self {
+            storage,
+            executor,
+            running: RwLock::new(HashMap::new()),
+        })
     }
 
     /// Submit a task and return immediately; it runs supervised in the
@@ -73,18 +79,19 @@ impl TaskManager {
         spec: Value,
         options: TaskOptions,
     ) -> Result<TaskRecord> {
+        let backoff_base = options.backoff;
         let record = TaskRecord {
             id: new_id("tsk"),
             user_id: principal.user_id.clone(),
-            trigger: options.trigger.clone(),
-            spec: spec.clone(),
+            trigger: options.trigger,
+            spec,
             status: task_status::PENDING.to_string(),
             attempts: 0,
             max_retries: options.max_retries,
             last_error: None,
             output: Value::Null,
             run_id: None,
-            schedule_id: options.schedule_id.clone(),
+            schedule_id: options.schedule_id,
             created_at: Utc::now(),
             started_at: None,
             ended_at: None,
@@ -92,17 +99,29 @@ impl TaskManager {
         self.storage.insert_task(record.clone()).await?;
 
         let cancel = CancellationToken::new();
+        let done = CancellationToken::new();
         let manager = Arc::clone(self);
         let task_record = record.clone();
         let principal = principal.clone();
         let token = cancel.clone();
-        let handle = tokio::spawn(async move {
-            manager.supervise(task_record, principal, token).await;
+        self.running.write().await.insert(
+            record.id.clone(),
+            RunningTask {
+                cancel,
+                done: done.clone(),
+            },
+        );
+        let id = record.id.clone();
+        tokio::spawn(async move {
+            // Fires `done` on every exit path — including a panicking
+            // supervisor — strictly after the final persist on the normal
+            // path.
+            let _done_guard = done.drop_guard();
+            manager
+                .supervise(task_record, principal, backoff_base, token)
+                .await;
+            manager.running.write().await.remove(&id);
         });
-        self.running
-            .write()
-            .await
-            .insert(record.id.clone(), RunningTask { cancel, handle });
         Ok(record)
     }
 
@@ -121,9 +140,18 @@ impl TaskManager {
 
     /// Await a task's completion and return its final record.
     pub async fn wait(&self, task_id: &str) -> Result<TaskRecord> {
-        let handle = self.running.write().await.remove(task_id);
-        if let Some(running) = handle {
-            let _ = running.handle.await;
+        let done = self
+            .running
+            .read()
+            .await
+            .get(task_id)
+            .map(|rt| rt.done.clone());
+        if let Some(done) = done {
+            done.cancelled().await;
+            // Idempotent belt-and-braces: the supervisor removes its own
+            // entry after the final persist; this also reaps entries a
+            // panicked supervisor left behind.
+            self.running.write().await.remove(task_id);
         }
         self.storage
             .get_task(task_id)
@@ -151,21 +179,20 @@ impl TaskManager {
             .get_task(task_id)
             .await?
             .ok_or_else(|| Error::not_found("task", task_id))?;
-        if record.user_id != principal.user_id && !principal.is_admin() {
-            return Err(Error::PermissionDenied(format!(
-                "task `{task_id}` belongs to another user"
-            )));
-        }
+        crate::ensure_owner(principal, &record.user_id, "task", task_id)?;
         Ok(record)
     }
 
+    /// List the principal's tasks, optionally filtered by status.
     pub async fn list(
         &self,
         principal: &Principal,
         status: Option<&str>,
         page: Page,
     ) -> Result<Vec<TaskRecord>> {
-        self.storage.list_tasks(&principal.user_id, status, page).await
+        self.storage
+            .list_tasks(&principal.user_id, status, page)
+            .await
     }
 
     /// The supervision loop for one task: retries with exponential backoff
@@ -175,6 +202,7 @@ impl TaskManager {
         &self,
         mut record: TaskRecord,
         principal: Principal,
+        backoff_base: Duration,
         cancel: CancellationToken,
     ) {
         record.status = task_status::RUNNING.to_string();
@@ -191,17 +219,13 @@ impl TaskManager {
 
             match outcome {
                 None => {
-                    record.status = task_status::CANCELLED.to_string();
-                    record.ended_at = Some(Utc::now());
-                    self.persist(&record).await;
+                    self.finish(&mut record, task_status::CANCELLED).await;
                     tracing::info!(task = %record.id, "task cancelled");
                     return;
                 }
                 Some(Ok(output)) => {
-                    record.status = task_status::COMPLETED.to_string();
                     record.output = output;
-                    record.ended_at = Some(Utc::now());
-                    self.persist(&record).await;
+                    self.finish(&mut record, task_status::COMPLETED).await;
                     return;
                 }
                 Some(Err(e)) => {
@@ -209,7 +233,7 @@ impl TaskManager {
                     let attempts_left = record.attempts <= record.max_retries;
                     if attempts_left && e.is_retryable() {
                         let backoff =
-                            Duration::from_millis(250) * 2u32.saturating_pow(record.attempts - 1);
+                            backoff_base.saturating_mul(2u32.saturating_pow(record.attempts - 1));
                         tracing::warn!(
                             task = %record.id,
                             error = %e,
@@ -220,22 +244,26 @@ impl TaskManager {
                         tokio::select! {
                             _ = tokio::time::sleep(backoff) => {}
                             _ = cancel.cancelled() => {
-                                record.status = task_status::CANCELLED.to_string();
-                                record.ended_at = Some(Utc::now());
-                                self.persist(&record).await;
+                                self.finish(&mut record, task_status::CANCELLED).await;
                                 return;
                             }
                         }
                     } else {
-                        record.status = task_status::FAILED.to_string();
-                        record.ended_at = Some(Utc::now());
-                        self.persist(&record).await;
+                        self.finish(&mut record, task_status::FAILED).await;
                         tracing::warn!(task = %record.id, error = %e, "task failed");
                         return;
                     }
                 }
             }
         }
+    }
+
+    /// Terminal transition: final status, `ended_at`, and the persist always
+    /// travel together.
+    async fn finish(&self, record: &mut TaskRecord, status: &str) {
+        record.status = status.to_string();
+        record.ended_at = Some(Utc::now());
+        self.persist(record).await;
     }
 
     async fn persist(&self, record: &TaskRecord) {
@@ -267,8 +295,10 @@ mod tests {
     #[tokio::test]
     async fn task_completes_and_persists_output() {
         let manager = TaskManager::new(Arc::new(InMemoryStorage::new()), Arc::new(EchoExecutor));
-        let record =
-            manager.run_now(&alice(), json!({"target": "agent"}), TaskOptions::default()).await.unwrap();
+        let record = manager
+            .run_now(&alice(), json!({"target": "agent"}), TaskOptions::default())
+            .await
+            .unwrap();
         assert_eq!(record.status, "completed");
         assert_eq!(record.output["echo"]["target"], "agent");
         assert_eq!(record.attempts, 1);
@@ -287,13 +317,19 @@ mod tests {
                 }
             }
         }
-        let manager =
-            TaskManager::new(Arc::new(InMemoryStorage::new()), Arc::new(Flaky(AtomicU32::new(0))));
+        let manager = TaskManager::new(
+            Arc::new(InMemoryStorage::new()),
+            Arc::new(Flaky(AtomicU32::new(0))),
+        );
         let record = manager
             .run_now(
                 &alice(),
                 json!({}),
-                TaskOptions { max_retries: 3, backoff: Duration::from_millis(1), ..Default::default() },
+                TaskOptions {
+                    max_retries: 3,
+                    backoff: Duration::from_millis(1),
+                    ..Default::default()
+                },
             )
             .await
             .unwrap();
@@ -313,7 +349,14 @@ mod tests {
         }
         let manager = TaskManager::new(Arc::new(InMemoryStorage::new()), Arc::new(AlwaysBad));
         let record = manager
-            .run_now(&alice(), json!({}), TaskOptions { max_retries: 5, ..Default::default() })
+            .run_now(
+                &alice(),
+                json!({}),
+                TaskOptions {
+                    max_retries: 5,
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
         assert_eq!(record.status, "failed");
@@ -331,8 +374,10 @@ mod tests {
             }
         }
         let manager = TaskManager::new(Arc::new(InMemoryStorage::new()), Arc::new(Slow));
-        let record =
-            manager.submit(&alice(), json!({}), TaskOptions::default()).await.unwrap();
+        let record = manager
+            .submit(&alice(), json!({}), TaskOptions::default())
+            .await
+            .unwrap();
         tokio::time::sleep(Duration::from_millis(20)).await; // let it start
         manager.cancel(&alice(), &record.id).await.unwrap();
         let finished = manager.wait(&record.id).await.unwrap();
@@ -342,8 +387,14 @@ mod tests {
     #[tokio::test]
     async fn tasks_are_user_scoped() {
         let manager = TaskManager::new(Arc::new(InMemoryStorage::new()), Arc::new(EchoExecutor));
-        let record = manager.run_now(&alice(), json!({}), TaskOptions::default()).await.unwrap();
-        let err = manager.get(&Principal::user("mallory"), &record.id).await.unwrap_err();
+        let record = manager
+            .run_now(&alice(), json!({}), TaskOptions::default())
+            .await
+            .unwrap();
+        let err = manager
+            .get(&Principal::user("mallory"), &record.id)
+            .await
+            .unwrap_err();
         assert!(matches!(err, Error::PermissionDenied(_)));
     }
 }

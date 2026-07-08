@@ -22,6 +22,8 @@ pub struct McpToolset {
 }
 
 impl McpToolset {
+    /// Wrap an already-connected client and its definition; call
+    /// [`Self::tools`] to discover and bridge.
     pub fn new(client: Arc<McpClient>, definition: McpServerDefinition) -> Self {
         Self { client, definition }
     }
@@ -30,25 +32,32 @@ impl McpToolset {
     /// `allowed_tools` filter and the `{server}_{tool}` namespace.
     pub async fn tools(&self) -> Result<Vec<Arc<dyn Tool>>> {
         let infos = self.client.list_tools().await?;
-        let mut tools: Vec<Arc<dyn Tool>> = Vec::with_capacity(infos.len());
-        for info in infos {
-            if let Some(allowed) = &self.definition.allowed_tools {
-                if !allowed.iter().any(|name| name == &info.name) {
-                    tracing::debug!(
-                        server = %self.definition.name,
-                        tool = %info.name,
-                        "mcp tool filtered out by allowed_tools"
-                    );
-                    continue;
-                }
+        Ok(infos
+            .into_iter()
+            .filter(|info| self.is_exposed(info))
+            .map(|info| {
+                Arc::new(McpTool::new(
+                    Arc::clone(&self.client),
+                    &self.definition,
+                    info,
+                )) as Arc<dyn Tool>
+            })
+            .collect())
+    }
+
+    /// Whether the definition's `allowed_tools` allow-list exposes `info`.
+    fn is_exposed(&self, info: &McpToolInfo) -> bool {
+        match &self.definition.allowed_tools {
+            Some(allowed) if !allowed.iter().any(|name| name == &info.name) => {
+                tracing::debug!(
+                    server = %self.definition.name,
+                    tool = %info.name,
+                    "mcp tool filtered out by allowed_tools"
+                );
+                false
             }
-            tools.push(Arc::new(McpTool::new(
-                Arc::clone(&self.client),
-                &self.definition,
-                info,
-            )));
+            _ => true,
         }
-        Ok(tools)
     }
 }
 
@@ -116,9 +125,12 @@ impl Tool for McpTool {
     }
 
     async fn execute(&self, input: Value, _ctx: &ToolContext) -> Result<Value> {
-        self.client.call_tool(&self.remote_name, input).await.map_err(|e| match e {
-            e @ Error::Timeout(_) => e, // let retry policies see timeouts
-            other => Error::tool(&self.id, other.to_string()),
-        })
+        self.client
+            .call_tool(&self.remote_name, input)
+            .await
+            .map_err(|e| match e {
+                e @ Error::Timeout(_) => e, // let retry policies see timeouts
+                other => Error::tool(&self.id, other.to_string()),
+            })
     }
 }

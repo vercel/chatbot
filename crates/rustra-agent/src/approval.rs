@@ -12,9 +12,12 @@ use serde_json::Value;
 use rustra_core::{Result, RuntimeContext};
 
 /// Outcome of reviewing a tool call.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ApprovalDecision {
+    /// Execute the tool call.
     Approved,
+    /// Refuse the call; `reason` is surfaced to the model as an error tool
+    /// result.
     Denied { reason: String },
 }
 
@@ -32,6 +35,7 @@ pub trait ToolApprover: Send + Sync {
 
 /// Default approver: everything is allowed. Appropriate for trusted local
 /// tools; wire a policy or HITL approver for anything with side effects.
+#[derive(Debug, Clone, Copy, Default)]
 pub struct AllowAll;
 
 #[async_trait]

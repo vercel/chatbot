@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use axum::extract::{Path, State};
 use axum::Json;
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use rustra::Rustra;
 use rustra_mcp::McpServerDefinition;
@@ -27,7 +27,9 @@ pub(crate) async fn list(
     State(rustra): State<Arc<Rustra>>,
     AuthedUser(principal): AuthedUser,
 ) -> ApiResult<Json<Vec<McpServerRecord>>> {
-    Ok(Json(rustra.mcp().list_for_user(&principal.user_id, true).await?))
+    Ok(Json(
+        rustra.mcp().list_for_user(&principal.user_id, true).await?,
+    ))
 }
 
 /// `POST /api/mcp/servers/{id}/enable`.
@@ -45,7 +47,9 @@ pub(crate) async fn disable(
     AuthedUser(principal): AuthedUser,
     Path(id): Path<String>,
 ) -> ApiResult<Json<McpServerRecord>> {
-    Ok(Json(rustra.mcp().set_enabled(&principal, &id, false).await?))
+    Ok(Json(
+        rustra.mcp().set_enabled(&principal, &id, false).await?,
+    ))
 }
 
 /// `DELETE /api/mcp/servers/{id}`.
@@ -55,5 +59,5 @@ pub(crate) async fn remove(
     Path(id): Path<String>,
 ) -> ApiResult<Json<Value>> {
     rustra.mcp().remove(&principal, &id).await?;
-    Ok(Json(json!({ "ok": true })))
+    Ok(super::ok())
 }

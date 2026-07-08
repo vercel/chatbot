@@ -13,6 +13,7 @@ pub trait MemoryProcessor: Send + Sync {
 ///
 /// TECH DEBT: budgeting is by characters, not tokens. Swap in a real
 /// tokenizer once one is chosen; the trait boundary will not change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CharBudgetProcessor {
     pub max_chars: usize,
 }

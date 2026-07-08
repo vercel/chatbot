@@ -5,7 +5,7 @@ use std::sync::Arc;
 use axum::extract::{Path, Query, State};
 use axum::Json;
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use rustra::{Event, Rustra};
 use rustra_storage::types::{SubscriptionRecord, TaskRecord};
@@ -40,7 +40,12 @@ pub(crate) async fn webhook(
     Path(hook): Path<String>,
     Json(payload): Json<Value>,
 ) -> ApiResult<Json<Vec<TaskRecord>>> {
-    Ok(Json(rustra.signals().emit_webhook(&principal, &hook, payload).await?))
+    Ok(Json(
+        rustra
+            .signals()
+            .emit_webhook(&principal, &hook, payload)
+            .await?,
+    ))
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,7 +61,12 @@ pub(crate) async fn subscribe(
     AuthedUser(principal): AuthedUser,
     Json(body): Json<SubscribeRequest>,
 ) -> ApiResult<Json<SubscriptionRecord>> {
-    Ok(Json(rustra.signals().subscribe(&principal, body.pattern, body.spec).await?))
+    Ok(Json(
+        rustra
+            .signals()
+            .subscribe(&principal, body.pattern, body.spec)
+            .await?,
+    ))
 }
 
 /// `GET /api/subscriptions`.
@@ -75,5 +85,5 @@ pub(crate) async fn unsubscribe(
     Path(id): Path<String>,
 ) -> ApiResult<Json<Value>> {
     rustra.signals().unsubscribe(&principal, &id).await?;
-    Ok(Json(json!({ "ok": true })))
+    Ok(super::ok())
 }

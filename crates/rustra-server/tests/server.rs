@@ -22,7 +22,10 @@ struct TestServer {
 async fn setup() -> TestServer {
     let workspaces = tempfile::tempdir().expect("tempdir");
     let rustra = Rustra::builder()
-        .model("mock/mock-1", Arc::new(MockModel::text("hello from the mock")))
+        .model(
+            "mock/mock-1",
+            Arc::new(MockModel::text("hello from the mock")),
+        )
         .default_model("mock/mock-1")
         .workspace_dir(workspaces.path())
         .build()
@@ -34,7 +37,12 @@ async fn setup() -> TestServer {
         .await
         .expect("issue token");
     let app = router(Arc::clone(&rustra), &ServerConfig::default());
-    TestServer { app, rustra, token, _workspaces: workspaces }
+    TestServer {
+        app,
+        rustra,
+        token,
+        _workspaces: workspaces,
+    }
 }
 
 async fn send(
@@ -55,15 +63,21 @@ async fn send(
             .unwrap(),
         None => request.body(Body::empty()).unwrap(),
     };
-    let response = server.app.clone().oneshot(request).await.expect("infallible");
+    let response = server
+        .app
+        .clone()
+        .oneshot(request)
+        .await
+        .expect("infallible");
     let status = response.status();
-    let bytes = to_bytes(response.into_body(), 4 * 1024 * 1024).await.unwrap();
+    let bytes = to_bytes(response.into_body(), 4 * 1024 * 1024)
+        .await
+        .unwrap();
     let value = if bytes.is_empty() {
         Value::Null
     } else {
-        serde_json::from_slice(&bytes).unwrap_or(Value::String(
-            String::from_utf8_lossy(&bytes).into_owned(),
-        ))
+        serde_json::from_slice(&bytes)
+            .unwrap_or(Value::String(String::from_utf8_lossy(&bytes).into_owned()))
     };
     (status, value)
 }
@@ -120,15 +134,23 @@ async fn main_agent_generate_returns_text() {
 #[tokio::test]
 async fn runs_list_trace_and_logs_after_generate() {
     let server = setup().await;
-    let (status, generated) =
-        call(&server, "POST", "/api/agents/main/generate", Some(json!({ "message": "go" }))).await;
+    let (status, generated) = call(
+        &server,
+        "POST",
+        "/api/agents/main/generate",
+        Some(json!({ "message": "go" })),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK, "{generated}");
     let run_id = generated["run_id"].as_str().unwrap().to_string();
 
     let (status, runs) = call(&server, "GET", "/api/runs", None).await;
     assert_eq!(status, StatusCode::OK);
     let runs = runs.as_array().unwrap();
-    assert!(runs.iter().any(|r| r["id"] == run_id.as_str()), "run listed");
+    assert!(
+        runs.iter().any(|r| r["id"] == run_id.as_str()),
+        "run listed"
+    );
 
     let (status, run) = call(&server, "GET", &format!("/api/runs/{run_id}"), None).await;
     assert_eq!(status, StatusCode::OK);
@@ -189,7 +211,13 @@ async fn schedules_crud_roundtrip() {
     let (_, listed) = call(&server, "GET", "/api/schedules", None).await;
     assert_eq!(listed[0]["enabled"], false);
 
-    let (status, _) = call(&server, "POST", &format!("/api/schedules/{id}/resume"), None).await;
+    let (status, _) = call(
+        &server,
+        "POST",
+        &format!("/api/schedules/{id}/resume"),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
 
     let (status, _) = call(&server, "POST", &format!("/api/schedules/{id}/run"), None).await;
@@ -210,7 +238,9 @@ async fn tasks_run_now_and_background_status() {
         &server,
         "POST",
         "/api/tasks",
-        Some(json!({ "spec": { "target": "agent", "id": "main", "input": { "message": "do it" } } })),
+        Some(
+            json!({ "spec": { "target": "agent", "id": "main", "input": { "message": "do it" } } }),
+        ),
     )
     .await;
     assert_eq!(status, StatusCode::OK, "{task}");
@@ -283,7 +313,13 @@ async fn signal_emit_launches_matching_subscription() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(listed.as_array().unwrap().len(), 1);
 
-    let (status, _) = call(&server, "DELETE", &format!("/api/subscriptions/{sub_id}"), None).await;
+    let (status, _) = call(
+        &server,
+        "DELETE",
+        &format!("/api/subscriptions/{sub_id}"),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     let (_, listed) = call(&server, "GET", "/api/subscriptions", None).await;
     assert!(listed.as_array().unwrap().is_empty());
@@ -304,8 +340,13 @@ async fn webhook_launches_subscription_task() {
     )
     .await;
 
-    let (status, launched) =
-        call(&server, "POST", "/api/webhooks/gh.push", Some(json!({ "ref": "main" }))).await;
+    let (status, launched) = call(
+        &server,
+        "POST",
+        "/api/webhooks/gh.push",
+        Some(json!({ "ref": "main" })),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK, "{launched}");
     let launched = launched.as_array().unwrap();
     assert_eq!(launched.len(), 1);
@@ -333,7 +374,13 @@ async fn decision_pending_and_resolve_roundtrip() {
     let decision = server
         .rustra
         .interrupts()
-        .request(&ada, "run_1", "approval", "Deploy to production?", json!({}))
+        .request(
+            &ada,
+            "run_1",
+            "approval",
+            "Deploy to production?",
+            json!({}),
+        )
         .await
         .unwrap();
 
@@ -386,7 +433,12 @@ async fn ui_render_sets_csp_headers() {
     let artifact = server
         .rustra
         .ui()
-        .create("ada", "Dashboard", "<p>chart goes here</p>", json!({ "points": [1, 2] }))
+        .create(
+            "ada",
+            "Dashboard",
+            "<p>chart goes here</p>",
+            json!({ "points": [1, 2] }),
+        )
         .await
         .unwrap();
 
@@ -407,15 +459,25 @@ async fn ui_render_sets_csp_headers() {
         .unwrap();
     let response = server.app.clone().oneshot(request).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    let csp = response.headers().get(header::CONTENT_SECURITY_POLICY).unwrap();
+    let csp = response
+        .headers()
+        .get(header::CONTENT_SECURITY_POLICY)
+        .unwrap();
     assert_eq!(
         csp.to_str().unwrap(),
         "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:"
     );
-    assert_eq!(response.headers().get(header::X_FRAME_OPTIONS).unwrap(), "SAMEORIGIN");
-    let html =
-        String::from_utf8(to_bytes(response.into_body(), 1024 * 1024).await.unwrap().to_vec())
-            .unwrap();
+    assert_eq!(
+        response.headers().get(header::X_FRAME_OPTIONS).unwrap(),
+        "SAMEORIGIN"
+    );
+    let html = String::from_utf8(
+        to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
     assert!(html.contains("<p>chart goes here</p>"));
     assert!(html.contains("window.__RUSTRA_DATA__"));
 }
@@ -428,8 +490,13 @@ async fn browser_bridge_and_workspace_files() {
     let (status, session) = call(&server, "POST", "/api/browser/sessions", None).await;
     assert_eq!(status, StatusCode::OK);
     let session_id = session["id"].as_str().unwrap().to_string();
-    let (status, polled) =
-        call(&server, "GET", &format!("/api/browser/sessions/{session_id}/commands"), None).await;
+    let (status, polled) = call(
+        &server,
+        "GET",
+        &format!("/api/browser/sessions/{session_id}/commands"),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(polled["command"], Value::Null);
 
@@ -442,8 +509,13 @@ async fn browser_bridge_and_workspace_files() {
     )
     .await;
     assert_eq!(status, StatusCode::OK, "{written}");
-    let (status, read) =
-        call(&server, "GET", "/api/workspace/files?path=files/notes.md", None).await;
+    let (status, read) = call(
+        &server,
+        "GET",
+        "/api/workspace/files?path=files/notes.md",
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(read["content"], "# notes");
 }
@@ -453,8 +525,13 @@ async fn user_isolation_across_tokens() {
     let server = setup().await;
 
     // Ada creates a run and a task.
-    let (_, generated) =
-        call(&server, "POST", "/api/agents/main/generate", Some(json!({ "message": "hi" }))).await;
+    let (_, generated) = call(
+        &server,
+        "POST",
+        "/api/agents/main/generate",
+        Some(json!({ "message": "hi" })),
+    )
+    .await;
     let run_id = generated["run_id"].as_str().unwrap().to_string();
 
     let bob_token = server
@@ -465,12 +542,24 @@ async fn user_isolation_across_tokens() {
         .unwrap();
 
     // Bob cannot read ada's run (or its trace).
-    let (status, body) =
-        send(&server, "GET", &format!("/api/runs/{run_id}"), Some(&bob_token), None).await;
+    let (status, body) = send(
+        &server,
+        "GET",
+        &format!("/api/runs/{run_id}"),
+        Some(&bob_token),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::FORBIDDEN, "{body}");
     assert_eq!(body["error"]["kind"], "permission_denied");
-    let (status, _) =
-        send(&server, "GET", &format!("/api/runs/{run_id}/trace"), Some(&bob_token), None).await;
+    let (status, _) = send(
+        &server,
+        "GET",
+        &format!("/api/runs/{run_id}/trace"),
+        Some(&bob_token),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::FORBIDDEN);
 
     // Bob's own listings are empty.

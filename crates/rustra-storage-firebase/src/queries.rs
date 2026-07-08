@@ -135,7 +135,10 @@ pub(crate) fn list_decisions(user_id: &str, pending_only: bool, page: Page) -> V
 // ---------------------------------------------------------------------------
 
 fn definition_key_filters(kind: ResourceKind, id: &str) -> Vec<Value> {
-    vec![field_eq("kind", str_value(kind.as_str())), field_eq("id", str_value(id))]
+    vec![
+        field_eq("kind", str_value(kind.as_str())),
+        field_eq("id", str_value(id)),
+    ]
 }
 
 /// The current latest version of one definition (`limit 1`).
@@ -152,7 +155,9 @@ pub(crate) fn latest_definition(kind: ResourceKind, id: &str) -> Value {
 pub(crate) fn latest_definition_flags(kind: ResourceKind, id: &str) -> Value {
     let mut filters = definition_key_filters(kind, id);
     filters.push(field_eq("latest", bool_value(true)));
-    StructuredQuery::collection(coll::DEFINITIONS).filter(and(filters)).build()
+    StructuredQuery::collection(coll::DEFINITIONS)
+        .filter(and(filters))
+        .build()
 }
 
 /// The highest version of a definition (`orderBy version desc, limit 1`).
@@ -304,7 +309,10 @@ mod tests {
             .unwrap();
         assert_eq!(filters.len(), 2);
         assert_eq!(filters[1]["fieldFilter"]["field"]["fieldPath"], "status");
-        assert_eq!(filters[1]["fieldFilter"]["value"], json!({"stringValue": "running"}));
+        assert_eq!(
+            filters[1]["fieldFilter"]["value"],
+            json!({"stringValue": "running"})
+        );
     }
 
     #[test]
@@ -321,7 +329,10 @@ mod tests {
             .as_array()
             .unwrap();
         assert_eq!(filters.len(), 3);
-        assert_eq!(filters[0]["fieldFilter"]["value"], json!({"stringValue": "skill"}));
+        assert_eq!(
+            filters[0]["fieldFilter"]["value"],
+            json!({"stringValue": "skill"})
+        );
         assert_eq!(filters[1]["fieldFilter"]["field"]["fieldPath"], "latest");
         let or_filter = &filters[2]["compositeFilter"];
         assert_eq!(or_filter["op"], "OR");

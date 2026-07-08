@@ -9,7 +9,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use rustra_core::{
-    ContextCandidate, ContextFragment, ContextKind, ContextRequest, ContextSource, Error, Result,
+    ContextCandidate, ContextFragment, ContextKind, ContextRequest, ContextSource, Result,
 };
 
 use crate::fs::{Workspace, FILES_DIR};
@@ -21,11 +21,14 @@ const MENTION_SCORE: f32 = 0.8;
 
 /// Offers workspace files (under `files/`) whose path or file name appears in
 /// the request text. Candidate ids are paths relative to `files/`.
+#[derive(Debug)]
 pub struct WorkspaceContextSource {
     workspace: Arc<Workspace>,
 }
 
 impl WorkspaceContextSource {
+    /// Wrap `workspace` as a context source; only that workspace's owner will
+    /// ever see candidates from it.
     pub fn new(workspace: Arc<Workspace>) -> Self {
         Self { workspace }
     }
@@ -33,14 +36,7 @@ impl WorkspaceContextSource {
     /// The source is bound to one user's workspace; requests from any other
     /// principal must not see it.
     fn ensure_owner(&self, req: &ContextRequest) -> Result<()> {
-        if req.runtime.user_id() == self.workspace.user_id() {
-            Ok(())
-        } else {
-            Err(Error::PermissionDenied(format!(
-                "workspace context source belongs to `{}`",
-                self.workspace.user_id()
-            )))
-        }
+        self.workspace.check_owner(req.runtime.user_id())
     }
 }
 
@@ -60,36 +56,38 @@ impl ContextSource for WorkspaceContextSource {
             return Ok(Vec::new());
         }
         let query = req.query.to_lowercase();
-        let mut candidates = Vec::new();
-        for (rel, size) in self.workspace.walk_files(FILES_DIR).await? {
-            let rel_lower = rel.to_lowercase();
-            let name_lower = Path::new(&rel)
-                .file_name()
-                .map(|n| n.to_string_lossy().to_lowercase())
-                .unwrap_or_default();
-            let mentioned = query.contains(&rel_lower)
-                || (!name_lower.is_empty() && query.contains(&name_lower));
-            if !mentioned {
-                continue;
-            }
-            candidates.push(ContextCandidate {
+        Ok(self
+            .workspace
+            .walk_files(FILES_DIR)
+            .await?
+            .into_iter()
+            .filter(|(rel, _)| {
+                let rel_lower = rel.to_lowercase();
+                let name_lower = Path::new(rel)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_lowercase())
+                    .unwrap_or_default();
+                query.contains(&rel_lower)
+                    || (!name_lower.is_empty() && query.contains(&name_lower))
+            })
+            .map(|(rel, size)| ContextCandidate {
                 id: rel.clone(),
                 kind: ContextKind::WorkspaceFile,
                 title: rel.clone(),
                 description: format!("Workspace file `{FILES_DIR}/{rel}`"),
                 score: MENTION_SCORE,
                 estimated_chars: size as usize,
-            });
-            if candidates.len() >= MAX_CANDIDATES {
-                break;
-            }
-        }
-        Ok(candidates)
+            })
+            .take(MAX_CANDIDATES)
+            .collect())
     }
 
     async fn load(&self, candidate_id: &str, req: &ContextRequest) -> Result<ContextFragment> {
         self.ensure_owner(req)?;
-        let content = self.workspace.read_file(&format!("{FILES_DIR}/{candidate_id}")).await?;
+        let content = self
+            .workspace
+            .read_file(&format!("{FILES_DIR}/{candidate_id}"))
+            .await?;
         let total_chars = content.chars().count();
         let truncated = total_chars > req.char_budget;
         let content = if truncated {
@@ -114,7 +112,7 @@ impl ContextSource for WorkspaceContextSource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rustra_core::{Principal, RuntimeContext};
+    use rustra_core::{Error, Principal, RuntimeContext};
 
     async fn source() -> (tempfile::TempDir, WorkspaceContextSource, Arc<Workspace>) {
         let dir = tempfile::tempdir().unwrap();
@@ -135,8 +133,12 @@ mod tests {
     #[tokio::test]
     async fn candidates_match_mentioned_files() {
         let (_dir, source, ws) = source().await;
-        ws.write_file("files/notes.txt", "some notes").await.unwrap();
-        ws.write_file("files/deep/plan.md", "the plan").await.unwrap();
+        ws.write_file("files/notes.txt", "some notes")
+            .await
+            .unwrap();
+        ws.write_file("files/deep/plan.md", "the plan")
+            .await
+            .unwrap();
         ws.write_file("files/unrelated.log", "nope").await.unwrap();
 
         let req = request("u1", "Please summarize notes.txt and deep/plan.md", 1000);
@@ -151,7 +153,10 @@ mod tests {
             assert!(candidate.estimated_chars > 0);
         }
 
-        let none = source.candidates(&request("u1", "nothing relevant here", 1000)).await.unwrap();
+        let none = source
+            .candidates(&request("u1", "nothing relevant here", 1000))
+            .await
+            .unwrap();
         assert!(none.is_empty());
     }
 
@@ -165,16 +170,23 @@ mod tests {
             query.push_str(&name);
             query.push(' ');
         }
-        let candidates = source.candidates(&request("u1", &query, 1000)).await.unwrap();
+        let candidates = source
+            .candidates(&request("u1", &query, 1000))
+            .await
+            .unwrap();
         assert_eq!(candidates.len(), 10);
     }
 
     #[tokio::test]
     async fn load_truncates_to_budget() {
         let (_dir, source, ws) = source().await;
-        ws.write_file("files/big.txt", &"x".repeat(100)).await.unwrap();
-        let fragment =
-            source.load("big.txt", &request("u1", "big.txt", 10)).await.unwrap();
+        ws.write_file("files/big.txt", &"x".repeat(100))
+            .await
+            .unwrap();
+        let fragment = source
+            .load("big.txt", &request("u1", "big.txt", 10))
+            .await
+            .unwrap();
         assert_eq!(fragment.content.len(), 10);
         assert_eq!(fragment.metadata["truncated"], true);
         assert_eq!(fragment.metadata["total_chars"], 100);

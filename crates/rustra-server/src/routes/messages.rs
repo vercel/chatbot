@@ -1,6 +1,7 @@
 //! In-app messages: inbox listing and live SSE delivery.
 
 use std::convert::Infallible;
+use std::future::ready;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -22,8 +23,6 @@ use crate::routes::PageQuery;
 #[derive(Debug, Deserialize)]
 pub(crate) struct MessagesQuery {
     channel: Option<String>,
-    limit: Option<usize>,
-    offset: Option<usize>,
 }
 
 /// `GET /api/messages` — the caller's persisted channel messages.
@@ -31,11 +30,11 @@ pub(crate) async fn list(
     State(rustra): State<Arc<Rustra>>,
     AuthedUser(principal): AuthedUser,
     Query(query): Query<MessagesQuery>,
+    Query(page): Query<PageQuery>,
 ) -> ApiResult<Json<Vec<ChannelMessageRecord>>> {
-    let page = PageQuery { limit: query.limit, offset: query.offset }.page();
     let messages = rustra
         .storage()
-        .list_channel_messages(&principal.user_id, query.channel.as_deref(), page)
+        .list_channel_messages(&principal.user_id, query.channel.as_deref(), page.page())
         .await?;
     Ok(Json(messages))
 }
@@ -49,18 +48,15 @@ pub(crate) async fn stream(
     let receiver = rustra.in_app().subscribe();
     let user_id = principal.user_id;
     let stream = BroadcastStream::new(receiver).filter_map(move |item| {
-        let user_id = user_id.clone();
-        async move {
-            match item {
-                Ok(record) if record.user_id == user_id => Some(Ok(Event::default()
-                    .event("message")
-                    .json_data(&record)
-                    .unwrap_or_else(|_| Event::default().event("message")))),
-                // Other users' messages and lag notices are skipped; lagged
-                // clients re-sync from `GET /api/messages`.
-                _ => None,
-            }
-        }
+        ready(match item {
+            Ok(record) if record.user_id == user_id => Some(Ok(Event::default()
+                .event("message")
+                .json_data(&record)
+                .unwrap_or_else(|_| Event::default().event("message")))),
+            // Other users' messages and lag notices are skipped; lagged
+            // clients re-sync from `GET /api/messages`.
+            _ => None,
+        })
     });
     Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
 }

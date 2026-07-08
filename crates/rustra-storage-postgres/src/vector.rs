@@ -17,23 +17,42 @@ use rustra_storage::{VectorHit, VectorStore};
 use serde_json::Value;
 
 use crate::util::*;
-use crate::Db;
+use crate::{Db, PostgresStorage};
 
 /// Id of the per-index metadata sentinel row.
 const SENTINEL_ID: &str = "";
 
 /// Brute-force cosine-similarity vector store on its own Postgres connection
-/// (may point at the same database as [`crate::PostgresStorage`] or a
-/// separate one).
+/// (may point at the same database as [`crate::PostgresStorage`] — see
+/// [`Self::from_storage`] — or a separate one).
+#[derive(Clone)]
 pub struct PostgresVectorStore {
     db: Db,
 }
 
+impl std::fmt::Debug for PostgresVectorStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PostgresVectorStore")
+            .finish_non_exhaustive()
+    }
+}
+
 impl PostgresVectorStore {
-    /// Connect to Postgres, spawn the connection driver task, and run any
-    /// pending migrations.
+    /// Connect to Postgres (e.g. `postgres://user:pass@localhost/rustra`), spawn
+    /// the connection driver task, and run any pending migrations.
     pub async fn connect(conn_str: &str) -> Result<Self> {
-        Ok(Self { db: Db::connect(conn_str).await? })
+        Ok(Self {
+            db: Db::connect(conn_str).await?,
+        })
+    }
+
+    /// Share the connection (and already-applied migrations) of an existing
+    /// [`PostgresStorage`] pointing at the same database, instead of opening
+    /// a second connection.
+    pub fn from_storage(storage: &PostgresStorage) -> Self {
+        Self {
+            db: storage.db.clone(),
+        }
     }
 }
 
@@ -80,7 +99,14 @@ impl PostgresVectorStore {
             )
             .await?;
         Ok(match row {
-            Some(row) => Some(col::<i64>(&row, 0)?.max(0) as usize),
+            Some(row) => {
+                let dim: i64 = col(&row, 0)?;
+                Some(usize::try_from(dim).map_err(|_| {
+                    Error::Storage(format!(
+                        "index `{index}` has invalid stored dimension {dim}"
+                    ))
+                })?)
+            }
             None => None,
         })
     }
@@ -136,31 +162,39 @@ impl VectorStore for PostgresVectorStore {
     }
 
     async fn query(&self, index: &str, vector: &[f32], top_k: usize) -> Result<Vec<VectorHit>> {
-        if self.index_dimension(index).await?.is_none() {
-            return Err(Error::not_found("vector_index", index));
-        }
+        // One statement fetches the metadata sentinel and the entries in the
+        // same snapshot, so index existence and the scanned rows are always
+        // judged consistently (no round trip between an exists-check and the
+        // scan for a concurrent `delete_index` to slip into).
         let rows = self
             .db
             .query(
-                "SELECT id, vector, metadata FROM rustra_vectors \
-                 WHERE index_name = $1 AND id <> $2",
-                &[&index, &SENTINEL_ID],
+                "SELECT id, vector, metadata FROM rustra_vectors WHERE index_name = $1",
+                &[&index],
             )
             .await?;
-        let mut hits = rows
-            .iter()
-            .map(|row| {
-                let id: String = col(row, 0)?;
-                let blob: Vec<u8> = col(row, 1)?;
-                let metadata: Option<Value> = col(row, 2)?;
-                let stored = blob_to_vec(&blob)?;
-                Ok(VectorHit {
-                    id,
-                    score: cosine(vector, &stored),
-                    metadata: metadata.unwrap_or(Value::Null),
-                })
-            })
-            .collect::<Result<Vec<_>>>()?;
+        let mut found = false;
+        let mut hits = Vec::with_capacity(rows.len().saturating_sub(1));
+        for row in &rows {
+            // The sentinel's `vector` column is NULL, so check the id before
+            // decoding the blob.
+            let id: String = col(row, 0)?;
+            if id == SENTINEL_ID {
+                found = true;
+                continue;
+            }
+            let blob: Vec<u8> = col(row, 1)?;
+            let metadata: Option<Value> = col(row, 2)?;
+            let stored = blob_to_vec(&blob)?;
+            hits.push(VectorHit {
+                id,
+                score: cosine(vector, &stored),
+                metadata: metadata.unwrap_or(Value::Null),
+            });
+        }
+        if !found {
+            return Err(Error::not_found("vector_index", index));
+        }
         hits.sort_by(|a, b| b.score.total_cmp(&a.score));
         hits.truncate(top_k);
         Ok(hits)
@@ -168,7 +202,10 @@ impl VectorStore for PostgresVectorStore {
 
     async fn delete_index(&self, index: &str) -> Result<()> {
         self.db
-            .execute("DELETE FROM rustra_vectors WHERE index_name = $1", &[&index])
+            .execute(
+                "DELETE FROM rustra_vectors WHERE index_name = $1",
+                &[&index],
+            )
             .await?;
         Ok(())
     }

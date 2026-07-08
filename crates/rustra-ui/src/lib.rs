@@ -9,8 +9,10 @@
 //!   (`create`/`update`/`get`/`list`/`delete`/`set_visibility`). Every
 //!   artifact is owner-scoped and defaults to `Visibility::Private`.
 //! * [`render_document`] — wraps artifact HTML in a full document with a
-//!   strict Content-Security-Policy `<meta>` tag and injects the artifact's
-//!   structured data as `window.__RUSTRA_DATA__` before the body content.
+//!   strict Content-Security-Policy `<meta>` tag (carrying [`ARTIFACT_CSP`],
+//!   also exported so the serving layer can repeat the same policy as a
+//!   response header) and injects the artifact's structured data as
+//!   `window.__RUSTRA_DATA__` before the body content.
 //! * [`create_ui_tool`] — the agent-facing tool; artifacts are always
 //!   created for the calling principal.
 //!
@@ -33,6 +35,6 @@ mod render;
 mod service;
 mod tool;
 
-pub use render::render_document;
+pub use render::{render_document, ARTIFACT_CSP};
 pub use service::{UiArtifactUpdate, UiService, MAX_HTML_BYTES, MAX_TITLE_CHARS};
 pub use tool::create_ui_tool;

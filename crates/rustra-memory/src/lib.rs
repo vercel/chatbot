@@ -20,13 +20,16 @@
 //! [`MemoryContextSource`] exposes working memory and semantic recall through
 //! the framework-wide dynamic context attachment model.
 
+mod config;
 mod context_source;
 mod processor;
 
+pub use config::{MemoryConfig, RecallScope, SemanticRecallConfig, WorkingMemoryConfig};
 pub use context_source::MemoryContextSource;
 pub use processor::{CharBudgetProcessor, MemoryProcessor};
 
 use chrono::Utc;
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -37,69 +40,6 @@ use rustra_storage::{Embedder, Page, SharedStorage, SharedVectorStore};
 
 /// Vector index holding message embeddings.
 const MESSAGE_INDEX: &str = "rustra_memory_messages";
-
-/// Whether semantic recall searches one thread or the whole resource
-/// (all of a user's conversations).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum RecallScope {
-    Thread,
-    #[default]
-    Resource,
-}
-
-/// Semantic recall configuration (Mastra `semanticRecall`).
-#[derive(Debug, Clone)]
-pub struct SemanticRecallConfig {
-    /// Number of past messages to retrieve.
-    pub top_k: usize,
-    pub scope: RecallScope,
-}
-
-impl Default for SemanticRecallConfig {
-    fn default() -> Self {
-        Self { top_k: 4, scope: RecallScope::Resource }
-    }
-}
-
-/// Working memory configuration (Mastra `workingMemory`).
-#[derive(Debug, Clone)]
-pub struct WorkingMemoryConfig {
-    pub enabled: bool,
-    /// Markdown template used to seed working memory the first time.
-    pub template: Option<String>,
-}
-
-impl Default for WorkingMemoryConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            template: Some(
-                "# User Profile\n\n- Name:\n- Preferences:\n- Current goals:\n- Open items:\n"
-                    .to_string(),
-            ),
-        }
-    }
-}
-
-/// Memory options (Mastra `Memory` constructor `options`).
-#[derive(Debug, Clone)]
-pub struct MemoryConfig {
-    /// How many recent thread messages to replay (short-term memory).
-    pub last_messages: usize,
-    /// `None` disables semantic recall.
-    pub semantic_recall: Option<SemanticRecallConfig>,
-    pub working_memory: WorkingMemoryConfig,
-}
-
-impl Default for MemoryConfig {
-    fn default() -> Self {
-        Self {
-            last_messages: 20,
-            semantic_recall: Some(SemanticRecallConfig::default()),
-            working_memory: WorkingMemoryConfig::default(),
-        }
-    }
-}
 
 /// What memory recalled for one agent turn.
 #[derive(Debug, Clone, Default)]
@@ -112,21 +52,45 @@ pub struct RecalledMemory {
     pub working_memory: Option<String>,
 }
 
+/// Vector store + embedder pair — semantic recall needs both or neither,
+/// so they are stored as one unit.
+struct SemanticIndex {
+    vector: SharedVectorStore,
+    embedder: Arc<dyn Embedder>,
+}
+
+/// Metadata stored alongside each message embedding. The field names are part
+/// of the stored format and must keep matching the metadata filter in
+/// `semantic_recall`.
+#[derive(serde::Serialize)]
+struct MessageVectorMetadata<'a> {
+    resource_id: &'a str,
+    thread_id: &'a str,
+}
+
 /// The memory subsystem: persistence + recall over a storage backend and an
 /// optional vector store/embedder pair.
 pub struct Memory {
     storage: SharedStorage,
-    vector: Option<SharedVectorStore>,
-    embedder: Option<Arc<dyn Embedder>>,
+    semantic: Option<SemanticIndex>,
     processors: Vec<Arc<dyn MemoryProcessor>>,
     config: MemoryConfig,
 }
 
 impl Memory {
+    /// Build a memory subsystem over `storage` with the default
+    /// [`MemoryConfig`]. Semantic recall stays inert until
+    /// [`Memory::with_vector`] supplies a vector store and embedder.
     pub fn new(storage: SharedStorage) -> Self {
-        Self { storage, vector: None, embedder: None, processors: Vec::new(), config: MemoryConfig::default() }
+        Self {
+            storage,
+            semantic: None,
+            processors: Vec::new(),
+            config: MemoryConfig::default(),
+        }
     }
 
+    /// Replace the memory options.
     pub fn with_config(mut self, config: MemoryConfig) -> Self {
         self.config = config;
         self
@@ -134,8 +98,7 @@ impl Memory {
 
     /// Enable semantic recall by providing the vector backend + embedder.
     pub fn with_vector(mut self, vector: SharedVectorStore, embedder: Arc<dyn Embedder>) -> Self {
-        self.vector = Some(vector);
-        self.embedder = Some(embedder);
+        self.semantic = Some(SemanticIndex { vector, embedder });
         self
     }
 
@@ -145,17 +108,16 @@ impl Memory {
         self
     }
 
+    /// The active memory options.
     pub fn config(&self) -> &MemoryConfig {
         &self.config
     }
 
     // -- Threads ------------------------------------------------------------
 
-    pub async fn create_thread(
-        &self,
-        resource_id: &str,
-        title: Option<String>,
-    ) -> Result<Thread> {
+    /// Create a new conversation thread owned by `resource_id`, optionally
+    /// titled.
+    pub async fn create_thread(&self, resource_id: &str, title: Option<String>) -> Result<Thread> {
         let mut thread = Thread::new(resource_id);
         thread.title = title;
         self.storage.create_thread(thread.clone()).await?;
@@ -178,6 +140,7 @@ impl Memory {
         Ok(thread)
     }
 
+    /// Page through `resource_id`'s threads, most recently updated first.
     pub async fn list_threads(&self, resource_id: &str, page: Page) -> Result<Vec<Thread>> {
         self.storage.list_threads(resource_id, page).await
     }
@@ -195,10 +158,7 @@ impl Memory {
             id: new_id("msg"),
             thread_id: thread_id.to_string(),
             resource_id: resource_id.to_string(),
-            role: match message.role {
-                Role::User => "user".to_string(),
-                Role::Assistant => "assistant".to_string(),
-            },
+            role: role_str(message.role).to_string(),
             content: serde_json::to_value(&message.content)?,
             created_at: Utc::now(),
         };
@@ -212,35 +172,47 @@ impl Memory {
 
         // Index text content for semantic recall (best effort — an indexing
         // failure must not lose the message).
-        if let (Some(vector), Some(embedder), Some(_)) =
-            (&self.vector, &self.embedder, &self.config.semantic_recall)
-        {
+        if self.config.semantic_recall.is_some() {
             let text = message.text();
             if !text.trim().is_empty() {
-                let result: Result<()> = async {
-                    vector.create_index(MESSAGE_INDEX, embedder.dimension()).await?;
-                    let vectors = embedder.embed(std::slice::from_ref(&text)).await?;
-                    vector
-                        .upsert(
-                            MESSAGE_INDEX,
-                            vec![(
-                                stored.id.clone(),
-                                vectors.into_iter().next().unwrap_or_default(),
-                                json!({
-                                    "resource_id": resource_id,
-                                    "thread_id": thread_id,
-                                }),
-                            )],
-                        )
-                        .await
-                }
-                .await;
-                if let Err(e) = result {
+                if let Err(e) = self.index_message(&stored, &text).await {
                     tracing::warn!(error = %e, "semantic recall indexing failed");
                 }
             }
         }
         Ok(stored)
+    }
+
+    /// Embed `text` and upsert it into the message vector index. A no-op when
+    /// no vector store/embedder pair is configured.
+    async fn index_message(&self, stored: &StoredMessage, text: &str) -> Result<()> {
+        let Some(index) = &self.semantic else {
+            return Ok(());
+        };
+        index
+            .vector
+            .create_index(MESSAGE_INDEX, index.embedder.dimension())
+            .await?;
+        let vectors = index.embedder.embed(&[text.to_string()]).await?;
+        let Some(embedding) = vectors.into_iter().next() else {
+            return Err(Error::Model(
+                "embedder returned no vector for message".into(),
+            ));
+        };
+        index
+            .vector
+            .upsert(
+                MESSAGE_INDEX,
+                vec![(
+                    stored.id.clone(),
+                    embedding,
+                    serde_json::to_value(MessageVectorMetadata {
+                        resource_id: &stored.resource_id,
+                        thread_id: &stored.thread_id,
+                    })?,
+                )],
+            )
+            .await
     }
 
     /// Recall everything relevant for the next model turn.
@@ -250,15 +222,13 @@ impl Memory {
         resource_id: &str,
         query: &str,
     ) -> Result<RecalledMemory> {
-        let mut stored_recent =
-            self.storage.recent_messages(thread_id, self.config.last_messages).await?;
-        for processor in &self.processors {
-            stored_recent = processor.process(stored_recent);
-        }
+        let stored_recent = self.processed_recent(thread_id, resource_id).await?;
         let recent_ids: Vec<String> = stored_recent.iter().map(|m| m.id.clone()).collect();
         let recent = stored_recent.iter().filter_map(to_model_message).collect();
 
-        let semantic = self.semantic_recall(thread_id, resource_id, query, &recent_ids).await?;
+        let semantic = self
+            .semantic_recall(thread_id, resource_id, query, &recent_ids)
+            .await?;
 
         let working_memory = if self.config.working_memory.enabled {
             self.get_working_memory(resource_id).await?
@@ -266,7 +236,49 @@ impl Memory {
             None
         };
 
-        Ok(RecalledMemory { recent, semantic, working_memory })
+        Ok(RecalledMemory {
+            recent,
+            semantic,
+            working_memory,
+        })
+    }
+
+    /// Semantic recall only: past messages similar to `query`, excluding
+    /// anything the recent history of [`Memory::recall`] would already
+    /// replay. Empty when semantic recall is disabled or unconfigured.
+    pub async fn recall_semantic(
+        &self,
+        thread_id: &str,
+        resource_id: &str,
+        query: &str,
+    ) -> Result<Vec<StoredMessage>> {
+        let recent_ids: Vec<String> = self
+            .processed_recent(thread_id, resource_id)
+            .await?
+            .into_iter()
+            .map(|m| m.id)
+            .collect();
+        self.semantic_recall(thread_id, resource_id, query, &recent_ids)
+            .await
+    }
+
+    /// Recent thread history after the processor pipeline, chronological.
+    async fn processed_recent(
+        &self,
+        thread_id: &str,
+        resource_id: &str,
+    ) -> Result<Vec<StoredMessage>> {
+        let mut stored_recent = self
+            .storage
+            .recent_messages(thread_id, self.config.last_messages)
+            .await?;
+        // Defense-in-depth: recent history is resource-scoped even if the
+        // caller passes an unverified thread_id.
+        stored_recent.retain(|m| m.resource_id == resource_id);
+        for processor in &self.processors {
+            stored_recent = processor.process(stored_recent);
+        }
+        Ok(stored_recent)
     }
 
     async fn semantic_recall(
@@ -276,18 +288,29 @@ impl Memory {
         query: &str,
         exclude_ids: &[String],
     ) -> Result<Vec<StoredMessage>> {
-        let (Some(config), Some(vector), Some(embedder)) =
-            (&self.config.semantic_recall, &self.vector, &self.embedder)
-        else {
+        let (Some(config), Some(index)) = (&self.config.semantic_recall, &self.semantic) else {
             return Ok(Vec::new());
         };
         if query.trim().is_empty() {
             return Ok(Vec::new());
         }
-        let query_vec = embedder.embed(&[query.to_string()]).await?;
+        let query_vec = index.embedder.embed(&[query.to_string()]).await?;
+        let Some(query_embedding) = query_vec.first() else {
+            return Err(Error::Model(
+                "embedder returned no vector for recall query".into(),
+            ));
+        };
         // Over-fetch so scope filtering + dedup still leaves top_k results.
-        let hits = match vector
-            .query(MESSAGE_INDEX, &query_vec[0], config.top_k * 4 + exclude_ids.len())
+        let hits = match index
+            .vector
+            .query(
+                MESSAGE_INDEX,
+                query_embedding,
+                config
+                    .top_k
+                    .saturating_mul(4)
+                    .saturating_add(exclude_ids.len()),
+            )
             .await
         {
             Ok(hits) => hits,
@@ -314,21 +337,30 @@ impl Memory {
 
     // -- Working memory -----------------------------------------------------
 
+    /// The resource's working memory document, falling back to the
+    /// configured seed template when none has been stored yet.
     pub async fn get_working_memory(&self, resource_id: &str) -> Result<Option<String>> {
-        let existing = self.storage.get_resource(resource_id).await?;
-        match existing {
-            Some(r) => Ok(r.working_memory),
-            None => Ok(self.config.working_memory.template.clone()),
-        }
+        Ok(self
+            .storage
+            .get_resource(resource_id)
+            .await?
+            .and_then(|r| r.working_memory)
+            .or_else(|| self.config.working_memory.template.clone()))
     }
 
+    /// Replace the resource's working memory document, creating the resource
+    /// record on first write.
     pub async fn update_working_memory(&self, resource_id: &str, content: &str) -> Result<()> {
-        let mut record = self.storage.get_resource(resource_id).await?.unwrap_or(ResourceRecord {
-            id: resource_id.to_string(),
-            working_memory: None,
-            metadata: Value::Null,
-            updated_at: Utc::now(),
-        });
+        let mut record = self
+            .storage
+            .get_resource(resource_id)
+            .await?
+            .unwrap_or_else(|| ResourceRecord {
+                id: resource_id.to_string(),
+                working_memory: None,
+                metadata: Value::Null,
+                updated_at: Utc::now(),
+            });
         record.working_memory = Some(content.to_string());
         record.updated_at = Utc::now();
         self.storage.save_resource(record).await
@@ -359,7 +391,9 @@ impl Memory {
                     let content = input["content"]
                         .as_str()
                         .ok_or_else(|| Error::Validation("`content` must be a string".into()))?;
-                    memory.update_working_memory(ctx.runtime.user_id(), content).await?;
+                    memory
+                        .update_working_memory(ctx.runtime.user_id(), content)
+                        .await?;
                     Ok(json!({ "ok": true }))
                 }
             },
@@ -367,26 +401,46 @@ impl Memory {
     }
 }
 
+/// The storage spelling of a model role. [`to_model_message`] holds the
+/// inverse (str -> [`Role`]) mapping.
+fn role_str(role: Role) -> &'static str {
+    match role {
+        Role::User => "user",
+        Role::Assistant => "assistant",
+    }
+}
+
 /// Convert a stored message back into a model message. Returns `None` for
-/// roles the model conversation cannot replay (e.g. `system` annotations).
+/// roles the model conversation cannot replay (e.g. `system` annotations)
+/// and for stored content that no longer decodes as content blocks.
 pub fn to_model_message(stored: &StoredMessage) -> Option<Message> {
     let role = match stored.role.as_str() {
         "user" => Role::User,
         "assistant" => Role::Assistant,
         _ => return None,
     };
-    let content: Vec<ContentBlock> = serde_json::from_value(stored.content.clone()).ok()?;
+    let content = match Vec::<ContentBlock>::deserialize(&stored.content) {
+        Ok(content) => content,
+        Err(e) => {
+            tracing::warn!(
+                message_id = %stored.id,
+                error = %e,
+                "stored message content failed to decode; omitting from replay"
+            );
+            return None;
+        }
+    };
     Some(Message { role, content })
 }
 
 /// Plain-text rendering of a stored message (for semantic recall fragments).
 pub fn stored_message_text(stored: &StoredMessage) -> String {
-    serde_json::from_value::<Vec<ContentBlock>>(stored.content.clone())
+    Vec::<ContentBlock>::deserialize(&stored.content)
         .map(|blocks| {
             blocks
-                .iter()
+                .into_iter()
                 .filter_map(|b| match b {
-                    ContentBlock::Text { text } => Some(text.clone()),
+                    ContentBlock::Text { text } => Some(text),
                     _ => None,
                 })
                 .collect::<Vec<_>>()
@@ -401,29 +455,37 @@ mod tests {
     use rustra_storage::{InMemoryStorage, InMemoryVectorStore, MockEmbedder};
 
     fn memory_with_vector() -> Arc<Memory> {
-        Arc::new(
-            Memory::new(Arc::new(InMemoryStorage::new())).with_vector(
-                Arc::new(InMemoryVectorStore::new()),
-                Arc::new(MockEmbedder::default()),
-            ),
-        )
+        Arc::new(Memory::new(Arc::new(InMemoryStorage::new())).with_vector(
+            Arc::new(InMemoryVectorStore::new()),
+            Arc::new(MockEmbedder::default()),
+        ))
     }
 
     #[tokio::test]
     async fn recall_returns_recent_and_working_memory() {
         let memory = memory_with_vector();
-        let thread = memory.create_thread("user-1", Some("test".into())).await.unwrap();
+        let thread = memory
+            .create_thread("user-1", Some("test".into()))
+            .await
+            .unwrap();
 
         memory
             .save_message(&thread.id, "user-1", &Message::user("hello there"))
             .await
             .unwrap();
         memory
-            .save_message(&thread.id, "user-1", &Message::assistant("hi! how can I help?"))
+            .save_message(
+                &thread.id,
+                "user-1",
+                &Message::assistant("hi! how can I help?"),
+            )
             .await
             .unwrap();
 
-        let recalled = memory.recall(&thread.id, "user-1", "greetings").await.unwrap();
+        let recalled = memory
+            .recall(&thread.id, "user-1", "greetings")
+            .await
+            .unwrap();
         assert_eq!(recalled.recent.len(), 2);
         // Default template is served before any update.
         assert!(recalled.working_memory.unwrap().contains("User Profile"));
@@ -455,8 +517,10 @@ mod tests {
         // A new thread for alice: recall should find her old kubernetes
         // message, never bob's.
         let new_thread = memory.create_thread("alice", None).await.unwrap();
-        let recalled =
-            memory.recall(&new_thread.id, "alice", "kubernetes deployment").await.unwrap();
+        let recalled = memory
+            .recall(&new_thread.id, "alice", "kubernetes deployment")
+            .await
+            .unwrap();
         assert!(!recalled.semantic.is_empty());
         for msg in &recalled.semantic {
             assert_eq!(msg.resource_id, "alice");
@@ -470,7 +534,9 @@ mod tests {
         let memory = memory_with_vector();
         let tool = memory.working_memory_tool();
         let ctx = ToolContext::new(RuntimeContext::new(Principal::user("user-9")));
-        tool.execute(json!({"content": "# Notes\n- likes rust"}), &ctx).await.unwrap();
+        tool.execute(json!({"content": "# Notes\n- likes rust"}), &ctx)
+            .await
+            .unwrap();
 
         let wm = memory.get_working_memory("user-9").await.unwrap().unwrap();
         assert!(wm.contains("likes rust"));

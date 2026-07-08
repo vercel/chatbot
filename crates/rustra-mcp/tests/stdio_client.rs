@@ -5,29 +5,19 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use rustra_core::{Error, Principal, RuntimeContext, ToolContext};
-use rustra_mcp::{McpClient, McpScope, McpServerDefinition, McpSide, McpToolset, McpTransport};
+use rustra_mcp::{McpClient, McpServerDefinition, McpToolset, McpTransport};
 use serde_json::json;
 
 fn fake_server_def(name: &str, timeout_ms: u64) -> McpServerDefinition {
-    McpServerDefinition {
-        name: name.into(),
-        transport: McpTransport::Stdio {
-            command: env!("CARGO_BIN_EXE_fake_mcp_server").into(),
-            args: vec![],
-            env: BTreeMap::new(),
-        },
-        timeout_ms: Some(timeout_ms),
-        enabled: true,
-        require_tool_approval: false,
-        allowed_tools: None,
-        scope: McpScope::User,
-        side: McpSide::ServerSide,
-    }
+    McpServerDefinition::stdio(name, env!("CARGO_BIN_EXE_fake_mcp_server"), vec![])
+        .with_timeout_ms(timeout_ms)
 }
 
 #[tokio::test]
 async fn connect_list_and_call() {
-    let client = McpClient::connect(&fake_server_def("fake", 5_000)).await.unwrap();
+    let client = McpClient::connect(&fake_server_def("fake", 5_000))
+        .await
+        .unwrap();
     assert_eq!(client.server_name(), "fake");
 
     let tools = client.list_tools().await.unwrap();
@@ -55,23 +45,38 @@ async fn connect_list_and_call() {
 
 #[tokio::test]
 async fn tool_error_result_becomes_mcp_error() {
-    let client = McpClient::connect(&fake_server_def("fake", 5_000)).await.unwrap();
+    let client = McpClient::connect(&fake_server_def("fake", 5_000))
+        .await
+        .unwrap();
     let err = client.call_tool("fail", json!({})).await.unwrap_err();
-    assert!(matches!(&err, Error::Mcp(msg) if msg.contains("boom")), "got {err:?}");
+    assert!(
+        matches!(&err, Error::Mcp(msg) if msg.contains("boom")),
+        "got {err:?}"
+    );
     client.disconnect().await.unwrap();
 }
 
 #[tokio::test]
 async fn jsonrpc_error_becomes_mcp_error() {
-    let client = McpClient::connect(&fake_server_def("fake", 5_000)).await.unwrap();
-    let err = client.call_tool("nonexistent", json!({})).await.unwrap_err();
-    assert!(matches!(&err, Error::Mcp(msg) if msg.contains("unknown tool")), "got {err:?}");
+    let client = McpClient::connect(&fake_server_def("fake", 5_000))
+        .await
+        .unwrap();
+    let err = client
+        .call_tool("nonexistent", json!({}))
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(&err, Error::Mcp(msg) if msg.contains("unknown tool")),
+        "got {err:?}"
+    );
     client.disconnect().await.unwrap();
 }
 
 #[tokio::test]
 async fn slow_tool_times_out() {
-    let client = McpClient::connect(&fake_server_def("fake", 300)).await.unwrap();
+    let client = McpClient::connect(&fake_server_def("fake", 300))
+        .await
+        .unwrap();
     let err = client.call_tool("slow", json!({})).await.unwrap_err();
     assert!(matches!(err, Error::Timeout(_)), "got {err:?}");
     client.disconnect().await.unwrap();
@@ -105,7 +110,10 @@ async fn bridge_namespaces_and_filters_tools() {
     assert_eq!(tool.spec().id, "fake_echo");
 
     let ctx = ToolContext::new(RuntimeContext::new(Principal::user("u1")));
-    let out = tool.execute(json!({ "hello": "world" }), &ctx).await.unwrap();
+    let out = tool
+        .execute(json!({ "hello": "world" }), &ctx)
+        .await
+        .unwrap();
     assert!(out["content"].as_str().unwrap().contains("hello"));
 
     client.disconnect().await.unwrap();
@@ -117,7 +125,13 @@ async fn bridge_exposes_all_tools_without_allowlist() {
     let client = Arc::new(McpClient::connect(&def).await.unwrap());
     let toolset = McpToolset::new(Arc::clone(&client), def);
 
-    let ids: Vec<_> = toolset.tools().await.unwrap().iter().map(|t| t.id().to_string()).collect();
+    let ids: Vec<_> = toolset
+        .tools()
+        .await
+        .unwrap()
+        .iter()
+        .map(|t| t.id().to_string())
+        .collect();
     assert_eq!(ids, vec!["fake_echo", "fake_fail", "fake_slow"]);
 
     client.disconnect().await.unwrap();

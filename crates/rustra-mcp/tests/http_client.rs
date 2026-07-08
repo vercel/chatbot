@@ -11,7 +11,9 @@ use rustra_mcp::{McpClient, McpServerDefinition};
 /// Serve JSON-RPC over bare HTTP/1.1 on `listener`, forever.
 async fn serve(listener: TcpListener) {
     loop {
-        let Ok((stream, _)) = listener.accept().await else { return };
+        let Ok((stream, _)) = listener.accept().await else {
+            return;
+        };
         tokio::spawn(handle_connection(stream));
     }
 }
@@ -107,7 +109,12 @@ async fn handle_connection(stream: TcpStream) {
             "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nMcp-Session-Id: sess-123\r\nContent-Length: {}\r\n\r\n{body}",
             body.len()
         );
-        if reader.get_mut().write_all(response.as_bytes()).await.is_err() {
+        if reader
+            .get_mut()
+            .write_all(response.as_bytes())
+            .await
+            .is_err()
+        {
             return;
         }
     }

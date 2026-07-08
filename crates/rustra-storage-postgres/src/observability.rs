@@ -36,50 +36,56 @@ const UPSERT_SPAN: &str = "INSERT INTO rustra_spans \
      error = EXCLUDED.error, started_at = EXCLUDED.started_at, \
      ended_at = EXCLUDED.ended_at, metadata = EXCLUDED.metadata";
 
-fn run_from_row(row: &Row) -> Result<RunRecord> {
-    Ok(RunRecord {
-        id: col(row, 0)?,
-        kind: col(row, 1)?,
-        subject_id: col(row, 2)?,
-        user_id: col(row, 3)?,
-        status: col(row, 4)?,
-        input: col(row, 5)?,
-        output: col(row, 6)?,
-        error: col(row, 7)?,
-        trace_id: col(row, 8)?,
-        started_at: col(row, 9)?,
-        ended_at: col(row, 10)?,
-        metadata: col(row, 11)?,
-    })
+impl FromRow for RunRecord {
+    fn from_row(row: &Row) -> Result<RunRecord> {
+        Ok(RunRecord {
+            id: col(row, 0)?,
+            kind: col(row, 1)?,
+            subject_id: col(row, 2)?,
+            user_id: col(row, 3)?,
+            status: col(row, 4)?,
+            input: col(row, 5)?,
+            output: col(row, 6)?,
+            error: col(row, 7)?,
+            trace_id: col(row, 8)?,
+            started_at: col(row, 9)?,
+            ended_at: col(row, 10)?,
+            metadata: col(row, 11)?,
+        })
+    }
 }
 
-fn span_from_row(row: &Row) -> Result<TraceSpan> {
-    Ok(TraceSpan {
-        id: col(row, 0)?,
-        trace_id: col(row, 1)?,
-        parent_id: col(row, 2)?,
-        name: col(row, 3)?,
-        kind: col(row, 4)?,
-        user_id: col(row, 5)?,
-        input: col(row, 6)?,
-        output: col(row, 7)?,
-        error: col(row, 8)?,
-        started_at: col(row, 9)?,
-        ended_at: col(row, 10)?,
-        metadata: col(row, 11)?,
-    })
+impl FromRow for TraceSpan {
+    fn from_row(row: &Row) -> Result<TraceSpan> {
+        Ok(TraceSpan {
+            id: col(row, 0)?,
+            trace_id: col(row, 1)?,
+            parent_id: col(row, 2)?,
+            name: col(row, 3)?,
+            kind: col(row, 4)?,
+            user_id: col(row, 5)?,
+            input: col(row, 6)?,
+            output: col(row, 7)?,
+            error: col(row, 8)?,
+            started_at: col(row, 9)?,
+            ended_at: col(row, 10)?,
+            metadata: col(row, 11)?,
+        })
+    }
 }
 
-fn log_from_row(row: &Row) -> Result<LogRecord> {
-    Ok(LogRecord {
-        id: col(row, 0)?,
-        level: col(row, 1)?,
-        message: col(row, 2)?,
-        fields: col(row, 3)?,
-        user_id: col(row, 4)?,
-        run_id: col(row, 5)?,
-        created_at: col(row, 6)?,
-    })
+impl FromRow for LogRecord {
+    fn from_row(row: &Row) -> Result<LogRecord> {
+        Ok(LogRecord {
+            id: col(row, 0)?,
+            level: col(row, 1)?,
+            message: col(row, 2)?,
+            fields: col(row, 3)?,
+            user_id: col(row, 4)?,
+            run_id: col(row, 5)?,
+            created_at: col(row, 6)?,
+        })
+    }
 }
 
 impl PostgresStorage {
@@ -118,11 +124,9 @@ impl ObservabilityStore for PostgresStorage {
     }
 
     async fn get_run(&self, run_id: &str) -> Result<Option<RunRecord>> {
-        let row = self
-            .db
-            .query_opt(&format!("{SELECT_RUN} WHERE id = $1"), &[&run_id])
-            .await?;
-        row_opt(row, run_from_row)
+        self.db
+            .query_opt_as::<RunRecord>(&format!("{SELECT_RUN} WHERE id = $1"), &[&run_id])
+            .await
     }
 
     async fn list_runs(
@@ -133,9 +137,8 @@ impl ObservabilityStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<RunRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<RunRecord>(
                 &format!(
                     "{SELECT_RUN} WHERE user_id = $1 \
                      AND ($2::TEXT IS NULL OR kind = $2) \
@@ -144,8 +147,7 @@ impl ObservabilityStore for PostgresStorage {
                 ),
                 &[&user_id, &kind, &status, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, run_from_row)
+            .await
     }
 
     async fn insert_spans(&self, spans: Vec<TraceSpan>) -> Result<()> {
@@ -177,14 +179,12 @@ impl ObservabilityStore for PostgresStorage {
     }
 
     async fn list_spans(&self, trace_id: &str) -> Result<Vec<TraceSpan>> {
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<TraceSpan>(
                 &format!("{SELECT_SPAN} WHERE trace_id = $1 ORDER BY started_at ASC, seq ASC"),
                 &[&trace_id],
             )
-            .await?;
-        rows_map(rows, span_from_row)
+            .await
     }
 
     async fn insert_log(&self, log: LogRecord) -> Result<()> {
@@ -214,9 +214,8 @@ impl ObservabilityStore for PostgresStorage {
         page: Page,
     ) -> Result<Vec<LogRecord>> {
         let (limit, offset) = page_params(page);
-        let rows = self
-            .db
-            .query(
+        self.db
+            .query_as::<LogRecord>(
                 &format!(
                     "{SELECT_LOG} WHERE ($1::TEXT IS NULL OR user_id = $1) \
                      AND ($2::TEXT IS NULL OR run_id = $2) \
@@ -224,7 +223,6 @@ impl ObservabilityStore for PostgresStorage {
                 ),
                 &[&user_id, &run_id, &limit, &offset],
             )
-            .await?;
-        rows_map(rows, log_from_row)
+            .await
     }
 }

@@ -3,9 +3,7 @@ use serde_json::{json, Value};
 
 use rustra_core::{Error, Result};
 
-use crate::types::{
-    ContentBlock, Message, ModelRequest, ModelResponse, Role, StopReason, TokenUsage,
-};
+use crate::types::{ContentBlock, Message, ModelRequest, ModelResponse, StopReason};
 use crate::LanguageModel;
 
 const DEFAULT_BASE_URL: &str = "https://api.anthropic.com";
@@ -30,6 +28,8 @@ pub struct AnthropicModel {
 }
 
 impl AnthropicModel {
+    /// The [`LanguageModel::id`] becomes `anthropic/<model>`. Requests
+    /// without `max_tokens` send 4096.
     pub fn new(model: impl Into<String>, api_key: impl Into<String>) -> Self {
         let model = model.into();
         Self {
@@ -47,50 +47,22 @@ impl AnthropicModel {
         self
     }
 
+    /// Use a preconfigured HTTP client — share one connection pool across
+    /// providers, or set timeouts/proxies. Defaults to `reqwest::Client::new()`.
+    pub fn with_client(mut self, client: reqwest::Client) -> Self {
+        self.client = client;
+        self
+    }
+
     fn encode_message(message: &Message) -> Value {
-        let content: Vec<Value> = message
-            .content
-            .iter()
-            .map(|block| match block {
-                ContentBlock::Text { text } => json!({"type": "text", "text": text}),
-                ContentBlock::ToolUse { id, name, input } => {
-                    json!({"type": "tool_use", "id": id, "name": name, "input": input})
-                }
-                ContentBlock::ToolResult { tool_use_id, content, is_error } => json!({
-                    "type": "tool_result",
-                    "tool_use_id": tool_use_id,
-                    "content": content,
-                    "is_error": is_error,
-                }),
-            })
-            .collect();
-        let role = match message.role {
-            Role::User => "user",
-            Role::Assistant => "assistant",
-        };
-        json!({"role": role, "content": content})
+        serde_json::to_value(message).expect("message serialization is infallible")
     }
 
     fn decode_block(block: &Value) -> Option<ContentBlock> {
-        match block["type"].as_str()? {
-            "text" => Some(ContentBlock::Text { text: block["text"].as_str()?.to_string() }),
-            "tool_use" => Some(ContentBlock::ToolUse {
-                id: block["id"].as_str()?.to_string(),
-                name: block["name"].as_str()?.to_string(),
-                input: block["input"].clone(),
-            }),
-            _ => None,
-        }
-    }
-}
-
-#[async_trait]
-impl LanguageModel for AnthropicModel {
-    fn id(&self) -> &str {
-        &self.id
+        serde_json::from_value(block.clone()).ok()
     }
 
-    async fn generate(&self, request: ModelRequest) -> Result<ModelResponse> {
+    fn request_body(&self, request: &ModelRequest) -> Value {
         let mut body = json!({
             "model": self.model,
             "max_tokens": request.max_tokens.unwrap_or(DEFAULT_MAX_TOKENS),
@@ -120,6 +92,55 @@ impl LanguageModel for AnthropicModel {
                     .collect(),
             );
         }
+        body
+    }
+
+    fn api_error(status: reqwest::StatusCode, payload: &Value) -> Error {
+        let message = payload["error"]["message"]
+            .as_str()
+            .unwrap_or("unknown error");
+        if status.as_u16() == 429 || status.is_server_error() {
+            Error::Unavailable(format!("anthropic {status}: {message}"))
+        } else {
+            Error::Model(format!("anthropic {status}: {message}"))
+        }
+    }
+
+    fn decode_response(payload: &Value) -> ModelResponse {
+        let content = payload["content"]
+            .as_array()
+            .map(|blocks| blocks.iter().filter_map(Self::decode_block).collect())
+            .unwrap_or_default();
+        let stop_reason =
+            serde_json::from_value(payload["stop_reason"].clone()).unwrap_or(StopReason::Other);
+        let usage = serde_json::from_value(payload["usage"].clone()).unwrap_or_default();
+        ModelResponse {
+            content,
+            stop_reason,
+            usage,
+        }
+    }
+}
+
+impl std::fmt::Debug for AnthropicModel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AnthropicModel")
+            .field("id", &self.id)
+            .field("model", &self.model)
+            .field("base_url", &self.base_url)
+            .field("api_key", &"<redacted>")
+            .finish_non_exhaustive()
+    }
+}
+
+#[async_trait]
+impl LanguageModel for AnthropicModel {
+    fn id(&self) -> &str {
+        &self.id
+    }
+
+    async fn generate(&self, request: ModelRequest) -> Result<ModelResponse> {
+        let body = self.request_body(&request);
 
         let response = self
             .client
@@ -132,36 +153,119 @@ impl LanguageModel for AnthropicModel {
             .map_err(|e| Error::Unavailable(format!("anthropic request failed: {e}")))?;
 
         let status = response.status();
-        let payload: Value = response
-            .json()
+        let bytes = response
+            .bytes()
             .await
-            .map_err(|e| Error::Model(format!("anthropic response decode failed: {e}")))?;
+            .map_err(|e| Error::Unavailable(format!("anthropic response read failed: {e}")))?;
 
         if !status.is_success() {
-            let message = payload["error"]["message"].as_str().unwrap_or("unknown error");
-            return if status.as_u16() == 429 || status.is_server_error() {
-                Err(Error::Unavailable(format!("anthropic {status}: {message}")))
-            } else {
-                Err(Error::Model(format!("anthropic {status}: {message}")))
-            };
+            let payload: Value = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
+            return Err(Self::api_error(status, &payload));
         }
 
-        let content = payload["content"]
-            .as_array()
-            .map(|blocks| blocks.iter().filter_map(Self::decode_block).collect())
-            .unwrap_or_default();
-        let stop_reason = match payload["stop_reason"].as_str() {
-            Some("end_turn") => StopReason::EndTurn,
-            Some("tool_use") => StopReason::ToolUse,
-            Some("max_tokens") => StopReason::MaxTokens,
-            Some("stop_sequence") => StopReason::StopSequence,
-            _ => StopReason::Other,
-        };
-        let usage = TokenUsage {
-            input_tokens: payload["usage"]["input_tokens"].as_u64().unwrap_or(0),
-            output_tokens: payload["usage"]["output_tokens"].as_u64().unwrap_or(0),
-        };
+        let payload: Value = serde_json::from_slice(&bytes)
+            .map_err(|e| Error::Model(format!("anthropic response decode failed: {e}")))?;
+        Ok(Self::decode_response(&payload))
+    }
+}
 
-        Ok(ModelResponse { content, stop_reason, usage })
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::{Role, TokenUsage};
+    use reqwest::StatusCode;
+
+    #[test]
+    fn encode_message_matches_anthropic_wire_shape() {
+        let message = Message {
+            role: Role::Assistant,
+            content: vec![
+                ContentBlock::text("let me add those"),
+                ContentBlock::ToolUse {
+                    id: "tu_1".into(),
+                    name: "add".into(),
+                    input: json!({"a": 2, "b": 3}),
+                },
+                ContentBlock::ToolResult {
+                    tool_use_id: "tu_1".into(),
+                    content: "5".into(),
+                    is_error: false,
+                },
+            ],
+        };
+        assert_eq!(
+            AnthropicModel::encode_message(&message),
+            json!({
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "let me add those"},
+                    {"type": "tool_use", "id": "tu_1", "name": "add", "input": {"a": 2, "b": 3}},
+                    {"type": "tool_result", "tool_use_id": "tu_1", "content": "5", "is_error": false},
+                ],
+            })
+        );
+    }
+
+    #[test]
+    fn decode_response_skips_unknown_blocks_and_maps_stop_reason() {
+        let payload = json!({
+            "content": [
+                {"type": "thinking", "thinking": "hmm"},
+                {"type": "text", "text": "the answer"},
+                {"type": "tool_use", "id": "tu_9", "name": "search", "input": {"q": "rust"}},
+            ],
+            "stop_reason": "tool_use",
+            "usage": {"input_tokens": 12, "output_tokens": 34},
+        });
+        let response = AnthropicModel::decode_response(&payload);
+        assert_eq!(
+            response.content,
+            vec![
+                ContentBlock::text("the answer"),
+                ContentBlock::ToolUse {
+                    id: "tu_9".into(),
+                    name: "search".into(),
+                    input: json!({"q": "rust"}),
+                },
+            ]
+        );
+        assert_eq!(response.stop_reason, StopReason::ToolUse);
+        assert_eq!(
+            response.usage,
+            TokenUsage {
+                input_tokens: 12,
+                output_tokens: 34,
+            }
+        );
+
+        // Unknown and missing stop reasons both fold into Other.
+        let unknown = AnthropicModel::decode_response(&json!({"stop_reason": "pause_turn"}));
+        assert_eq!(unknown.stop_reason, StopReason::Other);
+        let missing = AnthropicModel::decode_response(&json!({}));
+        assert_eq!(missing.stop_reason, StopReason::Other);
+    }
+
+    #[test]
+    fn api_error_classifies_by_status() {
+        // Non-JSON body (e.g. gateway HTML) still classifies 5xx as transient.
+        let err = AnthropicModel::api_error(StatusCode::BAD_GATEWAY, &Value::Null);
+        match err {
+            Error::Unavailable(message) => assert!(message.contains("unknown error")),
+            other => panic!("expected Unavailable, got {other:?}"),
+        }
+
+        let body = json!({"error": {"message": "rate limited"}});
+        let err = AnthropicModel::api_error(StatusCode::TOO_MANY_REQUESTS, &body);
+        match err {
+            Error::Unavailable(message) => assert!(message.contains("rate limited")),
+            other => panic!("expected Unavailable, got {other:?}"),
+        }
+
+        let body = json!({"error": {"message": "invalid request"}});
+        let err = AnthropicModel::api_error(StatusCode::BAD_REQUEST, &body);
+        match err {
+            Error::Model(message) => assert!(message.contains("invalid request")),
+            other => panic!("expected Model, got {other:?}"),
+        }
     }
 }

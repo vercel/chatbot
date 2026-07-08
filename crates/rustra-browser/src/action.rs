@@ -35,8 +35,20 @@ pub enum BrowserAction {
     Evaluate { expression: String },
 }
 
-fn default_json() -> Value {
-    Value::Null
+impl BrowserAction {
+    /// Wire-format `type` tags of every variant, in declaration order. Kept
+    /// in sync with the enum by the `kinds_match_wire_tags` test.
+    pub const KINDS: &'static [&'static str] = &[
+        "navigate",
+        "click",
+        "type",
+        "press",
+        "scroll",
+        "wait_for",
+        "read_dom",
+        "screenshot",
+        "evaluate",
+    ];
 }
 
 /// The executor's answer to one [`BrowserAction`].
@@ -46,7 +58,7 @@ pub struct BrowserActionResult {
     pub ok: bool,
     /// Action-specific payload (DOM text, evaluated value, screenshot data
     /// URL, ...). `null` when there is nothing to return.
-    #[serde(default = "default_json")]
+    #[serde(default)]
     pub data: Value,
     /// Failure detail when `ok` is false.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -55,11 +67,19 @@ pub struct BrowserActionResult {
 
 impl BrowserActionResult {
     pub fn success(data: Value) -> Self {
-        Self { ok: true, data, error: None }
+        Self {
+            ok: true,
+            data,
+            error: None,
+        }
     }
 
     pub fn failure(error: impl Into<String>) -> Self {
-        Self { ok: false, data: Value::Null, error: Some(error.into()) }
+        Self {
+            ok: false,
+            data: Value::Null,
+            error: Some(error.into()),
+        }
     }
 }
 
@@ -68,21 +88,41 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    #[test]
-    fn actions_roundtrip_through_serde() {
-        let actions = vec![
-            BrowserAction::Navigate { url: "https://example.com".into() },
-            BrowserAction::Click { selector: "#submit".into() },
-            BrowserAction::Type { selector: "input[name=q]".into(), text: "rustra".into() },
-            BrowserAction::Press { key: "Enter".into() },
+    /// One instance of every [`BrowserAction`] variant, in declaration order.
+    fn sample_actions() -> Vec<BrowserAction> {
+        vec![
+            BrowserAction::Navigate {
+                url: "https://example.com".into(),
+            },
+            BrowserAction::Click {
+                selector: "#submit".into(),
+            },
+            BrowserAction::Type {
+                selector: "input[name=q]".into(),
+                text: "rustra".into(),
+            },
+            BrowserAction::Press {
+                key: "Enter".into(),
+            },
             BrowserAction::Scroll { dx: 0, dy: 400 },
-            BrowserAction::WaitFor { selector: ".results".into(), timeout_ms: 5000 },
-            BrowserAction::ReadDom { selector: Some("main".into()) },
+            BrowserAction::WaitFor {
+                selector: ".results".into(),
+                timeout_ms: 5000,
+            },
+            BrowserAction::ReadDom {
+                selector: Some("main".into()),
+            },
             BrowserAction::ReadDom { selector: None },
             BrowserAction::Screenshot,
-            BrowserAction::Evaluate { expression: "document.title".into() },
-        ];
-        for action in actions {
+            BrowserAction::Evaluate {
+                expression: "document.title".into(),
+            },
+        ]
+    }
+
+    #[test]
+    fn actions_roundtrip_through_serde() {
+        for action in sample_actions() {
             let encoded = serde_json::to_value(&action).unwrap();
             let decoded: BrowserAction = serde_json::from_value(encoded).unwrap();
             assert_eq!(decoded, action);
@@ -90,9 +130,26 @@ mod tests {
     }
 
     #[test]
+    fn kinds_match_wire_tags() {
+        let mut tags: Vec<String> = Vec::new();
+        for action in sample_actions() {
+            let tag = serde_json::to_value(&action).unwrap()["type"]
+                .as_str()
+                .expect("every variant carries a `type` tag")
+                .to_string();
+            if !tags.contains(&tag) {
+                tags.push(tag);
+            }
+        }
+        assert_eq!(tags, BrowserAction::KINDS);
+    }
+
+    #[test]
     fn wire_format_is_snake_case_tagged() {
-        let encoded =
-            serde_json::to_value(BrowserAction::Navigate { url: "https://a.b".into() }).unwrap();
+        let encoded = serde_json::to_value(BrowserAction::Navigate {
+            url: "https://a.b".into(),
+        })
+        .unwrap();
         assert_eq!(encoded, json!({ "type": "navigate", "url": "https://a.b" }));
 
         let encoded = serde_json::to_value(BrowserAction::WaitFor {

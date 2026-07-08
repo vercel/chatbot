@@ -10,7 +10,7 @@ use crate::id::new_id;
 /// Events are the currency of the signal bus (`rustra-tasks`): subscriptions
 /// match on `name`, and matched subscriptions launch tasks/agents/flows with
 /// the event as input.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Event {
     pub id: String,
     /// Dotted event name, e.g. `webhook.github.push`, `browser.page_loaded`,
@@ -27,6 +27,8 @@ pub struct Event {
 }
 
 impl Event {
+    /// A new event with a generated `evt`-prefixed id, stamped with
+    /// `Utc::now()`.
     pub fn new(name: impl Into<String>, payload: Value, source: impl Into<String>) -> Self {
         Self {
             id: new_id("evt"),
@@ -38,6 +40,7 @@ impl Event {
         }
     }
 
+    /// Scope this event to a user's isolation boundary (builder-style).
     pub fn for_user(mut self, user_id: impl Into<String>) -> Self {
         self.user_id = Some(user_id.into());
         self

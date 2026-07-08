@@ -5,14 +5,12 @@
 
 use async_trait::async_trait;
 use serde_json::json;
-use std::fs;
 use std::sync::Arc;
 
 use rustra_core::{
     ContextCandidate, ContextFragment, ContextKind, ContextRequest, ContextSource, Error, Result,
 };
 
-use crate::collection::KnowledgeCollection;
 use crate::library::KnowledgeLibrary;
 
 /// Marker appended when a loaded fragment was cut to fit the budget.
@@ -20,33 +18,33 @@ const TRUNCATION_MARKER: &str = "\n(truncated)";
 
 /// Offers every collection visible to the requesting user whose trigger
 /// matches the request query.
+#[derive(Debug, Clone)]
 pub struct KnowledgeContextSource {
     library: Arc<KnowledgeLibrary>,
 }
 
 impl KnowledgeContextSource {
+    /// Create a context source over the given knowledge library.
     pub fn new(library: Arc<KnowledgeLibrary>) -> Self {
         Self { library }
     }
 }
 
-/// Cheap size estimate: overview length plus on-disk document sizes.
-fn estimated_chars(collection: &KnowledgeCollection) -> usize {
-    let docs: u64 = collection
-        .documents
-        .iter()
-        .filter_map(|doc| fs::metadata(collection.dir.join(doc)).ok())
-        .map(|m| m.len())
-        .sum();
-    collection.overview.len() + usize::try_from(docs).unwrap_or(usize::MAX)
-}
-
 /// Truncate `content` to at most `budget` bytes (respecting char
 /// boundaries), appending a `(truncated)` marker when content was dropped.
 /// A budget of zero means "no budget" and leaves the content untouched.
+/// When the budget is too small to fit the marker, content is hard-truncated
+/// without one so the `at most budget bytes` invariant still holds.
 fn truncate_to_budget(content: String, budget: usize) -> String {
     if budget == 0 || content.len() <= budget {
         return content;
+    }
+    if budget <= TRUNCATION_MARKER.len() {
+        let mut end = budget;
+        while end > 0 && !content.is_char_boundary(end) {
+            end -= 1;
+        }
+        return content[..end].to_string();
     }
     let mut end = budget.saturating_sub(TRUNCATION_MARKER.len());
     while end > 0 && !content.is_char_boundary(end) {
@@ -79,16 +77,11 @@ impl ContextSource for KnowledgeContextSource {
                     title: collection.name.clone(),
                     description: collection.description.clone(),
                     score,
-                    estimated_chars: estimated_chars(&collection),
+                    estimated_chars: collection.estimated_chars(),
                 })
             })
             .collect();
-        candidates.sort_by(|a, b| {
-            b.score
-                .partial_cmp(&a.score)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.id.cmp(&b.id))
-        });
+        candidates.sort_by(|a, b| b.score.total_cmp(&a.score).then_with(|| a.id.cmp(&b.id)));
         Ok(candidates)
     }
 
@@ -139,8 +132,11 @@ mod tests {
             "---\nname: billing-faq\ndescription: Billing answers\nkeywords: [billing]\n---\n\nBilling overview.\n",
         )
         .expect("write");
-        std::fs::write(dir.join("refunds.md"), "Refunds are honored within 30 days.\n")
-            .expect("write doc");
+        std::fs::write(
+            dir.join("refunds.md"),
+            "Refunds are honored within 30 days.\n",
+        )
+        .expect("write doc");
 
         let other = root.join("unrelated-notes");
         std::fs::create_dir_all(&other).expect("mkdir");
@@ -177,6 +173,11 @@ mod tests {
         assert!(none.is_empty());
     }
 
+    #[test]
+    fn truncate_respects_budget_too_small_for_marker() {
+        assert!(truncate_to_budget("aaaaaaaaaaaaaaaa".to_string(), 4).len() <= 4);
+    }
+
     #[tokio::test]
     async fn load_concatenates_and_truncates() {
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -201,7 +202,9 @@ mod tests {
         assert!(small.content.ends_with("(truncated)"));
 
         assert!(matches!(
-            source.load("missing", &request("u1", "billing", 4096)).await,
+            source
+                .load("missing", &request("u1", "billing", 4096))
+                .await,
             Err(Error::NotFound { .. })
         ));
     }

@@ -29,7 +29,7 @@
 //!   suffix, so lexicographic order equals chronological order.
 //! * JSON payloads are TEXT; booleans are INTEGER; enums
 //!   (`ResourceKind`, `Visibility`) are their snake_case serde strings.
-//! * The schema is versioned via `PRAGMA user_version` (see [`migrations`]).
+//! * The schema is versioned via `PRAGMA user_version` (see the private `migrations` module).
 //!
 //! [`MemoryStore`]: rustra_storage::MemoryStore
 //! [`WorkflowStore`]: rustra_storage::WorkflowStore
@@ -65,7 +65,7 @@ use crate::util::storage_err;
 /// A shared, mutex-guarded SQLite connection whose operations run on the
 /// blocking pool. Internal building block for [`SqliteStorage`] and
 /// [`SqliteVectorStore`].
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Db {
     conn: Arc<Mutex<Connection>>,
 }
@@ -85,14 +85,16 @@ impl Db {
     }
 
     fn init(mut conn: Connection, file_backed: bool) -> Result<Self> {
+        // Install the busy handler first: `PRAGMA journal_mode=WAL` briefly
+        // locks the database, so a concurrent open should wait, not fail.
+        conn.busy_timeout(Duration::from_millis(5000))
+            .map_err(storage_err)?;
         if file_backed {
             // `PRAGMA journal_mode` returns a row, so query rather than execute.
             conn.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(()))
                 .map_err(storage_err)?;
         }
         conn.pragma_update(None, "foreign_keys", "ON")
-            .map_err(storage_err)?;
-        conn.busy_timeout(Duration::from_millis(5000))
             .map_err(storage_err)?;
         migrations::run(&mut conn)?;
         Ok(Self {
@@ -120,6 +122,8 @@ impl Db {
 
 /// The default Rustra storage backend: every domain store on one SQLite
 /// database. See the crate docs for conventions.
+/// Cloning is cheap and yields another handle to the same database connection.
+#[derive(Clone, Debug)]
 pub struct SqliteStorage {
     pub(crate) db: Db,
 }
@@ -139,5 +143,12 @@ impl SqliteStorage {
         Ok(Self {
             db: Db::open_in_memory()?,
         })
+    }
+
+    /// A vector store sharing this storage's connection (and file). The
+    /// schema already provisions `rustra_vectors`; this avoids a second
+    /// database file and a second migration run.
+    pub fn vector_store(&self) -> SqliteVectorStore {
+        SqliteVectorStore::from_db(self.db.clone())
     }
 }
