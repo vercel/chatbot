@@ -16,6 +16,7 @@ import {
   type ChangeEvent,
   type Dispatch,
   memo,
+  type ReactNode,
   type SetStateAction,
   useCallback,
   useEffect,
@@ -52,6 +53,7 @@ import {
   PromptInputTools,
 } from "../ai-elements/prompt-input";
 import { Button } from "../ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import {
@@ -695,6 +697,22 @@ function ModelSelectorOption({
   setOpen: Dispatch<SetStateAction<boolean>>;
 }) {
   const [logoProvider] = model.id.split("/");
+  const maybeWithTooltip = (icon: ReactNode, label: string) => {
+    if (!curated) {
+      return icon;
+    }
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">{icon}</span>
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={8}>
+          {label}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
   const handleSelect = useCallback(() => {
     if (!curated) {
       return;
@@ -709,13 +727,16 @@ function ModelSelectorOption({
     }, 50);
   }, [curated, model.id, onModelChange, setOpen]);
 
-  return (
+  const option = (
     <ModelSelectorItem
+      aria-disabled={!curated}
       className={cn(
-        "flex w-full",
+        "flex w-full transition-colors",
         model.id === selectedModelId &&
           "border-b border-dashed border-foreground/50",
-        !curated && "opacity-40 cursor-default"
+        curated
+          ? "data-[selected=true]:bg-muted data-[selected=true]:text-foreground"
+          : "cursor-not-allowed opacity-40 data-[selected=true]:bg-transparent data-[selected=true]:opacity-60 data-[selected=true]:ring-1 data-[selected=true]:ring-muted-foreground/30 data-[selected=true]:ring-inset"
       )}
       onSelect={handleSelect}
       value={model.id}
@@ -723,18 +744,42 @@ function ModelSelectorOption({
       <ModelSelectorLogo provider={logoProvider} />
       <ModelSelectorName>{model.name}</ModelSelectorName>
       <div className="ml-auto flex items-center gap-2 text-foreground/70">
-        {capabilities?.[model.id]?.tools ? (
-          <WrenchIcon className="size-3.5" />
-        ) : null}
-        {capabilities?.[model.id]?.vision ? (
-          <EyeIcon className="size-3.5" />
-        ) : null}
-        {capabilities?.[model.id]?.reasoning ? (
-          <BrainIcon className="size-3.5" />
-        ) : null}
+        {capabilities?.[model.id]?.tools
+          ? maybeWithTooltip(
+              <WrenchIcon className="size-3.5" />,
+              "Supports tool use"
+            )
+          : null}
+        {capabilities?.[model.id]?.vision
+          ? maybeWithTooltip(
+              <EyeIcon className="size-3.5" />,
+              "Supports vision"
+            )
+          : null}
+        {capabilities?.[model.id]?.reasoning
+          ? maybeWithTooltip(
+              <BrainIcon className="size-3.5" />,
+              "Supports reasoning"
+            )
+          : null}
         {!curated && <LockIcon className="size-3 text-muted-foreground/50" />}
       </div>
     </ModelSelectorItem>
+  );
+
+  if (curated) {
+    return option;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="w-full cursor-not-allowed">{option}</div>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        This model is not available in the demo.
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -775,7 +820,7 @@ function PureModelSelectorCompact({
           <ModelSelectorName>{selectedModel.name}</ModelSelectorName>
         </Button>
       </ModelSelectorTrigger>
-      <ModelSelectorContent>
+      <ModelSelectorContent commandDefaultValue={selectedModel.id}>
         <ModelSelectorInput placeholder="Search models..." />
         <ModelSelectorList>
           {(() => {

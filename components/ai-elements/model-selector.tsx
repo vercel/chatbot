@@ -31,11 +31,13 @@ export const ModelSelectorTrigger = (props: ModelSelectorTriggerProps) => (
 );
 
 export type ModelSelectorContentProps = ComponentProps<typeof PopoverContent> & {
+  commandDefaultValue?: ComponentProps<typeof Command>["defaultValue"];
   title?: ReactNode;
 };
 
 export const ModelSelectorContent = ({
   className,
+  commandDefaultValue,
   children,
   title: _title,
   ...props
@@ -50,7 +52,10 @@ export const ModelSelectorContent = ({
     sideOffset={8}
     {...props}
   >
-    <Command className="**:data-[slot=command-input-wrapper]:h-auto">
+    <Command
+      className="**:data-[slot=command-input-wrapper]:h-auto"
+      defaultValue={commandDefaultValue}
+    >
       {children}
     </Command>
   </PopoverContent>
