@@ -1,0 +1,17 @@
+[package]
+name = "rustra-ui"
+description = "Generative UI artifacts: agent-produced HTML documents with versioning and safe rendering (backend only)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rustra-core.workspace = true
+rustra-storage.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

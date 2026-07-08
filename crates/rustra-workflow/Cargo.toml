@@ -1,0 +1,23 @@
+[package]
+name = "rustra-workflow"
+description = "The harness layer: deterministic flows with steps, checkpoints, suspend/resume, retries, and HITL"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rustra-core.workspace = true
+rustra-storage.workspace = true
+rustra-observability.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

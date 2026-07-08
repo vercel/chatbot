@@ -1,0 +1,87 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/rustra",
+    "crates/rustra-core",
+    "crates/rustra-llm",
+    "crates/rustra-storage",
+    "crates/rustra-storage-sqlite",
+    "crates/rustra-storage-postgres",
+    "crates/rustra-storage-firebase",
+    "crates/rustra-memory",
+    "crates/rustra-agent",
+    "crates/rustra-workflow",
+    "crates/rustra-skills",
+    "crates/rustra-knowledge",
+    "crates/rustra-workspace",
+    "crates/rustra-rbac",
+    "crates/rustra-tasks",
+    "crates/rustra-mcp",
+    "crates/rustra-messages",
+    "crates/rustra-observability",
+    "crates/rustra-ui",
+    "crates/rustra-browser",
+    "crates/rustra-server",
+    "examples/quickstart",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/goldylocks-ai/ai-chatbot"
+rust-version = "1.85"
+
+[workspace.dependencies]
+# Internal crates
+rustra-core = { path = "crates/rustra-core" }
+rustra-llm = { path = "crates/rustra-llm" }
+rustra-storage = { path = "crates/rustra-storage" }
+rustra-storage-sqlite = { path = "crates/rustra-storage-sqlite" }
+rustra-storage-postgres = { path = "crates/rustra-storage-postgres" }
+rustra-storage-firebase = { path = "crates/rustra-storage-firebase" }
+rustra-memory = { path = "crates/rustra-memory" }
+rustra-agent = { path = "crates/rustra-agent" }
+rustra-workflow = { path = "crates/rustra-workflow" }
+rustra-skills = { path = "crates/rustra-skills" }
+rustra-knowledge = { path = "crates/rustra-knowledge" }
+rustra-workspace = { path = "crates/rustra-workspace" }
+rustra-rbac = { path = "crates/rustra-rbac" }
+rustra-tasks = { path = "crates/rustra-tasks" }
+rustra-mcp = { path = "crates/rustra-mcp" }
+rustra-messages = { path = "crates/rustra-messages" }
+rustra-observability = { path = "crates/rustra-observability" }
+rustra-ui = { path = "crates/rustra-ui" }
+rustra-browser = { path = "crates/rustra-browser" }
+rustra-server = { path = "crates/rustra-server" }
+rustra = { path = "crates/rustra" }
+
+# External
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7" }
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures = "0.3"
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+thiserror = "2"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rusqlite = { version = "0.32", features = ["bundled", "serde_json"] }
+tokio-postgres = { version = "0.7", features = ["with-serde_json-1", "with-chrono-0_4"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+axum = { version = "0.8", features = ["macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+cron = "0.13"
+glob = "0.3"
+tempfile = "3"
+
+[profile.dev]
+debug = 1
+
+[profile.release]
+lto = "thin"

@@ -1,0 +1,24 @@
+[package]
+name = "rustra-agent"
+description = "The agent runtime: tool-calling loop, dynamic context assembly, memory, delegation, HITL hooks"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rustra-core.workspace = true
+rustra-llm.workspace = true
+rustra-memory.workspace = true
+rustra-storage.workspace = true
+rustra-observability.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

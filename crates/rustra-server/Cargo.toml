@@ -1,0 +1,33 @@
+[package]
+name = "rustra-server"
+description = "Rustra: the HTTP server — an axum shell over the Rustra runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rustra.workspace = true
+rustra-core.workspace = true
+rustra-storage.workspace = true
+rustra-rbac.workspace = true
+rustra-tasks.workspace = true
+rustra-mcp.workspace = true
+rustra-workflow.workspace = true
+rustra-browser.workspace = true
+rustra-ui.workspace = true
+
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+rustra-llm.workspace = true
+tempfile.workspace = true

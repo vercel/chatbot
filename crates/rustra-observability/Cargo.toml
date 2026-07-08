@@ -1,0 +1,18 @@
+[package]
+name = "rustra-observability"
+description = "Runs, traces, spans, and logs: the instrumentation layer every subsystem records through"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rustra-core.workspace = true
+rustra-storage.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

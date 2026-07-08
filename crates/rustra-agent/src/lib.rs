@@ -1,0 +1,702 @@
+//! # rustra-agent
+//!
+//! The agent runtime — the Rust analogue of Mastra's `Agent` from
+//! `@mastra/core/agent`. An [`Agent`] is configured with instructions, a
+//! model, tools, optional memory, optional sub-agents (the supervisor
+//! pattern), and dynamic [`ContextSource`]s; [`Agent::generate`] runs the
+//! tool-calling loop:
+//!
+//! 1. Resolve the memory thread and recall history + working memory.
+//! 2. Assemble dynamic context (skills, knowledge, memory, workspace files,
+//!    user profile, prior runs) within a character budget — every attachment
+//!    is traced.
+//! 3. Loop: call the model; execute requested tools (with approval hooks for
+//!    HITL); feed results back — until the model ends its turn or
+//!    `max_steps` is reached.
+//! 4. Persist every turn to memory and every operation to observability.
+//!
+//! The **main coding agent** that "runs the show" is just an `Agent` wired
+//! with the full set of workspace/skill/knowledge/delegation tools — see the
+//! `rustra` facade crate.
+
+mod approval;
+mod assembler;
+mod definition;
+mod delegate;
+
+pub use approval::{AllowAll, ApprovalDecision, ToolApprover};
+pub use assembler::{AssembledContext, ContextAssembler};
+pub use definition::AgentDefinition;
+pub use delegate::AgentTool;
+
+use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::sync::Arc;
+
+use rustra_core::{
+    ContextRequest, ContextSource, Error, Result, RuntimeContext, Tool, ToolContext,
+};
+use rustra_llm::{
+    ContentBlock, Message, ModelRequest, ModelResponse, Role, SharedModel, StopReason, TokenUsage,
+};
+use rustra_memory::Memory;
+use rustra_observability::{span_kind, ObservabilityHub, RunHandle};
+
+/// Per-call generation options (Mastra `defaultOptions` for
+/// `generate`/`stream`).
+#[derive(Debug, Clone)]
+pub struct GenerateOptions {
+    /// Maximum model⇄tool round trips per invocation.
+    pub max_steps: usize,
+    pub max_tokens: Option<u32>,
+    pub temperature: Option<f32>,
+    /// Character budget for dynamically attached context.
+    pub context_char_budget: usize,
+    /// Maximum number of context fragments attached per turn.
+    pub max_context_fragments: usize,
+    /// Minimum relevance score for a context candidate to be considered.
+    pub min_context_score: f32,
+}
+
+impl Default for GenerateOptions {
+    fn default() -> Self {
+        Self {
+            max_steps: 12,
+            max_tokens: None,
+            temperature: None,
+            context_char_budget: 24_000,
+            max_context_fragments: 12,
+            min_context_score: 0.15,
+        }
+    }
+}
+
+/// Input for one agent invocation.
+#[derive(Debug, Clone)]
+pub struct AgentInput {
+    /// The user's message.
+    pub message: String,
+    /// Continue an existing memory thread; `None` starts a new one.
+    pub thread_id: Option<String>,
+}
+
+impl From<&str> for AgentInput {
+    fn from(message: &str) -> Self {
+        Self { message: message.to_string(), thread_id: None }
+    }
+}
+
+impl From<String> for AgentInput {
+    fn from(message: String) -> Self {
+        Self { message, thread_id: None }
+    }
+}
+
+impl AgentInput {
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into(), thread_id: None }
+    }
+
+    pub fn in_thread(mut self, thread_id: impl Into<String>) -> Self {
+        self.thread_id = Some(thread_id.into());
+        self
+    }
+}
+
+/// The result of one agent invocation.
+#[derive(Debug, Clone)]
+pub struct AgentResponse {
+    /// Final assistant text.
+    pub text: String,
+    /// Every message produced during the invocation (assistant turns and
+    /// tool results), in order.
+    pub messages: Vec<Message>,
+    /// Total token usage across model calls.
+    pub usage: TokenUsage,
+    /// Observability correlation.
+    pub run_id: String,
+    pub trace_id: String,
+    /// Memory thread the conversation lives in (if memory is enabled).
+    pub thread_id: Option<String>,
+    /// Model⇄tool round trips consumed.
+    pub steps: usize,
+}
+
+/// An LLM agent. Cheap to share (`Arc` fields); construct via
+/// [`Agent::builder`].
+pub struct Agent {
+    id: String,
+    name: String,
+    description: String,
+    instructions: String,
+    model: SharedModel,
+    tools: HashMap<String, Arc<dyn Tool>>,
+    memory: Option<Arc<Memory>>,
+    context_sources: Vec<Arc<dyn ContextSource>>,
+    approver: Arc<dyn ToolApprover>,
+    hub: ObservabilityHub,
+    options: GenerateOptions,
+}
+
+impl Agent {
+    pub fn builder(id: impl Into<String>) -> AgentBuilder {
+        AgentBuilder::new(id)
+    }
+
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+    pub fn instructions(&self) -> &str {
+        &self.instructions
+    }
+    pub fn tool_ids(&self) -> Vec<&str> {
+        self.tools.keys().map(String::as_str).collect()
+    }
+    pub fn memory(&self) -> Option<&Arc<Memory>> {
+        self.memory.as_ref()
+    }
+
+    /// Run the agent to completion for one user message.
+    pub async fn generate(
+        &self,
+        input: impl Into<AgentInput>,
+        runtime: RuntimeContext,
+    ) -> Result<AgentResponse> {
+        let input: AgentInput = input.into();
+        let user_id = runtime.user_id().to_string();
+        let run = self
+            .hub
+            .start_run("agent", &self.id, &user_id, json!({ "message": input.message }))
+            .await;
+        runtime.set(RuntimeContext::RUN_ID, json!(run.run_id()));
+        runtime.set(RuntimeContext::TRACE_ID, json!(run.trace_id()));
+
+        match self.generate_inner(&input, &runtime, &run).await {
+            Ok(response) => {
+                run.finish_success(json!({ "text": response.text, "steps": response.steps }))
+                    .await;
+                Ok(response)
+            }
+            Err(e) => {
+                run.finish_failed(&e.to_string()).await;
+                Err(e)
+            }
+        }
+    }
+
+    async fn generate_inner(
+        &self,
+        input: &AgentInput,
+        runtime: &RuntimeContext,
+        run: &RunHandle,
+    ) -> Result<AgentResponse> {
+        let user_id = runtime.user_id().to_string();
+
+        // -- Memory thread + history ---------------------------------------
+        let (thread_id, mut conversation) = match &self.memory {
+            Some(memory) => {
+                let thread = match &input.thread_id {
+                    Some(id) => memory.get_thread(id, &user_id).await?,
+                    None => memory.create_thread(&user_id, None).await?,
+                };
+                runtime.set(RuntimeContext::THREAD_ID, json!(thread.id));
+                let span = run
+                    .span("memory recall", span_kind::MEMORY_OP, json!({"thread": thread.id}))
+                    .await;
+                let recalled = memory.recall(&thread.id, &user_id, &input.message).await?;
+                span.end_ok(json!({ "recent": recalled.recent.len() })).await;
+                (Some(thread.id), recalled.recent)
+            }
+            None => (None, Vec::new()),
+        };
+
+        // -- Dynamic context assembly ---------------------------------------
+        let context_request = ContextRequest {
+            query: input.message.clone(),
+            agent_id: self.id.clone(),
+            thread_id: thread_id.clone(),
+            runtime: runtime.clone(),
+            char_budget: self.options.context_char_budget,
+        };
+        let assembled = ContextAssembler::new(
+            self.options.max_context_fragments,
+            self.options.min_context_score,
+        )
+        .assemble(&self.context_sources, &context_request, run)
+        .await;
+        let system = assembled.render_system_prompt(&self.instructions);
+
+        // -- Persist the user turn ------------------------------------------
+        let user_message = Message::user(&input.message);
+        if let (Some(memory), Some(tid)) = (&self.memory, &thread_id) {
+            memory.save_message(tid, &user_id, &user_message).await?;
+        }
+        conversation.push(user_message);
+
+        // -- The loop ---------------------------------------------------------
+        let tool_specs: Vec<_> = self.tools.values().map(|t| t.spec()).collect();
+        let mut new_messages: Vec<Message> = Vec::new();
+        let mut usage = TokenUsage::default();
+        let mut steps = 0usize;
+
+        loop {
+            steps += 1;
+            if steps > self.options.max_steps {
+                return Err(Error::Other(format!(
+                    "agent `{}` exceeded max_steps ({})",
+                    self.id, self.options.max_steps
+                )));
+            }
+
+            let response = self.call_model(&system, &conversation, &tool_specs, run).await?;
+            usage.add(response.usage);
+
+            let assistant_message =
+                Message { role: Role::Assistant, content: response.content.clone() };
+            if let (Some(memory), Some(tid)) = (&self.memory, &thread_id) {
+                memory.save_message(tid, &user_id, &assistant_message).await?;
+            }
+            conversation.push(assistant_message.clone());
+            new_messages.push(assistant_message);
+
+            if response.stop_reason != StopReason::ToolUse {
+                let text = response.text();
+                return Ok(AgentResponse {
+                    text,
+                    messages: new_messages,
+                    usage,
+                    run_id: run.run_id().to_string(),
+                    trace_id: run.trace_id().to_string(),
+                    thread_id,
+                    steps,
+                });
+            }
+
+            // Execute every tool call in the assistant turn.
+            let mut result_blocks: Vec<ContentBlock> = Vec::new();
+            for (tool_use_id, tool_name, tool_input) in response.tool_uses() {
+                let block = self
+                    .execute_tool(tool_use_id, tool_name, tool_input.clone(), runtime, run)
+                    .await;
+                result_blocks.push(block);
+            }
+            let results_message = Message { role: Role::User, content: result_blocks };
+            if let (Some(memory), Some(tid)) = (&self.memory, &thread_id) {
+                memory.save_message(tid, &user_id, &results_message).await?;
+            }
+            conversation.push(results_message.clone());
+            new_messages.push(results_message);
+        }
+    }
+
+    async fn call_model(
+        &self,
+        system: &str,
+        conversation: &[Message],
+        tools: &[rustra_core::ToolSpec],
+        run: &RunHandle,
+    ) -> Result<ModelResponse> {
+        let span = run
+            .span(
+                &format!("llm call ({})", self.model.id()),
+                span_kind::LLM_CALL,
+                json!({ "messages": conversation.len(), "tools": tools.len() }),
+            )
+            .await;
+        let request = ModelRequest {
+            system: Some(system.to_string()),
+            messages: conversation.to_vec(),
+            tools: tools.to_vec(),
+            max_tokens: self.options.max_tokens,
+            temperature: self.options.temperature,
+            stop_sequences: Vec::new(),
+        };
+        match self.model.generate(request).await {
+            Ok(response) => {
+                span.end_ok(json!({
+                    "stop_reason": format!("{:?}", response.stop_reason),
+                    "output_tokens": response.usage.output_tokens,
+                }))
+                .await;
+                Ok(response)
+            }
+            Err(e) => {
+                span.end_err(&e.to_string()).await;
+                Err(e)
+            }
+        }
+    }
+
+    /// Execute one tool call, mapping every failure into a `tool_result`
+    /// error block so the model can react instead of the run aborting.
+    async fn execute_tool(
+        &self,
+        tool_use_id: &str,
+        tool_name: &str,
+        tool_input: Value,
+        runtime: &RuntimeContext,
+        run: &RunHandle,
+    ) -> ContentBlock {
+        let span = run
+            .span(&format!("tool: {tool_name}"), span_kind::TOOL_CALL, tool_input.clone())
+            .await;
+
+        let Some(tool) = self.tools.get(tool_name) else {
+            let message = format!("unknown tool `{tool_name}`");
+            span.end_err(&message).await;
+            return ContentBlock::ToolResult {
+                tool_use_id: tool_use_id.to_string(),
+                content: message,
+                is_error: true,
+            };
+        };
+
+        // HITL approval hook.
+        match self.approver.review(tool_name, &tool_input, runtime).await {
+            Ok(ApprovalDecision::Approved) => {}
+            Ok(ApprovalDecision::Denied { reason }) => {
+                let message = format!("tool call denied by approval policy: {reason}");
+                span.end_err(&message).await;
+                return ContentBlock::ToolResult {
+                    tool_use_id: tool_use_id.to_string(),
+                    content: message,
+                    is_error: true,
+                };
+            }
+            Err(e) => {
+                let message = format!("approval check failed: {e}");
+                span.end_err(&message).await;
+                return ContentBlock::ToolResult {
+                    tool_use_id: tool_use_id.to_string(),
+                    content: message,
+                    is_error: true,
+                };
+            }
+        }
+
+        let ctx = ToolContext {
+            runtime: runtime.clone(),
+            agent_id: Some(self.id.clone()),
+            run_id: Some(run.run_id().to_string()),
+        };
+        match tool.execute(tool_input, &ctx).await {
+            Ok(output) => {
+                span.end_ok(output.clone()).await;
+                ContentBlock::ToolResult {
+                    tool_use_id: tool_use_id.to_string(),
+                    content: output.to_string(),
+                    is_error: false,
+                }
+            }
+            Err(e) => {
+                let message = e.to_string();
+                span.end_err(&message).await;
+                ContentBlock::ToolResult {
+                    tool_use_id: tool_use_id.to_string(),
+                    content: message,
+                    is_error: true,
+                }
+            }
+        }
+    }
+}
+
+/// Fluent construction for [`Agent`] (Mastra's `new Agent({...})`).
+pub struct AgentBuilder {
+    id: String,
+    name: Option<String>,
+    description: String,
+    instructions: String,
+    model: Option<SharedModel>,
+    tools: Vec<Arc<dyn Tool>>,
+    memory: Option<Arc<Memory>>,
+    context_sources: Vec<Arc<dyn ContextSource>>,
+    approver: Arc<dyn ToolApprover>,
+    hub: ObservabilityHub,
+    options: GenerateOptions,
+}
+
+impl AgentBuilder {
+    pub fn new(id: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            name: None,
+            description: String::new(),
+            instructions: String::new(),
+            model: None,
+            tools: Vec::new(),
+            memory: None,
+            context_sources: Vec::new(),
+            approver: Arc::new(AllowAll),
+            hub: ObservabilityHub::noop(),
+            options: GenerateOptions::default(),
+        }
+    }
+
+    pub fn name(mut self, name: impl Into<String>) -> Self {
+        self.name = Some(name.into());
+        self
+    }
+
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.description = description.into();
+        self
+    }
+
+    pub fn instructions(mut self, instructions: impl Into<String>) -> Self {
+        self.instructions = instructions.into();
+        self
+    }
+
+    pub fn model(mut self, model: SharedModel) -> Self {
+        self.model = Some(model);
+        self
+    }
+
+    pub fn tool(mut self, tool: Arc<dyn Tool>) -> Self {
+        self.tools.push(tool);
+        self
+    }
+
+    pub fn tools(mut self, tools: impl IntoIterator<Item = Arc<dyn Tool>>) -> Self {
+        self.tools.extend(tools);
+        self
+    }
+
+    /// Enable memory. Also auto-attaches the working-memory tool and the
+    /// memory context source, matching Mastra's defaults.
+    pub fn memory(mut self, memory: Arc<Memory>) -> Self {
+        self.tools.push(Arc::new(memory.working_memory_tool()));
+        self.context_sources
+            .push(Arc::new(rustra_memory::MemoryContextSource::new(Arc::clone(&memory))));
+        self.memory = Some(memory);
+        self
+    }
+
+    pub fn context_source(mut self, source: Arc<dyn ContextSource>) -> Self {
+        self.context_sources.push(source);
+        self
+    }
+
+    /// Register a sub-agent, exposed to the model as an `ask_<id>` tool
+    /// (the Mastra supervisor pattern).
+    pub fn sub_agent(mut self, agent: Arc<Agent>) -> Self {
+        self.tools.push(Arc::new(AgentTool::new(agent)));
+        self
+    }
+
+    pub fn approver(mut self, approver: Arc<dyn ToolApprover>) -> Self {
+        self.approver = approver;
+        self
+    }
+
+    pub fn observability(mut self, hub: ObservabilityHub) -> Self {
+        self.hub = hub;
+        self
+    }
+
+    pub fn options(mut self, options: GenerateOptions) -> Self {
+        self.options = options;
+        self
+    }
+
+    pub fn build(self) -> Result<Agent> {
+        let model = self
+            .model
+            .ok_or_else(|| Error::Config(format!("agent `{}` has no model", self.id)))?;
+        if self.id.is_empty() {
+            return Err(Error::Config("agent id must not be empty".into()));
+        }
+        let mut tools = HashMap::new();
+        for tool in self.tools {
+            let id = tool.id().to_string();
+            if tools.insert(id.clone(), tool).is_some() {
+                return Err(Error::Config(format!("duplicate tool id `{id}`")));
+            }
+        }
+        Ok(Agent {
+            name: self.name.unwrap_or_else(|| self.id.clone()),
+            id: self.id,
+            description: self.description,
+            instructions: self.instructions,
+            model,
+            tools,
+            memory: self.memory,
+            context_sources: self.context_sources,
+            approver: self.approver,
+            hub: self.hub,
+            options: self.options,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rustra_core::{FunctionTool, Principal};
+    use rustra_llm::{MockModel, ScriptedTurn};
+    use rustra_storage::{InMemoryStorage, InMemoryVectorStore, MockEmbedder, SharedStorage};
+
+    fn runtime() -> RuntimeContext {
+        RuntimeContext::new(Principal::user("user-1"))
+    }
+
+    #[tokio::test]
+    async fn plain_text_generation() {
+        let agent = Agent::builder("helper")
+            .instructions("You are helpful.")
+            .model(Arc::new(MockModel::text("hello!")))
+            .build()
+            .unwrap();
+        let response = agent.generate("hi", runtime()).await.unwrap();
+        assert_eq!(response.text, "hello!");
+        assert_eq!(response.steps, 1);
+    }
+
+    #[tokio::test]
+    async fn tool_calling_loop_roundtrips() {
+        let model = Arc::new(MockModel::new(vec![
+            ScriptedTurn::ToolCall { name: "add".into(), input: json!({"a": 2, "b": 3}) },
+            ScriptedTurn::Text("the sum is 5".into()),
+        ]));
+        let add = FunctionTool::new(
+            "add",
+            "Add numbers",
+            json!({"type": "object"}),
+            |input, _ctx| async move {
+                Ok(json!({"sum": input["a"].as_f64().unwrap() + input["b"].as_f64().unwrap()}))
+            },
+        );
+        let agent = Agent::builder("calc")
+            .model(model.clone())
+            .tool(Arc::new(add))
+            .build()
+            .unwrap();
+
+        let response = agent.generate("what is 2+3?", runtime()).await.unwrap();
+        assert_eq!(response.text, "the sum is 5");
+        assert_eq!(response.steps, 2);
+
+        // The second model request must carry the tool result back.
+        let requests = model.requests.lock().unwrap();
+        let last = requests.last().unwrap();
+        let has_tool_result = last.messages.iter().any(|m| {
+            m.content.iter().any(|b| {
+                matches!(b, ContentBlock::ToolResult { content, is_error, .. }
+                    if content.contains("5") && !is_error)
+            })
+        });
+        assert!(has_tool_result);
+    }
+
+    #[tokio::test]
+    async fn unknown_tool_reports_error_to_model() {
+        let model = Arc::new(MockModel::new(vec![
+            ScriptedTurn::ToolCall { name: "nope".into(), input: json!({}) },
+            ScriptedTurn::Text("recovered".into()),
+        ]));
+        let agent = Agent::builder("a").model(model).build().unwrap();
+        let response = agent.generate("go", runtime()).await.unwrap();
+        assert_eq!(response.text, "recovered");
+    }
+
+    #[tokio::test]
+    async fn memory_persists_across_invocations() {
+        let storage: SharedStorage = Arc::new(InMemoryStorage::new());
+        let memory = Arc::new(
+            rustra_memory::Memory::new(storage.clone()).with_vector(
+                Arc::new(InMemoryVectorStore::new()),
+                Arc::new(MockEmbedder::default()),
+            ),
+        );
+        let model = Arc::new(MockModel::new(vec![
+            ScriptedTurn::Text("nice to meet you, Ada".into()),
+            ScriptedTurn::EchoLast,
+        ]));
+        let agent = Agent::builder("rememberer")
+            .model(model.clone())
+            .memory(memory)
+            .observability(ObservabilityHub::new(storage))
+            .build()
+            .unwrap();
+
+        let first = agent.generate("my name is Ada", runtime()).await.unwrap();
+        let thread_id = first.thread_id.clone().unwrap();
+
+        // Second call in the same thread: history must be replayed, so the
+        // model sees 3 prior messages + the new one.
+        agent
+            .generate(AgentInput::new("what did I say?").in_thread(&thread_id), runtime())
+            .await
+            .unwrap();
+        let requests = model.requests.lock().unwrap();
+        assert_eq!(requests.last().unwrap().messages.len(), 3); // user, assistant, user
+    }
+
+    #[tokio::test]
+    async fn denied_tool_is_surfaced_as_error_result() {
+        struct DenyAll;
+        #[async_trait::async_trait]
+        impl ToolApprover for DenyAll {
+            async fn review(
+                &self,
+                _tool: &str,
+                _input: &Value,
+                _runtime: &RuntimeContext,
+            ) -> Result<ApprovalDecision> {
+                Ok(ApprovalDecision::Denied { reason: "policy says no".into() })
+            }
+        }
+        let model = Arc::new(MockModel::new(vec![
+            ScriptedTurn::ToolCall { name: "add".into(), input: json!({}) },
+            ScriptedTurn::Text("understood, cannot compute".into()),
+        ]));
+        let add = FunctionTool::new("add", "Add", json!({"type":"object"}), |_, _| async {
+            Ok(json!(1))
+        });
+        let agent = Agent::builder("guarded")
+            .model(model.clone())
+            .tool(Arc::new(add))
+            .approver(Arc::new(DenyAll))
+            .build()
+            .unwrap();
+        let response = agent.generate("add", runtime()).await.unwrap();
+        assert_eq!(response.text, "understood, cannot compute");
+        let requests = model.requests.lock().unwrap();
+        let denied = requests.last().unwrap().messages.iter().any(|m| {
+            m.content.iter().any(|b| {
+                matches!(b, ContentBlock::ToolResult { content, is_error: true, .. }
+                    if content.contains("policy says no"))
+            })
+        });
+        assert!(denied);
+    }
+
+    #[tokio::test]
+    async fn sub_agent_delegation() {
+        let child = Arc::new(
+            Agent::builder("expert")
+                .description("Knows everything about rust")
+                .model(Arc::new(MockModel::text("rust is memory safe")))
+                .build()
+                .unwrap(),
+        );
+        let model = Arc::new(MockModel::new(vec![
+            ScriptedTurn::ToolCall {
+                name: "ask_expert".into(),
+                input: json!({"message": "tell me about rust"}),
+            },
+            ScriptedTurn::Text("the expert says: rust is memory safe".into()),
+        ]));
+        let supervisor =
+            Agent::builder("supervisor").model(model).sub_agent(child).build().unwrap();
+        let response = supervisor.generate("ask the expert about rust", runtime()).await.unwrap();
+        assert_eq!(response.text, "the expert says: rust is memory safe");
+    }
+}

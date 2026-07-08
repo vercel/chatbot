@@ -1,0 +1,20 @@
+[package]
+name = "rustra-skills"
+description = "Filesystem-based Agent Skills (SKILL.md convention): parsing, discovery, triggers, context attachment, and agent tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rustra-core.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+tempfile.workspace = true

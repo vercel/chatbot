@@ -1,0 +1,19 @@
+[package]
+name = "rustra-browser"
+description = "Computer-use protocol: browser action types and the command-queue bridge executed client-side (extension / Playwright bridge)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rustra-core.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

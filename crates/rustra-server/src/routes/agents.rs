@@ -1,0 +1,66 @@
+//! Agent invocation endpoints.
+
+use std::sync::Arc;
+
+use axum::extract::{Path, State};
+use axum::Json;
+use serde::Deserialize;
+use serde_json::{json, Value};
+
+use rustra::{Agent, AgentInput, Rustra, RuntimeContext};
+use rustra_core::{Error, Principal};
+
+use crate::auth::AuthedUser;
+use crate::error::ApiResult;
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct GenerateRequest {
+    message: String,
+    #[serde(default)]
+    thread_id: Option<String>,
+}
+
+/// `POST /api/agents/main/generate` — the caller's main agent.
+pub(crate) async fn generate_main(
+    State(rustra): State<Arc<Rustra>>,
+    AuthedUser(principal): AuthedUser,
+    Json(body): Json<GenerateRequest>,
+) -> ApiResult<Json<Value>> {
+    let agent = rustra.main_agent_for(&principal.user_id).await?;
+    generate(agent, principal, body).await
+}
+
+/// `POST /api/agents/{id}/generate` — a registered agent, falling back to a
+/// stored agent definition when the id is not in the registry.
+pub(crate) async fn generate_by_id(
+    State(rustra): State<Arc<Rustra>>,
+    AuthedUser(principal): AuthedUser,
+    Path(id): Path<String>,
+    Json(body): Json<GenerateRequest>,
+) -> ApiResult<Json<Value>> {
+    let agent = match rustra.agent(&id) {
+        Ok(agent) => agent,
+        Err(Error::NotFound { .. }) => rustra.instantiate_agent(&principal, &id).await?,
+        Err(error) => return Err(error.into()),
+    };
+    generate(agent, principal, body).await
+}
+
+async fn generate(
+    agent: Arc<Agent>,
+    principal: Principal,
+    body: GenerateRequest,
+) -> ApiResult<Json<Value>> {
+    let mut input = AgentInput::new(body.message);
+    if let Some(thread_id) = body.thread_id {
+        input = input.in_thread(thread_id);
+    }
+    let response = agent.generate(input, RuntimeContext::new(principal)).await?;
+    Ok(Json(json!({
+        "text": response.text,
+        "run_id": response.run_id,
+        "trace_id": response.trace_id,
+        "thread_id": response.thread_id,
+        "steps": response.steps,
+    })))
+}
