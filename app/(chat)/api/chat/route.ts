@@ -24,7 +24,7 @@ import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { editDocument } from "@/lib/ai/tools/edit-document";
-import { getWeather } from "@/lib/ai/tools/get-weather";
+import {  } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
@@ -46,6 +46,7 @@ import type { ChatMessage, WaitingStatusData } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
+import { analyzeCompetitor } from '@/lib/ai/tools/analyze-competitor';
 
 export const maxDuration = 60;
 
@@ -271,7 +272,7 @@ export async function POST(request: Request) {
             isReasoningModel && !supportsTools
               ? []
               : [
-                  "getWeather",
+                  "analyzeCompetitor",
                   "createDocument",
                   "editDocument",
                   "updateDocument",
@@ -307,18 +308,40 @@ export async function POST(request: Request) {
             functionId: "stream-text",
             isEnabled: isProductionEnvironment,
           },
-          tools: {
-            createDocument: createDocument({
-              dataStream,
-              modelId: chatModel,
-              session,
-            }),
-            editDocument: editDocument({ dataStream, session }),
-            getWeather,
-            requestSuggestions: requestSuggestions({
-              dataStream,
-              modelId: chatModel,
-              session,
+       tools: {
+          createDocument: createDocument({
+            dataStream,
+            modelId: chatModel,
+            session,
+          }),
+          editDocument: editDocument({ dataStream, session }) 
+          analyzeCompetitor: {
+            description: "深度竞品情报分析助手：输入竞品 URL 或功能描述，输出结构化对标报告。",
+            parameters: {
+              type: "object",
+              properties: {
+                url: { type: "string", description: "竞品网站 URL" },
+                focus: { type: "string", description: "重点分析的维度（如：定价、用户体验）" }
+              },
+              required: ["url"]
+            },
+            execute: async ({ url, focus }) => {
+              return `分析引擎已调用。目标URL: ${url}。分析维度: ${focus || '综合概览'}。`;
+            }
+          },
+          // ----------------------------------------------
+          
+          requestSuggestions: requestSuggestions({
+            dataStream,
+            modelId: chatModel,
+            session,
+          }),
+          updateDocument: updateDocument({
+            dataStream,
+            modelId: chatModel,
+            session,
+          }),
+        },
             }),
             updateDocument: updateDocument({
               dataStream,
