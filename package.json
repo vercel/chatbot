@@ -55,7 +55,7 @@
     "lucide-react": "^0.446.0",
     "motion": "^12.42.2",
     "nanoid": "^5.1.16",
-    "next": "16.2.10",
+    "next": "16.4.1",
     "next-auth": "5.0.0-beta.25",
     "next-themes": "^0.3.0",
     "orderedmap": "^2.1.1",

@@ -24,7 +24,6 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
   experimental: {
-    appNewScrollHandler: true,
     cachedNavigations: true,
     inlineCss: true,
     prefetchInlining: true,
