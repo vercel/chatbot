@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { auth } from "@/app/(auth)/auth";
-import { getChatById, getVotesByChatId, voteMessage } from "@/lib/db/queries";
+import {
+  getChatById,
+  getMessageById,
+  getVotesByChatId,
+  voteMessage,
+} from "@/lib/db/queries";
 import { ChatbotError } from "@/lib/errors";
 
 const voteSchema = z.object({
@@ -69,6 +74,12 @@ export async function PATCH(request: Request) {
 
   if (chat.userId !== session.user.id) {
     return new ChatbotError("forbidden:vote").toResponse();
+  }
+
+  const [message] = await getMessageById({ id: messageId });
+
+  if (!message || message.chatId !== chatId) {
+    return new ChatbotError("not_found:vote").toResponse();
   }
 
   await voteMessage({
