@@ -134,17 +134,20 @@ export const textArtifact = new Artifact<"text", TextArtifactMetadata>({
     }
 
     if (streamPart.type === "data-textDelta") {
-      setArtifact((draftArtifact) => ({
-        ...draftArtifact,
-        content: draftArtifact.content + streamPart.data,
-        isVisible:
-          draftArtifact.status === "streaming" &&
-          draftArtifact.content.length > 400 &&
-          draftArtifact.content.length < 450
-            ? true
-            : draftArtifact.isVisible,
-        status: "streaming",
-      }));
+      setArtifact((draftArtifact) => {
+        const content = draftArtifact.content + streamPart.data;
+        return {
+          ...draftArtifact,
+          content,
+          isVisible:
+            draftArtifact.status === "streaming" &&
+            draftArtifact.content.length <= 400 &&
+            content.length > 400
+              ? true
+              : draftArtifact.isVisible,
+          status: "streaming",
+        };
+      });
     }
   },
   toolbar: [
