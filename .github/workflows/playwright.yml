@@ -25,6 +25,8 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Update npm
+        run: npm install --global --ignore-scripts --no-audit --no-fund npm@12.2.1
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -49,6 +51,8 @@ jobs:
           node-version: lts/*
           cache: "pnpm"
 
+      - name: Update npm
+        run: npm install --global --ignore-scripts --no-audit --no-fund npm@12.2.1
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
