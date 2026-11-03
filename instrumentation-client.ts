@@ -4,7 +4,7 @@ initBotId({
   protect: [
     {
       method: "POST",
-      path: "/api/chat",
+      path: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat`,
     },
   ],
 });
