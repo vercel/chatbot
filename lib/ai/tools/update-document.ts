@@ -32,20 +32,22 @@ export const updateDocument = ({
         return { error: "Forbidden" };
       }
 
-      dataStream.write({
-        data: null,
-        transient: true,
-        type: "data-clear",
-      });
-
       const documentHandler = documentHandlersByArtifactKind.find(
         (documentHandlerByArtifactKind) =>
           documentHandlerByArtifactKind.kind === document.kind
       );
 
       if (!documentHandler) {
-        throw new Error(`No document handler found for kind: ${document.kind}`);
+        return {
+          error: `This document type (${document.kind}) can no longer be rewritten.`,
+        };
       }
+
+      dataStream.write({
+        data: null,
+        transient: true,
+        type: "data-clear",
+      });
 
       await documentHandler.onUpdateDocument({
         dataStream,
