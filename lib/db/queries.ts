@@ -266,6 +266,16 @@ export async function getMessagesByChatId({ id }: { id: string }) {
   }
 }
 
+export async function deleteMessagesByChatId({ chatId }: { chatId: string }) {
+  try {
+    await db.delete(vote).where(eq(vote.chatId, chatId));
+    await db.delete(stream).where(eq(stream.chatId, chatId));
+    return await db.delete(message).where(eq(message.chatId, chatId));
+  } catch (error) {
+    throw new ChatbotError("bad_request:database", { cause: error });
+  }
+}
+
 export async function voteMessage({
   chatId,
   messageId,

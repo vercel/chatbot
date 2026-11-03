@@ -24,7 +24,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import {
   ModelSelector,
@@ -143,6 +143,7 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+  const { mutate } = useSWRConfig();
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
   const [slashIndex, setSlashIndex] = useState(0);
@@ -171,9 +172,29 @@ function PureMultimodalInput({
         case "new":
           router.push("/");
           break;
-        case "clear":
+        case "clear": {
+          const messagesUrl = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/messages?chatId=${chatId}`;
           setMessages(() => []);
+          void mutate(
+            messagesUrl,
+            (current: Record<string, unknown> | undefined) =>
+              current
+                ? { ...current, messages: [] }
+                : {
+                    isReadonly: false,
+                    messages: [],
+                    userId: null,
+                    visibility: "private",
+                  },
+            { revalidate: false }
+          );
+          void fetch(messagesUrl, { method: "DELETE" }).then((response) => {
+            if (!response.ok) {
+              toast.error("Failed to clear chat history");
+            }
+          });
           break;
+        }
         case "rename":
           toast("Rename is available from the sidebar chat menu.");
           break;
@@ -223,7 +244,7 @@ function PureMultimodalInput({
           break;
       }
     },
-    [chatId, resolvedTheme, router, setInput, setMessages, setTheme]
+    [chatId, mutate, resolvedTheme, router, setInput, setMessages, setTheme]
   );
 
   const submitForm = useCallback(() => {
