@@ -1,0 +1,78 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Node modules (will be reinstalled)
+node_modules
+pnpm-lock.yaml
+npm-lock.json
+yarn.lock
+
+# Environment files (local only, secrets should never be here)
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build artifacts
+.next
+dist
+build
+out
+
+# Development files
+.vscode
+.idea
+.DS_Store
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log
+
+# Testing
+.playwright
+.test-results
+coverage
+.nyc_output
+
+# Documentation
+*.md
+README.md
+CHANGELOG.md
+
+# IDE
+.husky
+.git-hooks
+ts-node.json
+
+# Misc
+.cache
+.parcel-cache
+.next
+out
+.nuxt
+dist
+.cache/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.env*.local
+.turbo
+.vercel

@@ -1,0 +1,98 @@
+# ============================================
+# Nixpacks Configuration for Next.js + pnpm
+# Railway will use this to build and deploy
+# ============================================
+
+[metadata]
+name = "Vercel AI Chatbot on Railway"
+version = "1.0"
+author = "DevOps Team"
+
+# ============================================
+# Phase 1: Setup - Install system packages
+# Declare Node.js and pnpm versions here
+# ============================================
+[phases.setup]
+nixPkgs = [
+  "nodejs_20",
+  "pnpm",
+  "openssl",
+  "pkg-config",
+  "python3"
+]
+
+[phases.setup.env]
+PNPM_VERSION = "10.32.1"
+
+# ============================================
+# Phase 2: Install - Install dependencies
+# Use frozen lockfile for reproducible builds
+# ============================================
+[phases.install]
+dependsOn = ["setup"]
+cmds = [
+  "corepack enable",
+  "corepack prepare pnpm@10.32.1 --activate",
+  "pnpm install --frozen-lockfile"
+]
+
+# ============================================
+# Phase 3: Build - Compile Next.js app
+# Environment variables are injected HERE
+# This is where MissingSecret was failing
+# ============================================
+[phases.build]
+dependsOn = ["install"]
+cmds = [
+  "pnpm run build"
+]
+
+# CRITICAL: Environment variables must be set BEFORE build
+[phases.build.env]
+NODE_ENV = "production"
+NEXT_TELEMETRY_DISABLED = "1"
+
+# ============================================
+# Phase 4: Start - Runtime command
+# ============================================
+[phases.start]
+dependsOn = ["build"]
+cmd = "pnpm start"
+
+# ============================================
+# Runtime Environment Variables
+# These are available in the running container
+# ============================================
+[env]
+NODE_ENV = "production"
+NEXT_TELEMETRY_DISABLED = "1"
+PORT = "8080"
+
+# ============================================
+# Build Cache - Speed up subsequent builds
+# ============================================
+[cacheDirectories]
+paths = [
+  "node_modules",
+  ".next/cache"
+]
+
+# ============================================
+# Files to exclude from build context
+# Reduces build context size and build time
+# ============================================
+[ignoreFiles]
+patterns = [
+  "node_modules",
+  ".git",
+  ".next",
+  ".env.local",
+  ".env.*.local",
+  "*.md",
+  ".DS_Store",
+  ".vscode",
+  ".idea",
+  "coverage",
+  ".playwright",
+  "dist"
+]

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "pnpm run build",
+    "startCommand": "pnpm start"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 10,
+    "sleepBeforeRestart": 10,
+    "healthchecks": {
+      "readiness": {
+        "enabled": true,
+        "initialDelaySeconds": 30,
+        "periodSeconds": 10,
+        "timeoutSeconds": 5,
+        "successThreshold": 1,
+        "failureThreshold": 3
+      },
+      "liveness": {
+        "enabled": true,
+        "initialDelaySeconds": 60,
+        "periodSeconds": 30,
+        "timeoutSeconds": 10,
+        "successThreshold": 1,
+        "failureThreshold": 3
+      }
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
