@@ -1,0 +1,6 @@
+# Dependency build scripts that pnpm should not run. These were already
+# skipped under pnpm 10; listing them keeps install from failing on pnpm 11+.
+allowBuilds:
+  bufferutil: false
+  esbuild: false
+  sharp: false

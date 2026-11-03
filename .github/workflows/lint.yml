@@ -10,16 +10,11 @@ jobs:
         node-version: [20]
     steps:
       - uses: actions/checkout@v4
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - name: Install pnpm and Node.js ${{ matrix.node-version }}
+        uses: pnpm/setup@v3
         with:
-          version: 10.32.1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install
+          runtime: node@${{ matrix.node-version }}
+          cache: true
+          require-lockfile: true
       - name: Run check
         run: pnpm check
