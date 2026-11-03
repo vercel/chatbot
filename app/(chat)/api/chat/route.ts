@@ -1,3 +1,4 @@
+import { createGoogle } from "@ai-sdk/google";
 import { geolocation, ipAddress } from "@vercel/functions";
 import {
   convertToModelMessages,
@@ -78,8 +79,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { id, message, messages, selectedChatModel, selectedVisibilityType } =
-      requestBody;
+    const {
+      googleApiKey,
+      id,
+      message,
+      messages,
+      selectedChatModel,
+      selectedVisibilityType,
+      useGoogleSearch = false,
+    } = requestBody;
 
     const [botIdResult, session] = await Promise.all([
       checkBotId().catch(() => null),
@@ -97,6 +105,31 @@ export async function POST(request: Request) {
     const chatModel = allowedModelIds.has(selectedChatModel)
       ? selectedChatModel
       : DEFAULT_CHAT_MODEL;
+    const isGoogleModel = chatModels.some(
+      (model) => model.id === chatModel && model.provider === "google"
+    );
+
+    if (isGoogleModel && !googleApiKey?.trim()) {
+      return Response.json(
+        {
+          cause: "Add your Google Gemini API key in the Gemini settings first.",
+          code: "bad_request:api",
+          message: "A Google Gemini API key is required for this model.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (useGoogleSearch && !isGoogleModel) {
+      return Response.json(
+        {
+          cause: "Choose a Gemini model to use Google Search grounding.",
+          code: "bad_request:api",
+          message: "Google Search is available with Gemini models.",
+        },
+        { status: 400 }
+      );
+    }
 
     await checkIpRateLimit(ipAddress(request));
 
@@ -199,6 +232,9 @@ export async function POST(request: Request) {
     const capabilities = modelCapabilities[chatModel];
     const isReasoningModel = capabilities?.reasoning === true;
     const supportsTools = capabilities?.tools === true;
+    const googleProvider = isGoogleModel
+      ? createGoogle({ apiKey: googleApiKey?.trim() })
+      : null;
 
     const modelMessages = await convertToModelMessages(uiMessages);
 
@@ -270,16 +306,21 @@ export async function POST(request: Request) {
           activeTools:
             isReasoningModel && !supportsTools
               ? []
-              : [
+              : ([
                   "getWeather",
                   "createDocument",
                   "editDocument",
                   "updateDocument",
                   "requestSuggestions",
-                ],
+                  ...(useGoogleSearch && isGoogleModel
+                    ? (["google_search"] as const)
+                    : ([] as const)),
+                ] as const),
           instructions: systemPrompt({ requestHints, supportsTools }),
           messages: modelMessages,
-          model: getLanguageModel(chatModel),
+          model: googleProvider
+            ? googleProvider(chatModel)
+            : getLanguageModel(chatModel),
           onAbort() {
             stopWaitingStatus();
           },
@@ -298,9 +339,10 @@ export async function POST(request: Request) {
             ...(modelConfig?.gatewayOrder && {
               gateway: { order: modelConfig.gatewayOrder },
             }),
-            ...(modelConfig?.reasoningEffort && {
-              openai: { reasoningEffort: modelConfig.reasoningEffort },
-            }),
+            ...(modelConfig?.reasoningEffort &&
+              !isGoogleModel && {
+                openai: { reasoningEffort: modelConfig.reasoningEffort },
+              }),
           },
           stopWhen: isStepCount(5),
           telemetry: {
@@ -308,6 +350,10 @@ export async function POST(request: Request) {
             isEnabled: isProductionEnvironment,
           },
           tools: {
+            ...(useGoogleSearch &&
+              googleProvider && {
+                google_search: googleProvider.tools.googleSearch({}),
+              }),
             createDocument: createDocument({
               dataStream,
               modelId: chatModel,
@@ -331,6 +377,7 @@ export async function POST(request: Request) {
         dataStream.merge(
           toUIMessageStream({
             sendReasoning: isReasoningModel,
+            sendSources: useGoogleSearch && isGoogleModel,
             stream: result.stream,
           })
         );
@@ -396,6 +443,10 @@ export async function POST(request: Request) {
           )
         ) {
           return "AI Gateway requires a valid credit card on file to service requests. Please visit https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card to add a card and unlock your free credits.";
+        }
+        if (isGoogleModel && error instanceof Error) {
+          console.error("Gemini request failed:", error.message);
+          return "Gemini could not complete the request. Check the API key, model access, quota, or billing in Google AI Studio.";
         }
         return "Oops, an error occurred!";
       },

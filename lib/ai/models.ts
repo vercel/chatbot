@@ -55,6 +55,26 @@ export const chatModels: ChatModel[] = [
     reasoningEffort: "low",
   },
   {
+    description:
+      "Google's flagship reasoning model for complex tasks and agentic workflows",
+    id: "gemini-4-argon",
+    name: "Gemini 4 Argon",
+    provider: "google",
+    reasoningEffort: "high",
+  },
+  {
+    description: "High-intelligence Flash model for coding and agent workflows",
+    id: "gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
+    provider: "google",
+  },
+  {
+    description: "Stable, cost-efficient Gemini model for fast everyday tasks",
+    id: "gemini-3.1-flash-lite",
+    name: "Gemini 3.1 Flash-Lite",
+    provider: "google",
+  },
+  {
     description: "Fast non-reasoning model with tool use",
     gatewayOrder: ["xai"],
     id: "xai/grok-4.1-fast-non-reasoning",
@@ -68,6 +88,16 @@ export async function getCapabilities(): Promise<
 > {
   const results = await Promise.all(
     chatModels.map(async (model) => {
+      if (model.provider === "google") {
+        return [
+          model.id,
+          {
+            reasoning: model.id !== "gemini-3.1-flash-lite",
+            tools: true,
+            vision: true,
+          },
+        ];
+      }
       try {
         const res = await fetch(
           `https://ai-gateway.vercel.sh/v1/models/${model.id}/endpoints`,

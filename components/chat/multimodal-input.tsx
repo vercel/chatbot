@@ -7,6 +7,8 @@ import {
   ArrowUpIcon,
   BrainIcon,
   EyeIcon,
+  Globe2Icon,
+  KeyRoundIcon,
   LockIcon,
   WrenchIcon,
 } from "lucide-react";
@@ -37,6 +39,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector";
+import { useActiveChat } from "@/hooks/use-active-chat";
 import {
   type ChatModel,
   chatModels,
@@ -53,6 +56,16 @@ import {
   PromptInputTools,
 } from "../ai-elements/prompt-input";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
@@ -110,6 +123,8 @@ function PureMultimodalInput({
   isLoading?: boolean;
 }) {
   const router = useRouter();
+  const { googleApiKey, setGoogleApiKey, useGoogleSearch, setUseGoogleSearch } =
+    useActiveChat();
   const { setTheme, resolvedTheme } = useTheme();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -141,11 +156,51 @@ function PureMultimodalInput({
     setLocalStorageInput(input);
   }, [input, setLocalStorageInput]);
 
+  useEffect(() => {
+    setDraftGoogleApiKey(googleApiKey);
+  }, [googleApiKey]);
+
+  useEffect(() => {
+    if (!selectedModelId.startsWith("gemini-")) {
+      setUseGoogleSearch(false);
+    }
+  }, [selectedModelId, setUseGoogleSearch]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
   const [slashIndex, setSlashIndex] = useState(0);
+  const [geminiSettingsOpen, setGeminiSettingsOpen] = useState(false);
+  const [draftGoogleApiKey, setDraftGoogleApiKey] = useState(googleApiKey);
+
+  const toggleGoogleSearch = useCallback(() => {
+    setUseGoogleSearch((enabled) => !enabled);
+  }, [setUseGoogleSearch]);
+
+  const openGeminiSettings = useCallback(() => {
+    setDraftGoogleApiKey(googleApiKey);
+    setGeminiSettingsOpen(true);
+  }, [googleApiKey]);
+
+  const updateDraftGoogleApiKey = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setDraftGoogleApiKey(event.target.value);
+    },
+    []
+  );
+
+  const removeGoogleApiKey = useCallback(() => {
+    setGoogleApiKey("");
+    setDraftGoogleApiKey("");
+    setUseGoogleSearch(false);
+    setGeminiSettingsOpen(false);
+  }, [setGoogleApiKey, setUseGoogleSearch]);
+
+  const saveGoogleApiKey = useCallback(() => {
+    setGoogleApiKey(draftGoogleApiKey);
+    setGeminiSettingsOpen(false);
+  }, [draftGoogleApiKey, setGoogleApiKey]);
 
   const handleInput = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -545,6 +600,47 @@ function PureMultimodalInput({
         />
         <PromptInputFooter className="px-3 pb-3">
           <PromptInputTools>
+            <Button
+              aria-label={
+                useGoogleSearch
+                  ? "Turn off Google Search"
+                  : "Turn on Google Search"
+              }
+              aria-pressed={useGoogleSearch}
+              className={cn(
+                "h-7 gap-1.5 rounded-lg px-2 text-[12px]",
+                useGoogleSearch
+                  ? "bg-primary/10 text-primary hover:bg-primary/15"
+                  : "text-muted-foreground"
+              )}
+              data-testid="google-search-toggle"
+              disabled={!selectedModelId.startsWith("gemini-")}
+              onClick={toggleGoogleSearch}
+              title={
+                selectedModelId.startsWith("gemini-")
+                  ? "Google Search grounding"
+                  : "Choose a Gemini model to use Google Search"
+              }
+              type="button"
+              variant="ghost"
+            >
+              <Globe2Icon className="size-3.5" />
+              <span>Search</span>
+            </Button>
+            <Button
+              aria-label="Gemini API key settings"
+              className={cn(
+                "h-7 gap-1.5 rounded-lg px-2 text-[12px]",
+                googleApiKey ? "text-emerald-600" : "text-muted-foreground"
+              )}
+              data-testid="gemini-settings-button"
+              onClick={openGeminiSettings}
+              type="button"
+              variant="ghost"
+            >
+              <KeyRoundIcon className="size-3.5" />
+              <span>Gemini API</span>
+            </Button>
             <AttachmentsButton
               fileInputRef={fileInputRef}
               selectedModelId={selectedModelId}
@@ -576,6 +672,50 @@ function PureMultimodalInput({
           )}
         </PromptInputFooter>
       </PromptInput>
+
+      <Dialog onOpenChange={setGeminiSettingsOpen} open={geminiSettingsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Google Gemini API</DialogTitle>
+            <DialogDescription>
+              Paste a key from Google AI Studio. It stays in this browser tab
+              and is sent to the server only when you use a Gemini model. Never
+              share your key in chat.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="gemini-api-key">API key</Label>
+            <Input
+              autoComplete="off"
+              id="gemini-api-key"
+              onChange={updateDraftGoogleApiKey}
+              placeholder="AIza…"
+              type="password"
+              value={draftGoogleApiKey}
+            />
+            <a
+              className="text-xs text-primary underline underline-offset-4"
+              href="https://aistudio.google.com/apikey"
+              rel="noreferrer"
+              target="_blank"
+            >
+              Get a Google AI Studio API key
+            </a>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={removeGoogleApiKey}
+              type="button"
+              variant="outline"
+            >
+              Remove key
+            </Button>
+            <Button onClick={saveGoogleApiKey} type="button">
+              Save key
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

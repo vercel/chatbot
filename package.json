@@ -19,6 +19,7 @@
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.8",
     "@ai-sdk/otel": "^1.0.15",
     "@ai-sdk/provider": "^4.0.2",
     "@ai-sdk/react": "4.0.16",

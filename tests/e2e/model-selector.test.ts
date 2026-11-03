@@ -52,6 +52,15 @@ test.describe("Model Selector", () => {
     await expect(
       availableModels.getByRole("option", { name: /Kimi K2\.5/ })
     ).toBeVisible();
+    await expect(
+      availableModels.getByRole("option", { name: /Gemini 4 Argon/ })
+    ).toBeVisible();
+    await expect(
+      availableModels.getByRole("option", { name: /Gemini 3.8 Flash/ })
+    ).toBeVisible();
+    await expect(
+      availableModels.getByRole("option", { name: /Gemini 3.1 Flash-Lite/ })
+    ).toBeVisible();
   });
 
   test("can select a different model", async ({ page }) => {

@@ -1,5 +1,6 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
+import { Globe2Icon } from "lucide-react";
 import { useCallback } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -119,6 +120,7 @@ const PurePreviewMessage = ({
       (part.type === "reasoning" &&
         "text" in part &&
         part.text?.trim().length > 0) ||
+      part.type === "source-url" ||
       part.type.startsWith("tool-")
   );
   const isThinking = isAssistant && isLoading && !hasAnyContent;
@@ -171,6 +173,24 @@ const PurePreviewMessage = ({
         );
       }
       return null;
+    }
+
+    if (type === "source-url") {
+      return (
+        <a
+          className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/50 bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          href={part.url}
+          key={key}
+          rel="noreferrer"
+          target="_blank"
+          title={part.title ?? part.url}
+        >
+          <Globe2Icon className="size-3 shrink-0" />
+          <span className="max-w-48 truncate">
+            {part.title ?? new URL(part.url).hostname}
+          </span>
+        </a>
+      );
     }
 
     if (type === "text") {

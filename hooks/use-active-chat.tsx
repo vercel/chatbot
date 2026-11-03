@@ -9,6 +9,7 @@ import {
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -46,6 +47,10 @@ type ActiveChatContextValue = {
   currentModelId: string;
   setCurrentModelId: (id: string) => void;
   showCreditCardAlert: boolean;
+  googleApiKey: string;
+  setGoogleApiKey: (key: string) => void;
+  useGoogleSearch: boolean;
+  setUseGoogleSearch: Dispatch<SetStateAction<boolean>>;
   setShowCreditCardAlert: Dispatch<SetStateAction<boolean>>;
 };
 
@@ -81,6 +86,32 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const [input, setInput] = useState("");
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
+  const [googleApiKey, setGoogleApiKeyState] = useState("");
+  const [useGoogleSearch, setUseGoogleSearch] = useState(false);
+
+  useEffect(() => {
+    setGoogleApiKeyState(window.sessionStorage.getItem("google-api-key") ?? "");
+  }, []);
+
+  const setGoogleApiKey = useCallback((key: string) => {
+    const trimmedKey = key.trim();
+    setGoogleApiKeyState(trimmedKey);
+    googleApiKeyRef.current = trimmedKey;
+    if (trimmedKey) {
+      window.sessionStorage.setItem("google-api-key", trimmedKey);
+    } else {
+      window.sessionStorage.removeItem("google-api-key");
+    }
+  }, []);
+
+  const googleApiKeyRef = useRef(googleApiKey);
+  const useGoogleSearchRef = useRef(useGoogleSearch);
+  useEffect(() => {
+    googleApiKeyRef.current = googleApiKey;
+  }, [googleApiKey]);
+  useEffect(() => {
+    useGoogleSearchRef.current = useGoogleSearch;
+  }, [useGoogleSearch]);
 
   const { data: chatData, isLoading } = useSWR(
     isNewChat
@@ -166,8 +197,10 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
             ...(isToolApprovalContinuation
               ? { messages: request.messages }
               : { message: lastMessage }),
+            googleApiKey: googleApiKeyRef.current,
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibility,
+            useGoogleSearch: useGoogleSearchRef.current,
             ...request.body,
           },
         };
@@ -259,6 +292,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       addToolApprovalResponse,
       chatId,
       currentModelId,
+      googleApiKey,
       input,
       isLoading: !isNewChat && isLoading,
       isReadonly,
@@ -266,12 +300,15 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       regenerate,
       sendMessage,
       setCurrentModelId,
+      setGoogleApiKey,
       setInput,
       setMessages,
       setShowCreditCardAlert,
+      setUseGoogleSearch,
       showCreditCardAlert,
       status,
       stop,
+      useGoogleSearch,
       visibilityType: visibility,
       votes,
     }),
@@ -292,6 +329,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       votes,
       currentModelId,
       showCreditCardAlert,
+      googleApiKey,
+      setGoogleApiKey,
+      useGoogleSearch,
     ]
   );
 
