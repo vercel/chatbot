@@ -110,5 +110,5 @@
   "lint-staged": {
     "*": "corepack pnpm run fix --"
   },
-  "packageManager": "pnpm@10.32.1"
+  "packageManager": "pnpm@12.17.0"
 }
