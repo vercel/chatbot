@@ -6,6 +6,8 @@ import { titlePrompt } from "@/lib/ai/prompts";
 import { getTitleModel } from "@/lib/ai/providers";
 import { getTextFromMessage } from "@/lib/utils";
 
+const MAX_TITLE_PROMPT_LENGTH = 2000;
+
 export async function generateTitleFromUserMessage({
   message,
 }: {
@@ -14,7 +16,7 @@ export async function generateTitleFromUserMessage({
   const { text } = await generateText({
     instructions: titlePrompt,
     model: getTitleModel(),
-    prompt: getTextFromMessage(message),
+    prompt: getTextFromMessage(message).slice(0, MAX_TITLE_PROMPT_LENGTH),
     providerOptions: {
       gateway: { order: titleModel.gatewayOrder },
     },

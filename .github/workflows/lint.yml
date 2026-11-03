@@ -23,3 +23,5 @@ jobs:
         run: pnpm install
       - name: Run check
         run: pnpm check
+      - name: Run unit tests
+        run: pnpm test:unit
