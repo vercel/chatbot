@@ -98,15 +98,17 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
-    await db.delete(vote).where(eq(vote.chatId, id));
-    await db.delete(message).where(eq(message.chatId, id));
-    await db.delete(stream).where(eq(stream.chatId, id));
+    return await db.transaction(async (tx) => {
+      await tx.delete(vote).where(eq(vote.chatId, id));
+      await tx.delete(message).where(eq(message.chatId, id));
+      await tx.delete(stream).where(eq(stream.chatId, id));
 
-    const [chatsDeleted] = await db
-      .delete(chat)
-      .where(eq(chat.id, id))
-      .returning();
-    return chatsDeleted;
+      const [chatsDeleted] = await tx
+        .delete(chat)
+        .where(eq(chat.id, id))
+        .returning();
+      return chatsDeleted;
+    });
   } catch (error) {
     throw new ChatbotError("bad_request:database", { cause: error });
   }
@@ -125,16 +127,18 @@ export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
 
     const chatIds = userChats.map((c) => c.id);
 
-    await db.delete(vote).where(inArray(vote.chatId, chatIds));
-    await db.delete(message).where(inArray(message.chatId, chatIds));
-    await db.delete(stream).where(inArray(stream.chatId, chatIds));
+    return await db.transaction(async (tx) => {
+      await tx.delete(vote).where(inArray(vote.chatId, chatIds));
+      await tx.delete(message).where(inArray(message.chatId, chatIds));
+      await tx.delete(stream).where(inArray(stream.chatId, chatIds));
 
-    const deletedChats = await db
-      .delete(chat)
-      .where(eq(chat.userId, userId))
-      .returning();
+      const deletedChats = await tx
+        .delete(chat)
+        .where(eq(chat.userId, userId))
+        .returning();
 
-    return { deletedCount: deletedChats.length };
+      return { deletedCount: deletedChats.length };
+    });
   } catch (error) {
     throw new ChatbotError("bad_request:database", { cause: error });
   }
@@ -410,19 +414,21 @@ export async function deleteDocumentsByIdAfterTimestamp({
   timestamp: Date;
 }) {
   try {
-    await db
-      .delete(suggestion)
-      .where(
-        and(
-          eq(suggestion.documentId, id),
-          gt(suggestion.documentCreatedAt, timestamp)
-        )
-      );
+    return await db.transaction(async (tx) => {
+      await tx
+        .delete(suggestion)
+        .where(
+          and(
+            eq(suggestion.documentId, id),
+            gt(suggestion.documentCreatedAt, timestamp)
+          )
+        );
 
-    return await db
-      .delete(document)
-      .where(and(eq(document.id, id), gt(document.createdAt, timestamp)))
-      .returning();
+      return await tx
+        .delete(document)
+        .where(and(eq(document.id, id), gt(document.createdAt, timestamp)))
+        .returning();
+    });
   } catch (error) {
     throw new ChatbotError("bad_request:database", { cause: error });
   }
@@ -483,17 +489,19 @@ export async function deleteMessagesByChatIdAfterTimestamp({
     );
 
     if (messageIds.length > 0) {
-      await db
-        .delete(vote)
-        .where(
-          and(eq(vote.chatId, chatId), inArray(vote.messageId, messageIds))
-        );
+      return await db.transaction(async (tx) => {
+        await tx
+          .delete(vote)
+          .where(
+            and(eq(vote.chatId, chatId), inArray(vote.messageId, messageIds))
+          );
 
-      return await db
-        .delete(message)
-        .where(
-          and(eq(message.chatId, chatId), inArray(message.id, messageIds))
-        );
+        return await tx
+          .delete(message)
+          .where(
+            and(eq(message.chatId, chatId), inArray(message.id, messageIds))
+          );
+      });
     }
   } catch (error) {
     throw new ChatbotError("bad_request:database", { cause: error });
