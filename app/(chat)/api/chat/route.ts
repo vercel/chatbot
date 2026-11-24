@@ -3,7 +3,6 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
-  generateId,
   isStepCount,
   streamText,
   toUIMessageStream,
@@ -410,7 +409,7 @@ export async function POST(request: Request) {
         try {
           const streamContext = getStreamContext();
           if (streamContext) {
-            const streamId = generateId();
+            const streamId = generateUUID();
             await createStreamId({ chatId: id, streamId });
             await streamContext.createNewResumableStream(
               streamId,
