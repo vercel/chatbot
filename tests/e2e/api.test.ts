@@ -76,6 +76,43 @@ test.describe("Chat Error Handling", () => {
   });
 });
 
+test.describe("Stream Resume", () => {
+  test("returns 204 when there is no stream to resume", async ({ page }) => {
+    await page.goto("/");
+
+    const response = await page.request.get(
+      `/api/chat/${crypto.randomUUID()}/stream`
+    );
+    expect(response.status()).toBe(204);
+  });
+
+  test("does not resume another user's private chat", async ({
+    browser,
+    page,
+  }) => {
+    await page.goto("/");
+
+    const chatResponse = page.waitForResponse(
+      (res) =>
+        res.url().endsWith("/api/chat") && res.request().method() === "POST"
+    );
+    await page.getByTestId("multimodal-input").fill("Hello");
+    await page.getByTestId("send-button").click();
+    await chatResponse;
+    await expect(page).toHaveURL(CHAT_URL_REGEX);
+    const chatId = new URL(page.url()).pathname.split("/").at(-1);
+
+    const otherContext = await browser.newContext();
+    const otherPage = await otherContext.newPage();
+    await otherPage.goto("/");
+
+    const response = await otherPage.request.get(`/api/chat/${chatId}/stream`);
+    expect(response.status()).toBe(403);
+
+    await otherContext.close();
+  });
+});
+
 test.describe("Suggested Actions", () => {
   test("suggested actions are clickable", async ({ page }) => {
     await page.goto("/");
